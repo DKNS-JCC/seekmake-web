@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto Instantáneo - 3DCC Salamanca</title>
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="manifest" href="icons/site.webmanifest">
+    <link rel="shortcut icon" href="icons/favicon.ico">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2c3e50',
+                        secondary: '#34495e',
+                        accent: '#3498db',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="styles-tailwind.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navegación -->
+    <nav class="fixed top-0 left-0 right-0 bg-white shadow-md z-50 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo -->
+                <a href="index.html" class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-accent">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                    </svg>
+                    <span class="text-xl md:text-2xl font-bold text-primary">3DCC | Impresion3D</span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="index.html#inicio" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Inicio</a>
+                    <a href="index.html#servicios" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Servicios</a>
+                    <a href="muestrario.html" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Muestrario</a>
+                    <a href="index.html#trabajos" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Trabajos</a>
+                    <a href="instant-quote.html" class="nav-link text-accent border-b-2 border-accent transition-colors font-medium">Presupuesto</a>
+                    <a href="index.html#contacto" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Contacto</a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-gray-700 hover:text-accent" id="navToggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div class="md:hidden hidden pb-4" id="navMenuMobile">
+                <div class="flex flex-col space-y-3">
+                    <a href="index.html#inicio" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Inicio</a>
+                    <a href="index.html#servicios" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Servicios</a>
+                    <a href="muestrario.html" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Muestrario</a>
+                    <a href="index.html#trabajos" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Trabajos</a>
+                    <a href="instant-quote.html" class="nav-link text-accent font-semibold">Presupuesto</a>
+                    <a href="index.html#contacto" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Contacto</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20">
+        <section id="seekmake-quote-container">
+            <iframe
+                sandbox="allow-downloads allow-scripts allow-same-origin allow-forms allow-popups"
+                id="seekmake-embed-iq"
+                class="seekmake-embed-iq"
+                src="https://seekmake.com/instant-quote/?isEmbed=true&manufacturer=68dc31e8d996e3f4cdd284c2"
+                style="width: 100%; height: 100vh !important; min-height: 100vh !important; border: 0px"
+                scrolling="no"
+            ></iframe>
+        </section>
+    </main>
+
+    <script src="https://seekmake.com/assets/public/iq-api-latest.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

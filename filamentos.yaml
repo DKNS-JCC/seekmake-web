@@ -1,0 +1,95 @@
+filamentos:
+  PLA:
+    nombre: "PLA"
+    descripcion: "Filamentos de PLA son excelentes para impresiones visuales y prototipos rápidos. Resistencia moderada, precio asequible."
+    colores:
+      - nombre: "Blanco"
+        hex: "#FFFFFF"
+        texto: "black"
+
+      - nombre: "Negro"
+        hex: "#000000"
+        texto: "white"
+
+      - nombre: "Gris"
+        hex: "#9CA3AF"
+        texto: "white"
+        
+      - nombre: "Amarillo"
+        hex: "#FBBF24"
+        texto: "black"
+
+      - nombre: "Azul"
+        hex: "#3B82F6"
+        texto: "white"
+        
+      - nombre: "Azul Marino"
+        hex: "#000080"
+        texto: "white"
+
+      - nombre: "Rojo"
+        hex: "#EF4444"
+        texto: "white"
+
+      - nombre: "Morado"
+        hex: "#9333EA"
+        texto: "white"
+
+      - nombre: "Cobre"
+        hex: "#B87333"
+        texto: "white"
+
+      - nombre: "Verde Flúor"
+        hex: "#39FF14"
+        texto: "black"
+
+      - nombre: "Verde Galaxia"
+        hex: "#1A472A"
+        texto: "white"
+
+      - nombre: "Mármol"
+        hex: "#D1D5DB"
+        texto: "black"
+
+      - nombre: "Naranja"
+        hex: "#F97316"
+        texto: "white"
+
+      - nombre: "Dorado"
+        hex: "#FFD700"
+        texto: "black"
+
+      - nombre: "Amarillo Vainilla"
+        hex: "#F3E5AB"
+        texto: "black"
+
+  
+  PETG:
+    nombre: "PETG"
+    descripcion: "Material con mayor resistencia al impacto, temperatura y resistencia a químicos."
+    colores:
+      - nombre: "Blanco Hielo"
+        hex: "#FFFFFF"
+        texto: "black"
+
+      - nombre: "Negro"
+        hex: "#000000"
+        texto: "white"
+  
+  ASA:
+    nombre: "ASA"
+    descripcion: "Alta resistencia mecánica y durabilidad al exterior y productos químicos."
+    colores:
+      - nombre: "Negro Azabache"
+        hex: "#000000"
+        texto: "white"
+
+  
+  TPU:
+    nombre: "TPU"
+    descripcion: "Material elástico, gran resistencia a la rotura y recuperación de forma original."
+    colores:
+      - nombre: "Negro (Shore 95A)"
+        hex: "#000000"
+        texto: "white"
+
