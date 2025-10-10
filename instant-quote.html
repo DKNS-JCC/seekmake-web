@@ -16,6 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -29,10 +30,17 @@
     </script>
     
     <link rel="stylesheet" href="styles-tailwind.css">
+    
+    <!-- Dark Mode Script -->
+    <script>
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 dark:bg-gray-900">
     <!-- Navegación -->
-    <nav class="fixed top-0 left-0 right-0 bg-white shadow-md z-50 transition-all duration-300" id="navbar">
+    <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md z-50 transition-all duration-300" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo -->
@@ -40,21 +48,29 @@
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-accent">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                     </svg>
-                    <span class="text-xl md:text-2xl font-bold text-primary">3DCC | Impresion3D</span>
+                    <span class="text-xl md:text-2xl font-bold text-primary dark:text-white">3DCC | Impresion3D</span>
                 </a>
 
                 <!-- Desktop Navigation -->
-                <div class="hidden md:flex space-x-8">
-                    <a href="index.html#inicio" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Inicio</a>
-                    <a href="index.html#servicios" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Servicios</a>
-                    <a href="muestrario.html" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Muestrario</a>
-                    <a href="index.html#trabajos" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Trabajos</a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html#inicio" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Inicio</a>
+                    <a href="index.html#servicios" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Servicios</a>
+                    <a href="muestrario.html" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Muestrario</a>
+                    <a href="index.html#trabajos" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Trabajos</a>
                     <a href="instant-quote.html" class="nav-link text-accent border-b-2 border-accent transition-colors font-medium">Calculadora de precio</a>
-                    <a href="index.html#contacto" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Contacto</a>
+                    <a href="index.html#contacto" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Contacto</a>
+                    <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Cambiar modo oscuro">
+                        <svg id="sunIcon" class="w-5 h-5 text-yellow-500 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg id="moonIcon" class="w-5 h-5 text-gray-700 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
                 </div>
 
                 <!-- Mobile menu button -->
-                <button class="md:hidden text-gray-700 hover:text-accent" id="navToggle">
+                <button class="md:hidden text-gray-700 dark:text-gray-200 hover:text-accent" id="navToggle">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
@@ -64,12 +80,19 @@
             <!-- Mobile Navigation -->
             <div class="md:hidden hidden pb-4" id="navMenuMobile">
                 <div class="flex flex-col space-y-3">
-                    <a href="index.html#inicio" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Inicio</a>
-                    <a href="index.html#servicios" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Servicios</a>
-                    <a href="muestrario.html" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Muestrario</a>
-                    <a href="index.html#trabajos" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Trabajos</a>
+                    <a href="index.html#inicio" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Inicio</a>
+                    <a href="index.html#servicios" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Servicios</a>
+                    <a href="muestrario.html" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Muestrario</a>
+                    <a href="index.html#trabajos" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Trabajos</a>
                     <a href="instant-quote.html" class="nav-link text-accent font-semibold">Calculadora de precio</a>
-                    <a href="index.html#contacto" class="nav-link text-gray-700 hover:text-accent transition-colors font-medium">Contacto</a>
+                    <a href="index.html#contacto" class="nav-link text-gray-700 dark:text-gray-200 hover:text-accent transition-colors font-medium">Contacto</a>
+                    <button id="darkModeToggleMobile" class="flex items-center gap-3 text-gray-700 dark:text-gray-200 font-medium hover:text-accent transition-colors py-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <span class="dark:hidden">Modo Oscuro</span>
+                        <span class="hidden dark:inline">Modo Claro</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -90,10 +113,10 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-primary text-white text-center py-8 mt-8">
+    <footer class="bg-primary dark:bg-gray-950 text-white text-center py-8 mt-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p>&copy; 2025 Impresión 3DCC Salamanca. Todos los derechos reservados.</p>
-            <p class="text-sm text-gray-300 mt-2">
+            <p class="text-sm text-gray-300 dark:text-gray-400 mt-2">
                 <a href="terminos.html" class="hover:text-accent transition-colors">Términos y Condiciones</a> | 
                 Servicio ofrecido como hobby sin ánimo de lucro
             </p>
@@ -102,5 +125,28 @@
 
     <script src="https://seekmake.com/assets/public/iq-api-latest.js"></script>
     <script src="script.js"></script>
+    
+    <!-- Dark Mode Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeToggleMobile = document.getElementById('darkModeToggleMobile');
+            const htmlElement = document.documentElement;
+            
+            function toggleDarkMode() {
+                htmlElement.classList.toggle('dark');
+                const isDark = htmlElement.classList.contains('dark');
+                localStorage.setItem('darkMode', isDark);
+            }
+            
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('click', toggleDarkMode);
+            }
+            
+            if (darkModeToggleMobile) {
+                darkModeToggleMobile.addEventListener('click', toggleDarkMode);
+            }
+        });
+    </script>
 </body>
 </html>

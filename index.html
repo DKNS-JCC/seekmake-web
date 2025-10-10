@@ -12,10 +12,98 @@
     <link rel="manifest" href="icons/site.webmanifest">
     <link rel="shortcut icon" href="icons/favicon.ico">
     
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Servicio profesional de impresión 3D en Salamanca. Diseño, prototipado y fabricación de piezas personalizadas. Envíos a toda España. Cotización online instantánea.">
+    <meta name="keywords" content="impresión 3D, Salamanca, prototipado, diseño 3D, fabricación 3D, PLA, ABS, PETG, piezas personalizadas">
+    <meta name="author" content="3DCC Salamanca">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://impresion3dcc.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://impresion3dcc.com/">
+    <meta property="og:title" content="3DCC Salamanca - Servicio de Impresión 3D Profesional">
+    <meta property="og:description" content="Impresión 3D de calidad en Salamanca. Diseño, prototipado y fabricación de piezas personalizadas con envíos a toda España.">
+    <meta property="og:image" content="https://impresion3dcc.com/images/main_banner.png">
+    <meta property="og:locale" content="es_ES">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://impresion3dcc.com/">
+    <meta property="twitter:title" content="3DCC Salamanca - Servicio de Impresión 3D">
+    <meta property="twitter:description" content="Servicio profesional de impresión 3D en Salamanca con envíos a toda España.">
+    <meta property="twitter:image" content="https://impresion3dcc.com/images/main_banner.png">
+    
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "3DCC Salamanca - Impresión 3D",
+      "image": "https://impresion3dcc.com/images/main_banner.png",
+      "description": "Servicio profesional de impresión 3D en Salamanca. Diseño, prototipado y fabricación de piezas personalizadas con envíos a toda España.",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Plza. Barrio Vidal",
+        "addressLocality": "Salamanca",
+        "postalCode": "37006",
+        "addressCountry": "ES"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 40.9701,
+        "longitude": -5.6635
+      },
+      "url": "https://impresion3dcc.com",
+      "telephone": "+34665148956",
+      "email": "impresion3dslmc@gmail.com",
+      "priceRange": "€€",
+      "openingHours": "Mo-Su 09:00-21:00",
+      "sameAs": [
+        "https://impresion3dcc.com"
+      ],
+      "areaServed": {
+        "@type": "Country",
+        "name": "España"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servicios de Impresión 3D",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Impresión 3D Rápida",
+              "description": "Servicio de impresión 3D con entrega express disponible"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Diseño y Prototipado 3D",
+              "description": "Diseño personalizado y creación de prototipos"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Fabricación de Piezas Personalizadas",
+              "description": "Producción de piezas únicas y repuestos a medida"
+            }
+          }
+        ]
+      }
+    }
+    </script>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -28,10 +116,19 @@
         }
     </script>
     <link rel="stylesheet" href="styles-tailwind.css">
+    
+    <!-- Dark Mode Script - Debe ejecutarse antes de cargar la página -->
+    <script>
+        // Evitar flash de contenido sin estilo (FOUC)
+        // Solo activar dark mode si está explícitamente guardado como 'true'
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
 </head>
 <body>
     <!-- Navegación -->
-    <nav class="fixed top-0 left-0 right-0 bg-white shadow-md z-50 transition-all duration-300" id="navbar">
+    <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md z-50 transition-all duration-300" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center gap-2">
@@ -40,115 +137,132 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                         </svg>
                     </span>
-                    <span class="text-xl font-bold text-primary">3DCC | Impresión 3D</span>
+                    <span class="text-xl font-bold text-primary dark:text-white">3DCC | Impresión 3D</span>
                 </div>
                 <button class="lg:hidden flex flex-col gap-1.5" id="navToggle">
-                    <span class="w-6 h-0.5 bg-primary transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary transition-all"></span>
+                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
+                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
+                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
                 </button>
                 <ul class="hidden lg:flex gap-8 items-center" id="navMenu">
-                    <li><a href="#inicio" class="nav-link text-primary font-medium hover:text-accent transition-colors active border-b-2 border-accent">Inicio</a></li>
-                    <li><a href="muestrario.html" class="nav-link text-primary font-medium hover:text-accent transition-colors">Muestrario</a></li>
-                    <li><a href="#trabajos" class="nav-link text-primary font-medium hover:text-accent transition-colors">Algunos Trabajos</a></li>
-                    <li><a href="#contacto" class="nav-link text-primary font-medium hover:text-accent transition-colors">Contacto</a></li>
+                    <li><a href="#inicio" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors active border-b-2 border-accent">Inicio</a></li>
+                    <li><a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors">Muestrario</a></li>
+                    <li><a href="#trabajos" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors">Algunos Trabajos</a></li>
+                    <li><a href="#contacto" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors">Contacto</a></li>
+                    <li>
+                        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Cambiar modo oscuro">
+                            <svg id="sunIcon" class="w-5 h-5 text-yellow-500 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <svg id="moonIcon" class="w-5 h-5 text-gray-700 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        </button>
+                    </li>
                     <li><a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-600 transition-all hover:-translate-y-0.5">Obtener Precio</a></li>
                 </ul>
             </div>
             <!-- Mobile menu -->
             <div class="lg:hidden hidden flex-col gap-4 pb-4" id="navMenuMobile">
-                <a href="#inicio" class="nav-link text-primary font-medium hover:text-accent transition-colors py-2 border-b border-gray-100">Inicio</a>
-                <a href="muestrario.html" class="nav-link text-primary font-medium hover:text-accent transition-colors py-2 border-b border-gray-100">Muestrario</a>
-                <a href="#trabajos" class="nav-link text-primary font-medium hover:text-accent transition-colors py-2 border-b border-gray-100">Algunos Trabajos</a>
-                <a href="#contacto" class="nav-link text-primary font-medium hover:text-accent transition-colors py-2 border-b border-gray-100">Contacto</a>
+                <a href="#inicio" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Inicio</a>
+                <a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Muestrario</a>
+                <a href="#trabajos" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Algunos Trabajos</a>
+                <a href="#contacto" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Contacto</a>
+                <button id="darkModeToggleMobile" class="flex items-center gap-3 text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <span class="dark:hidden">Modo Oscuro</span>
+                    <span class="hidden dark:inline">Modo Claro</span>
+                </button>
                 <a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold text-center hover:bg-blue-600 transition-all">Obtener Precio</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section id="inicio" class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section id="inicio" class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 dark:bg-gray-900">
         <!-- Background image with overlay -->
         <div class="absolute inset-0 -z-10">
             <img src="images/main_banner.png" alt="Impresión 3D" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-br from-white/90 via-white/80 to-gray-100/85"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-white/90 via-white/80 to-gray-100/85 dark:from-gray-900/90 dark:via-gray-900/85 dark:to-gray-800/90"></div>
         </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center max-w-4xl mx-auto animate-fade-in">
-                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight text-primary drop-shadow-sm">
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight text-primary dark:text-white drop-shadow-sm">
                     <span class="block">Impresión 3DCC</span>
                     <span class="block">Diseño y Prototipado</span>
                 </h1>
-                <p class="text-xl md:text-2xl text-gray-700 mb-10 max-w-3xl mx-auto drop-shadow-sm">
+                <p class="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-10 max-w-3xl mx-auto drop-shadow-sm">
                     Convertimos tus ideas en realidad con precisión y calidad excepcional. Servicio en Salamanca y envíos a toda España.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="instant-quote.html" class="bg-accent text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-600 transition-all hover:-translate-y-1 hover:shadow-lg shadow-md">
                         Calcular Precio
                     </a>
-                    <a href="#contacto" class="bg-white/90 backdrop-blur-sm text-primary border-2 border-primary px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary hover:text-white transition-all shadow-md">
+                    <a href="#contacto" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-primary dark:text-white border-2 border-primary dark:border-gray-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary hover:text-white dark:hover:bg-gray-700 transition-all shadow-md">
                         Contactar
                     </a>
                 </div>
             </div>
         </div>
         <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce z-10">
-            <div class="w-6 h-10 border-2 border-primary rounded-full relative bg-white/50 backdrop-blur-sm">
-                <div class="w-1 h-2 bg-primary rounded-full absolute top-2 left-1/2 -translate-x-1/2 animate-pulse"></div>
+            <div class="w-6 h-10 border-2 border-primary dark:border-white rounded-full relative bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                <div class="w-1 h-2 bg-primary dark:bg-white rounded-full absolute top-2 left-1/2 -translate-x-1/2 animate-pulse"></div>
             </div>
         </div>
     </section>
 
     <!-- Servicios -->
-    <section class="py-20 bg-white">
+    <section class="py-20 bg-white dark:bg-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-4xl md:text-5xl font-bold text-center mb-4">Nuestros Servicios</h2>
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-4 dark:text-white">Nuestros Servicios</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
-                <div class="service-card bg-gray-50 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
+                <div class="service-card bg-gray-50 dark:bg-gray-700 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
                     <div class="text-accent text-5xl mb-4 flex justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-3">Impresión Rápida</h3>
-                    <p class="text-gray-600">Entrega express disponible para proyectos urgentes en Salamanca y alrededores</p>
+                    <h3 class="text-xl font-semibold mb-3 dark:text-white">Impresión Rápida</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Entrega express disponible para proyectos urgentes en Salamanca y alrededores</p>
                 </div>
-                <div class="service-card bg-gray-50 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
+                <div class="service-card bg-gray-50 dark:bg-gray-700 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
                     <div class="text-accent text-5xl mb-4 flex justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-3">Amplia Variedad</h3>
-                    <p class="text-gray-600">Múltiples colores y materiales para adaptarnos a tu proyecto específico</p>
+                    <h3 class="text-xl font-semibold mb-3 dark:text-white">Amplia Variedad</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Múltiples colores y materiales para adaptarnos a tu proyecto específico</p>
                 </div>
-                <div class="service-card bg-gray-50 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
+                <div class="service-card bg-gray-50 dark:bg-gray-700 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
                     <div class="text-accent text-5xl mb-4 flex justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-3">Envío Nacional</h3>
-                    <p class="text-gray-600">Servicio de envío seguro a toda España con seguimiento completo</p>
+                    <h3 class="text-xl font-semibold mb-3 dark:text-white">Envío Nacional</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Servicio de envío seguro a toda España con seguimiento completo</p>
                 </div>
-                <div class="service-card bg-gray-50 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
+                <div class="service-card bg-gray-50 dark:bg-gray-700 p-8 rounded-xl hover:-translate-y-2 transition-all duration-300 hover:shadow-xl text-center">
                     <div class="text-accent text-5xl mb-4 flex justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-3">Calculadora de Precio Online</h3>
-                    <p class="text-gray-600">Sistema automático de cotización para obtener tu valoración al instante</p>
+                    <h3 class="text-xl font-semibold mb-3 dark:text-white">Calculadora de Precio Online</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Sistema automático de cotización para obtener tu valoración al instante</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Muestrario -->
-    <section id="muestrario" class="py-20 bg-gray-50">
+    <section id="muestrario" class="py-20 bg-gray-50 dark:bg-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-4xl md:text-5xl font-bold text-center mb-4">Muestrario de Colores</h2>
-            <p class="text-center text-gray-600 text-lg max-w-3xl mx-auto mb-12">
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-4 dark:text-white">Muestrario de Colores</h2>
+            <p class="text-center text-gray-600 dark:text-gray-300 text-lg max-w-3xl mx-auto mb-12">
                 Disponemos de una amplia gama de colores y acabados para tu proyecto. Visita nuestra sección completa de muestrario para ver todas las opciones disponibles.
             </p>
             <div class="flex justify-center gap-6 mb-8 flex-wrap">
@@ -168,35 +282,35 @@
     </section>
 
     <!-- Trabajos -->
-    <section id="trabajos" class="py-20 bg-white">
+    <section id="trabajos" class="py-20 bg-white dark:bg-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-4xl md:text-5xl font-bold text-center mb-12">Algunos de Nuestros Trabajos</h2>
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-12 dark:text-white">Algunos de Nuestros Trabajos</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="portfolio-item rounded-xl overflow-hidden shadow-md hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
                     <div class="h-64 relative overflow-hidden">
                         <img src="images/examples/corporativa.jpg" alt="Productos corporativos" class="w-full h-full object-cover">
                     </div>
-                    <div class="p-6 bg-white">
-                        <h3 class="text-xl font-semibold mb-2">Productos corporativos</h3>
-                        <p class="text-gray-600">Detalles simples a medida</p>
+                    <div class="p-6 bg-white dark:bg-gray-700">
+                        <h3 class="text-xl font-semibold mb-2 dark:text-white">Productos corporativos</h3>
+                        <p class="text-gray-600 dark:text-gray-300">Detalles simples a medida</p>
                     </div>
                 </div>
                 <div class="portfolio-item rounded-xl overflow-hidden shadow-md hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
                     <div class="h-64 relative overflow-hidden">
                         <img src="images/examples/Decoracion.jpeg" alt="Figuras Decorativas" class="w-full h-full object-cover">
                     </div>
-                    <div class="p-6 bg-white">
-                        <h3 class="text-xl font-semibold mb-2">Figuras Decorativas</h3>
-                        <p class="text-gray-600">Diseños personalizados y detallados</p>
+                    <div class="p-6 bg-white dark:bg-gray-700">
+                        <h3 class="text-xl font-semibold mb-2 dark:text-white">Figuras Decorativas</h3>
+                        <p class="text-gray-600 dark:text-gray-300">Diseños personalizados y detallados</p>
                     </div>
                 </div>
                 <div class="portfolio-item rounded-xl overflow-hidden shadow-md hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
                     <div class="h-64 relative overflow-hidden">
                         <img src="images/examples/repuesto.png" alt="Repuestos y Recambios" class="w-full h-full object-cover">
                     </div>
-                    <div class="p-6 bg-white">
-                        <h3 class="text-xl font-semibold mb-2">Repuestos y Recambios</h3>
-                        <p class="text-gray-600">Soluciones a medida para cualquier necesidad</p>
+                    <div class="p-6 bg-white dark:bg-gray-700">
+                        <h3 class="text-xl font-semibold mb-2 dark:text-white">Repuestos y Recambios</h3>
+                        <p class="text-gray-600 dark:text-gray-300">Soluciones a medida para cualquier necesidad</p>
                     </div>
                 </div>
             </div>
@@ -219,13 +333,13 @@
     </section>
 
     <!-- Contacto -->
-    <section id="contacto" class="py-20 bg-gray-50">
+    <section id="contacto" class="py-20 bg-gray-50 dark:bg-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-4xl md:text-5xl font-bold text-center mb-12">Contacto</h2>
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-12 dark:text-white">Contacto</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div class="contact-info">
-                    <h3 class="text-2xl font-semibold mb-4">¿Tienes alguna pregunta?</h3>
-                    <p class="text-gray-600 mb-8">
+                    <h3 class="text-2xl font-semibold mb-4 dark:text-white">¿Tienes alguna pregunta?</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-8">
                         Estamos aquí para ayudarte. Contacta con nosotros a través de cualquiera de estos medios y te responderemos lo antes posible.
                     </p>
                     <div class="space-y-6">
@@ -236,7 +350,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">WhatsApp / Llamadas</h4>
+                                <h4 class="font-semibold mb-1 dark:text-white">WhatsApp / Llamadas</h4>
                                 <a href="tel:+34665148956" class="text-accent hover:underline">+34 665 14 89 56</a>
                             </div>
                         </div>
@@ -247,7 +361,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">Email</h4>
+                                <h4 class="font-semibold mb-1 dark:text-white">Email</h4>
                                 <a href="mailto:impresion3dslmc@gmail.com" class="text-accent hover:underline">impresion3dslmc@gmail.com</a>
                             </div>
                         </div>
@@ -258,7 +372,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">Web</h4>
+                                <h4 class="font-semibold mb-1 dark:text-white">Web</h4>
                                 <a href="https://impresion3dcc.com" class="text-accent hover:underline">impresion3dcc.com</a>
                             </div>
                         </div>
@@ -270,14 +384,14 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-semibold mb-1">Ubicación</h4>
-                                <p class="text-gray-600">Plza. Barrio Vidal, Salamanca 37006, España</p>
+                                <h4 class="font-semibold mb-1 dark:text-white">Ubicación</h4>
+                                <p class="text-gray-600 dark:text-gray-300">Plza. Barrio Vidal, Salamanca 37006, España</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="contact-form-container">
-                    <div class="contact-actions bg-white p-8 rounded-xl shadow-md space-y-4">
+                    <div class="contact-actions bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md space-y-4">
                         <a href="mailto:impresion3dslmc@gmail.com" 
                            class="flex items-center justify-center gap-3 bg-accent text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-600 transition-all hover:-translate-y-1 hover:shadow-lg w-full"
                            title="Enviar email a Impresión 3D Salamanca">
@@ -287,7 +401,7 @@
                             <span>Enviar email</span>
                         </a>
                         <a href="tel:+34665148956" 
-                           class="flex items-center justify-center gap-3 bg-transparent text-primary border-2 border-primary px-8 py-4 rounded-lg font-semibold hover:bg-primary hover:text-white transition-all hover:-translate-y-1 w-full"
+                           class="flex items-center justify-center gap-3 bg-transparent text-primary dark:text-white border-2 border-primary dark:border-gray-600 px-8 py-4 rounded-lg font-semibold hover:bg-primary hover:text-white dark:hover:bg-gray-700 transition-all hover:-translate-y-1 w-full"
                            title="Llamar a +34 665 14 89 56">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
@@ -311,16 +425,96 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-primary text-white text-center py-8">
+    <footer class="bg-primary dark:bg-gray-950 text-white text-center py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p>&copy; 2025 Impresión 3DCC Salamanca. Todos los derechos reservados.</p>
-            <p class="text-sm text-gray-300 mt-2">
+            <p class="text-sm text-gray-300 dark:text-gray-400 mt-2">
                 <a href="terminos.html" class="hover:text-accent transition-colors">Términos y Condiciones</a> | 
                 Servicio ofrecido como hobby sin ánimo de lucro
             </p>
         </div>
     </footer>
 
+    <!-- Banner de Términos y Condiciones -->
+    <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg border-t-2 border-accent z-50 transform translate-y-full transition-transform duration-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-start gap-3 flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                    </svg>
+                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                        Al navegar por esta web, aceptas nuestros 
+                        <a href="terminos.html" class="text-accent font-semibold hover:underline">Términos y Condiciones</a>. 
+                        Utilizamos tu información únicamente para procesar tus solicitudes de impresión 3D.
+                    </p>
+                </div>
+                <div class="flex gap-3 flex-shrink-0">
+                    <button id="acceptTerms" class="bg-accent text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-all shadow-sm">
+                        Aceptar
+                    </button>
+                    <button id="closeTerms" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+        // Dark Mode functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeToggleMobile = document.getElementById('darkModeToggleMobile');
+            const htmlElement = document.documentElement;
+            
+            // Función para activar/desactivar dark mode
+            function toggleDarkMode() {
+                htmlElement.classList.toggle('dark');
+                const isDark = htmlElement.classList.contains('dark');
+                localStorage.setItem('darkMode', isDark);
+            }
+            
+            // Event listeners para los botones de dark mode
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('click', toggleDarkMode);
+            }
+            
+            if (darkModeToggleMobile) {
+                darkModeToggleMobile.addEventListener('click', toggleDarkMode);
+            }
+        });
+        
+        // Banner de términos y condiciones
+        document.addEventListener('DOMContentLoaded', function() {
+            const banner = document.getElementById('cookieBanner');
+            const acceptBtn = document.getElementById('acceptTerms');
+            const closeBtn = document.getElementById('closeTerms');
+            
+            // Verificar si ya se aceptaron los términos
+            const termsAccepted = localStorage.getItem('termsAccepted');
+            
+            if (!termsAccepted) {
+                // Mostrar el banner después de un pequeño delay
+                setTimeout(() => {
+                    banner.classList.remove('translate-y-full');
+                }, 500);
+            }
+            
+            // Aceptar términos
+            acceptBtn.addEventListener('click', function() {
+                localStorage.setItem('termsAccepted', 'true');
+                banner.classList.add('translate-y-full');
+            });
+            
+            // Cerrar banner (sin aceptar, pero se volverá a mostrar)
+            closeBtn.addEventListener('click', function() {
+                banner.classList.add('translate-y-full');
+            });
+        });
+    </script>
 </body>
 </html>
