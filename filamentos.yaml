@@ -47,6 +47,10 @@ filamentos:
       hex: "#EF4444"
       texto: "white"
 
+    - nombre: "Rosa Cerezo"
+      hex: "#FFACA4"
+      texto: "white"
+
     - nombre: "Verde Radiante"
       hex: "#39FF14"
       texto: "black"
@@ -62,7 +66,7 @@ filamentos:
       acabado: "Purpurina"
 
     - nombre: "Azul Cobalto"
-      hex: "#7dc6e5"
+      hex: "#7DC6E5"
       texto: "white"
       acabado: "Metálico"
 
