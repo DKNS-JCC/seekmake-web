@@ -46,17 +46,25 @@ filamentos:
     - nombre: "Rojo Fórmula"
       hex: "#EF4444"
       texto: "white"
-      acabado: "Mate"
 
     - nombre: "Verde Radiante"
       hex: "#39FF14"
       texto: "black"
       acabado: "Fluorescente"
 
+    - nombre: "Verde Esmeralda"
+      hex: "#50C878"
+      texto: "white"
+
     - nombre: "Verde Galaxia"
       hex: "#1A472A"
       texto: "white"
       acabado: "Purpurina"
+
+    - nombre: "Azul Cobalto"
+      hex: "#7dc6e5"
+      texto: "white"
+      acabado: "Metálico"
 
     - nombre: "Azul Eléctrico"
       hex: "#3B82F6"
