@@ -3,8 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3DCC - Vue App</title>
-  <link rel="icon" type="image/x-icon" href="/seekmake-web/icons/site.webmanifest">
+  <title>3DCC Salamanca - Servicio de Impresión 3D</title>
+  
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/seekmake-web/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/seekmake-web/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/seekmake-web/icons/favicon-16x16.png">
+  <link rel="manifest" href="/seekmake-web/icons/site.webmanifest">
+  <link rel="shortcut icon" href="/seekmake-web/icons/favicon.ico">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Servicio profesional de impresión 3D en Salamanca. Diseño, prototipado y fabricación de piezas personalizadas. Envíos a toda España. Cotización online instantánea.">
+  <meta name="keywords" content="impresión 3D, Salamanca, prototipado, diseño 3D, fabricación 3D, PLA, ABS, PETG, piezas personalizadas">
+  <meta name="author" content="3DCC Salamanca">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://impresion3dcc.com/">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://impresion3dcc.com/">
+  <meta property="og:title" content="3DCC Salamanca - Servicio de Impresión 3D Profesional">
+  <meta property="og:description" content="Impresión 3D de calidad en Salamanca. Diseño, prototipado y fabricación de piezas personalizadas con envíos a toda España.">
+  <meta property="og:image" content="https://impresion3dcc.com/images/main_banner.png">
+  <meta property="og:locale" content="es_ES">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://impresion3dcc.com/">
+  <meta property="twitter:title" content="3DCC Salamanca - Servicio de Impresión 3D">
+  <meta property="twitter:description" content="Servicio profesional de impresión 3D en Salamanca con envíos a toda España.">
+  <meta property="twitter:image" content="https://impresion3dcc.com/images/main_banner.png">
+  
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "3DCC Salamanca - Impresión 3D",
+    "image": "https://impresion3dcc.com/images/main_banner.png",
+    "description": "Servicio profesional de impresión 3D en Salamanca. Diseño, prototipado y fabricación de piezas personalizadas con envíos a toda España.",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Plza. Barrio Vidal",
+      "addressLocality": "Salamanca",
+      "postalCode": "37006",
+      "addressCountry": "ES"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 40.9701,
+      "longitude": -5.6635
+    },
+    "url": "https://impresion3dcc.com",
+    "telephone": "+34665148956",
+    "email": "impresion3dslmc@gmail.com",
+    "priceRange": "€€",
+    "openingHours": "Mo-Su 09:00-21:00",
+    "sameAs": [
+      "https://impresion3dcc.com"
+    ],
+    "areaServed": {
+      "@type": "Country",
+      "name": "España"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Servicios de Impresión 3D",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Impresión 3D Rápida",
+            "description": "Servicio de impresión 3D con entrega express disponible"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Diseño y Prototipado 3D",
+            "description": "Diseño personalizado y creación de prototipos"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Fabricación de Piezas Personalizadas",
+            "description": "Producción de piezas únicas y repuestos a medida"
+          }
+        }
+      ]
+    }
+  }
+  </script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2c3e50',
+            secondary: '#34495e',
+            accent: '#3498db',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Dark Mode Script -->
+  <script>
+    // Evitar flash de contenido sin estilo (FOUC)
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
 </head>
 <body>
   <div id="app"></div>
