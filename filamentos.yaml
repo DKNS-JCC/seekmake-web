@@ -95,7 +95,12 @@ filamentos:
       hex: "#000000"
       texto: "white"
       acabado: "Brillante"
-
+      
+    - nombre: "Verde Neon"
+      hex: "#64ED6D"
+      texto: "black"
+      acabado: "Translucido"
+      
     - nombre: "Fibra de Carbono"
       hex: "#3B3B3B"
       texto: "white"
