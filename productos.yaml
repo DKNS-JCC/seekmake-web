@@ -1,0 +1,156 @@
+productos:
+- id: 1
+  nombre: "Figura Decorativa Geométrica"
+  descripcion: "Escultura moderna con formas geométricas perfecta para decoración"
+  precio: 25.00
+  categoria: "Decoracion"
+  material: "PLA"
+  colores: [ "Negro Azabache", "Blanco Hielo", "Gris Ceniza" ]
+  dimensiones: "15x15x20 cm"
+  peso: "120g"
+  imagen: "images/products/geometrica.jpg"
+  destacado: true
+  etiquetas: [ "decoracion", "geometrico", "moderno" ]
+
+- id: 2
+  nombre: "Soporte para Móvil Minimalista"
+  descripcion: "Base elegante y funcional para tu smartphone"
+  precio: 8.50
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Negro Azabache", "Blanco Hielo", "Azul Cobalto" ]
+  dimensiones: "10x8x5 cm"
+  peso: "45g"
+  imagen: "images/products/soporte-movil.jpg"
+  destacado: true
+  etiquetas: [ "oficina", "funcional", "movil" ]
+
+- id: 3
+  nombre: "Llavero Personalizado"
+  descripcion: "Diseño único con tu inicial o logo preferido"
+  precio: 3.50
+  categoria: "Accesorios"
+  material: "PLA"
+  colores: [ "Todos disponibles" ]
+  dimensiones: "5x5x0.5 cm"
+  peso: "10g"
+  imagen: "images/products/llavero.jpg"
+  destacado: false
+  etiquetas: [ "regalo", "personalizado", "accesorio" ]
+
+- id: 4
+  nombre: "Organizador de Escritorio"
+  descripcion: "Mantén tus útiles ordenados con estilo"
+  precio: 15.00
+  categoria: "Funcional"
+  material: "PLA"
+  colores: [ "Negro Azabache", "Blanco Hielo", "Gris Ceniza", "Azul Eléctrico" ]
+  dimensiones: "20x15x10 cm"
+  peso: "180g"
+  imagen: "images/products/organizador.jpg"
+  destacado: true
+  etiquetas: [ "oficina", "organizacion", "escritorio" ]
+
+- id: 5
+  nombre: "Maceta Moderna con Drenaje"
+  descripcion: "Perfecta para plantas pequeñas con sistema de drenaje integrado"
+  precio: 12.00
+  categoria: "Decoracion"
+  material: "PETG"
+  colores: [ "Verde Esmeralda", "Blanco Hielo", "Gris Ceniza" ]
+  dimensiones: "12x12x15 cm"
+  peso: "95g"
+  imagen: "images/products/maceta.jpg"
+  destacado: false
+  etiquetas: [ "plantas", "jardineria", "decoracion" ]
+
+- id: 6
+  nombre: "Soporte para Auriculares Gaming"
+  descripcion: "Base profesional para tus auriculares con diseño futurista"
+  precio: 18.00
+  categoria: "Gaming"
+  material: "PETG"
+  colores: [ "Negro Azabache", "Rojo Fórmula", "Azul Eléctrico" ]
+  dimensiones: "15x10x25 cm"
+  peso: "140g"
+  imagen: "images/products/soporte-auriculares.jpg"
+  destacado: true
+  etiquetas: [ "gaming", "auriculares", "setup" ]
+
+- id: 7
+  nombre: "Figura de Acción Articulada"
+  descripcion: "Personaje coleccionable con articulaciones móviles"
+  precio: 35.00
+  categoria: "Coleccionables"
+  material: "PLA"
+  colores: [ "Personalizable" ]
+  dimensiones: "18x8x5 cm"
+  peso: "85g"
+  imagen: "images/products/figura-accion.jpg"
+  destacado: false
+  etiquetas: [ "coleccion", "figura", "articulado" ]
+
+- id: 8
+  nombre: "Porta Tarjetas Elegante"
+  descripcion: "Tarjetero minimalista para tarjetas de visita"
+  precio: 6.00
+  categoria: "Funcional"
+  material: "PLA"
+  colores: [ "Negro Azabache", "Blanco Hielo", "Dorado" ]
+  dimensiones: "9x6x2 cm"
+  peso: "25g"
+  imagen: "images/products/porta-tarjetas.jpg"
+  destacado: false
+  etiquetas: [ "oficina", "negocio", "profesional" ]
+
+- id: 9
+  nombre: "Lámpara LED Atmosférica"
+  descripcion: "Base decorativa para tira LED (LED no incluido)"
+  precio: 22.00
+  categoria: "Decoracion"
+  material: "PLA"
+  colores: [ "Blanco Hielo", "Negro Azabache" ]
+  dimensiones: "20x20x25 cm"
+  peso: "200g"
+  imagen: "images/products/lampara.jpg"
+  destacado: true
+  etiquetas: [ "iluminacion", "decoracion", "ambiente" ]
+
+- id: 10
+  nombre: "Caja Organizadora Modular"
+  descripcion: "Sistema de cajas apilables para máxima organización"
+  precio: 10.00
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Todos disponibles" ]
+  dimensiones: "15x10x8 cm"
+  peso: "110g"
+  imagen: "images/products/caja-modular.jpg"
+  destacado: false
+  etiquetas: [ "organizacion", "modular", "almacenamiento" ]
+
+- id: 11
+  nombre: "Soporte para Tablet Ajustable"
+  descripcion: "Base con ángulo regulable para tablets y e-readers"
+  precio: 14.00
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Negro Azabache", "Blanco Hielo", "Gris Ceniza" ]
+  dimensiones: "18x12x3 cm"
+  peso: "90g"
+  imagen: "images/products/soporte-tablet.jpg"
+  destacado: true
+  etiquetas: [ "tablet", "lectura", "soporte" ]
+
+- id: 12
+  nombre: "Llavero Cable Organizer"
+  descripcion: "Mantén tus cables enrollados y organizados"
+  precio: 4.50
+  categoria: "Accesorios"
+  material: "TPU"
+  colores: [ "Negro", "Rojo Fórmula", "Azul Eléctrico" ]
+  dimensiones: "6x4x1 cm"
+  peso: "8g"
+  imagen: "images/products/cable-organizer.jpg"
+  destacado: false
+  etiquetas: [ "cables", "organizacion", "practico" ]
