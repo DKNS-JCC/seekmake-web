@@ -64,6 +64,10 @@ filamentos:
       hex: "#1A472A"
       texto: "white"
       acabado: "Purpurina"
+      
+    - nombre: "Verde Oliva"
+      hex: "#636B2F"
+      texto: "white"
 
     - nombre: "Azul Cobalto"
       hex: "#7DC6E5"
