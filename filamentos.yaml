@@ -24,10 +24,6 @@ filamentos:
       hex: "#F3E5AB"
       texto: "black"
 
-    - nombre: "Amarillo Mostaza"
-      hex: "#FFD700"
-      texto: "black"
-
     - nombre: "Dorado"
       hex: "#FBBF24"
       texto: "black"
@@ -55,10 +51,6 @@ filamentos:
       hex: "#39FF14"
       texto: "black"
       acabado: "Fluorescente"
-
-    - nombre: "Verde Esmeralda"
-      hex: "#50C878"
-      texto: "white"
 
     - nombre: "Verde Galaxia"
       hex: "#1A472A"
