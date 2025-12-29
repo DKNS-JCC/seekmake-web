@@ -24,6 +24,10 @@ filamentos:
       hex: "#F3E5AB"
       texto: "black"
 
+    - nombre: "Amarillo"
+      hex: "#FFFF00"
+      texto: "black"
+
     - nombre: "Dorado"
       hex: "#FBBF24"
       texto: "black"
