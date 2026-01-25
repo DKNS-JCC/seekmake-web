@@ -24,6 +24,10 @@ filamentos:
       hex: "#F3E5AB"
       texto: "black"
 
+    - nombre: "Amarillo"
+      hex: "#FFFF00"
+      texto: "black"
+
     - nombre: "Dorado"
       hex: "#FBBF24"
       texto: "black"
@@ -56,7 +60,7 @@ filamentos:
       hex: "#1A472A"
       texto: "white"
       acabado: "Purpurina"
-      
+
     - nombre: "Verde Oliva"
       hex: "#636B2F"
       texto: "white"
@@ -91,12 +95,12 @@ filamentos:
       hex: "#000000"
       texto: "white"
       acabado: "Brillante"
-      
+
     - nombre: "Verde Neon"
       hex: "#64ED6D"
       texto: "black"
       acabado: "Translucido"
-      
+
     - nombre: "Fibra de Carbono"
       hex: "#3B3B3B"
       texto: "white"
