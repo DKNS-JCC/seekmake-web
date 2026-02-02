@@ -104,9 +104,6 @@
                 <h1 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight text-primary dark:text-white">
                     Muestrario de Colores y Materiales
                 </h1>
-                <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                    Disponibles para impresión 3D - Calidad profesional garantizada
-                </p>
                 
                 <!-- Disclaimer -->
                 <div class="mt-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-accent p-4 rounded-r-lg max-w-2xl mx-auto">
@@ -116,7 +113,6 @@
                         </svg>
                         <div class="text-left">
                             <p class="text-sm text-gray-700 dark:text-gray-300">
-                                <strong class="font-semibold">Nota:</strong> Los colores mostrados en pantalla pueden variar ligeramente respecto al color real del filamento debido a la calibración de cada monitor. 
                                 <span class="text-accent font-medium">Puedes solicitar una imagen real del color específico</span> antes de realizar tu pedido.
                             </p>
                         </div>
@@ -126,8 +122,228 @@
         </div>
     </section>
 
+    <!-- Mini Test: Descubre tu material ideal -->
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <!-- Header del Test -->
+            <div class="bg-gradient-to-r from-accent to-blue-600 text-white px-4 py-3 text-center">
+                <h2 class="text-lg md:text-xl font-bold">¿Cuál es tu material ideal?</h2>
+            </div>
+
+            <!-- Contenedor del Test -->
+            <div id="materialTest" class="p-4 md:p-6">
+                <!-- Botón para iniciar -->
+                <div id="testStart" class="text-center py-4">
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Responde 4 preguntas rápidas para descubrir el filamento perfecto</p>
+                    <button onclick="iniciarTest()" class="bg-accent hover:bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all inline-flex items-center gap-2">
+                        <span>Comenzar</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Preguntas (ocultas inicialmente) -->
+                <div id="testQuestions" class="hidden">
+                    <!-- Barra de progreso -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                            <span>Pregunta <span id="currentQuestion">1</span>/4</span>
+                            <span id="progressPercent">25%</span>
+                        </div>
+                        <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div id="progressBar" class="h-full bg-accent transition-all duration-300" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 1 -->
+                    <div id="question1" class="question-slide">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Tu pieza estará expuesta al sol o intemperie?</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="responder(1, 'exterior')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">Sí, exterior</p>
+                            </button>
+                            <button onclick="responder(1, 'interior')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">No, interior</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 2 -->
+                    <div id="question2" class="question-slide hidden">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Necesitas que sea flexible o elástica?</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="responder(2, 'flexible')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">Sí, flexible</p>
+                            </button>
+                            <button onclick="responder(2, 'rigido')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">No, rígida</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 3 -->
+                    <div id="question3" class="question-slide hidden">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Soportará esfuerzos mecánicos o golpes?</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="responder(3, 'resistente')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">Sí, resistente</p>
+                            </button>
+                            <button onclick="responder(3, 'decorativo')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">No, decorativo/prototipo</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 4 -->
+                    <div id="question4" class="question-slide hidden">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Qué priorizas más?</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="responder(4, 'calidad')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">Máxima calidad</p>
+                            </button>
+                            <button onclick="responder(4, 'precio')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <p class="font-medium text-gray-800 dark:text-white text-sm">Mejor precio</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultado -->
+                <div id="testResult" class="hidden text-center py-4">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Tu material recomendado:</p>
+                    <div id="resultMaterial" class="text-3xl font-bold text-accent mb-2"></div>
+                    <p id="resultDescription" class="text-sm text-gray-600 dark:text-gray-300 mb-4"></p>
+                    
+                    <!-- Colores disponibles -->
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Colores disponibles:</p>
+                        <div id="resultColors" class="flex flex-wrap justify-center gap-1.5"></div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button onclick="reiniciarTest()" class="text-sm border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-lg transition-all">
+                            Repetir
+                        </button>
+                        <a href="instant-quote.html" class="text-sm bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all">
+                            Calcular precio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Script del Test -->
+    <script>
+        let respuestas = {};
+        let preguntaActual = 1;
+        let filamentosData = null;
+
+        // Cargar datos de filamentos
+        fetch('filamentos.yaml')
+            .then(response => response.text())
+            .then(yamlText => {
+                filamentosData = jsyaml.load(yamlText);
+            });
+
+        const materiales = {
+            PLA: {
+                nombre: "PLA",
+                descripcion: "Biodegradable, excelente acabado. Ideal para prototipos y piezas decorativas de interior."
+            },
+            PETG: {
+                nombre: "PETG",
+                descripcion: "Alta resistencia mecánica y térmica. Perfecto para piezas funcionales."
+            },
+            ASA: {
+                nombre: "ASA",
+                descripcion: "Resistente a UV e intemperie. El mejor para uso exterior."
+            },
+            TPU: {
+                nombre: "TPU",
+                descripcion: "Flexible y elástico. Ideal para fundas, juntas y amortiguadores."
+            }
+        };
+
+        function iniciarTest() {
+            document.getElementById('testStart').classList.add('hidden');
+            document.getElementById('testQuestions').classList.remove('hidden');
+            respuestas = {};
+            preguntaActual = 1;
+            actualizarProgreso();
+        }
+
+        function responder(pregunta, valor) {
+            respuestas[pregunta] = valor;
+            if (pregunta < 4) {
+                document.getElementById('question' + pregunta).classList.add('hidden');
+                preguntaActual = pregunta + 1;
+                document.getElementById('question' + preguntaActual).classList.remove('hidden');
+                actualizarProgreso();
+            } else {
+                mostrarResultado();
+            }
+        }
+
+        function actualizarProgreso() {
+            const porcentaje = (preguntaActual / 4) * 100;
+            document.getElementById('currentQuestion').textContent = preguntaActual;
+            document.getElementById('progressPercent').textContent = porcentaje + '%';
+            document.getElementById('progressBar').style.width = porcentaje + '%';
+        }
+
+        function calcularMaterial() {
+            if (respuestas[2] === 'flexible') return 'TPU';
+            if (respuestas[1] === 'exterior') return 'ASA';
+            if (respuestas[3] === 'resistente') return 'PETG';
+            return 'PLA';
+        }
+
+        function mostrarResultado() {
+            document.getElementById('testQuestions').classList.add('hidden');
+            document.getElementById('testResult').classList.remove('hidden');
+            
+            const materialKey = calcularMaterial();
+            const material = materiales[materialKey];
+            
+            document.getElementById('resultMaterial').textContent = material.nombre;
+            document.getElementById('resultDescription').textContent = material.descripcion;
+            
+            // Mostrar colores disponibles
+            const colorsContainer = document.getElementById('resultColors');
+            colorsContainer.innerHTML = '';
+            
+            if (filamentosData && filamentosData.filamentos && filamentosData.filamentos[materialKey]) {
+                const colores = filamentosData.filamentos[materialKey].colores;
+                colores.forEach(color => {
+                    const colorDiv = document.createElement('div');
+                    colorDiv.className = 'w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 cursor-pointer hover:scale-110 transition-transform';
+                    colorDiv.style.backgroundColor = color.hex;
+                    colorDiv.title = color.nombre;
+                    colorDiv.onclick = () => {
+                        window.abrirModal3D(color.nombre, color.hex, material.nombre);
+                    };
+                    colorsContainer.appendChild(colorDiv);
+                });
+            }
+        }
+
+        function reiniciarTest() {
+            respuestas = {};
+            preguntaActual = 1;
+            document.getElementById('testResult').classList.add('hidden');
+            document.getElementById('testQuestions').classList.add('hidden');
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('question' + i).classList.add('hidden');
+            }
+            document.getElementById('question1').classList.remove('hidden');
+            document.getElementById('testStart').classList.remove('hidden');
+        }
+    </script>
+
     <!-- Main Content - Se generará dinámicamente desde filamentos.yaml -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-16" id="filamentosContainer">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16" id="filamentosContainer">
         <!-- El contenido se cargará aquí dinámicamente -->
         <div class="text-center py-12">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
@@ -168,8 +384,9 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden">
             <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 flex justify-between items-center">
                 <div>
-                    <h3 class="text-2xl font-bold">Vista previa</h3>
-                    <p class="text-gray-200 text-sm mt-1"><span id="modalMaterial"></span> - <span id="modalColorName"></span></p>
+                    <h3 class="text-2xl font-bold"><span id="modalMaterial"></span> - <span id="modalColorName"></span></h3>
+                    <p class="text-gray-200 text-sm mt-1">Vista previa</p>
+                    
                 </div>
                 <button onclick="window.cerrarModal3D()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
