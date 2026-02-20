@@ -16,12 +16,20 @@ filamentos:
       hex: "#9CA3AF"
       texto: "white"
 
+    - nombre: "Gris"
+      hex: "#75787b"
+      texto: "white"
+
     - nombre: "Negro Azabache"
       hex: "#000000"
       texto: "white"
 
     - nombre: "Amarillo Vainilla"
       hex: "#F3E5AB"
+      texto: "black"
+
+    - nombre: "Beige"
+      hex: "#f0e0d6"
       texto: "black"
 
     - nombre: "Amarillo"
@@ -55,6 +63,10 @@ filamentos:
       hex: "#39FF14"
       texto: "black"
       acabado: "Fluorescente"
+
+    - nombre: "Verde"
+      hex: "#14C720"
+      texto: "white"
 
     - nombre: "Verde Galaxia"
       hex: "#1A472A"
