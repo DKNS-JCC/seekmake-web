@@ -41,11 +41,6 @@ filamentos:
       texto: "black"
       acabado: "Metálico"
 
-    - nombre: "Naranja Fluorescente"
-      hex: "#F97316"
-      texto: "white"
-      acabado: "Fluorescente"
-
     - nombre: "Cobre"
       hex: "#B87333"
       texto: "white"
@@ -58,11 +53,6 @@ filamentos:
     - nombre: "Rosa Cerezo"
       hex: "#FFACA4"
       texto: "white"
-
-    - nombre: "Verde Radiante"
-      hex: "#39FF14"
-      texto: "black"
-      acabado: "Fluorescente"
 
     - nombre: "Verde"
       hex: "#14C720"
@@ -93,6 +83,21 @@ filamentos:
     - nombre: "Morado Bubble"
       hex: "#9333EA"
       texto: "white"
+
+    - nombre: "Naranja Fluorescente"
+      hex: "#F97316"
+      texto: "white"
+      acabado: "Fluorescente"
+
+    - nombre: "Verde Radiante"
+      hex: "#39FF14"
+      texto: "black"
+      acabado: "Fluorescente"
+
+    - nombre: "Amarillo Radiante"
+      hex: "#FFFF33"
+      texto: "black"
+      acabado: "Fluorescente"
 
   PETG:
     nombre: "PETG"

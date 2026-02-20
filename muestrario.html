@@ -31,10 +31,234 @@
     <!-- JS-YAML library for parsing YAML -->
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     
-    <!-- Three.js library for 3D rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+
     
     <link rel="stylesheet" href="styles-tailwind.css">
+
+    <style>
+        /* ===== Color Card System ===== */
+        .color-card {
+            transition: all 0.25s ease;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .color-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15);
+        }
+
+        /* Metallic shimmer overlay */
+        .finish-overlay-metallic::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                105deg,
+                transparent 35%,
+                rgba(255,255,255,0.12) 42%,
+                rgba(255,255,255,0.3) 50%,
+                rgba(255,255,255,0.12) 58%,
+                transparent 65%
+            );
+            background-size: 250% 100%;
+            animation: shimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes shimmer {
+            0% { background-position: 250% 0; }
+            100% { background-position: -250% 0; }
+        }
+
+        /* Fluorescent glow */
+        .finish-overlay-fluorescente {
+            box-shadow: 0 0 16px var(--glow-color, #39FF14), 0 0 32px var(--glow-color, #39FF14);
+        }
+
+        /* Translucido */
+        .finish-overlay-translucido::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(45deg, rgba(180,180,180,0.2) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(180,180,180,0.2) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(180,180,180,0.2) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(180,180,180,0.2) 75%);
+            background-size: 10px 10px;
+            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        /* Texture */
+        .finish-overlay-textura::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
+            pointer-events: none;
+        }
+
+        /* Brillante */
+        .finish-overlay-brillante::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.18) 55%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Purpurina */
+        .finish-overlay-purpurina::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.8) 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.7) 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 90%, rgba(255,255,255,0.6) 0%, transparent 100%);
+            animation: sparkle 4s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes sparkle {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.8; }
+        }
+
+        /* Mate */
+        .finish-overlay-mate::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.06);
+            pointer-events: none;
+        }
+
+        /* Flexible */
+        .finish-overlay-flexible::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,255,255,0.06) 5px, rgba(255,255,255,0.06) 10px);
+            pointer-events: none;
+        }
+
+        /* Acabado badge */
+        .acabado-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        /* Material tab nav */
+        .material-tab {
+            transition: all 0.2s ease;
+        }
+
+        /* Color preview hover overlay */
+        .swatch-hover-overlay {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .color-card:hover .swatch-hover-overlay {
+            opacity: 1;
+        }
+        /* On touch devices, don't rely on hover */
+        @media (hover: none) {
+            .swatch-hover-overlay { display: none; }
+        }
+
+        /* Hex code copy tooltip */
+        .hex-tooltip {
+            opacity: 0;
+            transform: translateY(4px);
+            transition: all 0.2s ease;
+        }
+        .hex-code:hover .hex-tooltip {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Material section entrance animation */
+        .material-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        .material-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Sticky material nav */
+        .material-nav-sticky {
+            position: sticky;
+            top: 72px;
+            z-index: 40;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Search highlight */
+        .color-card.dimmed {
+            opacity: 0.15;
+            transform: scale(0.96);
+            pointer-events: none;
+        }
+
+        /* Count badge */
+        .count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 11px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0 5px;
+        }
+
+        /* ===== Modal mobile-first ===== */
+        @media (max-width: 640px) {
+            #modal3D > div {
+                max-width: 100%;
+                max-height: 100%;
+                height: 100%;
+                border-radius: 0;
+            }
+            #modal3D {
+                padding: 0;
+            }
+        }
+
+        /* Modal color preview */
+        .modal-color-preview {
+            position: relative;
+            overflow: hidden;
+        }
+        .modal-color-preview .modal-finish-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        /* Hex copy animation */
+        .hex-copy-btn {
+            transition: all 0.15s ease;
+        }
+        .hex-copy-btn.copied {
+            background-color: #10b981 !important;
+            color: white !important;
+        }
+    </style>
     
     <!-- Dark Mode Script -->
     <script>
@@ -98,25 +322,21 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="relative min-h-[40vh] flex items-center justify-center overflow-hidden pt-20 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+    <section class="relative flex items-center justify-center overflow-hidden pt-24 pb-10 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center max-w-4xl mx-auto">
-                <h1 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight text-primary dark:text-white">
+            <div class="text-center max-w-3xl mx-auto">
+                <h1 class="text-3xl md:text-5xl font-bold mb-3 leading-tight text-primary dark:text-white">
                     Muestrario de Colores y Materiales
                 </h1>
+                <p class="text-base text-gray-500 dark:text-gray-400 mb-6 max-w-xl mx-auto">
+                    Explora nuestra paleta de filamentos 3D. Pulsa sobre cualquier color para previsualizarlo.
+                </p>
                 
-                <!-- Disclaimer -->
-                <div class="mt-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-accent p-4 rounded-r-lg max-w-2xl mx-auto">
-                    <div class="flex items-start gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent flex-shrink-0 mt-0.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                        </svg>
-                        <div class="text-left">
-                            <p class="text-sm text-gray-700 dark:text-gray-300">
-                                <span class="text-accent font-medium">Puedes solicitar una imagen real del color específico</span> antes de realizar tu pedido.
-                            </p>
-                        </div>
-                    </div>
+                <div class="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-4 py-2.5 rounded-lg text-sm text-gray-600 dark:text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-accent flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                    </svg>
+                    Puedes solicitar una <strong class="text-accent">foto real</strong> del color antes de tu pedido
                 </div>
             </div>
         </div>
@@ -342,8 +562,32 @@
         }
     </script>
 
+    <!-- Material Navigation + Search -->
+    <div class="material-nav-sticky bg-white/90 dark:bg-gray-900/90 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 py-3">
+                <!-- Material tabs -->
+                <div class="flex gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto justify-center sm:justify-start" id="materialTabs">
+                    <button onclick="scrollToMaterial('all')" class="material-tab active flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-accent/10 text-accent border border-accent/20 whitespace-nowrap hover:bg-accent hover:text-white transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>
+                        Todos
+                    </button>
+                </div>
+                <!-- Search bar -->
+                <div class="relative w-full sm:w-64">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                    <input type="text" id="colorSearch" placeholder="Buscar color..." 
+                        class="w-full pl-9 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                        oninput="filtrarColores(this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content - Se generará dinámicamente desde filamentos.yaml -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16" id="filamentosContainer">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16" id="filamentosContainer">
         <!-- El contenido se cargará aquí dinámicamente -->
         <div class="text-center py-12">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
@@ -351,8 +595,9 @@
         </div>
     </main>
 
-        <!-- Call to Action -->
-        <section class="bg-gradient-to-br from-primary to-secondary text-white rounded-2xl p-12 text-center shadow-xl">
+    <!-- Call to Action -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div class="bg-gradient-to-br from-primary to-secondary text-white rounded-2xl p-12 text-center shadow-xl">
             <h2 class="text-3xl md:text-4xl font-bold mb-4">¿Necesitas más información?</h2>
             <p class="text-lg mb-8 text-gray-200 max-w-2xl mx-auto">
                 Contacta con nosotros para conocer más detalles sobre nuestros materiales, acabados especiales o cualquier consulta sobre tu proyecto.
@@ -365,8 +610,8 @@
                     Calcular precio
                 </a>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer class="bg-primary dark:bg-gray-950 text-white text-center py-8">
@@ -379,23 +624,73 @@
         </div>
     </footer>
 
-    <!-- Modal para visor 3D -->
-    <div id="modal3D" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden">
-            <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 flex justify-between items-center">
-                <div>
-                    <h3 class="text-2xl font-bold"><span id="modalMaterial"></span> - <span id="modalColorName"></span></h3>
-                    <p class="text-gray-200 text-sm mt-1">Vista previa</p>
-                    
-                </div>
-                <button onclick="window.cerrarModal3D()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+    <!-- Modal de detalle de color -->
+    <div id="modal3D" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 sm:rounded-xl shadow-2xl max-w-lg w-full overflow-hidden my-auto">
+            
+            <!-- Large Color Preview -->
+            <div class="modal-color-preview relative">
+                <!-- Close button overlaid -->
+                <button onclick="window.cerrarModal3D()" class="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
+                <!-- Color area -->
+                <div id="modalColorArea" class="w-full h-40 sm:h-48 relative">
+                    <div id="modalFinishOverlay" class="modal-finish-overlay"></div>
+                    <!-- Acabado badge on preview -->
+                    <span id="modalAcabadoBadge" class="hidden absolute bottom-3 left-3 acabado-badge shadow-sm"></span>
+                </div>
             </div>
-            
-            <div id="canvas3D" class="w-full h-96 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800"></div>
+
+            <!-- Color Info -->
+            <div class="px-5 pt-4 pb-2 sm:px-6">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h3 id="modalColorName" class="text-lg font-bold text-gray-900 dark:text-white"></h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            Material: <span id="modalMaterial" class="font-medium text-gray-700 dark:text-gray-300"></span>
+                        </p>
+                    </div>
+                    <button id="modalHexBtn" onclick="copiarHex()" class="hex-copy-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-mono font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer" title="Copiar código HEX">
+                        <span id="modalHexCode"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Material Specs -->
+            <div class="px-5 pb-4 sm:px-6">
+                <div id="modalSpecs" class="grid grid-cols-2 gap-2 mt-3">
+                    <!-- Filled dynamically -->
+                </div>
+
+                <!-- Usos recomendados -->
+                <div id="modalUsosWrapper" class="mt-4">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Usos recomendados</p>
+                    <p id="modalUsos" class="text-sm text-gray-700 dark:text-gray-300"></p>
+                </div>
+
+                <!-- Badges -->
+                <div id="modalBadges" class="flex flex-wrap gap-1.5 mt-3">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="px-5 pb-5 sm:px-6 flex flex-col sm:flex-row gap-2">
+                <a href="instant-quote.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-accent hover:bg-blue-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" /></svg>
+                    Calcular precio
+                </a>
+                <a id="modalWhatsAppLink" href="#" target="_blank" class="flex-1 inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                    Pedir foto real
+                </a>
+            </div>
         </div>
     </div>
 
@@ -426,237 +721,315 @@
     
     <!-- Script para cargar filamentos desde YAML -->
     <script>
-        // Variables globales para Three.js
-        let scene, camera, renderer, mesh, controls;
-        let currentColor = '#FFFFFF';
         let isModalOpen = false;
+        let currentModalHex = '';
 
-        // Funciones para el modal 3D (declaradas en window para acceso global)
+        // Abrir modal de detalle de color
         window.abrirModal3D = function(colorNombre, colorHex, materialTipo, acabado = '') {
             const modal = document.getElementById('modal3D');
-            const tituloCompleto = acabado ? `${colorNombre} (${acabado})` : colorNombre;
-            document.getElementById('modalColorName').textContent = tituloCompleto;
-            document.getElementById('modalMaterial').textContent = materialTipo;
-            currentColor = colorHex;
-            
-            modal.classList.remove('hidden');
-            isModalOpen = true;
-            
-            setTimeout(() => {
-                if (!renderer) {
-                    inicializarVisor3D();
+            currentModalHex = colorHex;
+
+            // Color preview area
+            const colorArea = document.getElementById('modalColorArea');
+            colorArea.style.backgroundColor = colorHex;
+
+            // Apply finish overlay class
+            const overlayEl = document.getElementById('modalFinishOverlay');
+            overlayEl.className = 'modal-finish-overlay';
+            if (acabado) {
+                const finishCls = getFinishClass(acabado);
+                if (finishCls) overlayEl.classList.add(finishCls);
+                // Fluorescent glow on the area
+                if (acabado === 'Fluorescente') {
+                    colorArea.style.setProperty('--glow-color', colorHex);
+                    colorArea.classList.add('finish-overlay-fluorescente');
                 } else {
-                    actualizarColor(colorHex);
+                    colorArea.style.removeProperty('--glow-color');
+                    colorArea.classList.remove('finish-overlay-fluorescente');
                 }
-            }, 100);
+            } else {
+                colorArea.style.removeProperty('--glow-color');
+                colorArea.classList.remove('finish-overlay-fluorescente');
+            }
+
+            // Acabado badge on preview
+            const acabadoBadge = document.getElementById('modalAcabadoBadge');
+            if (acabado) {
+                acabadoBadge.textContent = acabado;
+                acabadoBadge.className = `absolute bottom-3 left-3 acabado-badge shadow-sm ${getAcabadoBadgeStyle(acabado)}`;
+            } else {
+                acabadoBadge.className = 'hidden';
+            }
+
+            // Color info
+            document.getElementById('modalColorName').textContent = colorNombre;
+            document.getElementById('modalMaterial').textContent = materialTipo;
+            document.getElementById('modalHexCode').textContent = colorHex;
+
+            // Reset copy button state
+            const hexBtn = document.getElementById('modalHexBtn');
+            hexBtn.classList.remove('copied');
+
+            // Material specs
+            const materialKey = materialTipo.replace(/\s.*/, ''); // e.g. "PLA (PolyLactic...)" → "PLA"
+            const specs = especificacionesTecnicas[materialKey];
+            const specsContainer = document.getElementById('modalSpecs');
+            const usosEl = document.getElementById('modalUsos');
+            const badgesEl = document.getElementById('modalBadges');
+
+            if (specs) {
+                specsContainer.innerHTML = `
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Resistencia</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.resistencia}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Temperatura</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.temp}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Exterior</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.exterior}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Flexibilidad</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.flexibilidad}</p>
+                    </div>
+                `;
+                usosEl.textContent = specs.usos;
+                badgesEl.innerHTML = specs.badges.map(b =>
+                    `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${specs.tabColorLight}">${b}</span>`
+                ).join('');
+            } else {
+                specsContainer.innerHTML = '';
+                usosEl.textContent = '';
+                badgesEl.innerHTML = '';
+            }
+
+            // WhatsApp link
+            const waMsg = encodeURIComponent(`Hola, me gustaría recibir una foto real del color ${colorNombre} (${colorHex}) en ${materialTipo}. Gracias.`);
+            document.getElementById('modalWhatsAppLink').href = `https://wa.me/34665148956?text=${waMsg}`;
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            isModalOpen = true;
         }
 
         window.cerrarModal3D = function() {
-            const modal = document.getElementById('modal3D');
-            modal.classList.add('hidden');
+            document.getElementById('modal3D').classList.add('hidden');
+            document.body.style.overflow = '';
             isModalOpen = false;
         }
 
-        window.resetearCamara = function() {
-            if (camera && controls) {
-                camera.position.set(0, 0, 5);
-                controls.reset();
-            }
-        }
-
-        function inicializarVisor3D() {
-            const container = document.getElementById('canvas3D');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-
-            // Crear escena
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf8fafc);
-
-            // Crear cámara
-            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-            camera.position.set(0, 0, 5);
-
-            // Crear renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(width, height);
-            container.innerHTML = '';
-            container.appendChild(renderer.domElement);
-            if (currentColor === '#FFFFFF') currentColor = '#d9d9d9'; // Color por defecto si es blanco
-            if (currentColor === '#000000') currentColor = '#333232'; // Color por defecto si es negro
-            const geometry = new THREE.DodecahedronGeometry(1.5, 0);
-            const material = new THREE.MeshPhongMaterial({ 
-                color: currentColor,
-                shininess: 50,
-                flatShading: false
-            });
-            mesh = new THREE.Mesh(geometry, material);
-            scene.add(mesh);
-
-            // Iluminación
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(5, 10, 7);
-            scene.add(directionalLight);
-
-            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
-            directionalLight2.position.set(-5, 5, -5);
-            scene.add(directionalLight2);
-
-            // Controles de rotación
-            let isDragging = false;
-            let previousMousePosition = { x: 0, y: 0 };
-            let rotation = { x: 0, y: 0 };
-
-            container.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                previousMousePosition = { x: e.clientX, y: e.clientY };
-            });
-
-            container.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const deltaX = e.clientX - previousMousePosition.x;
-                    const deltaY = e.clientY - previousMousePosition.y;
-                    
-                    rotation.y += deltaX * 0.005;
-                    rotation.x += deltaY * 0.005;
-                    
-                    mesh.rotation.y = rotation.y;
-                    mesh.rotation.x = rotation.x;
-                    
-                    previousMousePosition = { x: e.clientX, y: e.clientY };
-                }
-            });
-
-            container.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-
-            container.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-
-            // Controles táctiles
-            let lastTouchX = 0;
-            let lastTouchY = 0;
-
-            container.addEventListener('touchstart', (e) => {
-                lastTouchX = e.touches[0].clientX;
-                lastTouchY = e.touches[0].clientY;
-            });
-
-            container.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const deltaX = e.touches[0].clientX - lastTouchX;
-                const deltaY = e.touches[0].clientY - lastTouchY;
-                
-                rotation.y += deltaX * 0.01;
-                rotation.x += deltaY * 0.01;
-                
-                mesh.rotation.y = rotation.y;
-                mesh.rotation.x = rotation.x;
-                
-                lastTouchX = e.touches[0].clientX;
-                lastTouchY = e.touches[0].clientY;
-            });
-
-            controls = { reset: () => { rotation = { x: 0, y: 0 }; mesh.rotation.set(0, 0, 0); } };
-
-            // Animación
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                if (!isDragging && isModalOpen) {
-                    mesh.rotation.y += 0.003;
-                }
-                
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // Ajustar tamaño en resize
-            window.addEventListener('resize', () => {
-                if (isModalOpen) {
-                    const width = container.clientWidth;
-                    const height = container.clientHeight;
-                    camera.aspect = width / height;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(width, height);
-                }
-            });
-        }
-
-        function actualizarColor(colorHex) {
-            if (mesh && mesh.material) {
-                if (colorHex === '#FFFFFF') colorHex = '#d9d9d9'; // Color por defecto si es blanco
-                if (colorHex === '#000000') colorHex = '#333232'; // Color por defecto
-                mesh.material.color.setStyle(colorHex);
-            }
-        }
-
-        // Cerrar modal con ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isModalOpen) {
-                cerrarModal3D();
+        // Close on backdrop click
+        document.addEventListener('click', function(e) {
+            if (e.target === document.getElementById('modal3D')) {
+                window.cerrarModal3D();
             }
         });
 
-        // Especificaciones técnicas simplificadas para cada tipo de filamento
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                window.cerrarModal3D();
+            }
+        });
+
+        // Copy hex code
+        function copiarHex() {
+            navigator.clipboard.writeText(currentModalHex).then(() => {
+                const btn = document.getElementById('modalHexBtn');
+                btn.classList.add('copied');
+                const codeEl = document.getElementById('modalHexCode');
+                const original = codeEl.textContent;
+                codeEl.textContent = 'Copiado';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    codeEl.textContent = original;
+                }, 1200);
+            });
+        }
+
+        // Especificaciones técnicas para cada tipo de filamento
         const especificacionesTecnicas = {
             PLA: {
-                usos: "Decoración, prototipos, figuras",
+                usos: "Decoración, prototipos, figuras, maquetas",
                 resistencia: "Media",
-                icono: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-green-600"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>',
-                color: "text-green-600"
+                temp: "190-220°C",
+                exterior: "No recomendado",
+                flexibilidad: "Rígido",
+                tabColor: "bg-green-500",
+                tabColorLight: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+                gradientFrom: "from-green-500",
+                gradientTo: "to-emerald-600",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>`,
+                badges: ["Biodegradable", "Fácil impresión", "Gran variedad de colores"]
             },
             PETG: {
-                usos: "Piezas funcionales, uso diario",
+                usos: "Piezas funcionales, uso diario, contenedores",
                 resistencia: "Alta",
-                icono: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>',
-                color: "text-blue-600"
+                temp: "220-250°C",
+                exterior: "Moderado",
+                flexibilidad: "Semi-rígido",
+                tabColor: "bg-blue-500",
+                tabColorLight: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+                gradientFrom: "from-blue-500",
+                gradientTo: "to-cyan-600",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>`,
+                badges: ["Resistente al impacto", "Resistente a químicos", "Semi-flexible"]
             },
             ASA: {
-                usos: "Exterior, alta temperatura",
+                usos: "Exterior, automoción, alta temperatura",
                 resistencia: "Muy Alta",
-                icono: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-orange-600"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>',
-                color: "text-orange-600"
+                temp: "240-260°C",
+                exterior: "Excelente",
+                flexibilidad: "Rígido",
+                tabColor: "bg-orange-500",
+                tabColorLight: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
+                gradientFrom: "from-orange-500",
+                gradientTo: "to-red-600",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>`,
+                badges: ["Resistente a UV", "Uso exterior", "Alta durabilidad"]
             },
             TPU: {
-                usos: "Piezas flexibles, carcasas",
+                usos: "Fundas, juntas, amortiguadores, carcasas",
                 resistencia: "Muy Alta",
-                icono: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-purple-600"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>',
-                color: "text-purple-600"
+                temp: "210-230°C",
+                exterior: "Bueno",
+                flexibilidad: "Elástico (95A)",
+                tabColor: "bg-purple-500",
+                tabColorLight: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
+                gradientFrom: "from-purple-500",
+                gradientTo: "to-pink-600",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`,
+                badges: ["Flexible 95A", "Resistente a rotura", "Recuperación de forma"]
             }
         };
 
-        // Función para generar las estadísticas simplificadas
+        // Función para generar las estadísticas del material
         function generarEstadisticas(tipo) {
             const specs = especificacionesTecnicas[tipo];
             if (!specs) return '';
 
+            const badgesHTML = specs.badges.map(b => 
+                `<span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${specs.tabColorLight}">${b}</span>`
+            ).join('');
+
             return `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border-l-4 border-blue-500">
-                        <div class="flex items-center gap-3 mb-2">
-                            ${specs.icono}
-                            <span class="text-base font-semibold text-gray-700">Recomendado para</span>
-                        </div>
-                        <p class="text-gray-800 font-medium text-lg">${specs.usos}</p>
+                <div class="flex flex-wrap gap-1.5 mb-4">
+                    ${badgesHTML}
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Resistencia</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.resistencia}</p>
                     </div>
-                    
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-5 border-l-4 border-purple-500">
-                        <div class="flex items-center gap-3 mb-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-purple-600">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                            </svg>
-                            <span class="text-base font-semibold text-gray-700">Resistencia</span>
-                        </div>
-                        <p class="${specs.color} font-bold text-xl">${specs.resistencia}</p>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Temperatura</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.temp}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Exterior</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.exterior}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Flexibilidad</p>
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.flexibilidad}</p>
                     </div>
                 </div>
             `;
+        }
+
+        // Helper: get finish CSS class
+        function getFinishClass(acabado) {
+            if (!acabado) return '';
+            const map = {
+                'Metálico': 'finish-overlay-metallic',
+                'Fluorescente': 'finish-overlay-fluorescente',
+                'Translucido': 'finish-overlay-translucido',
+                'Textura': 'finish-overlay-textura',
+                'Brillante': 'finish-overlay-brillante',
+                'Purpurina': 'finish-overlay-purpurina',
+                'Mate': 'finish-overlay-mate',
+                'Flexible': 'finish-overlay-flexible'
+            };
+            return map[acabado] || '';
+        }
+
+        // Helper: get acabado badge style
+        function getAcabadoBadgeStyle(acabado) {
+            const styles = {
+                'Metálico': 'bg-yellow-200/80 text-yellow-900',
+                'Fluorescente': 'bg-green-300/80 text-green-900',
+                'Translucido': 'bg-cyan-200/80 text-cyan-900',
+                'Textura': 'bg-stone-300/80 text-stone-900',
+                'Brillante': 'bg-sky-200/80 text-sky-900',
+                'Purpurina': 'bg-pink-200/80 text-pink-900',
+                'Mate': 'bg-gray-300/80 text-gray-900',
+                'Flexible': 'bg-purple-200/80 text-purple-900'
+            };
+            return styles[acabado] || 'bg-white/80 text-gray-800';
+        }
+
+        // Search / filter function
+        function filtrarColores(query) {
+            const cards = document.querySelectorAll('.color-card');
+            const normalizedQuery = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            cards.forEach(card => {
+                const nombre = card.getAttribute('data-color-nombre').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const material = card.getAttribute('data-material-tipo').toLowerCase();
+                const acabado = (card.getAttribute('data-color-acabado') || '').toLowerCase();
+                const hex = card.getAttribute('data-color-hex').toLowerCase();
+                
+                if (!query || nombre.includes(normalizedQuery) || material.includes(normalizedQuery) || acabado.includes(normalizedQuery) || hex.includes(normalizedQuery)) {
+                    card.classList.remove('dimmed');
+                } else {
+                    card.classList.add('dimmed');
+                }
+            });
+        }
+
+        // Material tab navigation
+        function scrollToMaterial(materialId) {
+            // Update active tab
+            document.querySelectorAll('.material-tab').forEach(tab => {
+                tab.classList.remove('active', 'bg-accent', 'text-white', 'border-accent');
+                tab.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+            });
+            const activeTab = document.querySelector(`[data-tab="${materialId}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active', 'bg-accent', 'text-white', 'border-accent');
+                activeTab.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+            }
+
+            if (materialId === 'all') {
+                // Show all sections
+                document.querySelectorAll('.material-section').forEach(s => s.style.display = '');
+                window.scrollTo({ top: document.getElementById('filamentosContainer').offsetTop - 140, behavior: 'smooth' });
+            } else {
+                // Show all but scroll to specific
+                document.querySelectorAll('.material-section').forEach(s => s.style.display = '');
+                const target = document.getElementById('material-' + materialId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        // Intersection observer for entrance animation
+        function setupScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.05, rootMargin: '0px 0px -50px 0px' });
+
+            document.querySelectorAll('.material-section').forEach(section => {
+                observer.observe(section);
+            });
         }
 
         // Función para cargar y parsear el archivo YAML
@@ -676,7 +1049,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                             </svg>
                         </div>
-                        <p class="text-gray-600">Error al cargar el catálogo de filamentos.</p>
+                        <p class="text-gray-600 dark:text-gray-300">Error al cargar el catálogo de filamentos.</p>
                         <p class="text-sm text-gray-500 mt-2">Por favor, recarga la página o contacta con nosotros.</p>
                     </div>
                 `;
@@ -687,69 +1060,120 @@
         function renderizarFilamentos(filamentos) {
             const container = document.getElementById('filamentosContainer');
             let html = '';
+            const tabsContainer = document.getElementById('materialTabs');
 
-            // Iterar sobre cada tipo de filamento
+            // Generate material tabs dynamically
             for (const [tipo, datos] of Object.entries(filamentos)) {
+                const specs = especificacionesTecnicas[tipo];
+                const tabBtn = document.createElement('button');
+                tabBtn.setAttribute('data-tab', tipo);
+                tabBtn.className = `material-tab flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-transparent whitespace-nowrap hover:bg-accent hover:text-white transition-all`;
+                tabBtn.onclick = () => scrollToMaterial(tipo);
+                tabBtn.innerHTML = `
+                    <span class="w-3 h-3 rounded-full ${specs ? specs.tabColor : 'bg-gray-400'}"></span>
+                    ${datos.nombre}
+                    <span class="count-badge bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">${datos.colores.length}</span>
+                `;
+                tabsContainer.appendChild(tabBtn);
+            }
+
+            // Build material sections
+            for (const [tipo, datos] of Object.entries(filamentos)) {
+                const specs = especificacionesTecnicas[tipo];
+                const gradientFrom = specs ? specs.gradientFrom : 'from-gray-500';
+                const gradientTo = specs ? specs.gradientTo : 'to-gray-600';
+
                 html += `
-                    <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8">
-                        <div class="mb-6">
-                            <h2 class="text-3xl md:text-4xl font-bold mb-2 text-primary dark:text-white">${datos.nombre}</h2>
-                            <p class="text-gray-600 dark:text-gray-300 text-base md:text-lg">${datos.descripcion}</p>
-                        </div>
-                        
-                        ${generarEstadisticas(tipo)}
-                        
-                        <div class="mt-6">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
-                                </svg>
-                                Colores Disponibles (${datos.colores.length})
-                            </h3>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    <section id="material-${tipo}" class="material-section scroll-mt-36">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                            <!-- Material Header -->
+                            <div class="bg-gradient-to-r ${gradientFrom} ${gradientTo} px-5 py-4 sm:px-6 sm:py-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center text-white">
+                                        ${specs ? specs.icon : ''}
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl sm:text-2xl font-bold text-white">${datos.nombre}</h2>
+                                        <p class="text-white/75 text-xs sm:text-sm">${datos.descripcion}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 sm:p-6">
+                                ${generarEstadisticas(tipo)}
+                                
+                                <!-- Color Grid Header -->
+                                <div class="flex items-center justify-between mb-5">
+                                    <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-accent">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
+                                        </svg>
+                                        Colores Disponibles
+                                    </h3>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">${datos.colores.length} colores</span>
+                                </div>
+
+                                <!-- Color Grid -->
+                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
                 `;
 
-                // Iterar sobre cada color
+                // Color cards
                 datos.colores.forEach(color => {
-                    const textColor = color.texto === 'white' ? 'text-white' : 'text-black';
-                    const acabadoHTML = color.acabado ? `<span class="text-xs opacity-75 block mt-1">${color.acabado}</span>` : '';
+                    const finishClass = getFinishClass(color.acabado);
+                    const isLight = color.texto === 'black';
+                    const glowStyle = color.acabado === 'Fluorescente' ? `--glow-color: ${color.hex};` : '';
+                    
+                    // Determine border for white/very light colors
+                    const needsBorder = ['#FFFFFF', '#F3E5AB', '#f0e0d6', '#FFFF00', '#FFACA4'].includes(color.hex);
+                    const borderClass = needsBorder ? 'border border-gray-200 dark:border-gray-600' : '';
+
                     html += `
-                        <div class="color-preview group relative h-24 flex flex-col items-center justify-center rounded-lg shadow-md hover:shadow-xl transition-all hover:-translate-y-1 font-medium ${textColor} cursor-pointer text-sm"
-                             style="background-color: ${color.hex};"
+                        <div class="color-card group cursor-pointer bg-white dark:bg-gray-750 shadow-sm ${borderClass}"
                              data-color-nombre="${color.nombre}"
                              data-color-hex="${color.hex}"
                              data-material-tipo="${datos.nombre}"
                              data-color-acabado="${color.acabado || ''}"
-                             title="Haz clic para ver en 3D: ${color.nombre}${color.acabado ? ' (' + color.acabado + ')' : ''}">
-                            <span class="text-center px-2">${color.nombre}</span>
-                            ${acabadoHTML}
-                            <div class="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-white">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                </svg>
+                             title="${color.nombre}${color.acabado ? ' (' + color.acabado + ')' : ''}">
+                            
+                            <!-- Color Swatch -->
+                            <div class="relative aspect-square rounded-t-xl overflow-hidden ${finishClass}" 
+                                 style="background-color: ${color.hex}; ${glowStyle}">
+
+                                ${color.acabado ? `<span class="absolute top-1.5 left-1.5 acabado-badge ${getAcabadoBadgeStyle(color.acabado)}">${color.acabado}</span>` : ''}
+
+                                <!-- Hover overlay -->
+                                <div class="swatch-hover-overlay absolute inset-0 bg-black/25 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-white drop-shadow">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Info -->
+                            <div class="px-2.5 py-2">
+                                <p class="font-medium text-xs text-gray-800 dark:text-white truncate">${color.nombre}</p>
+                                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">${color.hex}</p>
                             </div>
                         </div>
                     `;
                 });
 
                 html += `
+                                </div>
                             </div>
                         </div>
                     </section>
                 `;
             }
 
-            // Añadir la sección de Call to Action al final
-
-
             container.innerHTML = html;
             
-            // Agregar event listeners a todos los colores
-            const colorElements = document.querySelectorAll('.color-preview');
+            // Entrance animations
+            setupScrollAnimations();
             
-            colorElements.forEach((colorDiv) => {
-                colorDiv.addEventListener('click', function() {
+            // Click handlers for color cards
+            document.querySelectorAll('.color-card').forEach(card => {
+                card.addEventListener('click', function() {
                     const nombre = this.getAttribute('data-color-nombre');
                     const hex = this.getAttribute('data-color-hex');
                     const material = this.getAttribute('data-material-tipo');
