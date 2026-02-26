@@ -117,6 +117,11 @@ filamentos:
       hex: "#64ED6D"
       texto: "black"
       acabado: "Translucido"
+      
+    - nombre: "Azul Solán"
+      hex: "#1440E0"
+      texto: "white"
+      acabado: "Translucido"
 
     - nombre: "Fibra de Carbono"
       hex: "#3B3B3B"
