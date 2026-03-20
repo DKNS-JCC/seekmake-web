@@ -3,100 +3,70 @@ filamentos:
     nombre: "PLA"
     descripcion: "Filamentos de PLA son excelentes para impresiones visuales y prototipos rápidos. Resistencia moderada, precio asequible."
     colores:
+    # Neutros
     - nombre: "Blanco Hielo"
       hex: "#FFFFFF"
-      texto: "black"
-
-    - nombre: "Mármol"
-      hex: "#D1D5DB"
-      texto: "black"
-      acabado: "Textura"
-
-    - nombre: "Gris Ceniza"
-      hex: "#9CA3AF"
-      texto: "white"
-
-    - nombre: "Gris"
-      hex: "#75787b"
-      texto: "white"
-
-    - nombre: "Negro Azabache"
-      hex: "#000000"
-      texto: "white"
-
-    - nombre: "Amarillo Vainilla"
-      hex: "#F3E5AB"
-      texto: "black"
-
     - nombre: "Beige"
       hex: "#f0e0d6"
-      texto: "black"
-
+    - nombre: "Gris Ceniza"
+      hex: "#9CA3AF"
+    - nombre: "Gris"
+      hex: "#75787b"
+    - nombre: "Negro Azabache"
+      hex: "#000000"
+    # Amarillos / Naranjas
+    - nombre: "Amarillo Vainilla"
+      hex: "#F3E5AB"
     - nombre: "Amarillo"
       hex: "#FFFF00"
-      texto: "black"
-
     - nombre: "Dorado"
       hex: "#FBBF24"
-      texto: "black"
       acabado: "Metálico"
-
     - nombre: "Cobre"
       hex: "#B87333"
-      texto: "white"
       acabado: "Metálico"
-
+    - nombre: "Bronce"
+      hex: "#E0BB5A"
+      acabado: "Metálico"
+    # Rojos / Rosas
     - nombre: "Rojo Fórmula"
       hex: "#EF4444"
-      texto: "white"
-
     - nombre: "Rosa Cerezo"
       hex: "#FFACA4"
-      texto: "white"
-
+    # Verdes
     - nombre: "Verde"
       hex: "#14C720"
-      texto: "white"
-
-    - nombre: "Verde Galaxia"
-      hex: "#1A472A"
-      texto: "white"
-      acabado: "Purpurina"
-
     - nombre: "Verde Oliva"
       hex: "#636B2F"
-      texto: "white"
-
+    - nombre: "Verde Galaxia"
+      hex: "#1A472A"
+      acabado: "Purpurina"
+    # Azules
     - nombre: "Azul Cobalto"
       hex: "#7DC6E5"
-      texto: "white"
       acabado: "Metálico"
-
     - nombre: "Azul Eléctrico"
       hex: "#3B82F6"
-      texto: "white"
-
     - nombre: "Azul Marino"
       hex: "#000080"
-      texto: "white"
-
+    # Morados
     - nombre: "Morado Bubble"
       hex: "#9333EA"
-      texto: "white"
-
+    # Especiales
+    - nombre: "Plata"
+      hex: "#C0C0C0"
+      acabado: "Metálico"
+    - nombre: "Mármol"
+      hex: "#D1D5DB"
+      acabado: "Textura"
     - nombre: "Naranja Fluorescente"
       hex: "#F97316"
-      texto: "white"
       acabado: "Fluorescente"
-
     - nombre: "Verde Radiante"
       hex: "#39FF14"
-      texto: "black"
       acabado: "Fluorescente"
-
     - nombre: "Amarillo Radiante"
       hex: "#FFFF33"
-      texto: "black"
       acabado: "Fluorescente"
 
   PETG:
@@ -105,23 +75,16 @@ filamentos:
     colores:
     - nombre: "Blanco Hielo"
       hex: "#FFFFFF"
-      texto: "black"
       acabado: "Brillante"
-
     - nombre: "Negro Azabache"
       hex: "#000000"
-      texto: "white"
       acabado: "Brillante"
-
-    - nombre: "Verde Neon"
-      hex: "#64ED6D"
-      texto: "black"
-      acabado: "Translucido"
-
     - nombre: "Fibra de Carbono"
       hex: "#3B3B3B"
-      texto: "white"
       acabado: "Textura"
+    - nombre: "Verde Neon"
+      hex: "#64ED6D"
+      acabado: "Translucido"
 
   ASA:
     nombre: "ASA"
@@ -129,7 +92,6 @@ filamentos:
     colores:
     - nombre: "Negro Azabache"
       hex: "#000000"
-      texto: "white"
       acabado: "Mate"
 
   TPU:
@@ -138,5 +100,4 @@ filamentos:
     colores:
     - nombre: "Negro"
       hex: "#000000"
-      texto: "white"
       acabado: "Flexible"

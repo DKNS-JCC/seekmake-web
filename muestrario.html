@@ -4,493 +4,770 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Muestrario de Colores y Materiales - 3DCC Salamanca</title>
-    
+
     <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/android-chrome-512x512.png">
     <link rel="icon" href="icons/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="icon" href="icons/android-chrome-192x192.png" type="image/png" sizes="192x192">
     <link rel="manifest" href="icons/site.webmanifest">
     <link rel="shortcut icon" href="icons/android-chrome-192x192.png">
-    
+
+    <!-- Shared Design System -->
+    <link rel="stylesheet" href="styles.css">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2c3e50',
-                        secondary: '#34495e',
-                        accent: '#3498db',
-                    }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { colors: { accent: '#0EA5E9' } } } }
     </script>
-    <!-- JS-YAML library for parsing YAML -->
+    <!-- JS-YAML library -->
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-    
 
-    
-    <link rel="stylesheet" href="styles-tailwind.css">
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Muestrario de colores y materiales para impresión 3D. PLA, PETG, ABS y más en una amplia gama de colores. Consulta acabados disponibles en Salamanca.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://impresion3dcc.com/muestrario.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://impresion3dcc.com/muestrario.html">
+    <meta property="og:title" content="Muestrario de Colores y Materiales - 3DCC Salamanca">
+    <meta property="og:description" content="Explora nuestra gama de colores y materiales para impresión 3D. PLA, PETG, ABS y más acabados disponibles.">
+    <meta property="og:image" content="https://impresion3dcc.com/images/main_banner.png">
+    <meta property="og:locale" content="es_ES">
+
+    <script>if(localStorage.getItem('theme')!=='light'){document.documentElement.classList.add('dark')}</script>
 
     <style>
-        /* ===== Color Card System ===== */
-        .color-card {
-            transition: all 0.25s ease;
-            border-radius: 12px;
-            overflow: hidden;
+        /* ── Muestrario Page ──────────────────────────────────── */
+
+        .mu-hero {
+            padding: calc(var(--nav-h) + 48px) 0 40px;
+            text-align: center;
         }
-        .color-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15);
+        .mu-hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(36px, 5vw, 56px);
+            line-height: 1; letter-spacing: 0.02em;
+            color: var(--text); margin-bottom: 12px;
+        }
+        .mu-hero-desc {
+            font-size: 15px; color: var(--muted);
+            max-width: 460px; margin: 0 auto 20px;
+            line-height: 1.7;
+        }
+        .mu-hero-tip {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; color: var(--muted);
+        }
+        .mu-hero-tip strong { color: var(--accent); }
+
+        /* Filter bar */
+        .mu-filters {
+            position: sticky; top: var(--nav-h); z-index: 40;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s;
+        }
+        .mu-filters-inner {
+            max-width: 1200px; margin: 0 auto; padding: 12px 24px;
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 16px;
+        }
+        .mu-pills {
+            display: flex; gap: 6px;
+            overflow-x: auto; scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mu-pills::-webkit-scrollbar { display: none; }
+        .mu-pill {
+            flex-shrink: 0;
+            padding: 7px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted); cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .mu-pill:hover { border-color: var(--border-h); color: var(--text); }
+        .mu-pill.active {
+            background: var(--accent); border-color: var(--accent);
+            color: #fff;
+        }
+        .mu-pill-count {
+            font-size: 9px; opacity: 0.7; margin-left: 4px;
+        }
+        .mu-search {
+            position: relative; flex-shrink: 0;
+        }
+        .mu-search input {
+            width: 200px; height: 36px;
+            padding: 0 12px 0 34px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+            font-size: 13px; outline: none;
+            transition: border-color 0.2s, width 0.3s;
+        }
+        .mu-search input::placeholder { color: var(--muted); }
+        .mu-search input:focus {
+            border-color: var(--accent);
+            width: 260px;
+        }
+        .mu-search svg {
+            position: absolute; left: 10px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted); pointer-events: none;
         }
 
-        /* Metallic shimmer overlay */
-        .finish-overlay-metallic::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(
-                105deg,
-                transparent 35%,
-                rgba(255,255,255,0.12) 42%,
-                rgba(255,255,255,0.3) 50%,
-                rgba(255,255,255,0.12) 58%,
-                transparent 65%
-            );
+        /* Material sections */
+        .mu-section {
+            margin-bottom: 48px;
+            scroll-margin-top: calc(var(--nav-h) + 60px);
+        }
+        .mu-section-header {
+            display: flex; align-items: baseline;
+            gap: 12px; margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .mu-section-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px; line-height: 1;
+            letter-spacing: 0.02em; color: var(--text);
+        }
+        .mu-section-desc {
+            font-size: 13px; color: var(--muted);
+            flex: 1;
+        }
+        .mu-section-count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted); flex-shrink: 0;
+        }
+
+        /* Specs row — compact inline */
+        .mu-specs {
+            display: flex; gap: 8px; margin-bottom: 20px;
+            overflow-x: auto; scrollbar-width: none;
+        }
+        .mu-specs::-webkit-scrollbar { display: none; }
+        .mu-spec {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+        }
+        .mu-spec-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 2px;
+        }
+        .mu-spec-value {
+            font-family: 'Barlow', sans-serif;
+            font-size: 13px; font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Color grid */
+        .mu-color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        /* Color card — simple and readable */
+        .mu-color-card {
+            cursor: pointer;
+            border-radius: var(--r);
+            overflow: hidden;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+        }
+        .mu-color-card:hover {
+            border-color: var(--border-h);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+        .dark .mu-color-card:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .mu-color-card.dimmed {
+            opacity: 0.12; pointer-events: none;
+            transform: scale(0.96);
+        }
+
+        .mu-swatch {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+        }
+        .mu-swatch-acabado {
+            position: absolute; bottom: 6px; left: 6px;
+            padding: 2px 7px;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            border-radius: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .mu-color-info {
+            padding: 8px 10px;
+        }
+        .mu-color-name {
+            font-family: 'Barlow', sans-serif;
+            font-size: 12px; font-weight: 600;
+            color: var(--text);
+            white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+        }
+        .mu-color-hex {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* Finish overlays */
+        .finish-metallic::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.12) 42%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.12) 58%, transparent 65%);
             background-size: 250% 100%;
             animation: shimmer 4s ease-in-out infinite;
             pointer-events: none;
         }
-        @keyframes shimmer {
-            0% { background-position: 250% 0; }
-            100% { background-position: -250% 0; }
-        }
+        @keyframes shimmer { 0% { background-position: 250% 0; } 100% { background-position: -250% 0; } }
 
-        /* Fluorescent glow */
-        .finish-overlay-fluorescente {
-            box-shadow: 0 0 16px var(--glow-color, #39FF14), 0 0 32px var(--glow-color, #39FF14);
-        }
+        .finish-fluorescente { box-shadow: inset 0 0 16px var(--glow-color, #39FF14); }
 
-        /* Translucido */
-        .finish-overlay-translucido::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                linear-gradient(45deg, rgba(180,180,180,0.2) 25%, transparent 25%),
-                linear-gradient(-45deg, rgba(180,180,180,0.2) 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, rgba(180,180,180,0.2) 75%),
-                linear-gradient(-45deg, transparent 75%, rgba(180,180,180,0.2) 75%);
-            background-size: 10px 10px;
-            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
-            opacity: 0.35;
-            pointer-events: none;
+        .finish-translucido::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(45deg, rgba(180,180,180,0.2) 25%, transparent 25%), linear-gradient(-45deg, rgba(180,180,180,0.2) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(180,180,180,0.2) 75%), linear-gradient(-45deg, transparent 75%, rgba(180,180,180,0.2) 75%);
+            background-size: 10px 10px; opacity: 0.35; pointer-events: none;
         }
-
-        /* Texture */
-        .finish-overlay-textura::before {
-            content: '';
-            position: absolute;
-            inset: 0;
+        .finish-textura::before {
+            content: ''; position: absolute; inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
-            background-size: 128px 128px;
-            pointer-events: none;
+            background-size: 128px 128px; pointer-events: none;
         }
-
-        /* Brillante */
-        .finish-overlay-brillante::before {
-            content: '';
-            position: absolute;
-            inset: 0;
+        .finish-brillante::before {
+            content: ''; position: absolute; inset: 0;
             background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.18) 55%, transparent 70%);
             pointer-events: none;
         }
-
-        /* Purpurina */
-        .finish-overlay-purpurina::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
-                radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.6) 0%, transparent 100%),
-                radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.8) 0%, transparent 100%),
-                radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.7) 0%, transparent 100%),
-                radial-gradient(1px 1px at 70% 90%, rgba(255,255,255,0.6) 0%, transparent 100%);
+        .finish-purpurina::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.6) 0%, transparent 100%), radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.8) 0%, transparent 100%), radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.5) 0%, transparent 100%);
             animation: sparkle 4s ease-in-out infinite alternate;
             pointer-events: none;
         }
-        @keyframes sparkle {
-            0% { opacity: 0.4; }
-            100% { opacity: 0.8; }
+        @keyframes sparkle { 0% { opacity: 0.4; } 100% { opacity: 0.8; } }
+        .finish-mate::before {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(0,0,0,0.06); pointer-events: none;
         }
-
-        /* Mate */
-        .finish-overlay-mate::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.06);
-            pointer-events: none;
-        }
-
-        /* Flexible */
-        .finish-overlay-flexible::before {
-            content: '';
-            position: absolute;
-            inset: 0;
+        .finish-flexible::before {
+            content: ''; position: absolute; inset: 0;
             background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,255,255,0.06) 5px, rgba(255,255,255,0.06) 10px);
             pointer-events: none;
         }
 
-        /* Acabado badge */
-        .acabado-badge {
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
+        /* Material Test — compact collapsible */
+        .mu-test {
+            max-width: 1200px; margin: 0 auto;
+            padding: 0 24px 32px;
         }
-
-        /* Material tab nav */
-        .material-tab {
-            transition: all 0.2s ease;
-        }
-
-        /* Color preview hover overlay */
-        .swatch-hover-overlay {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        .color-card:hover .swatch-hover-overlay {
-            opacity: 1;
-        }
-        /* On touch devices, don't rely on hover */
-        @media (hover: none) {
-            .swatch-hover-overlay { display: none; }
-        }
-
-        /* Hex code copy tooltip */
-        .hex-tooltip {
-            opacity: 0;
-            transform: translateY(4px);
-            transition: all 0.2s ease;
-        }
-        .hex-code:hover .hex-tooltip {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Material section entrance animation */
-        .material-section {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
-        }
-        .material-section.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Sticky material nav */
-        .material-nav-sticky {
-            position: sticky;
-            top: 72px;
-            z-index: 40;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-
-        /* Search highlight */
-        .color-card.dimmed {
-            opacity: 0.15;
-            transform: scale(0.96);
-            pointer-events: none;
-        }
-
-        /* Count badge */
-        .count-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 22px;
-            height: 22px;
-            border-radius: 11px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0 5px;
-        }
-
-        /* ===== Modal mobile-first ===== */
-        @media (max-width: 640px) {
-            #modal3D > div {
-                max-width: 100%;
-                max-height: 100%;
-                height: 100%;
-                border-radius: 0;
-            }
-            #modal3D {
-                padding: 0;
-            }
-        }
-
-        /* Modal color preview */
-        .modal-color-preview {
-            position: relative;
+        .mu-test-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
             overflow: hidden;
         }
-        .modal-color-preview .modal-finish-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
+        .mu-test-toggle {
+            width: 100%; display: flex;
+            align-items: center; justify-content: space-between;
+            padding: 14px 20px;
+            background: none; border: none;
+            cursor: pointer; color: var(--text);
+        }
+        .mu-test-toggle-left {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .mu-test-toggle-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--muted);
+        }
+        .mu-test-toggle-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px; color: var(--text);
+            line-height: 1;
+        }
+        .mu-test-toggle svg {
+            color: var(--muted); transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+        .mu-test-toggle.open svg { transform: rotate(180deg); }
+
+        .mu-test-body {
+            display: none;
+            padding: 0 20px 20px;
+        }
+        .mu-test-body.open { display: block; }
+
+        .mu-test-q {
+            font-size: 15px; font-weight: 600;
+            color: var(--text); text-align: center;
+            margin-bottom: 14px;
+        }
+        .mu-test-options {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; max-width: 400px; margin: 0 auto;
+        }
+        .mu-test-opt {
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-family: 'Barlow', sans-serif;
+            font-size: 14px; font-weight: 500;
+            color: var(--text);
+            cursor: pointer; text-align: center;
+            transition: all 0.2s;
+        }
+        .mu-test-opt:hover {
+            border-color: var(--accent); color: var(--accent);
         }
 
-        /* Hex copy animation */
-        .hex-copy-btn {
-            transition: all 0.15s ease;
+        .mu-test-progress {
+            max-width: 400px; margin: 0 auto 16px;
         }
-        .hex-copy-btn.copied {
-            background-color: #10b981 !important;
-            color: white !important;
+        .mu-test-progress-bar {
+            height: 3px; background: var(--border);
+            border-radius: 2px; overflow: hidden;
+        }
+        .mu-test-progress-fill {
+            height: 100%; background: var(--accent);
+            transition: width 0.3s;
+        }
+        .mu-test-progress-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .mu-test-result {
+            text-align: center;
+        }
+        .mu-test-result-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px; color: var(--accent);
+            line-height: 1; margin-bottom: 6px;
+        }
+        .mu-test-result-desc {
+            font-size: 14px; color: var(--muted);
+            margin-bottom: 16px;
+        }
+        .mu-test-result-colors {
+            display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 6px;
+            margin-bottom: 16px;
+        }
+        .mu-test-result-swatch {
+            width: 24px; height: 24px;
+            border-radius: var(--r);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .mu-test-result-swatch:hover { transform: scale(1.2); }
+        .mu-test-result-actions {
+            display: flex; gap: 8px; justify-content: center;
+        }
+
+        /* Modal */
+        .mu-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s;
+        }
+        .mu-modal-overlay.open {
+            opacity: 1; pointer-events: auto;
+        }
+        .mu-modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            max-width: 440px; width: 100%;
+            overflow: hidden;
+            transform: translateY(16px);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .mu-modal-overlay.open .mu-modal {
+            transform: translateY(0);
+        }
+        .mu-modal-swatch {
+            position: relative;
+            height: 180px; overflow: hidden;
+        }
+        .mu-modal-swatch .mu-modal-finish { position: absolute; inset: 0; pointer-events: none; }
+        .mu-modal-close {
+            position: absolute; top: 10px; right: 10px;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            border: none; border-radius: var(--r);
+            color: #fff; cursor: pointer;
+            transition: background 0.2s; z-index: 2;
+        }
+        .mu-modal-close:hover { background: rgba(0,0,0,0.5); }
+        .mu-modal-acabado-badge {
+            position: absolute; bottom: 10px; left: 10px;
+            padding: 3px 8px;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            border-radius: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.1em;
+            text-transform: uppercase; color: #fff;
+        }
+        .mu-modal-body { padding: 20px; }
+        .mu-modal-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px; line-height: 1;
+            color: var(--text); margin-bottom: 4px;
+        }
+        .mu-modal-material {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--accent);
+            margin-bottom: 16px;
+        }
+        .mu-modal-hex-row {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            margin-bottom: 14px;
+        }
+        .mu-modal-hex {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px; font-weight: 600;
+            color: var(--text);
+        }
+        .mu-modal-copy {
+            background: none; border: none;
+            color: var(--muted); cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex; align-items: center; gap: 4px;
+            transition: color 0.2s;
+        }
+        .mu-modal-copy:hover { color: var(--accent); }
+        .mu-modal-copy.copied { color: #10b981; }
+
+        .mu-modal-specs {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 8px; margin-bottom: 14px;
+        }
+        .mu-modal-spec {
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+        }
+        .mu-modal-spec-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 2px;
+        }
+        .mu-modal-spec-val {
+            font-size: 13px; font-weight: 600; color: var(--text);
+        }
+        .mu-modal-usos {
+            font-size: 13px; color: var(--muted);
+            margin-bottom: 16px; line-height: 1.6;
+        }
+        .mu-modal-usos strong {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.18em;
+            text-transform: uppercase;
+            display: block; margin-bottom: 4px;
+        }
+        .mu-modal-actions {
+            display: flex; gap: 10px;
+        }
+        .mu-modal-actions a { flex: 1; text-align: center; }
+
+        /* CTA */
+        .mu-cta {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            position: relative; overflow: hidden;
+        }
+        .mu-cta::before {
+            content: ''; position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px; background: var(--accent);
+        }
+        .mu-cta-inner {
+            padding: 48px;
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 24px;
+        }
+        .mu-cta h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(28px, 3.5vw, 40px);
+            line-height: 1; color: var(--text);
+            margin-bottom: 8px;
+        }
+        .mu-cta p {
+            font-size: 14px; color: var(--muted);
+            max-width: 380px; line-height: 1.7;
+        }
+        .mu-cta-actions {
+            display: flex; gap: 10px; flex-shrink: 0;
+        }
+
+        /* Loading */
+        .mu-loading {
+            text-align: center; padding: 80px 0;
+        }
+        .mu-spinner {
+            width: 32px; height: 32px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .mu-loading-text {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .mu-filters-inner { flex-wrap: wrap; }
+            .mu-search { width: 100%; order: -1; }
+            .mu-search input { width: 100%; }
+            .mu-search input:focus { width: 100%; }
+
+            .mu-section-header { flex-wrap: wrap; gap: 4px; }
+            .mu-section-desc { display: none; }
+
+            .mu-color-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .mu-specs { gap: 6px; }
+
+            .mu-modal-overlay { align-items: flex-end; padding: 0; }
+            .mu-modal {
+                max-height: 90vh; overflow-y: auto;
+                border-radius: 12px 12px 0 0;
+                transform: translateY(100%);
+            }
+            .mu-modal-overlay.open .mu-modal { transform: translateY(0); }
+            .mu-modal-actions { flex-direction: column; }
+
+            .mu-cta-inner {
+                flex-direction: column;
+                padding: 32px 20px;
+                text-align: center;
+            }
+            .mu-cta p { max-width: none; }
+            .mu-cta-actions { flex-direction: column; width: 100%; }
+        }
+
+        @media (max-width: 420px) {
+            .mu-color-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            .mu-color-info { padding: 6px 8px; }
+            .mu-color-name { font-size: 11px; }
+            .mu-color-hex { font-size: 9px; }
         }
     </style>
-    
-    <!-- Dark Mode Script -->
-    <script>
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PKZ8N52F');</script>
+    <!-- End Google Tag Manager -->
 </head>
-<body class="dark:bg-gray-900">
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PKZ8N52F"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <a href="#filamentosContainer" class="visually-hidden">Ir al contenido principal</a>
+
     <!-- Navegación -->
-    <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md z-50 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="index.html" class="flex items-center gap-2">
-                    <span class="text-accent text-2xl">
-                        <img src="icons/android-chrome-192x192.png" alt="3DCC Logo" class="w-8 h-8 rounded-full object-cover">
-                    </span>
-                    <span class="text-xl font-bold text-primary dark:text-white">3DCC | Impresión 3D</span>
-                </a>
-                <button class="lg:hidden flex flex-col gap-1.5" id="navToggle">
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                </button>
-                <ul class="hidden lg:flex gap-8 items-center" id="navMenu">
-                    <li><a href="index.html#inicio" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Inicio</a></li>
-                    <li><a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors active border-b-2 border-accent">Muestrario</a></li>
-                    <li><a href="catalogo.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Catálogo</a></li>
-                    <li><a href="index.html#trabajos" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Algunos Trabajos</a></li>
-                    <li><a href="index.html#contacto" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Contacto</a></li>
-                    <li>
-                        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Cambiar modo oscuro">
-                            <svg id="sunIcon" class="w-5 h-5 text-yellow-500 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <svg id="moonIcon" class="w-5 h-5 text-gray-700 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                            </svg>
-                        </button>
-                    </li>
-                    <li><a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-600 transition-all hover:-translate-y-0.5">Calculadora de Precio</a></li>
-                </ul>
-            </div>
-            <!-- Mobile menu -->
-            <div class="lg:hidden hidden flex-col gap-4 pb-4" id="navMenuMobile">
-                <a href="index.html#inicio" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Inicio</a>
-                <a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Muestrario</a>
-                <a href="catalogo.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Catálogo</a>
-                <a href="index.html#trabajos" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Algunos Trabajos</a>
-                <a href="index.html#contacto" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Contacto</a>
-                <button id="darkModeToggleMobile" class="flex items-center gap-3 text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    <span class="dark:hidden">Modo Oscuro</span>
-                    <span class="hidden dark:inline">Modo Claro</span>
-                </button>
-                <a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold text-center hover:bg-blue-600 transition-all">Calculadora de Precio</a>
-            </div>
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo"><img src="icons/android-chrome-192x192.png" alt="3DCC Logo"><div><span class="nav-logo-name">3DCC</span><span class="nav-logo-sub">Impresión 3D</span></div></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-link">Inicio</a></li>
+                <li><a href="muestrario.html" class="nav-link active">Muestrario</a></li>
+                <li><a href="catalogo.html" class="nav-link">Catálogo</a></li>
+                <li><a href="index.html#trabajos" class="nav-link">Trabajos</a></li>
+                <li><a href="index.html#contacto" class="nav-link">Contacto</a></li>
+                <li><button class="nav-theme" id="themeToggle" aria-label="Cambiar tema"><svg id="iconMoon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="iconSun" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button></li>
+                <li><a href="instant-quote.html" class="nav-cta">Obtener Precio</a></li>
+            </ul>
+            <button class="hamburger" id="navToggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+        </div>
+        <div class="nav-mobile" id="navMenuMobile">
+            <a href="index.html">Inicio</a><a href="muestrario.html">Muestrario</a><a href="catalogo.html">Catálogo</a><a href="index.html#trabajos">Trabajos</a><a href="index.html#contacto">Contacto</a><a href="instant-quote.html">→ Obtener Precio</a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="relative flex items-center justify-center overflow-hidden pt-24 pb-10 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center max-w-3xl mx-auto">
-                <h1 class="text-3xl md:text-5xl font-bold mb-3 leading-tight text-primary dark:text-white">
-                    Muestrario de Colores y Materiales
-                </h1>
-                <p class="text-base text-gray-500 dark:text-gray-400 mb-6 max-w-xl mx-auto">
-                    Explora nuestra paleta de filamentos 3D. Pulsa sobre cualquier color para previsualizarlo.
-                </p>
-                
-                <div class="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-4 py-2.5 rounded-lg text-sm text-gray-600 dark:text-gray-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-accent flex-shrink-0">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                    </svg>
-                    Puedes solicitar una <strong class="text-accent">foto real</strong> del color antes de tu pedido
-                </div>
+    <!-- Hero -->
+    <section class="mu-hero">
+        <div class="container">
+            <div class="section-tag">Muestrario</div>
+            <h1>Colores y Materiales</h1>
+            <p class="mu-hero-desc">Explora nuestra paleta de filamentos 3D. Pulsa sobre cualquier color para ver los detalles.</p>
+            <div class="mu-hero-tip">
+                Puedes solicitar una <strong>foto real</strong> del color antes de tu pedido
             </div>
         </div>
     </section>
 
-    <!-- Mini Test: Descubre tu material ideal -->
-    <section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-            <!-- Header del Test -->
-            <div class="bg-gradient-to-r from-accent to-blue-600 text-white px-4 py-3 text-center">
-                <h2 class="text-lg md:text-xl font-bold">¿Cuál es tu material ideal?</h2>
-            </div>
-
-            <!-- Contenedor del Test -->
-            <div id="materialTest" class="p-4 md:p-6">
-                <!-- Botón para iniciar -->
-                <div id="testStart" class="text-center py-4">
-                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Responde 4 preguntas rápidas para descubrir el filamento perfecto</p>
-                    <button onclick="iniciarTest()" class="bg-accent hover:bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all inline-flex items-center gap-2">
-                        <span>Comenzar</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                        </svg>
-                    </button>
+    <!-- Material Test — collapsed by default -->
+    <div class="mu-test">
+        <div class="mu-test-card">
+            <button class="mu-test-toggle" id="testToggle">
+                <div class="mu-test-toggle-left">
+                    <div>
+                        <div class="mu-test-toggle-label">Descubre tu material</div>
+                        <div class="mu-test-toggle-title">¿Cuál es tu material ideal?</div>
+                    </div>
+                </div>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="mu-test-body" id="testBody">
+                <!-- Start -->
+                <div id="testStart" style="text-align:center; padding: 8px 0 12px;">
+                    <p style="font-size:14px; color:var(--muted); margin-bottom:12px;">Responde 4 preguntas rápidas para descubrir el filamento perfecto</p>
+                    <button onclick="iniciarTest()" class="btn-primary" style="padding:10px 24px; font-size:11px;">Comenzar</button>
                 </div>
 
-                <!-- Preguntas (ocultas inicialmente) -->
+                <!-- Questions -->
                 <div id="testQuestions" class="hidden">
-                    <!-- Barra de progreso -->
-                    <div class="mb-4">
-                        <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                            <span>Pregunta <span id="currentQuestion">1</span>/4</span>
-                            <span id="progressPercent">25%</span>
-                        </div>
-                        <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div id="progressBar" class="h-full bg-accent transition-all duration-300" style="width: 25%"></div>
-                        </div>
+                    <div class="mu-test-progress">
+                        <div class="mu-test-progress-label">Pregunta <span id="currentQuestion">1</span> de 4</div>
+                        <div class="mu-test-progress-bar"><div class="mu-test-progress-fill" id="progressBar" style="width:25%"></div></div>
                     </div>
 
-                    <!-- Pregunta 1 -->
                     <div id="question1" class="question-slide">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Tu pieza estará expuesta al sol o intemperie?</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="responder(1, 'exterior')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">Sí, exterior</p>
-                            </button>
-                            <button onclick="responder(1, 'interior')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">No, interior</p>
-                            </button>
+                        <div class="mu-test-q">¿Tu pieza estará expuesta al sol o intemperie?</div>
+                        <div class="mu-test-options">
+                            <button class="mu-test-opt" onclick="responder(1,'exterior')">Sí, exterior</button>
+                            <button class="mu-test-opt" onclick="responder(1,'interior')">No, interior</button>
                         </div>
                     </div>
-
-                    <!-- Pregunta 2 -->
                     <div id="question2" class="question-slide hidden">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Necesitas que sea flexible o elástica?</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="responder(2, 'flexible')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">Sí, flexible</p>
-                            </button>
-                            <button onclick="responder(2, 'rigido')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">No, rígida</p>
-                            </button>
+                        <div class="mu-test-q">¿Necesitas que sea flexible o elástica?</div>
+                        <div class="mu-test-options">
+                            <button class="mu-test-opt" onclick="responder(2,'flexible')">Sí, flexible</button>
+                            <button class="mu-test-opt" onclick="responder(2,'rigido')">No, rígida</button>
                         </div>
                     </div>
-
-                    <!-- Pregunta 3 -->
                     <div id="question3" class="question-slide hidden">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Soportará esfuerzos mecánicos o golpes?</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="responder(3, 'resistente')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">Sí, resistente</p>
-                            </button>
-                            <button onclick="responder(3, 'decorativo')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">No, decorativo/prototipo</p>
-                            </button>
+                        <div class="mu-test-q">¿Soportará esfuerzos mecánicos o golpes?</div>
+                        <div class="mu-test-options">
+                            <button class="mu-test-opt" onclick="responder(3,'resistente')">Sí, resistente</button>
+                            <button class="mu-test-opt" onclick="responder(3,'decorativo')">No, decorativo</button>
                         </div>
                     </div>
-
-                    <!-- Pregunta 4 -->
                     <div id="question4" class="question-slide hidden">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-3 text-center">¿Qué priorizas más?</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="responder(4, 'calidad')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">Máxima calidad</p>
-                            </button>
-                            <button onclick="responder(4, 'precio')" class="p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-center">
-                                <p class="font-medium text-gray-800 dark:text-white text-sm">Mejor precio</p>
-                            </button>
+                        <div class="mu-test-q">¿Qué priorizas más?</div>
+                        <div class="mu-test-options">
+                            <button class="mu-test-opt" onclick="responder(4,'calidad')">Máxima calidad</button>
+                            <button class="mu-test-opt" onclick="responder(4,'precio')">Mejor precio</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Resultado -->
-                <div id="testResult" class="hidden text-center py-4">
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Tu material recomendado:</p>
-                    <div id="resultMaterial" class="text-3xl font-bold text-accent mb-2"></div>
-                    <p id="resultDescription" class="text-sm text-gray-600 dark:text-gray-300 mb-4"></p>
-                    
-                    <!-- Colores disponibles -->
-                    <div class="mb-4">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Colores disponibles:</p>
-                        <div id="resultColors" class="flex flex-wrap justify-center gap-1.5"></div>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-2 justify-center">
-                        <button onclick="reiniciarTest()" class="text-sm border border-accent text-accent hover:bg-accent hover:text-white px-4 py-2 rounded-lg transition-all">
-                            Repetir
-                        </button>
-                        <a href="instant-quote.html" class="text-sm bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all">
-                            Calcular precio
-                        </a>
+                <!-- Result -->
+                <div id="testResult" class="hidden">
+                    <div class="mu-test-result">
+                        <div class="mu-test-progress-label">Tu material recomendado</div>
+                        <div class="mu-test-result-name" id="resultMaterial"></div>
+                        <p class="mu-test-result-desc" id="resultDescription"></p>
+                        <div class="mu-test-result-colors" id="resultColors"></div>
+                        <div class="mu-test-result-actions">
+                            <button onclick="reiniciarTest()" class="btn-outline" style="padding:8px 18px; font-size:11px;">Repetir</button>
+                            <a href="instant-quote.html" class="btn-primary" style="padding:8px 18px; font-size:11px;">Calcular precio</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Script del Test -->
+    <!-- Test Script -->
     <script>
         let respuestas = {};
         let preguntaActual = 1;
         let filamentosData = null;
 
-        // Cargar datos de filamentos
         fetch('filamentos.yaml')
-            .then(response => response.text())
-            .then(yamlText => {
-                filamentosData = jsyaml.load(yamlText);
-            });
+            .then(r => r.text())
+            .then(t => { filamentosData = jsyaml.load(t); });
 
         const materiales = {
-            PLA: {
-                nombre: "PLA",
-                descripcion: "Biodegradable, excelente acabado. Ideal para prototipos y piezas decorativas de interior."
-            },
-            PETG: {
-                nombre: "PETG",
-                descripcion: "Alta resistencia mecánica y térmica. Perfecto para piezas funcionales."
-            },
-            ASA: {
-                nombre: "ASA",
-                descripcion: "Resistente a UV e intemperie. El mejor para uso exterior."
-            },
-            TPU: {
-                nombre: "TPU",
-                descripcion: "Flexible y elástico. Ideal para fundas, juntas y amortiguadores."
-            }
+            PLA: { nombre: "PLA", descripcion: "Biodegradable, excelente acabado. Ideal para prototipos y piezas decorativas." },
+            PETG: { nombre: "PETG", descripcion: "Alta resistencia mecánica y térmica. Para piezas funcionales." },
+            ASA: { nombre: "ASA", descripcion: "Resistente a UV e intemperie. El mejor para uso exterior." },
+            TPU: { nombre: "TPU", descripcion: "Flexible y elástico. Ideal para fundas, juntas y amortiguadores." }
         };
+
+        // Toggle test
+        document.getElementById('testToggle').addEventListener('click', function() {
+            this.classList.toggle('open');
+            document.getElementById('testBody').classList.toggle('open');
+        });
 
         function iniciarTest() {
             document.getElementById('testStart').classList.add('hidden');
             document.getElementById('testQuestions').classList.remove('hidden');
-            respuestas = {};
-            preguntaActual = 1;
+            respuestas = {}; preguntaActual = 1;
             actualizarProgreso();
         }
 
@@ -507,10 +784,8 @@
         }
 
         function actualizarProgreso() {
-            const porcentaje = (preguntaActual / 4) * 100;
             document.getElementById('currentQuestion').textContent = preguntaActual;
-            document.getElementById('progressPercent').textContent = porcentaje + '%';
-            document.getElementById('progressBar').style.width = porcentaje + '%';
+            document.getElementById('progressBar').style.width = (preguntaActual / 4 * 100) + '%';
         }
 
         function calcularMaterial() {
@@ -523,319 +798,224 @@
         function mostrarResultado() {
             document.getElementById('testQuestions').classList.add('hidden');
             document.getElementById('testResult').classList.remove('hidden');
-            
             const materialKey = calcularMaterial();
             const material = materiales[materialKey];
-            
             document.getElementById('resultMaterial').textContent = material.nombre;
             document.getElementById('resultDescription').textContent = material.descripcion;
-            
-            // Mostrar colores disponibles
+
             const colorsContainer = document.getElementById('resultColors');
             colorsContainer.innerHTML = '';
-            
             if (filamentosData && filamentosData.filamentos && filamentosData.filamentos[materialKey]) {
-                const colores = filamentosData.filamentos[materialKey].colores;
-                colores.forEach(color => {
-                    const colorDiv = document.createElement('div');
-                    colorDiv.className = 'w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 cursor-pointer hover:scale-110 transition-transform';
-                    colorDiv.style.backgroundColor = color.hex;
-                    colorDiv.title = color.nombre;
-                    colorDiv.onclick = () => {
-                        window.abrirModal3D(color.nombre, color.hex, material.nombre);
-                    };
-                    colorsContainer.appendChild(colorDiv);
+                filamentosData.filamentos[materialKey].colores.forEach(color => {
+                    const d = document.createElement('div');
+                    d.className = 'mu-test-result-swatch';
+                    d.style.backgroundColor = color.hex;
+                    d.title = color.nombre;
+                    d.onclick = () => window.abrirModal3D(color.nombre, color.hex, material.nombre);
+                    colorsContainer.appendChild(d);
                 });
             }
         }
 
         function reiniciarTest() {
-            respuestas = {};
-            preguntaActual = 1;
+            respuestas = {}; preguntaActual = 1;
             document.getElementById('testResult').classList.add('hidden');
             document.getElementById('testQuestions').classList.add('hidden');
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById('question' + i).classList.add('hidden');
-            }
+            for (let i = 1; i <= 4; i++) document.getElementById('question' + i).classList.add('hidden');
             document.getElementById('question1').classList.remove('hidden');
             document.getElementById('testStart').classList.remove('hidden');
         }
     </script>
 
-    <!-- Material Navigation + Search -->
-    <div class="material-nav-sticky bg-white/90 dark:bg-gray-900/90 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 py-3">
-                <!-- Material tabs -->
-                <div class="flex gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto justify-center sm:justify-start" id="materialTabs">
-                    <button onclick="scrollToMaterial('all')" class="material-tab active flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-accent/10 text-accent border border-accent/20 whitespace-nowrap hover:bg-accent hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" /></svg>
-                        Todos
-                    </button>
-                </div>
-                <!-- Search bar -->
-                <div class="relative w-full sm:w-64">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                    </svg>
-                    <input type="text" id="colorSearch" placeholder="Buscar color..." 
-                        class="w-full pl-9 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-                        oninput="filtrarColores(this.value)">
-                </div>
+    <!-- Filter Bar -->
+    <div class="mu-filters">
+        <div class="mu-filters-inner">
+            <div class="mu-pills" id="materialTabs">
+                <button class="mu-pill active" data-tab="all" onclick="scrollToMaterial('all')">Todos</button>
+            </div>
+            <div class="mu-search">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="colorSearch" placeholder="Buscar color..." oninput="filtrarColores(this.value)">
             </div>
         </div>
     </div>
 
-    <!-- Main Content - Se generará dinámicamente desde filamentos.yaml -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16" id="filamentosContainer">
-        <!-- El contenido se cargará aquí dinámicamente -->
-        <div class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-            <p class="mt-4 text-gray-600 dark:text-gray-300">Cargando filamentos disponibles...</p>
+    <!-- Main Content -->
+    <main id="filamentosContainer" style="max-width:1200px; margin:0 auto; padding:32px 24px 64px;">
+        <noscript>
+            <div style="text-align:center; padding:60px 0;">
+                <p style="font-size:15px; color:var(--muted); margin-bottom:16px;">Para ver el muestrario necesitas JavaScript activado.</p>
+                <a href="index.html#contacto" class="btn-primary">Contactar directamente</a>
+            </div>
+        </noscript>
+        <div class="mu-loading">
+            <div class="mu-spinner"></div>
+            <div class="mu-loading-text">Cargando filamentos...</div>
         </div>
     </main>
 
-    <!-- Call to Action -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div class="bg-gradient-to-br from-primary to-secondary text-white rounded-2xl p-12 text-center shadow-xl">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">¿Necesitas más información?</h2>
-            <p class="text-lg mb-8 text-gray-200 max-w-2xl mx-auto">
-                Contacta con nosotros para conocer más detalles sobre nuestros materiales, acabados especiales o cualquier consulta sobre tu proyecto.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="index.html#contacto" class="inline-block bg-white text-primary px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all hover:scale-105 shadow-md">
-                    Contactar
-                </a>
-                <a href="instant-quote.html" class="inline-block bg-accent text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-600 transition-all hover:scale-105 shadow-md">
-                    Calcular precio
-                </a>
+    <!-- CTA -->
+    <section style="max-width:1200px; margin:0 auto; padding:0 24px 64px;">
+        <div class="mu-cta">
+            <div class="mu-cta-inner">
+                <div>
+                    <div class="section-tag">Más información</div>
+                    <h2>¿Necesitas ayuda<br>con tu proyecto?</h2>
+                    <p>Contacta con nosotros para conocer más detalles sobre materiales, acabados o cualquier consulta.</p>
+                </div>
+                <div class="mu-cta-actions">
+                    <a href="index.html#contacto" class="btn-outline">Contactar</a>
+                    <a href="instant-quote.html" class="btn-primary">Calcular precio</a>
+                </div>
             </div>
         </div>
     </section>
 
+    <!-- Back to Top -->
+    <button id="backToTop" aria-label="Volver arriba">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
+    </button>
+
+    <!-- WhatsApp FAB -->
+    <a href="https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp" class="wa-fab"><svg width="26" height="26" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
+
     <!-- Footer -->
-    <footer class="bg-primary dark:bg-gray-950 text-white text-center py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p>&copy; 2025 Impresión 3DCC Salamanca. Todos los derechos reservados.</p>
-            <p class="text-sm text-gray-300 dark:text-gray-400 mt-2">
-                <a href="terminos.html" class="hover:text-accent transition-colors">Términos y Condiciones</a> | 
-                Servicio ofrecido como hobby sin ánimo de lucro
-            </p>
-        </div>
-    </footer>
+    <footer class="site-footer"><div class="footer-inner"><span class="footer-copy">&copy; 2026 Impresión 3DCC Salamanca. Todos los derechos reservados.</span><span class="footer-copy"><a href="terminos.html" class="footer-link">Términos y Condiciones</a><span style="margin:0 8px;opacity:.3">|</span>Servicio ofrecido como hobby sin ánimo de lucro</span></div></footer>
 
-    <!-- Modal de detalle de color -->
-    <div id="modal3D" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-white dark:bg-gray-800 sm:rounded-xl shadow-2xl max-w-lg w-full overflow-hidden my-auto">
-            
-            <!-- Large Color Preview -->
-            <div class="modal-color-preview relative">
-                <!-- Close button overlaid -->
-                <button onclick="window.cerrarModal3D()" class="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-colors" aria-label="Cerrar">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+    <!-- Color Detail Modal -->
+    <div id="modal3D" class="mu-modal-overlay" role="dialog" aria-modal="true">
+        <div class="mu-modal">
+            <div class="mu-modal-swatch" id="modalColorArea">
+                <div class="mu-modal-finish" id="modalFinishOverlay"></div>
+                <button onclick="window.cerrarModal3D()" class="mu-modal-close" aria-label="Cerrar">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
-                <!-- Color area -->
-                <div id="modalColorArea" class="w-full h-40 sm:h-48 relative">
-                    <div id="modalFinishOverlay" class="modal-finish-overlay"></div>
-                    <!-- Acabado badge on preview -->
-                    <span id="modalAcabadoBadge" class="hidden absolute bottom-3 left-3 acabado-badge shadow-sm"></span>
-                </div>
+                <span id="modalAcabadoBadge" class="mu-modal-acabado-badge" style="display:none;"></span>
             </div>
+            <div class="mu-modal-body">
+                <h3 class="mu-modal-name" id="modalColorName"></h3>
+                <div class="mu-modal-material" id="modalMaterial"></div>
 
-            <!-- Color Info -->
-            <div class="px-5 pt-4 pb-2 sm:px-6">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <h3 id="modalColorName" class="text-lg font-bold text-gray-900 dark:text-white"></h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                            Material: <span id="modalMaterial" class="font-medium text-gray-700 dark:text-gray-300"></span>
-                        </p>
-                    </div>
-                    <button id="modalHexBtn" onclick="copiarHex()" class="hex-copy-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-mono font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer" title="Copiar código HEX">
-                        <span id="modalHexCode"></span>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-                        </svg>
+                <div class="mu-modal-hex-row">
+                    <span class="mu-modal-hex" id="modalHexCode"></span>
+                    <button class="mu-modal-copy" id="modalHexBtn" onclick="copiarHex()">
+                        Copiar
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     </button>
                 </div>
-            </div>
 
-            <!-- Material Specs -->
-            <div class="px-5 pb-4 sm:px-6">
-                <div id="modalSpecs" class="grid grid-cols-2 gap-2 mt-3">
-                    <!-- Filled dynamically -->
+                <div class="mu-modal-specs" id="modalSpecs"></div>
+
+                <div class="mu-modal-usos" id="modalUsosWrapper">
+                    <strong>Usos recomendados</strong>
+                    <span id="modalUsos"></span>
                 </div>
 
-                <!-- Usos recomendados -->
-                <div id="modalUsosWrapper" class="mt-4">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Usos recomendados</p>
-                    <p id="modalUsos" class="text-sm text-gray-700 dark:text-gray-300"></p>
+                <div class="mu-modal-actions">
+                    <a href="instant-quote.html" class="btn-primary" style="font-size:11px; padding:10px 20px; justify-content:center;">Calcular precio</a>
+                    <a id="modalWhatsAppLink" href="#" target="_blank" class="btn-outline" style="font-size:11px; padding:10px 20px; justify-content:center; border-color:#25D366; color:#25D366;">Pedir foto real</a>
                 </div>
-
-                <!-- Badges -->
-                <div id="modalBadges" class="flex flex-wrap gap-1.5 mt-3">
-                    <!-- Filled dynamically -->
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="px-5 pb-5 sm:px-6 flex flex-col sm:flex-row gap-2">
-                <a href="instant-quote.html" class="flex-1 inline-flex items-center justify-center gap-2 bg-accent hover:bg-blue-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" /></svg>
-                    Calcular precio
-                </a>
-                <a id="modalWhatsAppLink" href="#" target="_blank" class="flex-1 inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-                    Pedir foto real
-                </a>
             </div>
         </div>
     </div>
 
     <script src="script.js"></script>
-    
-    <!-- Dark Mode Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const darkModeToggleMobile = document.getElementById('darkModeToggleMobile');
-            const htmlElement = document.documentElement;
-            
-            function toggleDarkMode() {
-                htmlElement.classList.toggle('dark');
-                const isDark = htmlElement.classList.contains('dark');
-                localStorage.setItem('darkMode', isDark);
-            }
-            
-            if (darkModeToggle) {
-                darkModeToggle.addEventListener('click', toggleDarkMode);
-            }
-            
-            if (darkModeToggleMobile) {
-                darkModeToggleMobile.addEventListener('click', toggleDarkMode);
-            }
-        });
-    </script>
-    
-    <!-- Script para cargar filamentos desde YAML -->
+
+    <!-- Main Script -->
     <script>
         let isModalOpen = false;
         let currentModalHex = '';
 
-        // Abrir modal de detalle de color
+        const especificacionesTecnicas = {
+            PLA: { usos: "Decoración, prototipos, figuras, maquetas", resistencia: "Media", temp: "190-220°C", exterior: "No recomendado", flexibilidad: "Rígido" },
+            PETG: { usos: "Piezas funcionales, uso diario, contenedores", resistencia: "Alta", temp: "220-250°C", exterior: "Moderado", flexibilidad: "Semi-rígido" },
+            ASA: { usos: "Exterior, automoción, alta temperatura", resistencia: "Muy Alta", temp: "240-260°C", exterior: "Excelente", flexibilidad: "Rígido" },
+            TPU: { usos: "Fundas, juntas, amortiguadores, carcasas", resistencia: "Muy Alta", temp: "210-230°C", exterior: "Bueno", flexibilidad: "Elástico (95A)" }
+        };
+
+        function getFinishClass(acabado) {
+            if (!acabado) return '';
+            const map = {
+                'Metálico': 'finish-metallic', 'Fluorescente': 'finish-fluorescente',
+                'Translucido': 'finish-translucido', 'Textura': 'finish-textura',
+                'Brillante': 'finish-brillante', 'Purpurina': 'finish-purpurina',
+                'Mate': 'finish-mate', 'Flexible': 'finish-flexible'
+            };
+            return map[acabado] || '';
+        }
+
+        // Open modal
         window.abrirModal3D = function(colorNombre, colorHex, materialTipo, acabado = '') {
             const modal = document.getElementById('modal3D');
             currentModalHex = colorHex;
 
-            // Color preview area
             const colorArea = document.getElementById('modalColorArea');
             colorArea.style.backgroundColor = colorHex;
 
-            // Apply finish overlay class
             const overlayEl = document.getElementById('modalFinishOverlay');
-            overlayEl.className = 'modal-finish-overlay';
+            overlayEl.className = 'mu-modal-finish';
             if (acabado) {
-                const finishCls = getFinishClass(acabado);
-                if (finishCls) overlayEl.classList.add(finishCls);
-                // Fluorescent glow on the area
+                const cls = getFinishClass(acabado);
+                if (cls) overlayEl.classList.add(cls);
                 if (acabado === 'Fluorescente') {
                     colorArea.style.setProperty('--glow-color', colorHex);
-                    colorArea.classList.add('finish-overlay-fluorescente');
-                } else {
-                    colorArea.style.removeProperty('--glow-color');
-                    colorArea.classList.remove('finish-overlay-fluorescente');
                 }
             } else {
                 colorArea.style.removeProperty('--glow-color');
-                colorArea.classList.remove('finish-overlay-fluorescente');
             }
 
-            // Acabado badge on preview
-            const acabadoBadge = document.getElementById('modalAcabadoBadge');
+            const badge = document.getElementById('modalAcabadoBadge');
             if (acabado) {
-                acabadoBadge.textContent = acabado;
-                acabadoBadge.className = `absolute bottom-3 left-3 acabado-badge shadow-sm ${getAcabadoBadgeStyle(acabado)}`;
+                badge.textContent = acabado;
+                badge.style.display = '';
             } else {
-                acabadoBadge.className = 'hidden';
+                badge.style.display = 'none';
             }
 
-            // Color info
             document.getElementById('modalColorName').textContent = colorNombre;
             document.getElementById('modalMaterial').textContent = materialTipo;
             document.getElementById('modalHexCode').textContent = colorHex;
+            document.getElementById('modalHexBtn').classList.remove('copied');
 
-            // Reset copy button state
-            const hexBtn = document.getElementById('modalHexBtn');
-            hexBtn.classList.remove('copied');
-
-            // Material specs
-            const materialKey = materialTipo.replace(/\s.*/, ''); // e.g. "PLA (PolyLactic...)" → "PLA"
+            const materialKey = materialTipo.replace(/\s.*/, '');
             const specs = especificacionesTecnicas[materialKey];
-            const specsContainer = document.getElementById('modalSpecs');
-            const usosEl = document.getElementById('modalUsos');
-            const badgesEl = document.getElementById('modalBadges');
 
             if (specs) {
-                specsContainer.innerHTML = `
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Resistencia</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.resistencia}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Temperatura</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.temp}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Exterior</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.exterior}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Flexibilidad</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white mt-0.5">${specs.flexibilidad}</p>
-                    </div>
+                document.getElementById('modalSpecs').innerHTML = `
+                    <div class="mu-modal-spec"><div class="mu-modal-spec-label">Resistencia</div><div class="mu-modal-spec-val">${specs.resistencia}</div></div>
+                    <div class="mu-modal-spec"><div class="mu-modal-spec-label">Temperatura</div><div class="mu-modal-spec-val">${specs.temp}</div></div>
+                    <div class="mu-modal-spec"><div class="mu-modal-spec-label">Exterior</div><div class="mu-modal-spec-val">${specs.exterior}</div></div>
+                    <div class="mu-modal-spec"><div class="mu-modal-spec-label">Flexibilidad</div><div class="mu-modal-spec-val">${specs.flexibilidad}</div></div>
                 `;
-                usosEl.textContent = specs.usos;
-                badgesEl.innerHTML = specs.badges.map(b =>
-                    `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${specs.tabColorLight}">${b}</span>`
-                ).join('');
+                document.getElementById('modalUsos').textContent = specs.usos;
+                document.getElementById('modalUsosWrapper').style.display = '';
             } else {
-                specsContainer.innerHTML = '';
-                usosEl.textContent = '';
-                badgesEl.innerHTML = '';
+                document.getElementById('modalSpecs').innerHTML = '';
+                document.getElementById('modalUsosWrapper').style.display = 'none';
             }
 
-            // WhatsApp link
             const waMsg = encodeURIComponent(`Hola, me gustaría recibir una foto real del color ${colorNombre} (${colorHex}) en ${materialTipo}. Gracias.`);
             document.getElementById('modalWhatsAppLink').href = `https://wa.me/34665148956?text=${waMsg}`;
 
-            modal.classList.remove('hidden');
+            modal.classList.add('open');
             document.body.style.overflow = 'hidden';
             isModalOpen = true;
         }
 
         window.cerrarModal3D = function() {
-            document.getElementById('modal3D').classList.add('hidden');
+            document.getElementById('modal3D').classList.remove('open');
             document.body.style.overflow = '';
             isModalOpen = false;
         }
 
-        // Close on backdrop click
-        document.addEventListener('click', function(e) {
-            if (e.target === document.getElementById('modal3D')) {
-                window.cerrarModal3D();
-            }
+        document.getElementById('modal3D').addEventListener('click', function(e) {
+            if (e.target === this) window.cerrarModal3D();
         });
 
-        // Close on ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isModalOpen) {
-                window.cerrarModal3D();
-            }
+            if (e.key === 'Escape' && isModalOpen) window.cerrarModal3D();
         });
 
-        // Copy hex code
         function copiarHex() {
             navigator.clipboard.writeText(currentModalHex).then(() => {
                 const btn = document.getElementById('modalHexBtn');
@@ -843,146 +1023,20 @@
                 const codeEl = document.getElementById('modalHexCode');
                 const original = codeEl.textContent;
                 codeEl.textContent = 'Copiado';
-                setTimeout(() => {
-                    btn.classList.remove('copied');
-                    codeEl.textContent = original;
-                }, 1200);
+                setTimeout(() => { btn.classList.remove('copied'); codeEl.textContent = original; }, 1200);
             });
         }
 
-        // Especificaciones técnicas para cada tipo de filamento
-        const especificacionesTecnicas = {
-            PLA: {
-                usos: "Decoración, prototipos, figuras, maquetas",
-                resistencia: "Media",
-                temp: "190-220°C",
-                exterior: "No recomendado",
-                flexibilidad: "Rígido",
-                tabColor: "bg-green-500",
-                tabColorLight: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
-                gradientFrom: "from-green-500",
-                gradientTo: "to-emerald-600",
-                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>`,
-                badges: ["Biodegradable", "Fácil impresión", "Gran variedad de colores"]
-            },
-            PETG: {
-                usos: "Piezas funcionales, uso diario, contenedores",
-                resistencia: "Alta",
-                temp: "220-250°C",
-                exterior: "Moderado",
-                flexibilidad: "Semi-rígido",
-                tabColor: "bg-blue-500",
-                tabColorLight: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-                gradientFrom: "from-blue-500",
-                gradientTo: "to-cyan-600",
-                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>`,
-                badges: ["Resistente al impacto", "Resistente a químicos", "Semi-flexible"]
-            },
-            ASA: {
-                usos: "Exterior, automoción, alta temperatura",
-                resistencia: "Muy Alta",
-                temp: "240-260°C",
-                exterior: "Excelente",
-                flexibilidad: "Rígido",
-                tabColor: "bg-orange-500",
-                tabColorLight: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
-                gradientFrom: "from-orange-500",
-                gradientTo: "to-red-600",
-                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>`,
-                badges: ["Resistente a UV", "Uso exterior", "Alta durabilidad"]
-            },
-            TPU: {
-                usos: "Fundas, juntas, amortiguadores, carcasas",
-                resistencia: "Muy Alta",
-                temp: "210-230°C",
-                exterior: "Bueno",
-                flexibilidad: "Elástico (95A)",
-                tabColor: "bg-purple-500",
-                tabColorLight: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
-                gradientFrom: "from-purple-500",
-                gradientTo: "to-pink-600",
-                icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>`,
-                badges: ["Flexible 95A", "Resistente a rotura", "Recuperación de forma"]
-            }
-        };
-
-        // Función para generar las estadísticas del material
-        function generarEstadisticas(tipo) {
-            const specs = especificacionesTecnicas[tipo];
-            if (!specs) return '';
-
-            const badgesHTML = specs.badges.map(b => 
-                `<span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${specs.tabColorLight}">${b}</span>`
-            ).join('');
-
-            return `
-                <div class="flex flex-wrap gap-1.5 mb-4">
-                    ${badgesHTML}
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Resistencia</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.resistencia}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Temperatura</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.temp}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Exterior</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.exterior}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-center">
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Flexibilidad</p>
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">${specs.flexibilidad}</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Helper: get finish CSS class
-        function getFinishClass(acabado) {
-            if (!acabado) return '';
-            const map = {
-                'Metálico': 'finish-overlay-metallic',
-                'Fluorescente': 'finish-overlay-fluorescente',
-                'Translucido': 'finish-overlay-translucido',
-                'Textura': 'finish-overlay-textura',
-                'Brillante': 'finish-overlay-brillante',
-                'Purpurina': 'finish-overlay-purpurina',
-                'Mate': 'finish-overlay-mate',
-                'Flexible': 'finish-overlay-flexible'
-            };
-            return map[acabado] || '';
-        }
-
-        // Helper: get acabado badge style
-        function getAcabadoBadgeStyle(acabado) {
-            const styles = {
-                'Metálico': 'bg-yellow-200/80 text-yellow-900',
-                'Fluorescente': 'bg-green-300/80 text-green-900',
-                'Translucido': 'bg-cyan-200/80 text-cyan-900',
-                'Textura': 'bg-stone-300/80 text-stone-900',
-                'Brillante': 'bg-sky-200/80 text-sky-900',
-                'Purpurina': 'bg-pink-200/80 text-pink-900',
-                'Mate': 'bg-gray-300/80 text-gray-900',
-                'Flexible': 'bg-purple-200/80 text-purple-900'
-            };
-            return styles[acabado] || 'bg-white/80 text-gray-800';
-        }
-
-        // Search / filter function
+        // Search
         function filtrarColores(query) {
-            const cards = document.querySelectorAll('.color-card');
-            const normalizedQuery = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            
+            const cards = document.querySelectorAll('.mu-color-card');
+            const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             cards.forEach(card => {
                 const nombre = card.getAttribute('data-color-nombre').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const material = card.getAttribute('data-material-tipo').toLowerCase();
                 const acabado = (card.getAttribute('data-color-acabado') || '').toLowerCase();
                 const hex = card.getAttribute('data-color-hex').toLowerCase();
-                
-                if (!query || nombre.includes(normalizedQuery) || material.includes(normalizedQuery) || acabado.includes(normalizedQuery) || hex.includes(normalizedQuery)) {
+                if (!query || nombre.includes(q) || material.includes(q) || acabado.includes(q) || hex.includes(q)) {
                     card.classList.remove('dimmed');
                 } else {
                     card.classList.add('dimmed');
@@ -992,198 +1046,113 @@
 
         // Material tab navigation
         function scrollToMaterial(materialId) {
-            // Update active tab
-            document.querySelectorAll('.material-tab').forEach(tab => {
-                tab.classList.remove('active', 'bg-accent', 'text-white', 'border-accent');
-                tab.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-            });
-            const activeTab = document.querySelector(`[data-tab="${materialId}"]`);
-            if (activeTab) {
-                activeTab.classList.add('active', 'bg-accent', 'text-white', 'border-accent');
-                activeTab.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-            }
+            document.querySelectorAll('.mu-pill').forEach(p => p.classList.remove('active'));
+            const active = document.querySelector(`.mu-pill[data-tab="${materialId}"]`);
+            if (active) active.classList.add('active');
 
             if (materialId === 'all') {
-                // Show all sections
-                document.querySelectorAll('.material-section').forEach(s => s.style.display = '');
+                document.querySelectorAll('.mu-section').forEach(s => s.style.display = '');
                 window.scrollTo({ top: document.getElementById('filamentosContainer').offsetTop - 140, behavior: 'smooth' });
             } else {
-                // Show all but scroll to specific
-                document.querySelectorAll('.material-section').forEach(s => s.style.display = '');
+                document.querySelectorAll('.mu-section').forEach(s => s.style.display = '');
                 const target = document.getElementById('material-' + materialId);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
-        // Intersection observer for entrance animation
-        function setupScrollAnimations() {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                    }
-                });
-            }, { threshold: 0.05, rootMargin: '0px 0px -50px 0px' });
-
-            document.querySelectorAll('.material-section').forEach(section => {
-                observer.observe(section);
-            });
-        }
-
-        // Función para cargar y parsear el archivo YAML
+        // Load and render filaments
         async function cargarFilamentos() {
             try {
                 const response = await fetch('filamentos.yaml');
                 const yamlText = await response.text();
                 const data = jsyaml.load(yamlText);
-                
                 renderizarFilamentos(data.filamentos);
             } catch (error) {
                 console.error('Error al cargar filamentos:', error);
                 document.getElementById('filamentosContainer').innerHTML = `
-                    <div class="text-center py-12">
-                        <div class="text-red-500 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                            </svg>
-                        </div>
-                        <p class="text-gray-600 dark:text-gray-300">Error al cargar el catálogo de filamentos.</p>
-                        <p class="text-sm text-gray-500 mt-2">Por favor, recarga la página o contacta con nosotros.</p>
+                    <div style="text-align:center; padding:60px 0;">
+                        <p style="font-size:15px; color:var(--muted);">Error al cargar el catálogo de filamentos.</p>
+                        <p style="font-size:13px; color:var(--muted); margin-top:8px;">Por favor, recarga la página.</p>
                     </div>
                 `;
             }
         }
 
-        // Función para renderizar los filamentos en el DOM
         function renderizarFilamentos(filamentos) {
             const container = document.getElementById('filamentosContainer');
-            let html = '';
             const tabsContainer = document.getElementById('materialTabs');
+            let html = '';
 
-            // Generate material tabs dynamically
+            // Build tabs
             for (const [tipo, datos] of Object.entries(filamentos)) {
-                const specs = especificacionesTecnicas[tipo];
-                const tabBtn = document.createElement('button');
-                tabBtn.setAttribute('data-tab', tipo);
-                tabBtn.className = `material-tab flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-transparent whitespace-nowrap hover:bg-accent hover:text-white transition-all`;
-                tabBtn.onclick = () => scrollToMaterial(tipo);
-                tabBtn.innerHTML = `
-                    <span class="w-3 h-3 rounded-full ${specs ? specs.tabColor : 'bg-gray-400'}"></span>
-                    ${datos.nombre}
-                    <span class="count-badge bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">${datos.colores.length}</span>
-                `;
-                tabsContainer.appendChild(tabBtn);
+                const tab = document.createElement('button');
+                tab.className = 'mu-pill';
+                tab.setAttribute('data-tab', tipo);
+                tab.onclick = () => scrollToMaterial(tipo);
+                tab.innerHTML = `${datos.nombre}<span class="mu-pill-count">${datos.colores.length}</span>`;
+                tabsContainer.appendChild(tab);
             }
 
-            // Build material sections
+            // Build sections
             for (const [tipo, datos] of Object.entries(filamentos)) {
                 const specs = especificacionesTecnicas[tipo];
-                const gradientFrom = specs ? specs.gradientFrom : 'from-gray-500';
-                const gradientTo = specs ? specs.gradientTo : 'to-gray-600';
 
-                html += `
-                    <section id="material-${tipo}" class="material-section scroll-mt-36">
-                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                            <!-- Material Header -->
-                            <div class="bg-gradient-to-r ${gradientFrom} ${gradientTo} px-5 py-4 sm:px-6 sm:py-5">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center text-white">
-                                        ${specs ? specs.icon : ''}
-                                    </div>
-                                    <div>
-                                        <h2 class="text-xl sm:text-2xl font-bold text-white">${datos.nombre}</h2>
-                                        <p class="text-white/75 text-xs sm:text-sm">${datos.descripcion}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="p-4 sm:p-6">
-                                ${generarEstadisticas(tipo)}
-                                
-                                <!-- Color Grid Header -->
-                                <div class="flex items-center justify-between mb-5">
-                                    <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-accent">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
-                                        </svg>
-                                        Colores Disponibles
-                                    </h3>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">${datos.colores.length} colores</span>
-                                </div>
+                html += `<section id="material-${tipo}" class="mu-section">`;
+                html += `<div class="mu-section-header">
+                    <h2 class="mu-section-name">${datos.nombre}</h2>
+                    <span class="mu-section-desc">${datos.descripcion}</span>
+                    <span class="mu-section-count">${datos.colores.length} colores</span>
+                </div>`;
 
-                                <!-- Color Grid -->
-                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-                `;
+                // Compact specs row
+                if (specs) {
+                    html += `<div class="mu-specs">
+                        <div class="mu-spec"><div class="mu-spec-label">Resistencia</div><div class="mu-spec-value">${specs.resistencia}</div></div>
+                        <div class="mu-spec"><div class="mu-spec-label">Temperatura</div><div class="mu-spec-value">${specs.temp}</div></div>
+                        <div class="mu-spec"><div class="mu-spec-label">Exterior</div><div class="mu-spec-value">${specs.exterior}</div></div>
+                        <div class="mu-spec"><div class="mu-spec-label">Flexibilidad</div><div class="mu-spec-value">${specs.flexibilidad}</div></div>
+                    </div>`;
+                }
 
-                // Color cards
+                // Color grid
+                html += `<div class="mu-color-grid">`;
                 datos.colores.forEach(color => {
                     const finishClass = getFinishClass(color.acabado);
-                    const isLight = color.texto === 'black';
                     const glowStyle = color.acabado === 'Fluorescente' ? `--glow-color: ${color.hex};` : '';
-                    
-                    // Determine border for white/very light colors
-                    const needsBorder = ['#FFFFFF', '#F3E5AB', '#f0e0d6', '#FFFF00', '#FFACA4'].includes(color.hex);
-                    const borderClass = needsBorder ? 'border border-gray-200 dark:border-gray-600' : '';
 
-                    html += `
-                        <div class="color-card group cursor-pointer bg-white dark:bg-gray-750 shadow-sm ${borderClass}"
-                             data-color-nombre="${color.nombre}"
-                             data-color-hex="${color.hex}"
-                             data-material-tipo="${datos.nombre}"
-                             data-color-acabado="${color.acabado || ''}"
-                             title="${color.nombre}${color.acabado ? ' (' + color.acabado + ')' : ''}">
-                            
-                            <!-- Color Swatch -->
-                            <div class="relative aspect-square rounded-t-xl overflow-hidden ${finishClass}" 
-                                 style="background-color: ${color.hex}; ${glowStyle}">
-
-                                ${color.acabado ? `<span class="absolute top-1.5 left-1.5 acabado-badge ${getAcabadoBadgeStyle(color.acabado)}">${color.acabado}</span>` : ''}
-
-                                <!-- Hover overlay -->
-                                <div class="swatch-hover-overlay absolute inset-0 bg-black/25 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-white drop-shadow">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Info -->
-                            <div class="px-2.5 py-2">
-                                <p class="font-medium text-xs text-gray-800 dark:text-white truncate">${color.nombre}</p>
-                                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">${color.hex}</p>
-                            </div>
+                    html += `<div class="mu-color-card"
+                        data-color-nombre="${color.nombre}"
+                        data-color-hex="${color.hex}"
+                        data-material-tipo="${datos.nombre}"
+                        data-color-acabado="${color.acabado || ''}"
+                        title="${color.nombre}">
+                        <div class="mu-swatch ${finishClass}" style="background-color:${color.hex}; ${glowStyle}">
+                            ${color.acabado ? `<span class="mu-swatch-acabado">${color.acabado}</span>` : ''}
                         </div>
-                    `;
+                        <div class="mu-color-info">
+                            <div class="mu-color-name">${color.nombre}</div>
+                            <div class="mu-color-hex">${color.hex}</div>
+                        </div>
+                    </div>`;
                 });
-
-                html += `
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                `;
+                html += `</div></section>`;
             }
 
             container.innerHTML = html;
-            
-            // Entrance animations
-            setupScrollAnimations();
-            
-            // Click handlers for color cards
-            document.querySelectorAll('.color-card').forEach(card => {
+
+            // Click handlers
+            document.querySelectorAll('.mu-color-card').forEach(card => {
                 card.addEventListener('click', function() {
-                    const nombre = this.getAttribute('data-color-nombre');
-                    const hex = this.getAttribute('data-color-hex');
-                    const material = this.getAttribute('data-material-tipo');
-                    const acabado = this.getAttribute('data-color-acabado');
-                    window.abrirModal3D(nombre, hex, material, acabado);
+                    window.abrirModal3D(
+                        this.getAttribute('data-color-nombre'),
+                        this.getAttribute('data-color-hex'),
+                        this.getAttribute('data-material-tipo'),
+                        this.getAttribute('data-color-acabado')
+                    );
                 });
             });
         }
 
-        // Cargar los filamentos cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', cargarFilamentos);
     </script>
 </body>

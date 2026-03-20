@@ -1,127 +1,139 @@
-// Navegación móvil
-const navToggle = document.getElementById('navToggle');
-const navMenuMobile = document.getElementById('navMenuMobile');
-const navLinks = document.querySelectorAll('.nav-link');
+/* ================================================================
+   3DCC — Shared JavaScript
+   Handles: theme, nav, scroll, back-to-top, intersection observer,
+            active link highlighting, cookie banner
+================================================================ */
 
-navToggle.addEventListener('click', () => {
-    navMenuMobile.classList.toggle('hidden');
-    navMenuMobile.classList.toggle('flex');
-    
-    // Animar el botón hamburguesa
-    const spans = navToggle.querySelectorAll('span');
-    if (!navMenuMobile.classList.contains('hidden')) {
-        spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-        spans[1].style.opacity = '0';
-        spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
-    } else {
-        spans[0].style.transform = 'none';
-        spans[1].style.opacity = '1';
-        spans[2].style.transform = 'none';
+(function () {
+    'use strict';
+
+    /* ── Theme Toggle ───────────────────────────────────────── */
+    const html = document.documentElement;
+    const themeBtn = document.getElementById('themeToggle');
+    const iconMoon = document.getElementById('iconMoon');
+    const iconSun  = document.getElementById('iconSun');
+
+    function syncIcons() {
+        if (!iconMoon || !iconSun) return;
+        const dark = html.classList.contains('dark');
+        iconMoon.style.display = dark ? 'block' : 'none';
+        iconSun.style.display  = dark ? 'none'  : 'block';
     }
-});
+    syncIcons();
 
-// Cerrar menú al hacer clic en un enlace
-navLinks.forEach(link => {
-    link.addEventListener('click', () => {
-        if (navMenuMobile) {
-            navMenuMobile.classList.add('hidden');
-            navMenuMobile.classList.remove('flex');
-            const spans = navToggle.querySelectorAll('span');
-            spans[0].style.transform = 'none';
-            spans[1].style.opacity = '1';
-            spans[2].style.transform = 'none';
-        }
-    });
-});
-
-// Scroll suave
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            const offsetTop = target.offsetTop - 70;
-            window.scrollTo({
-                top: offsetTop,
-                behavior: 'smooth'
-            });
-        }
-    });
-});
-
-// Efecto de scroll en la navegación
-const navbar = document.getElementById('navbar');
-let lastScroll = 0;
-
-window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
-    
-    // Añadir sombra al hacer scroll
-    if (currentScroll > 50) {
-        navbar.classList.add('shadow-lg');
-    } else {
-        navbar.classList.remove('shadow-lg');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', function () {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            syncIcons();
+        });
     }
-    
-    lastScroll = currentScroll;
-});
 
-// Marcar enlace activo según la sección visible
-const sections = document.querySelectorAll('section[id]');
+    /* ── Mobile Nav Toggle ──────────────────────────────────── */
+    const navToggle = document.getElementById('navToggle');
+    const navMobile = document.getElementById('navMenuMobile');
 
-function highlightNavigation() {
-    const scrollY = window.pageYOffset;
-    
-    sections.forEach(section => {
-        const sectionHeight = section.offsetHeight;
-        const sectionTop = section.offsetTop - 100;
-        const sectionId = section.getAttribute('id');
-        const navLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
-        
-        if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                link.classList.remove('border-b-2');
-                link.classList.remove('border-accent');
-            });
-            if (navLink && !navLink.classList.contains('bg-accent')) {
-                navLink.classList.add('active');
-                navLink.classList.add('border-b-2');
-                navLink.classList.add('border-accent');
+    if (navToggle && navMobile) {
+        navToggle.addEventListener('click', function () {
+            navMobile.classList.toggle('open');
+            var spans = navToggle.querySelectorAll('span');
+            var open = navMobile.classList.contains('open');
+            if (spans.length >= 3) {
+                spans[0].style.transform = open ? 'rotate(45deg) translate(5px, 5px)' : '';
+                spans[1].style.opacity   = open ? '0' : '1';
+                spans[2].style.transform = open ? 'rotate(-45deg) translate(7px, -6px)' : '';
             }
-        }
+        });
+
+        // Close mobile nav on link click
+        navMobile.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () {
+                navMobile.classList.remove('open');
+                var spans = navToggle.querySelectorAll('span');
+                if (spans.length >= 3) {
+                    spans[0].style.transform = spans[2].style.transform = '';
+                    spans[1].style.opacity = '1';
+                }
+            });
+        });
+    }
+
+    /* ── Smooth Scroll ──────────────────────────────────────── */
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.querySelector(a.getAttribute('href'));
+            if (target) {
+                e.preventDefault();
+                window.scrollTo({ top: target.offsetTop - 64, behavior: 'smooth' });
+            }
+        });
     });
-}
 
-window.addEventListener('scroll', highlightNavigation);
+    /* ── Navbar Scroll Effect ───────────────────────────────── */
+    var navbar = document.getElementById('navbar');
+    if (navbar) {
+        window.addEventListener('scroll', function () {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    }
 
-// Animación de aparición al hacer scroll (Intersection Observer)
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
-};
+    /* ── Active Nav Link Highlighting ───────────────────────── */
+    var sections = document.querySelectorAll('section[id]');
+    var navLinks = document.querySelectorAll('ul.nav-links .nav-link, .nav-links .nav-link');
 
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
-    });
-}, observerOptions);
+    if (sections.length && navLinks.length) {
+        window.addEventListener('scroll', function () {
+            var y = window.scrollY;
+            sections.forEach(function (s) {
+                var top = s.offsetTop - 100;
+                if (y >= top && y < top + s.offsetHeight) {
+                    navLinks.forEach(function (l) { l.classList.remove('active'); });
+                    var active = document.querySelector('.nav-links .nav-link[href="#' + s.id + '"]');
+                    if (active) active.classList.add('active');
+                }
+            });
+        });
+    }
 
-// Observar elementos para animación
-const animatedElements = document.querySelectorAll('.service-card, .portfolio-item, .contact-item, .quote-feature');
-animatedElements.forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(30px)';
-    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    observer.observe(el);
-});
+    /* ── Back to Top ────────────────────────────────────────── */
+    var btt = document.getElementById('backToTop');
+    if (btt) {
+        window.addEventListener('scroll', function () {
+            btt.classList.toggle('visible', window.scrollY > 300);
+        });
+        btt.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 
-// Ya no usamos un formulario de envío; las acciones de contacto son enlaces interactivos.
+    /* ── Intersection Observer (fade-up) ────────────────────── */
+    var fadeEls = document.querySelectorAll('.fade-up');
+    if (fadeEls.length && 'IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) e.target.classList.add('in');
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
+        fadeEls.forEach(function (el) { io.observe(el); });
+    }
 
-// Inicializar
-document.addEventListener('DOMContentLoaded', () => {
-    highlightNavigation();
-});
+    /* ── Cookie / Terms Banner ──────────────────────────────── */
+    var banner    = document.getElementById('cookieBanner');
+    var acceptBtn = document.getElementById('acceptTerms');
+    var closeBtn  = document.getElementById('closeTerms');
+
+    if (banner && !localStorage.getItem('termsAccepted')) {
+        setTimeout(function () { banner.classList.add('visible'); }, 2000);
+    }
+    if (acceptBtn) {
+        acceptBtn.addEventListener('click', function () {
+            localStorage.setItem('termsAccepted', 'true');
+            if (banner) banner.classList.remove('visible');
+        });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            if (banner) banner.classList.remove('visible');
+        });
+    }
+})();

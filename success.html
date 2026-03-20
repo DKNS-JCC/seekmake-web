@@ -4,185 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compra completada | 3DCC Salamanca</title>
-
-    <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/android-chrome-512x512.png">
-    <link rel="icon" href="icons/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="icon" href="icons/android-chrome-192x192.png" type="image/png" sizes="192x192">
     <link rel="manifest" href="icons/site.webmanifest">
     <link rel="shortcut icon" href="icons/android-chrome-192x192.png">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .status-page { display: flex; flex-direction: column; min-height: 100vh; padding-top: var(--nav-h); }
+        .status-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+        .status-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 48px; max-width: 560px; width: 100%; text-align: center; }
+        .status-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; }
+        .status-icon.success { background: rgba(34,197,94,0.12); color: #22c55e; }
+        .status-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; color: var(--text); margin-bottom: 16px; letter-spacing: 0.02em; }
+        .status-text { font-size: 16px; color: var(--muted); margin-bottom: 8px; line-height: 1.7; }
+        .status-actions { margin-top: 32px; }
+    </style>
+    <script>if(localStorage.getItem('theme')!=='light'){document.documentElement.classList.add('dark')}</script>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2c3e50',
-                        secondary: '#34495e',
-                        accent: '#3498db',
-                    }
-                }
-            }
-        }
-    </script>
-
-    <link rel="stylesheet" href="styles-tailwind.css">
-
-    <!-- Dark Mode Script -->
-    <script>
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PKZ8N52F');</script>
+    <!-- End Google Tag Manager -->
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
-    <!-- Navegación -->
-    <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md z-50 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="index.html" class="flex items-center gap-2">
-                    <img src="icons/android-chrome-192x192.png" alt="3DCC Logo" class="w-8 h-8 rounded-full object-cover">
-                    <span class="text-xl font-bold text-primary dark:text-white">3DCC | Impresión 3D</span>
-                </a>
-
-                <ul class="hidden lg:flex gap-8 items-center" id="navMenu">
-                    <li><a href="index.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors">Inicio</a></li>
-                    <li><a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors">Muestrario</a></li>
-                    <li><a href="catalogo.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent dark:hover:text-accent transition-colors">Catálogo</a></li>
-                    <li><a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-600 transition-all hover:-translate-y-0.5">Obtener Precio</a></li>
-                    <li>
-                        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Cambiar modo oscuro">
-                            <svg id="sunIcon" class="w-5 h-5 text-yellow-500 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <svg id="moonIcon" class="w-5 h-5 text-gray-700 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                            </svg>
-                        </button>
-                    </li>
-                </ul>
-
-                <button class="lg:hidden flex flex-col gap-1.5" id="navToggle" aria-label="Abrir menú">
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                </button>
-            </div>
-
-            <div class="lg:hidden hidden flex-col gap-4 pb-4" id="navMenuMobile">
-                <a href="index.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Inicio</a>
-                <a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Muestrario</a>
-                <a href="catalogo.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Catálogo</a>
-                <a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold text-center hover:bg-blue-600 transition-all">Obtener Precio</a>
-                <button id="darkModeToggleMobile" class="flex items-center gap-3 text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    <span class="dark:hidden">Modo Oscuro</span>
-                    <span class="hidden dark:inline">Modo Claro</span>
-                </button>
-            </div>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PKZ8N52F"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo"><img src="icons/android-chrome-192x192.png" alt="3DCC Logo"><div><span class="nav-logo-name">3DCC</span><span class="nav-logo-sub">Impresión 3D</span></div></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-link">Inicio</a></li>
+                <li><a href="muestrario.html" class="nav-link">Muestrario</a></li>
+                <li><a href="catalogo.html" class="nav-link">Catálogo</a></li>
+                <li><button class="nav-theme" id="themeToggle" aria-label="Cambiar tema"><svg id="iconMoon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="iconSun" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button></li>
+                <li><a href="instant-quote.html" class="nav-cta">Obtener Precio</a></li>
+            </ul>
+            <button class="hamburger" id="navToggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+        </div>
+        <div class="nav-mobile" id="navMenuMobile">
+            <a href="index.html">Inicio</a><a href="muestrario.html">Muestrario</a><a href="catalogo.html">Catálogo</a><a href="instant-quote.html">→ Obtener Precio</a>
         </div>
     </nav>
 
-    <main class="flex-1 pt-28 pb-12 px-4 sm:px-6 lg:px-8">
-        <section class="max-w-3xl mx-auto">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-12 text-center border border-gray-100 dark:border-gray-700">
-                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                    <svg class="w-10 h-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+    <div class="status-page">
+        <div class="status-content">
+            <div class="status-card">
+                <div class="status-icon success">
+                    <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                 </div>
-
-                <h1 class="text-3xl md:text-4xl font-extrabold text-primary dark:text-white mb-4">¡Gracias por tu compra!</h1>
-                <p class="text-lg text-gray-700 dark:text-gray-300 mb-4">Tu pago se ha procesado correctamente y hemos recibido tu pedido.</p>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">En breve revisaremos los detalles y, si hace falta, te contactaremos por correo para confirmar el siguiente paso.</p>
-
-                <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="index.html" class="bg-accent text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-all hover:-translate-y-0.5">Volver al inicio</a>
+                <h1 class="status-title">Gracias por tu compra</h1>
+                <p class="status-text">Tu pago se ha procesado correctamente y hemos recibido tu pedido.</p>
+                <p class="status-text">En breve revisaremos los detalles y, si hace falta, te contactaremos por correo para confirmar el siguiente paso.</p>
+                <div class="status-actions">
+                    <a href="index.html" class="btn-primary">Volver al inicio</a>
                 </div>
             </div>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-primary dark:bg-gray-950 text-white text-center py-8 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p>&copy; 2025 Impresión 3DCC Salamanca. Todos los derechos reservados.</p>
-            <p class="text-sm text-gray-300 dark:text-gray-400 mt-2">
-                <a href="terminos.html" class="hover:text-accent transition-colors">Términos y Condiciones</a> |
-                Servicio ofrecido como hobby sin ánimo de lucro
-            </p>
         </div>
-    </footer>
+        <footer class="site-footer"><div class="footer-inner"><span class="footer-copy">&copy; 2026 Impresión 3DCC Salamanca.</span><span class="footer-copy"><a href="terminos.html" class="footer-link">Términos y Condiciones</a></span></div></footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const navToggle = document.getElementById('navToggle');
-            const navMenuMobile = document.getElementById('navMenuMobile');
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const darkModeToggleMobile = document.getElementById('darkModeToggleMobile');
-            const htmlElement = document.documentElement;
-
-            if (navToggle && navMenuMobile) {
-                navToggle.addEventListener('click', function() {
-                    navMenuMobile.classList.toggle('hidden');
-                    navMenuMobile.classList.toggle('flex');
-
-                    const spans = navToggle.querySelectorAll('span');
-                    if (!navMenuMobile.classList.contains('hidden')) {
-                        spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-                        spans[1].style.opacity = '0';
-                        spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
-                    } else {
-                        spans[0].style.transform = 'none';
-                        spans[1].style.opacity = '1';
-                        spans[2].style.transform = 'none';
-                    }
-                });
-            }
-
-            function toggleDarkMode() {
-                htmlElement.classList.toggle('dark');
-                localStorage.setItem('darkMode', htmlElement.classList.contains('dark'));
-            }
-
-            if (darkModeToggle) {
-                darkModeToggle.addEventListener('click', toggleDarkMode);
-            }
-
-            if (darkModeToggleMobile) {
-                darkModeToggleMobile.addEventListener('click', toggleDarkMode);
-            }
-
             if (window.confetti && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                const end = Date.now() + 1600;
-                const colors = ['#3498db', '#2c3e50', '#60a5fa', '#22c55e', '#facc15'];
-
+                var end = Date.now() + 1600;
+                var colors = ['#0EA5E9', '#06b6d4', '#22c55e', '#facc15', '#a855f7'];
                 (function frame() {
-                    confetti({
-                        particleCount: 3,
-                        angle: 60,
-                        spread: 55,
-                        origin: { x: 0 },
-                        colors: colors
-                    });
-
-                    confetti({
-                        particleCount: 3,
-                        angle: 120,
-                        spread: 55,
-                        origin: { x: 1 },
-                        colors: colors
-                    });
-
-                    if (Date.now() < end) {
-                        requestAnimationFrame(frame);
-                    }
+                    confetti({ particleCount: 3, angle: 60, spread: 55, origin: {x:0}, colors: colors });
+                    confetti({ particleCount: 3, angle: 120, spread: 55, origin: {x:1}, colors: colors });
+                    if (Date.now() < end) requestAnimationFrame(frame);
                 })();
             }
         });

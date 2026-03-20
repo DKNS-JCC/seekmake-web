@@ -4,235 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Términos y Condiciones - 3DCC Salamanca</title>
-    
-    <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/android-chrome-512x512.png">
-    <link rel="icon" href="icons/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="icon" href="icons/android-chrome-192x192.png" type="image/png" sizes="192x192">
     <link rel="manifest" href="icons/site.webmanifest">
     <link rel="shortcut icon" href="icons/android-chrome-192x192.png">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2c3e50',
-                        secondary: '#34495e',
-                        accent: '#3498db',
-                    }
-                }
-            }
-        }
-    </script>
+    <meta name="description" content="Términos y condiciones del servicio de impresión 3D de 3DCC Salamanca.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://impresion3dcc.com/terminos.html">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .terms-page { padding-top: calc(var(--nav-h) + 40px); padding-bottom: 80px; }
+        .terms-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 48px; margin-top: 32px; }
+        .terms-card h2 { font-family: 'Barlow', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 16px; margin-top: 40px; }
+        .terms-card h2:first-of-type { margin-top: 0; }
+        .terms-card p, .terms-card li { font-size: 15px; color: var(--muted); line-height: 1.8; }
+        .terms-card ul { list-style: disc; padding-left: 24px; margin: 12px 0; }
+        .terms-card li { margin-bottom: 6px; }
+        .terms-card a { color: var(--accent); text-decoration: none; }
+        .terms-card a:hover { text-decoration: underline; }
+        .terms-card strong { color: var(--text); }
+        .notice-box { background: var(--surface-2); border-left: 3px solid var(--accent); padding: 24px; border-radius: 0 var(--r) var(--r) 0; margin-bottom: 32px; }
+        .terms-footer { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); padding: 24px; margin-top: 40px; }
+        .terms-footer p { font-size: 13px; font-style: italic; }
+        .back-link { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+        .back-link:hover { opacity: 0.7; }
+        @media (max-width: 640px) { .terms-card { padding: 28px 20px; } }
+    </style>
+    <script>if(localStorage.getItem('theme')!=='light'){document.documentElement.classList.add('dark')}</script>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PKZ8N52F');</script>
+    <!-- End Google Tag Manager -->
 </head>
-<body class="bg-gray-50">
-    <!-- Navegación -->
-    <nav class="fixed top-0 left-0 right-0 bg-white shadow-md z-50 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="index.html" class="flex items-center gap-2">
-                    <span class="text-accent text-2xl">
-                        <img src="icons/android-chrome-192x192.png" alt="3DCC Logo" class="w-8 h-8 rounded-full object-cover">
-                    </span>
-                    <span class="text-xl font-bold text-primary">3DCC | Impresión 3D</span>
-                </a>
-                <a href="index.html" class="text-accent hover:text-blue-600 font-medium transition-colors">
-                    Volver al inicio
-                </a>
-            </div>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PKZ8N52F"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <a href="#main" class="visually-hidden">Ir al contenido principal</a>
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo"><img src="icons/android-chrome-192x192.png" alt="3DCC Logo"><div><span class="nav-logo-name">3DCC</span><span class="nav-logo-sub">Impresión 3D</span></div></a>
+            <a href="index.html" class="back-link">← Volver al inicio</a>
         </div>
     </nav>
 
-    <!-- Contenido Principal -->
-    <main class="pt-24 pb-20">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-primary mb-6">Términos y Condiciones</h1>
-            <p class="text-sm text-gray-500 mb-8">Última actualización: 9 de octubre de 2025</p>
+    <main id="main" class="terms-page">
+        <div class="container">
+            <div class="section-tag">Legal</div>
+            <h1 class="section-title">Términos y Condiciones</h1>
+            <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:12px;letter-spacing:0.1em;">Última actualización: 9 de octubre de 2025</p>
 
-            <div class="bg-white rounded-xl shadow-md p-8 mb-8">
-                <div class="bg-blue-50 border-l-4 border-accent p-6 mb-8">
-                    <h2 class="text-xl font-semibold text-primary mb-2">Aviso Importante</h2>
-                    <p class="text-gray-700">
-                        Este servicio se ofrece como un <strong>hobby personal sin ánimo de lucro</strong>. No soy una empresa registrada ni autónomo. 
-                        El objetivo de este proyecto es compartir mi pasión por la impresión 3D con la comunidad y ayudar a otras personas 
-                        a materializar sus ideas, sin constituir una actividad económica profesional.
-                    </p>
+            <div class="terms-card">
+                <div class="notice-box">
+                    <h2 style="margin-top:0">Aviso Importante</h2>
+                    <p>Este servicio se ofrece como un <strong>hobby personal sin ánimo de lucro</strong>. No soy una empresa registrada ni autónomo. El objetivo es compartir mi pasión por la impresión 3D con la comunidad y ayudar a otras personas a materializar sus ideas, sin constituir una actividad económica profesional.</p>
                 </div>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">1. Naturaleza del Servicio</h2>
-                    <p class="text-gray-700 mb-3">
-                        El servicio de impresión 3D ofrecido a través de esta web es una <strong>actividad amateur sin fines comerciales</strong>. 
-                        Los costes solicitados cubren únicamente:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>Coste del material utilizado (filamento, resina, etc.)</li>
-                        <li>Coste de electricidad consumida durante la impresión</li>
-                        <li>Desgaste del equipo y mantenimiento básico</li>
-                        <li>Gastos de envío (si aplica)</li>
-                    </ul>
-                    <p class="text-gray-700 mt-3">
-                        No se genera beneficio económico ni constituye una actividad lucrativa.
-                    </p>
-                </section>
+                <h2>1. Naturaleza del Servicio</h2>
+                <p>El servicio de impresión 3D ofrecido a través de esta web es una <strong>actividad amateur sin fines comerciales</strong>. Los costes solicitados cubren únicamente:</p>
+                <ul><li>Coste del material utilizado (filamento, resina, etc.)</li><li>Coste de electricidad consumida durante la impresión</li><li>Desgaste del equipo y mantenimiento básico</li><li>Gastos de envío (si aplica)</li></ul>
+                <p>No se genera beneficio económico ni constituye una actividad lucrativa.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">2. Aceptación de los Términos</h2>
-                    <p class="text-gray-700">
-                        Al utilizar este servicio y solicitar un presupuesto o impresión, aceptas estos términos y condiciones. 
-                        Si no estás de acuerdo con alguno de los puntos aquí expuestos, te rogamos que no utilices el servicio.
-                    </p>
-                </section>
+                <h2>2. Aceptación de los Términos</h2>
+                <p>Al utilizar este servicio y solicitar un presupuesto o impresión, aceptas estos términos y condiciones. Si no estás de acuerdo con alguno de los puntos aquí expuestos, te rogamos que no utilices el servicio.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">3. Limitación de Responsabilidad</h2>
-                    <p class="text-gray-700 mb-3">
-                        Al tratarse de un servicio amateur ofrecido como hobby:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>No se garantizan plazos de entrega específicos (aunque se hará el mejor esfuerzo posible)</li>
-                        <li>No se asume responsabilidad por defectos o imperfecciones propias del proceso de impresión 3D</li>
-                        <li>No se ofrece garantía comercial, aunque se intentará resolver cualquier problema razonable</li>
-                        <li>No me hago responsable del uso final que se dé a las piezas impresas</li>
-                        <li>Las piezas se entregan "tal cual" según las limitaciones técnicas de la impresión 3D doméstica</li>
-                    </ul>
-                </section>
+                <h2>3. Limitación de Responsabilidad</h2>
+                <p>Al tratarse de un servicio amateur ofrecido como hobby:</p>
+                <ul><li>No se garantizan plazos de entrega específicos (aunque se hará el mejor esfuerzo posible)</li><li>No se asume responsabilidad por defectos o imperfecciones propias del proceso de impresión 3D</li><li>No se ofrece garantía comercial, aunque se intentará resolver cualquier problema razonable</li><li>No me hago responsable del uso final que se dé a las piezas impresas</li><li>Las piezas se entregan "tal cual" según las limitaciones técnicas de la impresión 3D doméstica</li></ul>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">4. Propiedad Intelectual</h2>
-                    <p class="text-gray-700 mb-3">
-                        El usuario que solicita una impresión declara que:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>Tiene los derechos necesarios sobre el diseño 3D que envía</li>
-                        <li>El diseño no infringe derechos de autor, marcas registradas o patentes de terceros</li>
-                        <li>Asume toda responsabilidad legal derivada del diseño proporcionado</li>
-                    </ul>
-                    <p class="text-gray-700 mt-3">
-                        Me reservo el derecho a <strong>rechazar cualquier trabajo</strong> que pueda infringir derechos de propiedad intelectual, 
-                        contenga material ofensivo, ilegal o inapropiado.
-                    </p>
-                </section>
+                <h2>4. Propiedad Intelectual</h2>
+                <p>El usuario que solicita una impresión declara que:</p>
+                <ul><li>Tiene los derechos necesarios sobre el diseño 3D que envía</li><li>El diseño no infringe derechos de autor, marcas registradas o patentes de terceros</li><li>Asume toda responsabilidad legal derivada del diseño proporcionado</li></ul>
+                <p>Me reservo el derecho a <strong>rechazar cualquier trabajo</strong> que pueda infringir derechos de propiedad intelectual, contenga material ofensivo, ilegal o inapropiado.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">5. Proceso de Pedido y Pago</h2>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>Los presupuestos son orientativos y pueden variar según la complejidad del proyecto</li>
-                        <li>El pago se solicitará antes de iniciar la impresión</li>
-                        <li>Los métodos de pago se acordarán directamente (transferencia, Bizum, etc.)</li>
-                        <li>Una vez iniciada la impresión, no se aceptan cancelaciones con devolución</li>
-                        <li>Si el resultado no es satisfactorio por causas técnicas, se intentará reimprimir o llegar a un acuerdo razonable</li>
-                    </ul>
-                </section>
+                <h2>5. Proceso de Pedido y Pago</h2>
+                <ul><li>Los presupuestos son orientativos y pueden variar según la complejidad del proyecto</li><li>El pago se solicitará antes de iniciar la impresión</li><li>Los métodos de pago se acordarán directamente (transferencia, Bizum, etc.)</li><li>Una vez iniciada la impresión, no se aceptan cancelaciones con devolución</li><li>Si el resultado no es satisfactorio por causas técnicas, se intentará reimprimir o llegar a un acuerdo razonable</li></ul>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">6. Privacidad y Protección de Datos</h2>
-                    <p class="text-gray-700 mb-3">
-                        Los datos personales proporcionados (nombre, email, teléfono, dirección de envío) se utilizarán exclusivamente para:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>Gestionar el pedido y la comunicación relacionada</li>
-                        <li>Coordinar la entrega o recogida del pedido</li>
-                        <li>Proporcionar soporte post-impresión si es necesario</li>
-                    </ul>
-                    <p class="text-gray-700 mt-3">
-                        <strong>No se compartirán datos con terceros</strong> salvo servicios de mensajería para envíos. 
-                        Los datos se conservarán el tiempo necesario para completar el servicio y se eliminarán posteriormente 
-                        a petición del usuario. Tienes derecho a acceder, rectificar y suprimir tus datos en cualquier momento.
-                    </p>
-                </section>
+                <h2>6. Privacidad y Protección de Datos</h2>
+                <p>Los datos personales proporcionados se utilizarán exclusivamente para:</p>
+                <ul><li>Gestionar el pedido y la comunicación relacionada</li><li>Coordinar la entrega o recogida del pedido</li><li>Proporcionar soporte post-impresión si es necesario</li></ul>
+                <p><strong>No se compartirán datos con terceros</strong> salvo servicios de mensajería para envíos. Los datos se conservarán el tiempo necesario para completar el servicio y se eliminarán posteriormente a petición del usuario.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">7. Calidad y Características Técnicas</h2>
-                    <p class="text-gray-700 mb-3">
-                        Las impresiones 3D se realizan con equipos domésticos/semi-profesionales y pueden presentar:
-                    </p>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>Líneas de capa visibles (característica normal de la tecnología FDM/FFF)</li>
-                        <li>Pequeñas imperfecciones superficiales</li>
-                        <li>Variaciones de color según el lote de filamento</li>
-                        <li>Necesidad de post-procesado (lijado, pintura) para acabados profesionales</li>
-                    </ul>
-                    <p class="text-gray-700 mt-3">
-                        Se proporcionarán fotos previas si el usuario lo solicita antes del envío.
-                    </p>
-                </section>
+                <h2>7. Calidad y Características Técnicas</h2>
+                <p>Las impresiones 3D se realizan con equipos domésticos/semi-profesionales y pueden presentar:</p>
+                <ul><li>Líneas de capa visibles (característica normal de la tecnología FDM/FFF)</li><li>Pequeñas imperfecciones superficiales</li><li>Variaciones de color según el lote de filamento</li><li>Necesidad de post-procesado (lijado, pintura) para acabados profesionales</li></ul>
+                <p>Se proporcionarán fotos previas si el usuario lo solicita antes del envío.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">8. Envíos y Entregas</h2>
-                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
-                        <li>Los envíos se realizan a través de servicios de mensajería estándar</li>
-                        <li>Los plazos de entrega son estimados y dependen de la empresa de transporte</li>
-                        <li>El embalaje se realiza con cuidado, pero no me responsabilizo de daños durante el transporte</li>
-                        <li>Se recomienda contratar seguro de envío para piezas de alto valor (coste adicional)</li>
-                        <li>También es posible la recogida en mano en Salamanca (acordar cita previa)</li>
-                    </ul>
-                </section>
+                <h2>8. Envíos y Entregas</h2>
+                <ul><li>Los envíos se realizan a través de servicios de mensajería estándar</li><li>Los plazos de entrega son estimados y dependen de la empresa de transporte</li><li>El embalaje se realiza con cuidado, pero no me responsabilizo de daños durante el transporte</li><li>Se recomienda contratar seguro de envío para piezas de alto valor (coste adicional)</li><li>También es posible la recogida en mano en Salamanca (acordar cita previa)</li></ul>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">9. Uso de la Plataforma Seekmake</h2>
-                    <p class="text-gray-700">
-                        El sistema de presupuestos instantáneos está proporcionado por Seekmake, un servicio externo. 
-                        Al utilizar esta herramienta, también aceptas sus propios términos y condiciones. 
-                        Los datos introducidos en el cotizador son procesados por Seekmake según su política de privacidad.
-                    </p>
-                </section>
+                <h2>9. Uso de la Plataforma Seekmake</h2>
+                <p>El sistema de presupuestos instantáneos está proporcionado por Seekmake, un servicio externo. Al utilizar esta herramienta, también aceptas sus propios términos y condiciones.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">10. Modificaciones de los Términos</h2>
-                    <p class="text-gray-700">
-                        Me reservo el derecho a modificar estos términos en cualquier momento. 
-                        Los cambios se publicarán en esta página con la fecha de actualización correspondiente. 
-                        Es responsabilidad del usuario revisar periódicamente estos términos.
-                    </p>
-                </section>
+                <h2>10. Modificaciones de los Términos</h2>
+                <p>Me reservo el derecho a modificar estos términos en cualquier momento. Los cambios se publicarán en esta página con la fecha de actualización correspondiente.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">11. Ley Aplicable y Jurisdicción</h2>
-                    <p class="text-gray-700">
-                        Estos términos se rigen por la legislación española. Cualquier disputa se intentará resolver de forma amistosa. 
-                        En caso de conflicto, serán competentes los juzgados y tribunales de Salamanca, España.
-                    </p>
-                </section>
+                <h2>11. Ley Aplicable y Jurisdicción</h2>
+                <p>Estos términos se rigen por la legislación española. Cualquier disputa se intentará resolver de forma amistosa. En caso de conflicto, serán competentes los juzgados y tribunales de Salamanca, España.</p>
 
-                <section class="mb-8">
-                    <h2 class="text-2xl font-bold text-primary mb-4">12. Contacto</h2>
-                    <p class="text-gray-700 mb-3">
-                        Para cualquier duda, consulta o ejercicio de derechos relacionados con estos términos, puedes contactarme a través de:
-                    </p>
-                    <ul class="list-none text-gray-700 space-y-2 ml-4">
-                        <li><strong>Email:</strong> <a href="mailto:impresion3dslmc@gmail.com" class="text-accent hover:underline">impresion3dslmc@gmail.com</a></li>
-                        <li><strong>Teléfono/WhatsApp:</strong> <a href="tel:+34665148956" class="text-accent hover:underline">+34 665 14 89 56</a></li>
-                        <li><strong>Ubicación:</strong> Salamanca, España</li>
-                    </ul>
-                </section>
+                <h2>12. Contacto</h2>
+                <p>Para cualquier duda, consulta o ejercicio de derechos:</p>
+                <ul style="list-style:none;padding-left:0">
+                    <li><strong>Email:</strong> <a href="mailto:impresion3dslmc@gmail.com">impresion3dslmc@gmail.com</a></li>
+                    <li><strong>Teléfono/WhatsApp:</strong> <a href="tel:+34665148956">+34 665 14 89 56</a></li>
+                    <li><strong>Ubicación:</strong> Salamanca, España</li>
+                </ul>
 
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8">
-                    <p class="text-sm text-gray-600 italic">
-                        Al utilizar este servicio, confirmas que has leído, entendido y aceptado estos términos y condiciones. 
-                        Agradezco tu confianza y espero poder ayudarte a dar vida a tus proyectos de impresión 3D.
-                    </p>
-                    <p class="text-sm text-gray-600 italic mt-4">
-                        <strong>— 3DCC Salamanca</strong>
-                    </p>
+                <div class="terms-footer">
+                    <p>Al utilizar este servicio, confirmas que has leído, entendido y aceptado estos términos y condiciones. Agradezco tu confianza y espero poder ayudarte a dar vida a tus proyectos de impresión 3D.</p>
+                    <p style="margin-top:12px"><strong>— 3DCC Salamanca</strong></p>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-primary text-white text-center py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p>&copy; 2025 Impresión 3DCC Salamanca. Todos los derechos reservados.</p>
-            <p class="text-sm text-gray-300 mt-2">
-                <a href="terminos.html" class="hover:text-accent transition-colors">Términos y Condiciones</a>
-            </p>
-        </div>
-    </footer>
-
+    <footer class="site-footer"><div class="footer-inner"><span class="footer-copy">&copy; 2026 Impresión 3DCC Salamanca.</span><span class="footer-copy"><a href="terminos.html" class="footer-link">Términos y Condiciones</a></span></div></footer>
     <script src="script.js"></script>
 </body>
 </html>

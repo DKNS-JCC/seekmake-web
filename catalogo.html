@@ -4,502 +4,1097 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Productos - 3DCC Salamanca</title>
-    
+
     <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/android-chrome-512x512.png">
     <link rel="icon" href="icons/android-chrome-512x512.png" type="image/png" sizes="512x512">
     <link rel="icon" href="icons/android-chrome-192x192.png" type="image/png" sizes="192x192">
     <link rel="manifest" href="icons/site.webmanifest">
     <link rel="shortcut icon" href="icons/android-chrome-192x192.png">
-    
+
+    <!-- Shared Design System -->
+    <link rel="stylesheet" href="styles.css">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2c3e50',
-                        secondary: '#34495e',
-                        accent: '#3498db',
-                    }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { colors: { accent: '#0EA5E9' } } } }
     </script>
-    
+
     <!-- JS-YAML library -->
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-    
-    <link rel="stylesheet" href="styles-tailwind.css">
-    
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Catálogo de productos de impresión 3D en Salamanca. Keycaps artesanales, figuras coleccionables Pokémon y más. Compra online con envío a toda España.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://impresion3dcc.com/catalogo.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://impresion3dcc.com/catalogo.html">
+    <meta property="og:title" content="Catálogo de Productos - 3DCC Salamanca">
+    <meta property="og:description" content="Keycaps artesanales, figuras coleccionables y más. Productos impresos en 3D con envío a toda España.">
+    <meta property="og:image" content="https://impresion3dcc.com/images/poke_banner.png">
+    <meta property="og:locale" content="es_ES">
+
     <!-- Dark Mode Script -->
-    <script>
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
-    
+    <script>if(localStorage.getItem('theme')!=='light'){document.documentElement.classList.add('dark')}</script>
+
     <style>
-        .product-card {
-            transition: all 0.3s ease;
+        /* ── Catalog Page Styles ─────────────────────────────────── */
+
+        /* Hero */
+        .cat-hero {
+            position: relative;
+            min-height: 52vh;
+            display: flex;
+            align-items: flex-end;
+            overflow: hidden;
+            padding-top: var(--nav-h);
         }
-        .product-card:hover {
-            transform: translateY(-8px);
+        .cat-hero-bg {
+            position: absolute; inset: 0; z-index: 0;
         }
-        .badge-destacado {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 10;
+        .cat-hero-bg img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.45) saturate(1.1);
+        }
+        .cat-hero-bg::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(
+                to top,
+                var(--bg) 0%,
+                rgba(0,0,0,0.15) 40%,
+                transparent 100%
+            );
+        }
+        .cat-hero-content {
+            position: relative; z-index: 2;
+            max-width: 1200px; margin: 0 auto;
+            padding: 0 24px 56px;
+            width: 100%;
+        }
+        .cat-hero-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.32em;
+            text-transform: uppercase; color: var(--accent);
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px;
+        }
+        .cat-hero-tag::before {
+            content: ''; width: 24px; height: 1px;
+            background: var(--accent);
+        }
+        .cat-hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(48px, 7vw, 88px);
+            line-height: 0.92; letter-spacing: 0.02em;
+            color: #fff; margin-bottom: 16px;
+        }
+        .cat-hero h1 span {
+            color: var(--accent);
+        }
+        .cat-hero-desc {
+            font-size: 16px; color: rgba(255,255,255,0.72);
+            max-width: 440px; line-height: 1.7;
+        }
+        .cat-hero-collab {
+            display: inline-flex; align-items: center; gap: 8px;
+            margin-top: 14px; padding: 6px 14px;
+            background: rgba(14,165,233,0.15);
+            border: 1px solid rgba(14,165,233,0.25);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--accent);
+        }
+        .cat-hero-stats {
+            display: flex; gap: 32px; margin-top: 28px;
+        }
+        .cat-hero-stat-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px; color: #fff; line-height: 1;
+        }
+        .cat-hero-stat-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.2em;
+            text-transform: uppercase; color: rgba(255,255,255,0.5);
+        }
+
+        /* Filter Bar */
+        .cat-filters {
+            position: sticky; top: var(--nav-h); z-index: 40;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .cat-filters-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 24px;
+        }
+        .cat-filters-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 0;
+        }
+        .cat-search {
+            flex: 1; position: relative;
+        }
+        .cat-search input {
+            width: 100%; height: 42px;
+            padding: 0 16px 0 42px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .cat-search input::placeholder { color: var(--muted); }
+        .cat-search input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        .cat-search-icon {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted); pointer-events: none;
+        }
+
+        .cat-select-wrap {
+            position: relative;
+        }
+        .cat-select {
+            appearance: none;
+            height: 42px; padding: 0 36px 0 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer; outline: none;
+            transition: border-color 0.2s;
+        }
+        .cat-select:focus { border-color: var(--accent); }
+        .cat-select-wrap::after {
+            content: '';
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%);
+            width: 0; height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid var(--muted);
+            pointer-events: none;
+        }
+
+        .cat-view-toggle {
+            display: flex; gap: 2px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 3px;
+        }
+        .cat-view-btn {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent;
+            border: none; border-radius: 2px;
+            color: var(--muted); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cat-view-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+        .cat-view-btn:not(.active):hover { color: var(--text); }
+
+        .cat-reset-btn {
+            width: 42px; height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--muted); cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .cat-reset-btn:hover {
+            border-color: var(--accent); color: var(--accent);
+        }
+
+        /* Mobile filter toggle */
+        .cat-filter-toggle {
+            display: none;
+            align-items: center; justify-content: space-between;
+            padding: 12px 0; cursor: pointer;
+            background: none; border: none; width: 100%;
+            color: var(--text);
+        }
+        .cat-filter-toggle-left {
+            display: flex; align-items: center; gap: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted);
+        }
+        .cat-filter-toggle-count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; color: var(--accent);
+        }
+        .cat-filter-toggle svg {
+            color: var(--muted);
+            transition: transform 0.3s;
+        }
+        .cat-filter-toggle.open svg {
+            transform: rotate(180deg);
+        }
+
+        /* Category Pills */
+        .cat-pills {
+            display: flex; gap: 8px; padding: 0 0 14px;
+            overflow-x: auto; scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .cat-pills::-webkit-scrollbar { display: none; }
+        .cat-pill {
+            flex-shrink: 0;
+            padding: 7px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted); cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .cat-pill:hover { border-color: var(--border-h); color: var(--text); }
+        .cat-pill.active {
+            background: var(--accent); border-color: var(--accent);
+            color: #fff;
+        }
+
+        .cat-results-count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--muted);
+            padding-bottom: 14px;
+        }
+        .cat-results-count strong {
+            color: var(--accent); font-weight: 600;
+        }
+
+        /* Product Grid */
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 20px;
+        }
+        .cat-grid.list-view {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        /* Product Card */
+        .p-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+            position: relative;
+        }
+        .p-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0;
+            width: 3px; height: 0;
+            background: var(--accent);
+            transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2;
+        }
+        .p-card:hover {
+            border-color: var(--border-h);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            transform: translateY(-4px);
+        }
+        .dark .p-card:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .p-card:hover::before { height: 100%; }
+
+        .p-card-img {
+            position: relative;
+            height: 200px;
+            background: var(--surface-2);
+            overflow: hidden;
+        }
+        .p-card-img img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .p-card:hover .p-card-img img {
+            transform: scale(1.06);
+        }
+        .p-card-img-placeholder {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--muted); opacity: 0.4;
+        }
+
+        .p-card-badge {
+            position: absolute; top: 10px; right: 10px;
+            padding: 4px 10px;
+            background: var(--accent);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #fff; font-weight: 600;
+            z-index: 2;
+        }
+
+        .p-card-body {
+            padding: 18px 20px 20px;
+        }
+        .p-card-category {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+        .p-card-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px; line-height: 1.1;
+            letter-spacing: 0.02em;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .p-card-desc {
+            font-size: 13px; line-height: 1.6;
+            color: var(--muted);
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .p-card-footer {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .p-card-price {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px; line-height: 1;
+            color: var(--text);
+        }
+        .p-card-price .eur {
+            font-size: 16px; color: var(--muted);
+            margin-left: 2px;
+        }
+        .p-card-action {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+        .p-card:hover .p-card-action {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        /* List View Card */
+        .cat-grid.list-view .p-card {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+        }
+        .cat-grid.list-view .p-card-img { height: 100%; min-height: 140px; }
+        .cat-grid.list-view .p-card-body { display: flex; flex-direction: column; justify-content: center; }
+        .cat-grid.list-view .p-card-desc { -webkit-line-clamp: 1; }
+
+        /* Loading State */
+        .cat-loading {
+            grid-column: 1 / -1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 80px 0;
+        }
+        .cat-spinner {
+            width: 36px; height: 36px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .cat-loading-text {
+            margin-top: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* No Results */
+        .cat-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 24px;
+        }
+        .cat-empty-icon {
+            width: 48px; height: 48px;
+            margin: 0 auto 20px;
+            border: 2px solid var(--border);
+            border-radius: var(--r);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--muted);
+        }
+        .cat-empty h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px; color: var(--text);
+            margin-bottom: 8px;
+        }
+        .cat-empty p {
+            font-size: 14px; color: var(--muted); max-width: 360px;
+            margin: 0 auto;
+        }
+
+        /* CTA Section */
+        .cat-cta {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+            position: relative;
+        }
+        .cat-cta::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 3px; background: var(--accent);
+        }
+        .cat-cta-inner {
+            padding: 56px 48px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            gap: 32px;
+        }
+        .cat-cta-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.32em;
+            text-transform: uppercase; color: var(--accent);
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .cat-cta-tag::before {
+            content: ''; width: 20px; height: 1px;
+            background: var(--accent);
+        }
+        .cat-cta h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(32px, 4vw, 48px);
+            line-height: 1; letter-spacing: 0.02em;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        .cat-cta p {
+            font-size: 15px; color: var(--muted);
+            max-width: 420px; line-height: 1.7;
+        }
+        .cat-cta-actions {
+            display: flex; gap: 12px; flex-shrink: 0;
+        }
+
+        /* Modal */
+        .cat-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            z-index: 200;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .cat-modal-overlay.open {
+            opacity: 1; pointer-events: auto;
+        }
+        .cat-modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            max-width: 860px; width: 100%;
+            max-height: 88vh; overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .cat-modal-overlay.open .cat-modal {
+            transform: translateY(0);
+        }
+        .cat-modal-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 38px; height: 38px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--muted); cursor: pointer;
+            transition: all 0.2s; z-index: 5;
+        }
+        .cat-modal-close:hover {
+            border-color: var(--accent); color: var(--accent);
+        }
+        .cat-modal-image {
+            height: 340px;
+            background: var(--surface-2);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .cat-modal-image img {
+            width: 100%; height: 100%; object-fit: contain;
+        }
+        .cat-modal-body {
+            padding: 32px;
+        }
+        .cat-modal-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.28em;
+            text-transform: uppercase; color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .cat-modal-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px; line-height: 1;
+            letter-spacing: 0.02em; color: var(--text);
+            margin-bottom: 12px;
+        }
+        .cat-modal-desc {
+            font-size: 15px; color: var(--muted);
+            line-height: 1.7; margin-bottom: 28px;
+            max-width: 520px;
+        }
+        .cat-modal-specs {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 16px; margin-bottom: 28px;
+        }
+        .cat-modal-spec {
+            padding: 14px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+        }
+        .cat-modal-spec-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.22em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 4px;
+        }
+        .cat-modal-spec-value {
+            font-family: 'Barlow', sans-serif;
+            font-size: 15px; font-weight: 600;
+            color: var(--text);
+        }
+        .cat-modal-spec-value.price-val {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px; color: var(--accent);
+            line-height: 1;
+        }
+        .cat-modal-actions {
+            display: flex; gap: 12px;
+        }
+
+        /* Staggered card animation */
+        .p-card {
+            opacity: 0;
+            transform: translateY(16px);
+            animation: cardIn 0.4s ease forwards;
+        }
+
+        @keyframes cardIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Responsive ──────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .cat-hero { min-height: 44vh; }
+            .cat-hero-content { padding-bottom: 40px; }
+            .cat-hero-stats { gap: 24px; }
+            .cat-hero-stat-num { font-size: 26px; }
+
+            .cat-filter-toggle { display: flex; }
+            .cat-filters-row {
+                display: none;
+                flex-direction: column;
+                padding: 0 0 14px;
+            }
+            .cat-filters-row.open { display: flex; }
+            .cat-filters-row .cat-search { width: 100%; }
+            .cat-filters-row .cat-select-wrap { width: 100%; }
+            .cat-filters-row .cat-select { width: 100%; }
+            .cat-filters-row .cat-view-toggle { display: none; }
+            .cat-filters-row .cat-reset-btn { width: 100%; }
+
+            .cat-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .cat-grid.list-view {
+                grid-template-columns: 1fr;
+            }
+            .cat-grid.list-view .p-card {
+                grid-template-columns: 120px 1fr;
+            }
+
+            .p-card-img { height: 150px; }
+            .p-card-body { padding: 14px 14px 16px; }
+            .p-card-name { font-size: 18px; }
+            .p-card-price { font-size: 24px; }
+            .p-card-desc { font-size: 12px; margin-bottom: 12px; }
+            .p-card-action { display: none; }
+            .p-card-footer { padding-top: 10px; }
+            .p-card-footer::after {
+                content: 'Ver';
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 9px; letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--accent);
+            }
+
+            .cat-modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+            .cat-modal {
+                max-height: 92vh;
+                border-radius: 12px 12px 0 0;
+                transform: translateY(100%);
+            }
+            .cat-modal-overlay.open .cat-modal {
+                transform: translateY(0);
+            }
+            .cat-modal-image { height: 240px; }
+            .cat-modal-body { padding: 24px 20px 32px; }
+            .cat-modal-title { font-size: 28px; }
+            .cat-modal-specs { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .cat-modal-actions { flex-direction: column; }
+
+            .cat-cta-inner {
+                flex-direction: column;
+                padding: 36px 24px;
+                text-align: center;
+                align-items: stretch;
+            }
+            .cat-cta p { max-width: none; }
+            .cat-cta-actions { flex-direction: column; }
+        }
+
+        @media (max-width: 420px) {
+            .cat-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .p-card-img { height: 130px; }
+            .p-card-body { padding: 10px 10px 14px; }
+            .p-card-name { font-size: 16px; }
+            .p-card-category { font-size: 8px; margin-bottom: 3px; }
+            .p-card-desc { display: none; }
+            .p-card-price { font-size: 20px; }
         }
     </style>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PKZ8N52F');</script>
+    <!-- End Google Tag Manager -->
 </head>
-<body class="dark:bg-gray-900">
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PKZ8N52F"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <a href="#main" class="visually-hidden">Ir al contenido principal</a>
+
     <!-- Navegación -->
-    <nav class="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md z-50 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="index.html" class="flex items-center gap-2">
-                    <span class="text-accent text-2xl">
-                        <img src="icons/android-chrome-192x192.png" alt="3DCC Logo" class="w-8 h-8 rounded-full object-cover">
-                    </span>
-                    <span class="text-xl font-bold text-primary dark:text-white">3DCC | Impresión 3D</span>
-                </a>
-                <button class="lg:hidden flex flex-col gap-1.5" id="navToggle">
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                    <span class="w-6 h-0.5 bg-primary dark:bg-white transition-all"></span>
-                </button>
-                <ul class="hidden lg:flex gap-8 items-center" id="navMenu">
-                    <li><a href="index.html#inicio" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Inicio</a></li>
-                    <li><a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Muestrario</a></li>
-                    <li><a href="catalogo.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors active border-b-2 border-accent">Catálogo</a></li>
-                    <li><a href="index.html#trabajos" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Algunos Trabajos</a></li>
-                    <li><a href="index.html#contacto" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors">Contacto</a></li>
-                    <li>
-                        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Cambiar modo oscuro">
-                            <svg id="sunIcon" class="w-5 h-5 text-yellow-500 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <svg id="moonIcon" class="w-5 h-5 text-gray-700 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                            </svg>
-                        </button>
-                    </li>
-                    <li><a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-600 transition-all hover:-translate-y-0.5">Calculadora de Precio</a></li>
-                </ul>
-            </div>
-            <!-- Mobile menu -->
-            <div class="lg:hidden hidden flex-col gap-4 pb-4" id="navMenuMobile">
-                <a href="index.html#inicio" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Inicio</a>
-                <a href="muestrario.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Muestrario</a>
-                <a href="catalogo.html" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700 active">Catálogo</a>
-                <a href="index.html#trabajos" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Algunos Trabajos</a>
-                <a href="index.html#contacto" class="nav-link text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">Contacto</a>
-                <button id="darkModeToggleMobile" class="flex items-center gap-3 text-primary dark:text-gray-200 font-medium hover:text-accent transition-colors py-2 border-b border-gray-100 dark:border-gray-700">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    <span class="dark:hidden">Modo Oscuro</span>
-                    <span class="hidden dark:inline">Modo Claro</span>
-                </button>
-                <a href="instant-quote.html" class="bg-accent text-white px-6 py-2.5 rounded-lg font-semibold text-center hover:bg-blue-600 transition-all">Calculadora de Precio</a>
-            </div>
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo"><img src="icons/android-chrome-192x192.png" alt="3DCC Logo"><div><span class="nav-logo-name">3DCC</span><span class="nav-logo-sub">Impresión 3D</span></div></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-link">Inicio</a></li>
+                <li><a href="muestrario.html" class="nav-link">Muestrario</a></li>
+                <li><a href="catalogo.html" class="nav-link active">Catálogo</a></li>
+                <li><a href="index.html#trabajos" class="nav-link">Trabajos</a></li>
+                <li><a href="index.html#contacto" class="nav-link">Contacto</a></li>
+                <li><button class="nav-theme" id="themeToggle" aria-label="Cambiar tema"><svg id="iconMoon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="iconSun" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button></li>
+                <li><a href="instant-quote.html" class="nav-cta">Obtener Precio</a></li>
+            </ul>
+            <button class="hamburger" id="navToggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+        </div>
+        <div class="nav-mobile" id="navMenuMobile">
+            <a href="index.html">Inicio</a><a href="muestrario.html">Muestrario</a><a href="catalogo.html">Catálogo</a><a href="index.html#trabajos">Trabajos</a><a href="index.html#contacto">Contacto</a><a href="instant-quote.html">→ Obtener Precio</a>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="relative min-h-[40vh] flex items-center justify-center overflow-hidden pt-20">
-        <!-- Background image with overlay -->
-        <div class="absolute inset-0 -z-10">
-            <img src="images/poke_banner.png" alt="Pokémon Banner" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60"></div>
+    <section class="cat-hero">
+        <div class="cat-hero-bg">
+            <img src="images/poke_banner.png" alt="Pokémon Banner">
         </div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center max-w-4xl mx-auto">
-                <h1 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight text-white drop-shadow-lg">
-                    Catálogo Pokémon
-                </h1>
-                <p class="text-lg md:text-xl text-gray-100 max-w-3xl mx-auto drop-shadow-md">
-                    Keycaps artesanales y figuras coleccionables de tus Pokémon favoritos
-                </p>
-                <p class="text-sm text-yellow-400 font-semibold mt-2 drop-shadow-md">
-                    En colaboración con TCG Tracker
-                </p>
+        <div class="cat-hero-content">
+            <div class="cat-hero-tag">Catálogo 3DCC</div>
+            <h1>Colección<br><span>Pokémon</span></h1>
+            <p class="cat-hero-desc">Keycaps artesanales y figuras coleccionables impresas en 3D con precisión milimétrica</p>
+            <div class="cat-hero-collab">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                En colaboración con TCG Tracker
+            </div>
+            <div class="cat-hero-stats" id="heroStats">
+                <div>
+                    <div class="cat-hero-stat-num" id="statTotal">0</div>
+                    <div class="cat-hero-stat-label">Productos</div>
+                </div>
+                <div>
+                    <div class="cat-hero-stat-num" id="statKeycaps">0</div>
+                    <div class="cat-hero-stat-label">Keycaps</div>
+                </div>
+                <div>
+                    <div class="cat-hero-stat-num" id="statFiguras">0</div>
+                    <div class="cat-hero-stat-label">Figuras</div>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Filtros y Búsqueda -->
-    <section class="lg:sticky lg:top-20 bg-white dark:bg-gray-800 shadow-md z-40 py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
-                <!-- Búsqueda -->
-                <div class="flex-1">
-                    <div class="relative">
-                        <input type="text" 
-                               id="searchInput" 
-                               placeholder="Buscar productos..." 
-                               class="w-full px-4 py-3 pl-12 rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-accent focus:ring-2 focus:ring-accent focus:ring-opacity-50 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                        </svg>
-                    </div>
+    <section class="cat-filters">
+        <div class="cat-filters-inner">
+            <!-- Mobile toggle -->
+            <button class="cat-filter-toggle" id="filterToggle" aria-label="Mostrar filtros">
+                <span class="cat-filter-toggle-left">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                    Filtros
+                </span>
+                <span class="cat-filter-toggle-count" id="mobileResultCount">0 productos</span>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+
+            <!-- Category Pills -->
+            <div class="cat-pills" id="categoryPills">
+                <button class="cat-pill active" data-cat="todas">Todos</button>
+                <button class="cat-pill" data-cat="Keycaps">Keycaps</button>
+                <button class="cat-pill" data-cat="Figuras">Figuras</button>
+            </div>
+
+            <!-- Filters Row -->
+            <div class="cat-filters-row" id="filtersRow">
+                <!-- Search -->
+                <div class="cat-search">
+                    <svg class="cat-search-icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <label for="searchInput" class="visually-hidden">Buscar productos</label>
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre, tipo o etiqueta...">
                 </div>
-                
-                <!-- Filtro por categoría -->
-                <div class="lg:w-64">
-                    <select id="categoryFilter" class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-accent focus:ring-2 focus:ring-accent focus:ring-opacity-50 transition-all">
-                        <option value="todas">Todas las categorías</option>
-                        <option value="Keycaps">Keycaps</option>
-                        <option value="Figuras">Figuras</option>
-                    </select>
-                </div>
-                
-                <!-- Ordenar -->
-                <div class="lg:w-64">
-                    <select id="sortFilter" class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-accent focus:ring-2 focus:ring-accent focus:ring-opacity-50 transition-all">
+
+                <!-- Hidden category select for JS compatibility -->
+                <select id="categoryFilter" class="visually-hidden" aria-hidden="true">
+                    <option value="todas">Todas las categorías</option>
+                    <option value="Keycaps">Keycaps</option>
+                    <option value="Figuras">Figuras</option>
+                </select>
+
+                <!-- Sort -->
+                <div class="cat-select-wrap">
+                    <label for="sortFilter" class="visually-hidden">Ordenar productos</label>
+                    <select id="sortFilter" class="cat-select">
                         <option value="destacado">Destacados</option>
-                        <option value="precio-asc">Precio: Menor a Mayor</option>
-                        <option value="precio-desc">Precio: Mayor a Menor</option>
-                        <option value="nombre">Nombre A-Z</option>
+                        <option value="precio-asc">Precio ↑</option>
+                        <option value="precio-desc">Precio ↓</option>
+                        <option value="nombre">A — Z</option>
                     </select>
                 </div>
-                
-                <!-- Botón resetear filtros -->
-                <button id="resetFilters" class="px-6 py-3 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition-all flex items-center gap-2 justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                    </svg>
-                    <span class="hidden sm:inline">Resetear</span>
+
+                <!-- View Toggle -->
+                <div class="cat-view-toggle">
+                    <button class="cat-view-btn active" data-view="grid" aria-label="Vista cuadrícula">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    </button>
+                    <button class="cat-view-btn" data-view="list" aria-label="Vista lista">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                    </button>
+                </div>
+
+                <!-- Reset -->
+                <button id="resetFilters" class="cat-reset-btn" aria-label="Resetear filtros">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                 </button>
             </div>
-            
-            <!-- Contador de resultados -->
-            <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                <span id="resultCount">0</span> productos encontrados
+
+            <!-- Results Count -->
+            <div class="cat-results-count">
+                <strong id="resultCount">0</strong> productos encontrados
             </div>
         </div>
     </section>
 
     <!-- Grid de Productos -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div id="productosGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Productos se cargarán aquí -->
-            <div class="col-span-full text-center py-12">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-                <p class="mt-4 text-gray-600 dark:text-gray-300">Cargando productos...</p>
+    <main id="main" style="max-width:1200px; margin:0 auto; padding: 32px 24px 64px;">
+        <noscript>
+            <div style="text-align:center; padding:60px 0;">
+                <p style="font-size:16px; color:var(--muted); margin-bottom:16px;">Para ver el catálogo necesitas JavaScript activado.</p>
+                <a href="index.html#contacto" class="btn-primary">Contactar directamente</a>
+            </div>
+        </noscript>
+        <div id="productosGrid" class="cat-grid">
+            <div class="cat-loading">
+                <div class="cat-spinner"></div>
+                <div class="cat-loading-text">Cargando catálogo...</div>
             </div>
         </div>
-        
-        <!-- Mensaje cuando no hay resultados -->
-        <div id="noResults" class="hidden col-span-full text-center py-12">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-gray-400 mb-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6" />
-            </svg>
-            <p class="text-xl text-gray-600 dark:text-gray-300">No se encontraron productos</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Intenta ajustar tus filtros de búsqueda</p>
+
+        <div id="noResults" style="display:none;">
+            <div class="cat-empty">
+                <div class="cat-empty-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6"/></svg>
+                </div>
+                <h3>Sin resultados</h3>
+                <p>No encontramos productos con esos filtros. Prueba con otros términos o resetea los filtros.</p>
+            </div>
         </div>
     </main>
 
     <!-- Call to Action -->
-    <section class="bg-gradient-to-br from-primary to-secondary text-white rounded-2xl p-12 text-center shadow-xl max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold mb-4">¿No encuentras lo que buscas?</h2>
-        <p class="text-lg mb-8 text-gray-200 max-w-2xl mx-auto">
-            Podemos crear cualquier diseño personalizado para ti. Contacta con nosotros y cuéntanos tu proyecto.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="index.html#contacto" class="inline-block bg-white text-primary px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all hover:scale-105 shadow-md">
-                Contactar
-            </a>
-            <a href="instant-quote.html" class="inline-block bg-accent text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-600 transition-all hover:scale-105 shadow-md">
-                Calcular precio personalizado
-            </a>
+    <section style="max-width:1200px; margin:0 auto; padding: 0 24px 64px;">
+        <div class="cat-cta">
+            <div class="cat-cta-inner">
+                <div>
+                    <div class="cat-cta-tag">Diseño personalizado</div>
+                    <h2>¿No encuentras<br>lo que buscas?</h2>
+                    <p>Podemos crear cualquier diseño personalizado. Cuéntanos tu proyecto y lo haremos realidad.</p>
+                </div>
+                <div class="cat-cta-actions">
+                    <a href="index.html#contacto" class="btn-outline">Contactar</a>
+                    <a href="instant-quote.html" class="btn-primary">Calcular precio<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-primary dark:bg-gray-950 text-white text-center py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p>&copy; 2025 Impresión 3DCC Salamanca. Todos los derechos reservados.</p>
-            <p class="text-sm text-gray-300 dark:text-gray-400 mt-2">
-                <a href="terminos.html" class="hover:text-accent transition-colors">Términos y Condiciones</a> | 
-                Servicio ofrecido como hobby sin ánimo de lucro
-            </p>
-        </div>
-    </footer>
+    <footer class="site-footer"><div class="footer-inner"><span class="footer-copy">&copy; 2026 Impresión 3DCC Salamanca. Todos los derechos reservados.</span><span class="footer-copy"><a href="terminos.html" class="footer-link">Términos y Condiciones</a><span style="margin:0 8px;opacity:.3">|</span>Servicio ofrecido como hobby sin ánimo de lucro</span></div></footer>
 
-    <!-- Modal de Producto -->
-    <div id="productModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 flex justify-between items-center sticky top-0 z-10">
-                <h3 class="text-2xl font-bold" id="modalTitle">Producto</h3>
-                <button onclick="cerrarModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+    <!-- Product Modal -->
+    <div id="productModal" class="cat-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="cat-modal">
+            <button onclick="cerrarModal()" class="cat-modal-close" aria-label="Cerrar">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <div class="cat-modal-image" id="modalImageContainer">
+                <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="color:var(--muted); opacity:0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
             </div>
-            
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Imagen -->
-                    <div id="modalImageContainer" class="bg-gray-100 dark:bg-gray-700 rounded-xl h-80 flex items-center justify-center overflow-hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-32 h-32 text-gray-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                        </svg>
+            <div class="cat-modal-body">
+                <div class="cat-modal-tag" id="modalCategory"></div>
+                <h3 class="cat-modal-title" id="modalTitle">Producto</h3>
+                <p class="cat-modal-desc" id="modalDescription"></p>
+
+                <div class="cat-modal-specs">
+                    <div class="cat-modal-spec">
+                        <div class="cat-modal-spec-label">Precio</div>
+                        <div class="cat-modal-spec-value price-val" id="modalPrice"></div>
                     </div>
-                    
-                    <!-- Detalles -->
-                    <div>
-                        <p class="text-gray-600 dark:text-gray-300 mb-6" id="modalDescription"></p>
-                        
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
-                                </svg>
-                                <div>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">Precio</span>
-                                    <p class="font-bold text-2xl text-accent" id="modalPrice"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
-                                </svg>
-                                <div>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">Material</span>
-                                    <p class="font-semibold dark:text-white" id="modalMaterial"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
-                                </svg>
-                                <div>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">Colores disponibles</span>
-                                    <p class="font-semibold dark:text-white" id="modalColors"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-2.25-1.313M21 7.5v2.25m0-2.25-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3 2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75 2.25-1.313M12 21.75V19.5m0 2.25-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25" />
-                                </svg>
-                                <div>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">Dimensiones</span>
-                                    <p class="font-semibold dark:text-white" id="modalDimensions"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-accent">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
-                                </svg>
-                                <div>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">Peso aproximado</span>
-                                    <p class="font-semibold dark:text-white" id="modalWeight"></p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-8 flex gap-4">
-                            <a href="index.html#contacto" class="flex-1 bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-all text-center">
-                                Solicitar
-                            </a>
-                            <a href="muestrario.html" class="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition-all text-center">
-                                Ver Colores
-                            </a>
-                        </div>
+                    <div class="cat-modal-spec">
+                        <div class="cat-modal-spec-label">Material</div>
+                        <div class="cat-modal-spec-value" id="modalMaterial"></div>
                     </div>
+                    <div class="cat-modal-spec">
+                        <div class="cat-modal-spec-label">Colores</div>
+                        <div class="cat-modal-spec-value" id="modalColors"></div>
+                    </div>
+                    <div class="cat-modal-spec">
+                        <div class="cat-modal-spec-label">Dimensiones</div>
+                        <div class="cat-modal-spec-value" id="modalDimensions"></div>
+                    </div>
+                    <div class="cat-modal-spec" style="grid-column: 1 / -1;">
+                        <div class="cat-modal-spec-label">Peso aproximado</div>
+                        <div class="cat-modal-spec-value" id="modalWeight"></div>
+                    </div>
+                </div>
+
+                <div class="cat-modal-actions">
+                    <a href="index.html#contacto" class="btn-primary" style="flex:1; justify-content:center;">
+                        Solicitar
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="muestrario.html" class="btn-outline" style="flex:1; justify-content:center;">Ver Colores</a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Back to Top Button -->
+    <button id="backToTop" aria-label="Volver arriba">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
+    </button>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp" class="wa-fab"><svg width="26" height="26" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
+
     <script src="script.js"></script>
-    
-    <!-- Dark Mode Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const darkModeToggleMobile = document.getElementById('darkModeToggleMobile');
-            const htmlElement = document.documentElement;
-            
-            function toggleDarkMode() {
-                htmlElement.classList.toggle('dark');
-                const isDark = htmlElement.classList.contains('dark');
-                localStorage.setItem('darkMode', isDark);
-            }
-            
-            if (darkModeToggle) {
-                darkModeToggle.addEventListener('click', toggleDarkMode);
-            }
-            
-            if (darkModeToggleMobile) {
-                darkModeToggleMobile.addEventListener('click', toggleDarkMode);
-            }
-        });
-    </script>
-    
-    <!-- Script para catálogo -->
+
+    <!-- Catalog Script -->
     <script>
         let todosLosProductos = [];
         let productosFiltrados = [];
+        let currentView = 'grid';
 
-        // Función para cargar productos desde YAML
+        // Load products from YAML
         async function cargarProductos() {
             try {
                 const response = await fetch('productos.yaml');
                 const yamlText = await response.text();
                 const data = jsyaml.load(yamlText);
-                
+
                 todosLosProductos = data.productos;
                 productosFiltrados = [...todosLosProductos];
                 renderizarProductos();
                 actualizarContador();
+                actualizarStats();
             } catch (error) {
                 console.error('Error al cargar productos:', error);
                 document.getElementById('productosGrid').innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <div class="text-red-500 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                            </svg>
+                    <div class="cat-empty">
+                        <div class="cat-empty-icon">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                         </div>
-                        <p class="text-gray-600 dark:text-gray-300">Error al cargar el catálogo de productos.</p>
+                        <h3>Error de carga</h3>
+                        <p>No se pudo cargar el catálogo. Recarga la página para intentar de nuevo.</p>
                     </div>
                 `;
             }
         }
 
-        // Función para renderizar productos
+        // Update hero stats
+        function actualizarStats() {
+            document.getElementById('statTotal').textContent = todosLosProductos.length;
+            document.getElementById('statKeycaps').textContent = todosLosProductos.filter(p => p.categoria === 'Keycaps').length;
+            document.getElementById('statFiguras').textContent = todosLosProductos.filter(p => p.categoria === 'Figuras').length;
+        }
+
+        // Render products
         function renderizarProductos() {
             const grid = document.getElementById('productosGrid');
             const noResults = document.getElementById('noResults');
-            
+
             if (productosFiltrados.length === 0) {
                 grid.innerHTML = '';
-                noResults.classList.remove('hidden');
+                noResults.style.display = 'block';
                 return;
             }
-            
-            noResults.classList.add('hidden');
-            
-            grid.innerHTML = productosFiltrados.map(producto => `
-                <div class="product-card bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden cursor-pointer relative" onclick="abrirModalProducto(${producto.id})">
-                    ${producto.destacado ? '<div class="badge-destacado">⭐ Destacado</div>' : ''}
-                    
-                    <!-- Imagen del producto -->
-                    <div class="h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center overflow-hidden">
-                        ${producto.imagen ? 
-                            `<img src="${producto.imagen}" alt="${producto.nombre}" class="w-full h-full object-cover">` :
-                            `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 text-gray-400">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-                            </svg>`
+
+            noResults.style.display = 'none';
+
+            grid.innerHTML = productosFiltrados.map((producto, i) => `
+                <div class="p-card" onclick="abrirModalProducto(${producto.id})" style="animation-delay: ${i * 0.04}s">
+                    ${producto.destacado ? '<div class="p-card-badge">Destacado</div>' : ''}
+                    <div class="p-card-img">
+                        ${producto.imagen ?
+                            `<img src="${producto.imagen}" alt="${producto.nombre}" loading="lazy">` :
+                            `<div class="p-card-img-placeholder"><svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg></div>`
                         }
                     </div>
-                    
-                    <div class="p-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white flex-1">${producto.nombre}</h3>
-                        </div>
-                        
-                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">${producto.descripcion}</p>
-                        
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="inline-block bg-accent bg-opacity-10 text-accent text-xs font-semibold px-3 py-1 rounded-full">
-                                ${producto.categoria}
-                            </span>
-                            <span class="text-gray-500 dark:text-gray-400 text-xs">${producto.material}</span>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-2xl font-bold text-accent">${producto.precio.toFixed(2)}€</span>
-                            <button class="bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-all">
-                                Ver detalles
-                            </button>
+                    <div class="p-card-body">
+                        <div class="p-card-category">${producto.categoria}</div>
+                        <div class="p-card-name">${producto.nombre}</div>
+                        <div class="p-card-desc">${producto.descripcion}</div>
+                        <div class="p-card-footer">
+                            <div class="p-card-price">${producto.precio.toFixed(2)}<span class="eur">&euro;</span></div>
+                            <div class="p-card-action">
+                                Ver
+                                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </div>
                         </div>
                     </div>
                 </div>
             `).join('');
+
+            // Apply current view
+            if (currentView === 'list') {
+                grid.classList.add('list-view');
+            } else {
+                grid.classList.remove('list-view');
+            }
         }
 
-        // Función para abrir modal de producto
+        // Open product modal
         function abrirModalProducto(id) {
             const producto = todosLosProductos.find(p => p.id === id);
             if (!producto) return;
-            
+
+            document.getElementById('modalCategory').textContent = producto.categoria;
             document.getElementById('modalTitle').textContent = producto.nombre;
             document.getElementById('modalDescription').textContent = producto.descripcion;
-            document.getElementById('modalPrice').textContent = producto.precio.toFixed(2) + '€';
+            document.getElementById('modalPrice').textContent = producto.precio.toFixed(2) + '\u20AC';
             document.getElementById('modalMaterial').textContent = producto.material;
             document.getElementById('modalColors').textContent = producto.colores.join(', ');
             document.getElementById('modalDimensions').textContent = producto.dimensiones;
             document.getElementById('modalWeight').textContent = producto.peso;
-            
-            // Actualizar imagen del modal
+
             const imageContainer = document.getElementById('modalImageContainer');
             if (producto.imagen) {
-                imageContainer.innerHTML = `<img src="${producto.imagen}" alt="${producto.nombre}" class="w-full h-full object-contain">`;
+                imageContainer.innerHTML = `<img src="${producto.imagen}" alt="${producto.nombre}">`;
             } else {
-                imageContainer.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-32 h-32 text-gray-400">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                    </svg>
-                `;
+                imageContainer.innerHTML = `<svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="color:var(--muted); opacity:0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`;
             }
-            
-            document.getElementById('productModal').classList.remove('hidden');
+
+            document.getElementById('productModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
         }
 
-        // Función para cerrar modal
+        // Close modal
         function cerrarModal() {
-            document.getElementById('productModal').classList.add('hidden');
+            document.getElementById('productModal').classList.remove('open');
+            document.body.style.overflow = '';
         }
 
-        // Cerrar modal con ESC
+        // Close modal with ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                cerrarModal();
-            }
+            if (e.key === 'Escape') cerrarModal();
         });
 
-        // Función para actualizar contador
+        // Close modal on backdrop click
+        document.getElementById('productModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) cerrarModal();
+        });
+
+        // Update counter
         function actualizarContador() {
             document.getElementById('resultCount').textContent = productosFiltrados.length;
+            document.getElementById('mobileResultCount').textContent = productosFiltrados.length + ' productos';
         }
 
-        // Función para aplicar filtros
+        // Apply filters
         function aplicarFiltros() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value;
             const sortBy = document.getElementById('sortFilter').value;
-            
-            // Filtrar por búsqueda y categoría
+
             productosFiltrados = todosLosProductos.filter(producto => {
                 const matchSearch = producto.nombre.toLowerCase().includes(searchTerm) ||
                                   producto.descripcion.toLowerCase().includes(searchTerm) ||
                                   producto.etiquetas.some(tag => tag.toLowerCase().includes(searchTerm));
                 const matchCategory = category === 'todas' || producto.categoria === category;
-                
                 return matchSearch && matchCategory;
             });
-            
-            // Ordenar
+
             switch(sortBy) {
                 case 'precio-asc':
                     productosFiltrados.sort((a, b) => a.precio - b.precio);
@@ -514,24 +1109,59 @@
                     productosFiltrados.sort((a, b) => (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0));
                     break;
             }
-            
+
             renderizarProductos();
             actualizarContador();
         }
 
-        // Event listeners para filtros
+        // Filter event listeners
         document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
         document.getElementById('categoryFilter').addEventListener('change', aplicarFiltros);
         document.getElementById('sortFilter').addEventListener('change', aplicarFiltros);
-        
+
+        // Category pills
+        document.querySelectorAll('.cat-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                document.getElementById('categoryFilter').value = pill.dataset.cat;
+                aplicarFiltros();
+            });
+        });
+
+        // View toggle
+        document.querySelectorAll('.cat-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.cat-view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentView = btn.dataset.view;
+                const grid = document.getElementById('productosGrid');
+                if (currentView === 'list') {
+                    grid.classList.add('list-view');
+                } else {
+                    grid.classList.remove('list-view');
+                }
+            });
+        });
+
+        // Mobile filter toggle
+        document.getElementById('filterToggle').addEventListener('click', function() {
+            const row = document.getElementById('filtersRow');
+            row.classList.toggle('open');
+            this.classList.toggle('open');
+        });
+
+        // Reset filters
         document.getElementById('resetFilters').addEventListener('click', () => {
             document.getElementById('searchInput').value = '';
             document.getElementById('categoryFilter').value = 'todas';
             document.getElementById('sortFilter').value = 'destacado';
+            document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+            document.querySelector('.cat-pill[data-cat="todas"]').classList.add('active');
             aplicarFiltros();
         });
 
-        // Cargar productos al inicio
+        // Load on DOM ready
         document.addEventListener('DOMContentLoaded', cargarProductos);
     </script>
 </body>
