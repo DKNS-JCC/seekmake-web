@@ -86,6 +86,11 @@ filamentos:
       hex: "#64ED6D"
       acabado: "Translucido"
 
+    - nombre: "Fibra de Carbono"
+      hex: "#3B3B3B"
+      texto: "white"
+      acabado: "Textura"
+
   ASA:
     nombre: "ASA"
     descripcion: "Alta resistencia mecánica y durabilidad al exterior y productos químicos."
