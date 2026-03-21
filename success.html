@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="google-adsense-account" content="ca-pub-2879714749440744">
     <title>Compra completada | 3DCC Salamanca</title>
     <link rel="apple-touch-icon" sizes="180x180" href="icons/android-chrome-512x512.png">
@@ -19,6 +20,14 @@
         .status-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; color: var(--text); margin-bottom: 16px; letter-spacing: 0.02em; }
         .status-text { font-size: 16px; color: var(--muted); margin-bottom: 8px; line-height: 1.7; }
         .status-actions { margin-top: 32px; }
+        @media (max-width: 480px) {
+            .status-content { padding: 24px 16px; }
+            .status-card { padding: 32px 20px; border-radius: 8px; }
+            .status-icon { width: 56px; height: 56px; margin-bottom: 20px; }
+            .status-title { font-size: 32px; }
+            .status-text { font-size: 14px; }
+            .status-actions { margin-top: 24px; }
+        }
     </style>
     <script>if(localStorage.getItem('theme')!=='light'){document.documentElement.classList.add('dark')}</script>
 

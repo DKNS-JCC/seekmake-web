@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="google-adsense-account" content="ca-pub-2879714749440744">
     <title>Muestrario de Colores y Materiales - 3DCC Salamanca</title>
 
@@ -577,12 +578,21 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .mu-filters-inner { flex-wrap: wrap; }
+            .mu-hero { padding: calc(var(--nav-h) + 28px) 0 24px; }
+            .mu-hero h1 { font-size: clamp(30px, 8vw, 44px); }
+            .mu-hero-desc { font-size: 13px; margin-bottom: 14px; }
+            .mu-hero-tip { font-size: 10px; padding: 6px 12px; }
+
+            .mu-filters-inner { flex-wrap: wrap; padding: 10px 16px; }
             .mu-search { width: 100%; order: -1; }
             .mu-search input { width: 100%; }
             .mu-search input:focus { width: 100%; }
+            .mu-pills { gap: 4px; }
+            .mu-pill { padding: 6px 10px; font-size: 9px; }
 
-            .mu-section-header { flex-wrap: wrap; gap: 4px; }
+            .mu-section { margin-bottom: 32px; }
+            .mu-section-header { flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+            .mu-section-name { font-size: 22px; }
             .mu-section-desc { display: none; }
 
             .mu-color-grid {
@@ -591,6 +601,11 @@
             }
 
             .mu-specs { gap: 6px; }
+            .mu-spec { padding: 6px 10px; }
+            .mu-spec-label { font-size: 7px; }
+            .mu-spec-value { font-size: 12px; }
+
+            .mu-test { padding: 0 16px 24px; }
 
             .mu-modal-overlay { align-items: flex-end; padding: 0; }
             .mu-modal {
@@ -599,6 +614,9 @@
                 transform: translateY(100%);
             }
             .mu-modal-overlay.open .mu-modal { transform: translateY(0); }
+            .mu-modal-swatch { height: 140px; }
+            .mu-modal-body { padding: 16px; }
+            .mu-modal-name { font-size: 20px; }
             .mu-modal-actions { flex-direction: column; }
 
             .mu-cta-inner {
@@ -615,9 +633,10 @@
                 grid-template-columns: repeat(3, 1fr);
                 gap: 6px;
             }
-            .mu-color-info { padding: 6px 8px; }
-            .mu-color-name { font-size: 11px; }
-            .mu-color-hex { font-size: 9px; }
+            .mu-color-info { padding: 5px 6px; }
+            .mu-color-name { font-size: 10px; }
+            .mu-color-hex { font-size: 8px; }
+            .mu-swatch-acabado { font-size: 7px; padding: 2px 5px; }
         }
     </style>
 
