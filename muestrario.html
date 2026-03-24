@@ -35,7 +35,7 @@
     <meta property="og:image" content="https://impresion3dcc.com/images/main_banner.png">
     <meta property="og:locale" content="es_ES">
 
-    <script>if(localStorage.getItem('theme')!=='light'){document.documentElement.classList.add('dark')}</script>
+    <script>if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}</script>
 
     <style>
         /* ── Muestrario Page ──────────────────────────────────── */
@@ -225,6 +225,21 @@
             font-size: 8px; letter-spacing: 0.1em;
             text-transform: uppercase;
             color: #fff;
+        }
+        
+        .mu-swatch-oferta {
+            position: absolute; top: 6px; right: 6px;
+            background: #ef4444; /* Rojo llamativo */
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            line-height: 1;
+            letter-spacing: 0.05em;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+            transform: rotate(5deg);
+            z-index: 10;
         }
 
         .mu-color-info {
@@ -1146,6 +1161,7 @@
                         data-color-acabado="${color.acabado || ''}"
                         title="${color.nombre}">
                         <div class="mu-swatch ${finishClass}" style="background-color:${color.hex}; ${glowStyle}">
+                            ${color.oferta ? `<div class="mu-swatch-oferta">OFERTA</div>` : ''}
                             ${color.acabado ? `<span class="mu-swatch-acabado">${color.acabado}</span>` : ''}
                         </div>
                         <div class="mu-color-info">
