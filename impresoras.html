@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="google-adsense-account" content="ca-pub-2879714749440744">
+    <title>Sobre impresoras - 3DCC Salamanca | Impresión 3D</title>
+
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/android-chrome-512x512.png">
+    <link rel="icon" href="icons/android-chrome-512x512.png" type="image/png" sizes="512x512">
+    <link rel="icon" href="icons/android-chrome-192x192.png" type="image/png" sizes="192x192">
+    <link rel="manifest" href="icons/site.webmanifest">
+    <link rel="shortcut icon" href="icons/android-chrome-192x192.png">
+
+    <!-- SEO -->
+    <meta name="description" content="Conoce al equipo detrás de 3DCC Salamanca. Nuestras impresoras 3D trabajan sin descanso para convertir tus ideas en piezas reales con precisión profesional.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://impresion3dcc.com/impresoras.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://impresion3dcc.com/impresoras.html">
+    <meta property="og:title" content="Sobre impresoras - 3DCC Salamanca">
+    <meta property="og:description" content="Conoce al equipo de impresoras 3D de 3DCC Salamanca. Tecnología de precisión al servicio de tus ideas.">
+    <meta property="og:image" content="https://impresion3dcc.com/images/main_banner.png">
+    <meta property="og:locale" content="es_ES">
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="styles.css">
+
+    <script>if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}</script>
+
+    <style>
+        /* ── Hero ──────────────────────────────────────────── */
+        .about-hero {
+            padding: calc(var(--nav-h) + 80px) 0 64px;
+            position: relative; overflow: hidden;
+            text-align: center;
+        }
+        .about-hero::before {
+            content: ''; position: absolute; inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, black 0%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, black 0%, transparent 100%);
+            opacity: 0.5;
+        }
+        .about-hero-inner { position: relative; z-index: 1; }
+        .about-hero .section-tag { justify-content: center; margin-bottom: 20px; }
+        .about-hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(52px, 7vw, 96px);
+            line-height: 0.9; letter-spacing: 0.02em;
+            color: var(--text); margin-bottom: 8px;
+        }
+        .about-hero h1 .accent { color: var(--accent); }
+
+        .slogan {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(13px, 1.6vw, 17px);
+            letter-spacing: 0.18em; text-transform: uppercase;
+            color: var(--muted); margin-top: 28px;
+            display: flex; align-items: center; justify-content: center; gap: 16px;
+        }
+        .slogan::before, .slogan::after {
+            content: ''; width: 40px; height: 1px; background: var(--accent); flex-shrink: 0;
+        }
+
+        .about-intro-block {
+            max-width: 640px; margin: 40px auto 0;
+            font-size: 17px; color: var(--muted); line-height: 1.85; text-align: center;
+        }
+        .about-intro-block strong { color: var(--text); font-weight: 600; }
+
+        /* ── Printer Section ──────────────────────────────── */
+        .printer-section { padding: 96px 0; }
+        .printer-section:nth-child(odd) { background: var(--surface); }
+        .printer-layout {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 72px; align-items: center;
+        }
+        .printer-layout.reverse .printer-collage { order: 2; }
+        .printer-layout.reverse .printer-text { order: 1; }
+
+        /* Collage — 3 photos, asymmetric mosaic */
+        .printer-collage {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 6px;
+            aspect-ratio: 1;
+            position: relative;
+        }
+        .pc-img {
+            border-radius: var(--r); overflow: hidden; position: relative;
+        }
+        .pc-img img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.5s;
+            filter: saturate(0.8) contrast(1.02);
+        }
+        .pc-img:hover img { transform: scale(1.05); filter: saturate(1) contrast(1.05); }
+        .pc-img::after {
+            content: ''; position: absolute; inset: 0;
+            border: 1px solid var(--border); border-radius: var(--r); pointer-events: none;
+        }
+
+        /* Collage layout A (Creality — left) */
+        .collage-a .pc-main  { grid-column: 1 / 6; grid-row: 1 / 6; }
+        .collage-a .pc-close { grid-column: 6 / 9; grid-row: 1 / 6; }
+        .collage-a .pc-sec   { grid-column: 1 / 9; grid-row: 6 / 9; }
+
+        /* Collage layout B (Kobra — center-dominant) */
+        .collage-b .pc-main  { grid-column: 1 / 9; grid-row: 1 / 5; }
+        .collage-b .pc-close { grid-column: 1 / 5; grid-row: 5 / 9; }
+        .collage-b .pc-sec   { grid-column: 5 / 9; grid-row: 5 / 9; }
+
+        /* Collage layout C (Prusa — right) */
+        .collage-c .pc-main  { grid-column: 4 / 9; grid-row: 1 / 6; }
+        .collage-c .pc-close { grid-column: 1 / 4; grid-row: 1 / 6; }
+        .collage-c .pc-sec   { grid-column: 1 / 9; grid-row: 6 / 9; }
+
+        /* Accent corners */
+        .collage-corner {
+            position: absolute; width: 64px; height: 64px;
+            border: 2px solid var(--accent); border-radius: var(--r);
+            opacity: 0.25; pointer-events: none; z-index: -1;
+        }
+        .collage-corner-tl { top: -10px; left: -10px; }
+        .collage-corner-br { bottom: -10px; right: -10px; }
+
+        /* Printer text content */
+        .printer-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+            color: var(--accent); margin-bottom: 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .printer-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--accent); }
+        .printer-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(48px, 5vw, 72px);
+            line-height: 0.92; letter-spacing: 0.02em;
+            color: var(--text); margin-bottom: 6px;
+        }
+        .printer-nick {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--accent); margin-bottom: 24px;
+        }
+        .printer-desc {
+            font-size: 16px; color: var(--muted); line-height: 1.8;
+            margin-bottom: 36px; max-width: 440px;
+        }
+        .printer-desc strong { color: var(--text); font-weight: 600; }
+
+        /* Spec strip */
+        .spec-strip {
+            display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--r);
+            overflow: hidden; background: var(--border);
+        }
+        .spec-item {
+            flex: 1; background: var(--bg); padding: 18px 16px; text-align: center;
+            transition: background 0.3s;
+        }
+        .spec-strip > .spec-item + .spec-item { border-left: 1px solid var(--border); }
+        .spec-val {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px; color: var(--accent); line-height: 1; display: block;
+        }
+        .spec-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+            color: var(--muted); margin-top: 4px; display: block;
+        }
+
+        /* ── Values strip ─────────────────────────────────── */
+        .values-section { padding: 96px 0; }
+        .values-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 0; border: 1px solid var(--border); border-radius: var(--r);
+            overflow: hidden; background: var(--border);
+        }
+        .value-card {
+            background: var(--bg); padding: 44px 32px;
+            position: relative; overflow: hidden;
+            transition: background 0.3s;
+        }
+        .value-card:hover { background: var(--surface); }
+        .value-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 3px; background: var(--accent);
+            transform: scaleX(0); transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
+        .value-card:hover::before { transform: scaleX(1); }
+        .value-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 56px; color: var(--border); line-height: 1;
+            position: absolute; top: 12px; right: 16px;
+            transition: color 0.3s; pointer-events: none;
+        }
+        .value-card:hover .value-num { color: var(--accent-dim); }
+        .value-icon { color: var(--accent); margin-bottom: 20px; }
+        .value-title {
+            font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px;
+        }
+        .value-desc {
+            font-size: 14px; color: var(--muted); line-height: 1.75;
+        }
+
+        /* ── CTA banner ───────────────────────────────────── */
+        .about-cta {
+            padding: 96px 0; background: var(--accent);
+            position: relative; overflow: hidden;
+        }
+        .about-cta::after {
+            content: '3DCC'; position: absolute; right: -20px; top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Bebas Neue', sans-serif; font-size: 280px;
+            line-height: 1; color: rgba(255,255,255,0.06); pointer-events: none;
+        }
+        .about-cta .container { position: relative; z-index: 1; text-align: center; }
+        .about-cta .section-tag { color: rgba(255,255,255,0.65); justify-content: center; }
+        .about-cta .section-tag::before { background: rgba(255,255,255,0.65); }
+        .about-cta h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(42px, 5vw, 68px); line-height: 1;
+            color: #fff; letter-spacing: 0.02em; margin-top: 14px;
+        }
+        .about-cta p { color: rgba(255,255,255,0.78); font-size: 16px; margin-top: 14px; line-height: 1.75; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+        /* ── Scroll reveal ────────────────────────────────── */
+        .reveal {
+            opacity: 0; transform: translateY(32px);
+            transition: opacity 0.7s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-d1 { transition-delay: 0.1s; }
+        .reveal-d2 { transition-delay: 0.2s; }
+        .reveal-d3 { transition-delay: 0.3s; }
+
+        /* ── Responsive ───────────────────────────────────── */
+        @media (max-width: 900px) {
+            .about-hero { padding: calc(var(--nav-h) + 48px) 0 40px; }
+            .about-hero h1 { font-size: clamp(42px, 10vw, 60px); }
+            .slogan { font-size: 11px; letter-spacing: 0.12em; gap: 10px; }
+            .slogan::before, .slogan::after { width: 24px; }
+            .about-intro-block { font-size: 15px; margin-top: 28px; padding: 0 8px; }
+
+            .printer-section { padding: 64px 0; }
+            .printer-layout { grid-template-columns: 1fr; gap: 40px; }
+            .printer-layout.reverse .printer-collage { order: 0; }
+            .printer-layout.reverse .printer-text { order: 0; }
+            .printer-collage { max-width: 480px; margin: 0 auto; }
+            .printer-name { font-size: clamp(40px, 10vw, 56px); }
+            .printer-desc { max-width: 100%; }
+
+            .values-section { padding: 64px 0; }
+            .values-grid { grid-template-columns: 1fr; }
+            .value-card { padding: 28px 24px; }
+
+            .about-cta { padding: 56px 0; }
+            .about-cta::after { font-size: 120px; right: -10px; }
+        }
+        @media (max-width: 480px) {
+            .about-hero { padding: calc(var(--nav-h) + 32px) 0 28px; }
+            .printer-section { padding: 48px 0; }
+            .spec-strip { flex-wrap: wrap; }
+            .spec-item { flex: 1 1 calc(50% - 1px); min-width: 0; }
+            .values-section { padding: 48px 0; }
+        }
+    </style>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PKZ8N52F');</script>
+</head>
+<body>
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PKZ8N52F" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo"><img src="icons/android-chrome-192x192.png" alt="3DCC Logo"><div><span class="nav-logo-name">3DCC</span><span class="nav-logo-sub">Impresión 3D</span></div></a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-link">Inicio</a></li>
+                <li><a href="muestrario.html" class="nav-link">Muestrario</a></li>
+                <li><a href="catalogo.html" class="nav-link">Catálogo</a></li>
+                <li><a href="index.html#trabajos" class="nav-link">Trabajos</a></li>
+                <li><a href="impresoras.html" class="nav-link active">impresoras</a></li>
+                <li><a href="index.html#contacto" class="nav-link">Contacto</a></li>
+                <li><button class="nav-theme" id="themeToggle" aria-label="Cambiar tema"><svg id="iconMoon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="iconSun" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button></li>
+                <li><a href="instant-quote.html" class="nav-cta">Obtener Precio</a></li>
+            </ul>
+            <button class="hamburger" id="navToggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+        </div>
+        <div class="nav-mobile" id="navMenuMobile">
+            <a href="index.html">Inicio</a><a href="muestrario.html">Muestrario</a><a href="catalogo.html">Catálogo</a><a href="index.html#trabajos">Trabajos</a><a href="impresoras.html">impresoras</a><a href="index.html#contacto">Contacto</a><a href="instant-quote.html">→ Obtener Precio</a>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         HERO
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="about-hero">
+        <div class="container about-hero-inner">
+            <div class="section-tag reveal">Sobre impresoras</div>
+            <h1 class="reveal reveal-d1">Nuestro<br><span class="accent">Equipo</span></h1>
+            <div class="slogan reveal reveal-d2">Capa a capa, idea a realidad</div>
+            <p class="about-intro-block reveal reveal-d3">
+                <!-- TODO: Personaliza este texto con vuestra historia -->
+                Aquí no hay oficinas ni cubículos — solo <strong>máquinas de precisión</strong> trabajando sin descanso. Nuestro taller en Salamanca combina velocidad y detalle para convertir cualquier archivo en una pieza real. Cada impresora tiene su personalidad, su especialidad y sus horas de vuelo.
+            </p>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CREALITY K1 SE
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="printer-section">
+        <div class="container">
+            <div class="printer-layout">
+                <div class="printer-collage collage-a reveal">
+                    <div class="collage-corner collage-corner-tl"></div>
+                    <div class="collage-corner collage-corner-br"></div>
+                    <div class="pc-img pc-main"><img src="images/team/CrealityMain.jpg" alt="Creality K1 SE vista principal" loading="lazy"></div>
+                    <div class="pc-img pc-close"><img src="images/team/CrealityCloseUp.jpg" alt="Creality K1 SE detalle extrusor" loading="lazy"></div>
+                    <div class="pc-img pc-sec"><img src="images/team/CrealitySecondary.jpg" alt="Creality K1 SE en producción" loading="lazy"></div>
+                </div>
+                <div class="printer-text">
+                    <div class="printer-eyebrow reveal"></div>
+                    <div class="printer-name reveal reveal-d1">Creality<br>K1 SE</div>
+                    <!-- TODO: Cambia el apodo -->
+                    <div class="printer-nick reveal reveal-d1">"SE-XY"</div>
+                    <p class="printer-desc reveal reveal-d2">
+                        <!-- TODO: Describe su rol en vuestro taller -->
+                        Especialista en <strong>producción de alta velocidad</strong>. Cuando un pedido es urgente o necesita tiradas grandes, esta es la máquina que entra en acción. Su volumen de impresión y velocidad la hacen ideal para proyectos exigentes.
+                    </p>
+                    <div class="spec-strip reveal reveal-d3">
+                        <!-- TODO: Ajusta las specs si es necesario -->
+                        <div class="spec-item"><span class="spec-val">220³</span><span class="spec-label">Volumen (mm)</span></div>
+                        <div class="spec-item"><span class="spec-val">600</span><span class="spec-label">Vel. mm/s</span></div>
+                        <div class="spec-item"><span class="spec-val">0.08</span><span class="spec-label">Capa mín. mm</span></div>
+                        <!-- TODO: Añade más specs si quieres -->
+                        <div class="spec-item"><span class="spec-val">300°</span><span class="spec-label">Temp. máx.</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ANYCUBIC KOBRA X
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="printer-section">
+        <div class="container">
+            <div class="printer-layout reverse">
+                <div class="printer-collage collage-b reveal">
+                    <div class="collage-corner collage-corner-tl"></div>
+                    <div class="collage-corner collage-corner-br"></div>
+                    <div class="pc-img pc-main"><img src="images/team/KobraMain.jpg" alt="Anycubic Kobra X vista principal" loading="lazy"></div>
+                    <div class="pc-img pc-close"><img src="images/team/KobraCloseUp.jpg" alt="Anycubic Kobra X Ace Gen2 detalle" loading="lazy"></div>
+                    <div class="pc-img pc-sec"><img src="images/team/KobraSecondary.jpg" alt="Anycubic Kobra X extrusor" loading="lazy"></div>
+                </div>
+                <div class="printer-text">
+                    <div class="printer-eyebrow reveal"></div>
+                    <div class="printer-name reveal reveal-d1">Anycubic<br>Kobra X</div>
+                    <!-- TODO: Cambia el apodo -->
+                    <div class="printer-nick reveal reveal-d1">"La Multicolor"</div>
+                    <p class="printer-desc reveal reveal-d2">
+                        <!-- TODO: Describe su rol en vuestro taller -->
+                        Equipada con el sistema <strong>Ace Gen2 multicolor</strong>, esta máquina imprime hasta 4 colores/materiales en una sola pieza sin pausas. Ideal para proyectos que necesitan acabados llamativos y combinaciones de color imposibles en una impresora convencional.
+                    </p>
+                    <div class="spec-strip reveal reveal-d3">
+                        <!-- TODO: Ajusta las specs si es necesario -->
+                        <div class="spec-item"><span class="spec-val">220³</span><span class="spec-label">Volumen (mm)</span></div>
+                        <div class="spec-item"><span class="spec-val">500</span><span class="spec-label">Vel. mm/s</span></div>
+                        <div class="spec-item"><span class="spec-val">4</span><span class="spec-label">Colores</span></div>
+                        <div class="spec-item"><span class="spec-val">300°</span><span class="spec-label">Temp. máx.</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PRUSA MINI
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="printer-section">
+        <div class="container">
+            <div class="printer-layout">
+                <div class="printer-collage collage-c reveal">
+                    <div class="collage-corner collage-corner-tl"></div>
+                    <div class="collage-corner collage-corner-br"></div>
+                    <div class="pc-img pc-main"><img src="images/team/PrusaMain.jpg" alt="Prusa Mini vista principal" loading="lazy"></div>
+                    <div class="pc-img pc-close"><img src="images/team/PrusaCloseUp.jpg" alt="Prusa Mini detalle hotend" loading="lazy"></div>
+                    <div class="pc-img pc-sec"><img src="images/team/PrusaSecondary.jpg" alt="Prusa Mini en producción" loading="lazy"></div>
+                </div>
+                <div class="printer-text">
+                    <div class="printer-eyebrow reveal"></div>
+                    <div class="printer-name reveal reveal-d1">Prusa<br>Mini</div>
+                    <!-- TODO: Cambia el apodo -->
+                    <div class="printer-nick reveal reveal-d1">"Pequeña pero matona"</div>
+                    <p class="printer-desc reveal reveal-d2">
+                        <!-- TODO: Describe su rol en vuestro taller -->
+                        Maestra del <strong>detalle fino</strong>. Cuando una pieza exige máxima calidad superficial y tolerancias ajustadas, la Prusa Mini es la elegida. Fiabilidad open-source con acabados que hablan por sí solos.
+                    </p>
+                    <div class="spec-strip reveal reveal-d3">
+                        <!-- TODO: Ajusta las specs si es necesario -->
+                        <div class="spec-item"><span class="spec-val">180³</span><span class="spec-label">Volumen (mm)</span></div>
+                        <div class="spec-item"><span class="spec-val">200</span><span class="spec-label">Vel. mm/s</span></div>
+                        <div class="spec-item"><span class="spec-val">0.1</span><span class="spec-label">Capa mín. mm</span></div>
+                        <!-- TODO: Añade más specs si quieres -->
+                        <div class="spec-item"><span class="spec-val">280°</span><span class="spec-label">Temp. máx.</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VALUES
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="values-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-tag">Cómo trabajamos</div>
+                <h2 class="section-title">Nuestra Filosofía</h2>
+            </div>
+            <div class="values-grid">
+                <div class="value-card reveal">
+                    <span class="value-num">01</span>
+                    <svg class="value-icon" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+                    <!-- TODO: Personaliza título y descripción -->
+                    <h3 class="value-title">Precisión</h3>
+                    <p class="value-desc">Cada capa cuenta. Calibración constante y control de calidad en cada pieza que sale de nuestro taller.</p>
+                </div>
+                <div class="value-card reveal reveal-d1">
+                    <span class="value-num">02</span>
+                    <svg class="value-icon" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
+                    <!-- TODO: Personaliza título y descripción -->
+                    <h3 class="value-title">Rapidez</h3>
+                    <p class="value-desc">Optimizamos cada proceso para entregar tus piezas en el menor tiempo posible, sin sacrificar calidad.</p>
+                </div>
+                <div class="value-card reveal reveal-d2">
+                    <span class="value-num">03</span>
+                    <svg class="value-icon" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"/></svg>
+                    <!-- TODO: Personaliza título y descripción -->
+                    <h3 class="value-title">Cercanía</h3>
+                    <p class="value-desc">Trato directo y personalizado. Te asesoramos en cada paso, desde la elección del material hasta el acabado final.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CTA
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="about-cta">
+        <div class="container">
+            <div class="section-tag">¿Tienes un proyecto?</div>
+            <h2>Ponemos nuestras<br>máquinas a trabajar</h2>
+            <p>Sube tu archivo y recibe un presupuesto instantáneo. Sin compromiso.</p>
+            <a href="instant-quote.html" class="btn-white">Calcular Precio <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+    </section>
+
+    <footer class="site-footer"><div class="footer-inner"><span class="footer-copy">&copy; 2026 Impresión 3DCC Salamanca. Todos los derechos reservados.</span><span class="footer-copy"><a href="terminos.html" class="footer-link">Términos y Condiciones</a><span style="margin:0 8px;opacity:.3">|</span>Servicio ofrecido como hobby sin ánimo de lucro</span></div></footer>
+
+    <button id="backToTop" aria-label="Volver arriba"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg></button>
+
+    <a href="https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp" class="wa-fab"><svg width="26" height="26" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
+
+    <script src="script.js"></script>
+    <script>
+        // Scroll reveal for about page
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    </script>
+</body>
+</html>

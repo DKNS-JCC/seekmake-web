@@ -6,69 +6,93 @@ filamentos:
     # Escala Cromática (Base)
     - nombre: "Blanco Hielo"
       hex: "#FFFFFF"
+      combina_con: ["Negro Azabache", "Azul Eléctrico", "Rojo Fórmula", "Gris"]
     - nombre: "Beige"
       hex: "#f0e0d6"
+      combina_con: ["Blanco Hielo", "Bronce", "Verde Oliva", "Gris Ceniza"]
     - nombre: "Amarillo Vainilla"
       hex: "#FFEFA1"
+      combina_con: ["Gris", "Azul Marino", "Negro Azabache"]
     - nombre: "Amarillo"
       hex: "#FFFF00"
+      combina_con: ["Negro Azabache", "Gris", "Azul Marino"]
     - nombre: "Rojo Fórmula"
       hex: "#EF4444"
+      combina_con: ["Negro Azabache", "Blanco Hielo", "Gris"]
     - nombre: "Rosa Cerezo"
       hex: "#FFACA4"
+      combina_con: ["Blanco Hielo", "Gris Ceniza", "Morado Bubble"]
     - nombre: "Morado Bubble"
       hex: "#9333EA"
+      combina_con: ["Blanco Hielo", "Negro Azabache", "Rosa Cerezo", "Plata"]
     - nombre: "Azul Eléctrico"
       hex: "#3B82F6"
+      combina_con: ["Blanco Hielo", "Negro Azabache", "Gris Ceniza", "Plata"]
     - nombre: "Azul Marino"
       hex: "#000080"
+      combina_con: ["Blanco Hielo", "Dorado", "Gris Ceniza", "Beige"]
     - nombre: "Verde"
       hex: "#14C720"
+      combina_con: ["Blanco Hielo", "Negro Azabache", "Amarillo"]
     - nombre: "Verde Oliva"
       hex: "#636B2F"
+      combina_con: ["Beige", "Negro Azabache", "Bronce"]
     - nombre: "Gris Ceniza"
       hex: "#9CA3AF"
+      combina_con: ["Blanco Hielo", "Negro Azabache", "Azul Eléctrico"]
     - nombre: "Gris"
       hex: "#75787b"
+      combina_con: ["Blanco Hielo", "Negro Azabache", "Rojo Fórmula", "Azul Eléctrico"]
     - nombre: "Negro Azabache"
       hex: "#000000"
+      combina_con: ["Blanco Hielo", "Dorado", "Rojo Fórmula", "Azul Eléctrico"]
 
     # Especiales - Metálicos
     - nombre: "Plata"
       hex: "#C0C0C0"
       acabado: "Metálico"
+      combina_con: ["Negro Azabache", "Azul Eléctrico", "Azul Marino"]
     - nombre: "Dorado"
       hex: "#FBBF24"
       acabado: "Metálico"
+      combina_con: ["Negro Azabache", "Azul Marino", "Blanco Hielo"]
     - nombre: "Bronce"
       hex: "#E0BB5A"
       acabado: "Metálico"
+      combina_con: ["Negro Azabache", "Verde Oliva", "Beige"]
     - nombre: "Cobre"
       hex: "#B87333"
       acabado: "Metálico"
+      combina_con: ["Negro Azabache", "Blanco Hielo", "Verde Oliva"]
     - nombre: "Azul Cobalto"
       hex: "#7DC6E5"
       acabado: "Metálico"
+      combina_con: ["Negro Azabache", "Blanco Hielo", "Plata"]
 
     # Especiales - Fluorescentes
     - nombre: "Amarillo Radiante"
       hex: "#FFFF33"
       acabado: "Fluorescente"
+      combina_con: ["Negro Azabache", "Gris"]
     - nombre: "Naranja Fluorescente"
       hex: "#F97316"
       acabado: "Fluorescente"
       oferta: true
+      combina_con: ["Negro Azabache", "Blanco Hielo"]
     - nombre: "Verde Radiante"
       hex: "#39FF14"
       acabado: "Fluorescente"
+      combina_con: ["Negro Azabache", "Gris"]
 
     # Especiales - Otros
     - nombre: "Verde Galaxia"
       hex: "#1A472A"
       acabado: "Purpurina"
+      combina_con: ["Dorado", "Blanco Hielo", "Negro Azabache"]
     - nombre: "Mármol"
       hex: "#D1D5DB"
       acabado: "Textura"
+      combina_con: ["Negro Azabache", "Dorado", "Blanco Hielo"]
 
   PETG:
     nombre: "PETG"
@@ -77,16 +101,20 @@ filamentos:
     - nombre: "Blanco Hielo"
       hex: "#FFFFFF"
       acabado: "Brillante"
+      combina_con: ["Negro Azabache"]
     - nombre: "Negro Azabache"
       hex: "#000000"
       acabado: "Brillante"
+      combina_con: ["Blanco Hielo"]
     - nombre: "Fibra de Carbono"
       hex: "#3B3B3B"
       acabado: "Textura"
+      combina_con: ["Blanco Hielo", "Negro Azabache"]
     - nombre: "Verde Neon"
       hex: "#64ED6D"
       acabado: "Translucido"
       oferta: true
+      combina_con: ["Negro Azabache"]
 
   ASA:
     nombre: "ASA"

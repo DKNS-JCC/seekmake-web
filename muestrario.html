@@ -536,6 +536,43 @@
             text-transform: uppercase;
             display: block; margin-bottom: 4px;
         }
+        .mu-modal-combina {
+            margin-bottom: 16px;
+        }
+        .mu-modal-combina-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 8px; display: block;
+        }
+        .mu-modal-combina-list {
+            display: flex; gap: 6px; flex-wrap: wrap;
+        }
+        .mu-modal-combina-item {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px 5px 5px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mu-modal-combina-item:hover {
+            border-color: var(--border-h);
+            transform: translateY(-1px);
+        }
+        .mu-modal-combina-swatch {
+            width: 22px; height: 22px;
+            border-radius: 2px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .mu-modal-combina-name {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; letter-spacing: 0.06em;
+            color: var(--text);
+            white-space: nowrap;
+        }
         .mu-modal-actions {
             display: flex; gap: 10px;
         }
@@ -679,6 +716,7 @@
                 <li><a href="muestrario.html" class="nav-link active">Muestrario</a></li>
                 <li><a href="catalogo.html" class="nav-link">Catálogo</a></li>
                 <li><a href="index.html#trabajos" class="nav-link">Trabajos</a></li>
+                <li><a href="impresoras.html" class="nav-link">impresoras</a></li>
                 <li><a href="index.html#contacto" class="nav-link">Contacto</a></li>
                 <li><button class="nav-theme" id="themeToggle" aria-label="Cambiar tema"><svg id="iconMoon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="iconSun" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button></li>
                 <li><a href="instant-quote.html" class="nav-cta">Obtener Precio</a></li>
@@ -686,7 +724,7 @@
             <button class="hamburger" id="navToggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
         </div>
         <div class="nav-mobile" id="navMenuMobile">
-            <a href="index.html">Inicio</a><a href="muestrario.html">Muestrario</a><a href="catalogo.html">Catálogo</a><a href="index.html#trabajos">Trabajos</a><a href="index.html#contacto">Contacto</a><a href="instant-quote.html">→ Obtener Precio</a>
+            <a href="index.html">Inicio</a><a href="muestrario.html">Muestrario</a><a href="catalogo.html">Catálogo</a><a href="index.html#trabajos">Trabajos</a><a href="impresoras.html">impresoras</a><a href="index.html#contacto">Contacto</a><a href="instant-quote.html">→ Obtener Precio</a>
         </div>
     </nav>
 
@@ -895,7 +933,7 @@
                 <div>
                     <div class="section-tag">Más información</div>
                     <h2>¿Necesitas ayuda<br>con tu proyecto?</h2>
-                    <p>Contacta con nosotros para conocer más detalles sobre materiales, acabados o cualquier consulta.</p>
+                    <p>Contacta con impresoras para conocer más detalles sobre materiales, acabados o cualquier consulta.</p>
                 </div>
                 <div class="mu-cta-actions">
                     <a href="index.html#contacto" class="btn-outline">Contactar</a>
@@ -945,6 +983,11 @@
                     <span id="modalUsos"></span>
                 </div>
 
+                <div class="mu-modal-combina" id="modalCombinaWrapper" style="display:none;">
+                    <span class="mu-modal-combina-label">Combina con</span>
+                    <div class="mu-modal-combina-list" id="modalCombinaList"></div>
+                </div>
+
                 <div class="mu-modal-actions">
                     <a href="instant-quote.html" class="btn-primary" style="font-size:11px; padding:10px 20px; justify-content:center;">Calcular precio</a>
                     <a id="modalWhatsAppLink" href="#" target="_blank" class="btn-outline" style="font-size:11px; padding:10px 20px; justify-content:center; border-color:#25D366; color:#25D366;">Pedir foto real</a>
@@ -961,10 +1004,10 @@
         let currentModalHex = '';
 
         const especificacionesTecnicas = {
-            PLA: { usos: "Decoración, prototipos, figuras, maquetas", resistencia: "Media", temp: "190-220°C", exterior: "No recomendado", flexibilidad: "Rígido" },
-            PETG: { usos: "Piezas funcionales, uso diario, contenedores", resistencia: "Alta", temp: "220-250°C", exterior: "Moderado", flexibilidad: "Semi-rígido" },
-            ASA: { usos: "Exterior, automoción, alta temperatura", resistencia: "Muy Alta", temp: "240-260°C", exterior: "Excelente", flexibilidad: "Rígido" },
-            TPU: { usos: "Fundas, juntas, amortiguadores, carcasas", resistencia: "Muy Alta", temp: "210-230°C", exterior: "Bueno", flexibilidad: "Elástico (95A)" }
+            PLA: { usos: "Decoración, prototipos, figuras, maquetas", resistencia: "Media", temp: "50-60°C", exterior: "No recomendado", flexibilidad: "Rígido" },
+            PETG: { usos: "Piezas funcionales, uso diario, contenedores", resistencia: "Alta", temp: "70-80°C", exterior: "Moderado", flexibilidad: "Semi-rígido" },
+            ASA: { usos: "Exterior, automoción, alta temperatura", resistencia: "Muy Alta", temp: "100-120°C", exterior: "Excelente", flexibilidad: "Rígido" },
+            TPU: { usos: "Fundas, juntas, amortiguadores, carcasas", resistencia: "Muy Alta", temp: "60-70°C", exterior: "Bueno", flexibilidad: "Elástico (95A)" }
         };
 
         function getFinishClass(acabado) {
@@ -1017,7 +1060,7 @@
             if (specs) {
                 document.getElementById('modalSpecs').innerHTML = `
                     <div class="mu-modal-spec"><div class="mu-modal-spec-label">Resistencia</div><div class="mu-modal-spec-val">${specs.resistencia}</div></div>
-                    <div class="mu-modal-spec"><div class="mu-modal-spec-label">Temperatura</div><div class="mu-modal-spec-val">${specs.temp}</div></div>
+                    <div class="mu-modal-spec"><div class="mu-modal-spec-label">Temperatura Max.</div><div class="mu-modal-spec-val">${specs.temp}</div></div>
                     <div class="mu-modal-spec"><div class="mu-modal-spec-label">Exterior</div><div class="mu-modal-spec-val">${specs.exterior}</div></div>
                     <div class="mu-modal-spec"><div class="mu-modal-spec-label">Flexibilidad</div><div class="mu-modal-spec-val">${specs.flexibilidad}</div></div>
                 `;
@@ -1026,6 +1069,37 @@
             } else {
                 document.getElementById('modalSpecs').innerHTML = '';
                 document.getElementById('modalUsosWrapper').style.display = 'none';
+            }
+
+            // Matching colors
+            const combinaWrapper = document.getElementById('modalCombinaWrapper');
+            const combinaList = document.getElementById('modalCombinaList');
+            combinaList.innerHTML = '';
+
+            if (filamentosData && filamentosData.filamentos && filamentosData.filamentos[materialKey]) {
+                const materialColores = filamentosData.filamentos[materialKey].colores;
+                const currentColor = materialColores.find(c => c.nombre === colorNombre);
+                const combinaCon = currentColor && currentColor.combina_con;
+
+                if (combinaCon && combinaCon.length > 0) {
+                    combinaCon.forEach(nombre => {
+                        const match = materialColores.find(c => c.nombre === nombre);
+                        if (!match) return;
+                        const item = document.createElement('button');
+                        item.className = 'mu-modal-combina-item';
+                        item.type = 'button';
+                        item.innerHTML = `<span class="mu-modal-combina-swatch" style="background-color:${match.hex}"></span><span class="mu-modal-combina-name">${match.nombre}</span>`;
+                        item.addEventListener('click', () => {
+                            window.abrirModal3D(match.nombre, match.hex, materialTipo, match.acabado || '');
+                        });
+                        combinaList.appendChild(item);
+                    });
+                    combinaWrapper.style.display = '';
+                } else {
+                    combinaWrapper.style.display = 'none';
+                }
+            } else {
+                combinaWrapper.style.display = 'none';
             }
 
             const waMsg = encodeURIComponent(`Hola, me gustaría recibir una foto real del color ${colorNombre} (${colorHex}) en ${materialTipo}. Gracias.`);
@@ -1100,6 +1174,7 @@
                 const response = await fetch('filamentos.yaml');
                 const yamlText = await response.text();
                 const data = jsyaml.load(yamlText);
+                filamentosData = data;
                 renderizarFilamentos(data.filamentos);
             } catch (error) {
                 console.error('Error al cargar filamentos:', error);
@@ -1142,9 +1217,9 @@
                 if (specs) {
                     html += `<div class="mu-specs">
                         <div class="mu-spec"><div class="mu-spec-label">Resistencia</div><div class="mu-spec-value">${specs.resistencia}</div></div>
-                        <div class="mu-spec"><div class="mu-spec-label">Temperatura</div><div class="mu-spec-value">${specs.temp}</div></div>
-                        <div class="mu-spec"><div class="mu-spec-label">Exterior</div><div class="mu-spec-value">${specs.exterior}</div></div>
+                        <div class="mu-spec"><div class="mu-spec-label">Temperatura max.</div><div class="mu-spec-value">${specs.temp}</div></div>
                         <div class="mu-spec"><div class="mu-spec-label">Flexibilidad</div><div class="mu-spec-value">${specs.flexibilidad}</div></div>
+                        <div class="mu-spec"><div class="mu-spec-label">Exterior</div><div class="mu-spec-value">${specs.exterior}</div></div>
                     </div>`;
                 }
 
