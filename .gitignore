@@ -1,0 +1,6 @@
+.claude
+*.key
+*.pem
+
+.env
+.env.local
