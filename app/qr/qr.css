@@ -1,0 +1,449 @@
+        /* ── Design System Tokens ─────────────────────────────── */
+        :root {
+            --bg:        #F2EDE6;
+            --surface:   #E8E2D9;
+            --surface-2: #DDD7CE;
+            --accent:    #0EA5E9;
+            --accent-dim:rgba(14,165,233,0.22);
+            --text:      #0A0B0E;
+            --muted:     #5C5A65;
+            --border:    rgba(0,0,0,0.08);
+            --border-h:  rgba(0,0,0,0.16);
+            --r:         3px;
+            --wa:        #25D366;
+        }
+        .dark {
+            --bg:        #0A0B0E;
+            --surface:   #12141A;
+            --surface-2: #1C1F28;
+            --text:      #E8E0D4;
+            --muted:     #6B6875;
+            --border:    rgba(255,255,255,0.07);
+            --border-h:  rgba(255,255,255,0.15);
+        }
+
+        /* ── Reset ────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a { color: inherit; text-decoration: none; cursor: pointer; }
+        img { max-width: 100%; height: auto; display: block; }
+
+        /* ── Layout ───────────────────────────────────────────── */
+        .qr-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 0 20px;
+        }
+
+        .qr-content {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 0 100px;
+        }
+
+        /* ── Profile Header ───────────────────────────────────── */
+        .qr-profile {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .qr-avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: var(--r);
+            object-fit: cover;
+            border: 2px solid var(--accent);
+            margin: 0 auto 20px;
+        }
+
+        .qr-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            color: var(--text);
+        }
+
+        .qr-tagline {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-top: 6px;
+        }
+
+        .qr-location {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .qr-location svg { flex-shrink: 0; }
+
+        /* ── Stats Row ────────────────────────────────────────── */
+        .qr-stats {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-top: 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+        }
+
+        .qr-stat {
+            flex: 1;
+            padding: 14px 8px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+        .qr-stat:last-child { border-right: none; }
+
+        .qr-stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            line-height: 1;
+            color: var(--text);
+        }
+
+        .qr-stat-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* ── Section Label ────────────────────────────────────── */
+        .qr-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            margin-top: 32px;
+        }
+
+        .qr-label::before {
+            content: '';
+            width: 16px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        /* ── Review CTA (Featured) ────────────────────────────── */
+        .qr-review-cta {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: var(--r);
+            transition: all 0.22s ease;
+            margin-bottom: 8px;
+        }
+
+        .qr-review-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px var(--accent-dim);
+        }
+
+        .qr-review-cta:active { transform: scale(0.98); }
+
+        .qr-review-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--r);
+            background: var(--accent);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .qr-review-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .qr-review-title {
+            font-family: 'Barlow', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .qr-review-sub {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .qr-review-stars {
+            display: flex;
+            gap: 2px;
+            margin-top: 6px;
+        }
+
+        .qr-review-stars svg {
+            width: 14px;
+            height: 14px;
+            color: var(--accent);
+        }
+
+        .qr-chevron {
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        /* ── Link Cards ───────────────────────────────────────── */
+        .qr-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .qr-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            transition: all 0.22s ease;
+        }
+
+        .qr-link:hover {
+            border-color: var(--border-h);
+            transform: translateY(-1px);
+        }
+
+        .qr-link:active { transform: scale(0.98); }
+
+        .qr-link-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--r);
+            background: var(--surface-2);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .qr-link-icon svg { width: 20px; height: 20px; }
+
+        .qr-link-icon--wa { background: var(--wa); color: #fff; }
+        .qr-link-icon--ig {
+            background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            color: #fff;
+        }
+
+        .qr-link-body { flex: 1; min-width: 0; }
+
+        .qr-link-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .qr-link-desc {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* ── Gallery ──────────────────────────────────────────── */
+        .qr-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            border-radius: var(--r);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .qr-gallery-item {
+            aspect-ratio: 1;
+            overflow: hidden;
+        }
+
+        .qr-gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .qr-gallery-item img:hover {
+            transform: scale(1.06);
+        }
+
+        /* ── Map ──────────────────────────────────────────────── */
+        .qr-map-wrap {
+            border-radius: var(--r);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .qr-map-wrap iframe {
+            width: 100%;
+            height: 180px;
+            display: block;
+            border: 0;
+        }
+
+        .qr-map-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 6px;
+            transition: all 0.22s ease;
+        }
+
+        .qr-map-link:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .qr-map-link svg { width: 16px; height: 16px; color: var(--accent); }
+
+        /* ── Bottom Review ────────────────────────────────────── */
+        .qr-review-bottom {
+            text-align: center;
+            padding: 24px 20px;
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            margin-top: 32px;
+        }
+
+        .qr-review-bottom p {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        .qr-review-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 600;
+            transition: all 0.22s ease;
+        }
+
+        .qr-review-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px var(--accent-dim);
+        }
+
+        .qr-review-btn svg { width: 16px; height: 16px; }
+
+        /* ── Footer ───────────────────────────────────────────── */
+        .qr-footer {
+            margin-top: auto;
+            padding: 32px 0 24px;
+            text-align: center;
+        }
+
+        .qr-footer-copy {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        /* ── Floating WhatsApp ────────────────────────────────── */
+        .qr-wa-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            width: 52px;
+            height: 52px;
+            background: var(--wa);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 18px rgba(37,211,102,0.4);
+        }
+
+        .qr-wa-fab:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 26px rgba(37,211,102,0.55);
+        }
+
+        .qr-wa-fab svg { width: 26px; height: 26px; fill: #fff; }
+
+        /* ── Entrance Animations (subtle) ─────────────────────── */
+        .qr-fade {
+            opacity: 0;
+            transform: translateY(14px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .qr-fade.in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Scrollbar ────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }

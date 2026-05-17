@@ -8,6 +8,7 @@ interface Counts {
   filamentos: number;
   colores: number;
   productos: number;
+  posts: number;
 }
 
 export default function AdminDashboard() {
@@ -19,14 +20,16 @@ export default function AdminDashboard() {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
 
     Promise.all([
-      supabase.from('filamentos').select('id', { count: 'exact', head: true }),
+      supabase.from('filamentos').select('id',  { count: 'exact', head: true }),
       supabase.from('colores').select('id',     { count: 'exact', head: true }),
-      supabase.from('productos').select('id',   { count: 'exact', head: true })
-    ]).then(([f, c, p]) => {
+      supabase.from('productos').select('id',   { count: 'exact', head: true }),
+      supabase.from('blog_posts').select('id',  { count: 'exact', head: true }).eq('published', true)
+    ]).then(([f, c, p, b]) => {
       setCounts({
         filamentos: f.count ?? 0,
         colores:    c.count ?? 0,
-        productos:  p.count ?? 0
+        productos:  p.count ?? 0,
+        posts:      b.count ?? 0
       });
     });
   }, []);
@@ -56,7 +59,8 @@ export default function AdminDashboard() {
         {[
           { label: 'Filamentos', value: counts?.filamentos, href: '/admin/filamentos' },
           { label: 'Colores',    value: counts?.colores,    href: '/admin/filamentos' },
-          { label: 'Productos',  value: counts?.productos,  href: '/admin/productos' }
+          { label: 'Productos',  value: counts?.productos,  href: '/admin/productos' },
+          { label: 'Posts',      value: counts?.posts,      href: '/admin/blog' }
         ].map((c) => (
           <Link key={c.label} href={c.href} className="card" style={{ textDecoration: 'none' }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)' }}>
@@ -69,8 +73,8 @@ export default function AdminDashboard() {
         ))}
       </div>
       <p style={{ marginTop: 32, color: 'var(--muted)', fontSize: 14 }}>
-        El CRUD de productos y filamentos llega en el siguiente paso. Por
-        ahora puedes editar directamente en el dashboard de Supabase.
+        El CRUD de productos, filamentos y blog está en cada pestaña. Para
+        cambios masivos puedes editar directamente en el dashboard de Supabase.
       </p>
     </div>
   );

@@ -52,11 +52,7 @@ export default function AdminLogin() {
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
-      <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 16 }}>
-        El usuario admin se crea en el dashboard de Supabase (Authentication →
-        Users) y se le añade <code>is_admin: true</code> en su{' '}
-        <code>app_metadata</code>.
-      </p>
+      
     </div>
   );
 }

@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
+import { Drawer } from '../_components/Drawer';
+import { Field, inputStyle } from '../_components/Field';
+import { ColorPickerField } from '../_components/ColorPickerField';
+import { SaveButton, SaveState } from '../_components/SaveButton';
+import './filamentos.css';
 
 const ACABADOS: Acabado[] = [
   'Metálico',
@@ -16,6 +21,19 @@ const ACABADOS: Acabado[] = [
   'Flexible'
 ];
 
+type ColorDraft = Omit<Color, 'id'>;
+
+const emptyColorDraft = (filamento_id: string, orden: number): ColorDraft => ({
+  filamento_id,
+  nombre: 'Nuevo color',
+  hex: '#cccccc',
+  texto: 'black',
+  acabado: null,
+  combina_con: [],
+  oferta: false,
+  orden
+});
+
 export default function AdminFilamentos() {
   const [filamentos, setFilamentos] = useState<Filamento[]>([]);
   const [colores, setColores] = useState<Color[]>([]);
@@ -24,12 +42,22 @@ export default function AdminFilamentos() {
   const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Lazy: avoid throwing during static prerender if env vars are missing.
+  // Color drawer state
+  const [colorDraft, setColorDraft] = useState<ColorDraft | null>(null);
+  const [editingColorId, setEditingColorId] = useState<string | null>(null);
+  const [colorSave, setColorSave] = useState<SaveState>('idle');
+  const [colorDirty, setColorDirty] = useState(false);
+
+  // Filamento (material) drawer state
+  const [matDraft, setMatDraft] = useState<Omit<Filamento, 'id'> | null>(null);
+  const [editingMatId, setEditingMatId] = useState<string | null>(null);
+  const [matSave, setMatSave] = useState<SaveState>('idle');
+  const [matDirty, setMatDirty] = useState(false);
+
   const supabase = () => createClient();
 
   useEffect(() => {
-    const s = supabase();
-    s.auth.getUser().then(({ data }) => setAuthed(!!data.user));
+    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -49,75 +77,129 @@ export default function AdminFilamentos() {
     setLoading(false);
   }
 
-  async function addFilamento() {
-    const material = prompt('Material (PLA, PETG, ASA, TPU, ...)');
-    if (!material) return;
-    const nombre = prompt('Nombre completo') ?? material;
-    const { error, data } = await supabase()
-      .from('filamentos')
-      .insert({
-        material,
-        nombre,
-        descripcion: '',
-        orden: filamentos.length
-      })
-      .select()
-      .single();
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    await refresh();
-    if (data) setActive(data.id);
+  // ───────── Material CRUD via drawer ─────────
+
+  function startMatCreate() {
+    setMatDraft({
+      material: '',
+      nombre: '',
+      descripcion: '',
+      orden: filamentos.length
+    });
+    setEditingMatId(null);
+    setMatSave('idle');
+    setMatDirty(false);
   }
 
-  async function updateFilamento(f: Filamento, patch: Partial<Filamento>) {
-    const { error } = await supabase()
-      .from('filamentos')
-      .update(patch)
-      .eq('id', f.id);
-    if (error) setError(error.message);
+  function startMatEdit(f: Filamento) {
+    setMatDraft({
+      material: f.material,
+      nombre: f.nombre,
+      descripcion: f.descripcion,
+      orden: f.orden
+    });
+    setEditingMatId(f.id);
+    setMatSave('idle');
+    setMatDirty(false);
+  }
+
+  async function saveMat() {
+    if (!matDraft) return;
+    setMatSave('saving');
+    setError(null);
+    const res = editingMatId
+      ? await supabase().from('filamentos').update(matDraft).eq('id', editingMatId)
+      : await supabase().from('filamentos').insert(matDraft).select().single();
+    if (res.error) {
+      setError(res.error.message);
+      setMatSave('error');
+      return;
+    }
+    setMatSave('saved');
+    setMatDirty(false);
     await refresh();
+    if (!editingMatId && 'data' in res && res.data && 'id' in res.data) {
+      setActive(res.data.id as string);
+    }
+    setTimeout(() => {
+      setMatDraft(null);
+      setEditingMatId(null);
+    }, 800);
   }
 
   async function deleteFilamento(f: Filamento) {
-    if (!confirm(`Eliminar ${f.material} y todos sus colores?`)) return;
+    if (!confirm(`¿Eliminar ${f.material} y todos sus colores?`)) return;
     const { error } = await supabase().from('filamentos').delete().eq('id', f.id);
     if (error) setError(error.message);
     await refresh();
   }
 
-  async function addColor() {
+  // ───────── Color CRUD via drawer ─────────
+
+  function startColorCreate() {
     if (!active) return;
-    const { error } = await supabase().from('colores').insert({
-      filamento_id: active,
-      nombre: 'Nuevo color',
-      hex: '#cccccc',
-      texto: 'black',
-      acabado: null,
-      combina_con: [],
-      oferta: false,
-      orden: colores.filter((c) => c.filamento_id === active).length
-    });
-    if (error) setError(error.message);
-    await refresh();
+    setColorDraft(
+      emptyColorDraft(
+        active,
+        colores.filter((c) => c.filamento_id === active).length
+      )
+    );
+    setEditingColorId(null);
+    setColorSave('idle');
+    setColorDirty(false);
   }
 
-  async function updateColor(c: Color, patch: Partial<Color>) {
-    const { error } = await supabase()
-      .from('colores')
-      .update(patch)
-      .eq('id', c.id);
-    if (error) setError(error.message);
+  function startColorEdit(c: Color) {
+    setColorDraft({
+      filamento_id: c.filamento_id,
+      nombre: c.nombre,
+      hex: c.hex,
+      texto: c.texto,
+      acabado: c.acabado,
+      combina_con: c.combina_con,
+      oferta: c.oferta,
+      orden: c.orden
+    });
+    setEditingColorId(c.id);
+    setColorSave('idle');
+    setColorDirty(false);
+  }
+
+  function patchColor<K extends keyof ColorDraft>(k: K, v: ColorDraft[K]) {
+    if (!colorDraft) return;
+    setColorDraft({ ...colorDraft, [k]: v });
+    setColorDirty(true);
+  }
+
+  async function saveColor() {
+    if (!colorDraft) return;
+    setColorSave('saving');
+    setError(null);
+    const res = editingColorId
+      ? await supabase().from('colores').update(colorDraft).eq('id', editingColorId)
+      : await supabase().from('colores').insert(colorDraft);
+    if (res.error) {
+      setError(res.error.message);
+      setColorSave('error');
+      return;
+    }
+    setColorSave('saved');
+    setColorDirty(false);
     await refresh();
+    setTimeout(() => {
+      setColorDraft(null);
+      setEditingColorId(null);
+    }, 800);
   }
 
   async function deleteColor(c: Color) {
-    if (!confirm(`Eliminar el color "${c.nombre}"?`)) return;
+    if (!confirm(`¿Eliminar el color "${c.nombre}"?`)) return;
     const { error } = await supabase().from('colores').delete().eq('id', c.id);
     if (error) setError(error.message);
     await refresh();
   }
+
+  // ───────── Render ─────────
 
   if (authed === false) {
     return (
@@ -134,6 +216,7 @@ export default function AdminFilamentos() {
 
   const activeFilamento = filamentos.find((f) => f.id === active);
   const visibleColors = colores.filter((c) => c.filamento_id === active);
+  const colorsInSameMaterial = visibleColors;
 
   return (
     <div>
@@ -142,13 +225,15 @@ export default function AdminFilamentos() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 24
+          marginBottom: 24,
+          gap: 16,
+          flexWrap: 'wrap'
         }}
       >
         <h1 className="section-title" style={{ fontSize: 32 }}>
           Filamentos
         </h1>
-        <button type="button" className="btn-primary" onClick={addFilamento}>
+        <button type="button" className="btn-primary" onClick={startMatCreate}>
           + Material
         </button>
       </div>
@@ -169,30 +254,23 @@ export default function AdminFilamentos() {
       )}
 
       {loading ? (
-        <p style={{ color: 'var(--muted)' }}>Cargando...</p>
+        <p style={{ color: 'var(--muted)' }}>Cargando…</p>
+      ) : filamentos.length === 0 ? (
+        <p style={{ color: 'var(--muted)' }}>
+          Crea un material para empezar.
+        </p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 24 }}>
-          <aside>
+        <div className="filamentos-layout">
+          <aside className="filamentos-aside">
             {filamentos.map((f) => (
               <button
                 type="button"
                 key={f.id}
                 onClick={() => setActive(f.id)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '12px 14px',
-                  marginBottom: 6,
-                  background: active === f.id ? 'var(--accent)' : 'var(--surface)',
-                  color: active === f.id ? '#fff' : 'var(--text)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--r)',
-                  cursor: 'pointer'
-                }}
+                className={'filamento-pill' + (active === f.id ? ' active' : '')}
               >
-                <div style={{ fontWeight: 700 }}>{f.material}</div>
-                <div style={{ fontSize: 11, opacity: 0.8 }}>
+                <div className="filamento-pill-name">{f.material}</div>
+                <div className="filamento-pill-meta">
                   {colores.filter((c) => c.filamento_id === f.id).length} colores
                 </div>
               </button>
@@ -200,7 +278,7 @@ export default function AdminFilamentos() {
           </aside>
 
           <section>
-            {activeFilamento ? (
+            {activeFilamento && (
               <>
                 <div
                   style={{
@@ -209,68 +287,49 @@ export default function AdminFilamentos() {
                     borderRadius: 'var(--r)',
                     padding: 20,
                     marginBottom: 24,
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 12
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap'
                   }}
                 >
-                  <label style={{ gridColumn: '1 / -1' }}>
-                    <div style={fieldLabel}>Material (clave)</div>
-                    <input
-                      defaultValue={activeFilamento.material}
-                      onBlur={(e) =>
-                        updateFilamento(activeFilamento, {
-                          material: e.target.value
-                        })
-                      }
-                      style={input}
-                    />
-                  </label>
-                  <label>
-                    <div style={fieldLabel}>Nombre</div>
-                    <input
-                      defaultValue={activeFilamento.nombre}
-                      onBlur={(e) =>
-                        updateFilamento(activeFilamento, {
-                          nombre: e.target.value
-                        })
-                      }
-                      style={input}
-                    />
-                  </label>
-                  <label>
-                    <div style={fieldLabel}>Orden</div>
-                    <input
-                      type="number"
-                      defaultValue={activeFilamento.orden}
-                      onBlur={(e) =>
-                        updateFilamento(activeFilamento, {
-                          orden: parseInt(e.target.value, 10) || 0
-                        })
-                      }
-                      style={input}
-                    />
-                  </label>
-                  <label style={{ gridColumn: '1 / -1' }}>
-                    <div style={fieldLabel}>Descripción</div>
-                    <textarea
-                      defaultValue={activeFilamento.descripcion}
-                      onBlur={(e) =>
-                        updateFilamento(activeFilamento, {
-                          descripcion: e.target.value
-                        })
-                      }
-                      rows={2}
-                      style={{ ...input, fontFamily: 'inherit', resize: 'vertical' }}
-                    />
-                  </label>
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'right' }}>
+                  <div>
+                    <div
+                      style={{
+                        fontFamily: "'Bebas Neue', sans-serif",
+                        fontSize: 32,
+                        lineHeight: 1
+                      }}
+                    >
+                      {activeFilamento.nombre}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--muted)',
+                        marginTop: 6
+                      }}
+                    >
+                      {activeFilamento.descripcion || (
+                        <em>Sin descripción</em>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      onClick={() => startMatEdit(activeFilamento)}
+                    >
+                      Editar
+                    </button>
                     <button
                       type="button"
                       onClick={() => deleteFilamento(activeFilamento)}
                       style={{ ...btnLink, color: '#dc2626' }}
                     >
-                      Borrar material
+                      Borrar
                     </button>
                   </div>
                 </div>
@@ -280,188 +339,359 @@ export default function AdminFilamentos() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: 12
+                    marginBottom: 16
                   }}
                 >
-                  <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28 }}>
+                  <h2
+                    style={{
+                      fontFamily: "'Bebas Neue', sans-serif",
+                      fontSize: 28
+                    }}
+                  >
                     Colores
+                    <span
+                      style={{
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: 11,
+                        color: 'var(--muted)',
+                        marginLeft: 10,
+                        letterSpacing: '0.12em'
+                      }}
+                    >
+                      {visibleColors.length}
+                    </span>
                   </h2>
-                  <button type="button" className="btn-primary" onClick={addColor}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={startColorCreate}
+                  >
                     + Color
                   </button>
                 </div>
 
-                <table
-                  style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    fontSize: 13,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--r)',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <thead>
-                    <tr style={{ background: 'var(--surface-2)' }}>
-                      <th style={th}></th>
-                      <th style={th}>Nombre</th>
-                      <th style={th}>Hex</th>
-                      <th style={th}>Acabado</th>
-                      <th style={th}>Texto</th>
-                      <th style={th}>Oferta</th>
-                      <th style={th}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleColors.map((c) => (
-                      <tr key={c.id} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td style={{ ...td, width: 32 }}>
-                          <div
-                            style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 4,
-                              background: c.hex,
-                              border: '1px solid var(--border)'
-                            }}
-                          />
-                        </td>
-                        <td style={td}>
-                          <input
-                            defaultValue={c.nombre}
-                            onBlur={(e) => updateColor(c, { nombre: e.target.value })}
-                            style={cellInput}
-                          />
-                        </td>
-                        <td style={td}>
-                          <input
-                            defaultValue={c.hex}
-                            onBlur={(e) => updateColor(c, { hex: e.target.value })}
-                            style={cellInput}
-                          />
-                        </td>
-                        <td style={td}>
-                          <select
-                            defaultValue={c.acabado ?? ''}
-                            onChange={(e) =>
-                              updateColor(c, {
-                                acabado: (e.target.value || null) as Acabado | null
-                              })
-                            }
-                            style={cellInput}
-                          >
-                            <option value="">—</option>
-                            {ACABADOS.map((a) => (
-                              <option key={a} value={a}>
-                                {a}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td style={td}>
-                          <select
-                            defaultValue={c.texto}
-                            onChange={(e) =>
-                              updateColor(c, {
-                                texto: e.target.value as 'black' | 'white'
-                              })
-                            }
-                            style={cellInput}
-                          >
-                            <option value="black">black</option>
-                            <option value="white">white</option>
-                          </select>
-                        </td>
-                        <td style={td}>
-                          <input
-                            type="checkbox"
-                            defaultChecked={c.oferta}
-                            onChange={(e) => updateColor(c, { oferta: e.target.checked })}
-                          />
-                        </td>
-                        <td style={{ ...td, textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            onClick={() => deleteColor(c)}
-                            style={{ ...btnLink, color: '#dc2626' }}
-                          >
-                            Borrar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {visibleColors.length === 0 && (
-                      <tr>
-                        <td colSpan={7} style={{ ...td, textAlign: 'center', color: 'var(--muted)' }}>
-                          Sin colores. Añade uno con el botón.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                <div className="color-grid">
+                  {visibleColors.map((c) => (
+                    <article
+                      key={c.id}
+                      className="color-card"
+                      onClick={() => startColorEdit(c)}
+                    >
+                      <div
+                        className="color-swatch"
+                        style={{ background: c.hex }}
+                      >
+                        {c.oferta && <span className="color-badge">OFERTA</span>}
+                        {c.acabado && (
+                          <span className="color-acabado">{c.acabado}</span>
+                        )}
+                      </div>
+                      <div className="color-info">
+                        <div className="color-name">{c.nombre}</div>
+                        <div className="color-hex">{c.hex}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteColor(c);
+                        }}
+                        aria-label="Borrar color"
+                        className="color-delete"
+                      >
+                        ×
+                      </button>
+                    </article>
+                  ))}
+                  {visibleColors.length === 0 && (
+                    <p
+                      style={{
+                        color: 'var(--muted)',
+                        gridColumn: '1 / -1',
+                        textAlign: 'center',
+                        padding: '24px 0'
+                      }}
+                    >
+                      Sin colores. Añade uno con el botón.
+                    </p>
+                  )}
+                </div>
               </>
-            ) : (
-              <p style={{ color: 'var(--muted)' }}>
-                Crea un material para empezar.
-              </p>
             )}
           </section>
         </div>
       )}
+
+      {/* ───────── Material drawer ───────── */}
+      <Drawer
+        open={!!matDraft}
+        onClose={() => setMatDraft(null)}
+        title={editingMatId ? 'Editar material' : 'Nuevo material'}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => setMatDraft(null)}
+            >
+              Cerrar
+            </button>
+            <SaveButton onClick={saveMat} state={matSave} dirty={matDirty} />
+          </>
+        }
+      >
+        {matDraft && (
+          <>
+            <Field label="Clave (PLA, PETG, ASA, TPU…)" hint="Identificador corto, mayúsculas">
+              <input
+                value={matDraft.material}
+                onChange={(e) => {
+                  setMatDraft({ ...matDraft, material: e.target.value });
+                  setMatDirty(true);
+                }}
+                style={inputStyle}
+                placeholder="PLA"
+              />
+            </Field>
+            <Field label="Nombre completo">
+              <input
+                value={matDraft.nombre}
+                onChange={(e) => {
+                  setMatDraft({ ...matDraft, nombre: e.target.value });
+                  setMatDirty(true);
+                }}
+                style={inputStyle}
+                placeholder="PLA"
+              />
+            </Field>
+            <Field label="Descripción">
+              <textarea
+                rows={4}
+                value={matDraft.descripcion}
+                onChange={(e) => {
+                  setMatDraft({ ...matDraft, descripcion: e.target.value });
+                  setMatDirty(true);
+                }}
+                style={{ ...inputStyle, resize: 'vertical' }}
+              />
+            </Field>
+            <Field label="Orden" hint="Posición en la lista pública (menor = primero)">
+              <input
+                type="number"
+                value={matDraft.orden}
+                onChange={(e) => {
+                  setMatDraft({ ...matDraft, orden: parseInt(e.target.value, 10) || 0 });
+                  setMatDirty(true);
+                }}
+                style={inputStyle}
+              />
+            </Field>
+          </>
+        )}
+      </Drawer>
+
+      {/* ───────── Color drawer ───────── */}
+      <Drawer
+        open={!!colorDraft}
+        onClose={() => setColorDraft(null)}
+        title={editingColorId ? 'Editar color' : 'Nuevo color'}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => setColorDraft(null)}
+            >
+              Cerrar
+            </button>
+            <SaveButton onClick={saveColor} state={colorSave} dirty={colorDirty} />
+          </>
+        }
+      >
+        {colorDraft && (
+          <>
+            <Field label="Color">
+              <ColorPickerField
+                value={colorDraft.hex}
+                onChange={(v) => patchColor('hex', v)}
+                acabado={colorDraft.acabado}
+              />
+            </Field>
+
+            <Field label="Nombre">
+              <input
+                value={colorDraft.nombre}
+                onChange={(e) => patchColor('nombre', e.target.value)}
+                style={inputStyle}
+              />
+            </Field>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Field label="Acabado">
+                <select
+                  value={colorDraft.acabado ?? ''}
+                  onChange={(e) =>
+                    patchColor(
+                      'acabado',
+                      (e.target.value || null) as Acabado | null
+                    )
+                  }
+                  style={inputStyle}
+                >
+                  <option value="">— Sin acabado —</option>
+                  {ACABADOS.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Color de texto" hint="Sobre el swatch">
+                <select
+                  value={colorDraft.texto}
+                  onChange={(e) =>
+                    patchColor('texto', e.target.value as 'black' | 'white')
+                  }
+                  style={inputStyle}
+                >
+                  <option value="black">Oscuro</option>
+                  <option value="white">Claro</option>
+                </select>
+              </Field>
+            </div>
+
+            <Field label="Oferta">
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 12px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--r)',
+                  background: 'var(--surface)',
+                  cursor: 'pointer'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={colorDraft.oferta}
+                  onChange={(e) => patchColor('oferta', e.target.checked)}
+                />
+                <span style={{ fontSize: 13 }}>Mostrar etiqueta "OFERTA"</span>
+              </label>
+            </Field>
+
+            <Field
+              label="Combina con"
+              hint="Colores del mismo material que combinan bien"
+            >
+              <CombinaConPicker
+                value={colorDraft.combina_con}
+                options={colorsInSameMaterial.filter(
+                  (c) => c.id !== editingColorId
+                )}
+                onChange={(v) => patchColor('combina_con', v)}
+              />
+            </Field>
+          </>
+        )}
+      </Drawer>
     </div>
   );
 }
 
-const fieldLabel: React.CSSProperties = {
-  fontFamily: "'IBM Plex Mono', monospace",
-  fontSize: 10,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: 'var(--muted)',
-  marginBottom: 6
-};
+function CombinaConPicker({
+  value,
+  options,
+  onChange
+}: {
+  value: string[];
+  options: Color[];
+  onChange: (v: string[]) => void;
+}) {
+  const selectedSet = useMemo(() => new Set(value), [value]);
 
-const input: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--r)',
-  background: 'var(--bg)',
-  color: 'var(--text)',
-  fontSize: 13
-};
+  const toggle = (nombre: string) => {
+    if (selectedSet.has(nombre)) {
+      onChange(value.filter((v) => v !== nombre));
+    } else {
+      onChange([...value, nombre]);
+    }
+  };
 
-const cellInput: React.CSSProperties = {
-  width: '100%',
-  padding: '6px 8px',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--r)',
-  background: 'var(--bg)',
-  color: 'var(--text)',
-  fontSize: 12
-};
+  if (options.length === 0) {
+    return (
+      <div style={{ color: 'var(--muted)', fontSize: 13, fontStyle: 'italic' }}>
+        Crea más colores en este material para poder combinarlos.
+      </div>
+    );
+  }
 
-const th: React.CSSProperties = {
-  padding: 12,
-  textAlign: 'left',
-  fontFamily: "'IBM Plex Mono', monospace",
-  fontSize: 10,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: 'var(--muted)'
-};
-
-const td: React.CSSProperties = { padding: 8, verticalAlign: 'middle' };
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+        gap: 6
+      }}
+    >
+      {options.map((c) => {
+        const on = selectedSet.has(c.nombre);
+        return (
+          <button
+            type="button"
+            key={c.id}
+            onClick={() => toggle(c.nombre)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: 6,
+              border: '1px solid ' + (on ? 'var(--accent)' : 'var(--border)'),
+              background: on ? 'var(--accent-dim)' : 'var(--surface)',
+              borderRadius: 'var(--r)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              textAlign: 'left'
+            }}
+          >
+            <span
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 4,
+                background: c.hex,
+                border: '1px solid var(--border)',
+                flexShrink: 0
+              }}
+            />
+            <span
+              style={{
+                fontSize: 11,
+                color: 'var(--text)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
+            >
+              {c.nombre}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const btnLink: React.CSSProperties = {
   background: 'none',
   border: 'none',
-  color: 'var(--accent)',
-  fontSize: 12,
-  cursor: 'pointer',
-   marginLeft: 8,
+  color: 'var(--text)',
+  padding: '8px 16px',
   fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: 11,
+  letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  letterSpacing: '0.1em'
+  cursor: 'pointer'
 };

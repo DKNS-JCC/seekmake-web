@@ -10,7 +10,7 @@ type ViewMode = 'grid' | 'list';
 
 export function CatalogoClient({ productos }: { productos: Producto[] }) {
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<'todas' | Categoria>('todas');
+  const [category, setCategory] = useState<string>('todas');
   const [sort, setSort] = useState<SortKey>('destacado');
   const [view, setView] = useState<ViewMode>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -36,9 +36,14 @@ export function CatalogoClient({ productos }: { productos: Producto[] }) {
   // ----- Stats -------------------------------------------------------------
   const stats = useMemo(() => {
     const total = productos.length;
-    const keycaps = productos.filter((p) => p.categoria === 'Keycaps').length;
-    const figuras = productos.filter((p) => p.categoria === 'Figuras').length;
-    return { total, keycaps, figuras };
+    const categoriasCount = new Set(productos.map((p) => p.categoria)).size;
+    const destacados = productos.filter((p) => p.destacado).length;
+    return { total, categoriasCount, destacados };
+  }, [productos]);
+
+  // Compute unique categories for pills
+  const allCategories = useMemo(() => {
+    return Array.from(new Set(productos.map((p) => p.categoria))).sort();
   }, [productos]);
 
   // ----- Filtering + sorting -----------------------------------------------
@@ -81,44 +86,29 @@ export function CatalogoClient({ productos }: { productos: Producto[] }) {
     <>
       {/* Hero */}
       <section className="cat-hero">
-        <div className="cat-hero-bg">
-          <img src="/images/poke_banner.png" alt="Pokémon Banner" />
+        <div className="cat-hero-bg" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(0,0,0,0.8))' }}>
         </div>
         <div className="cat-hero-content">
           <div className="cat-hero-tag">Catálogo 3DCC</div>
           <h1>
-            Colección<br />
-            <span>Pokémon</span>
+            Nuestros<br />
+            <span>Productos</span>
           </h1>
           <p className="cat-hero-desc">
-            Keycaps artesanales y figuras coleccionables impresas en 3D con
-            precisión milimétrica
+            Diseños impresos en 3D de la más alta calidad, con precisión milimétrica y atención al detalle en cada pieza.
           </p>
-          <div className="cat-hero-collab">
-            <svg
-              width="12"
-              height="12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-            En colaboración con TCG Tracker
-          </div>
           <div className="cat-hero-stats">
             <div>
               <div className="cat-hero-stat-num">{stats.total}</div>
               <div className="cat-hero-stat-label">Productos</div>
             </div>
             <div>
-              <div className="cat-hero-stat-num">{stats.keycaps}</div>
-              <div className="cat-hero-stat-label">Keycaps</div>
+              <div className="cat-hero-stat-num">{stats.categoriasCount}</div>
+              <div className="cat-hero-stat-label">Categorías</div>
             </div>
             <div>
-              <div className="cat-hero-stat-num">{stats.figuras}</div>
-              <div className="cat-hero-stat-label">Figuras</div>
+              <div className="cat-hero-stat-num">{stats.destacados}</div>
+              <div className="cat-hero-stat-label">Destacados</div>
             </div>
           </div>
         </div>
@@ -162,12 +152,12 @@ export function CatalogoClient({ productos }: { productos: Producto[] }) {
           </button>
 
           <div className="cat-pills">
-            {(['todas', 'Keycaps', 'Figuras'] as const).map((c) => (
+            {['todas', ...allCategories].map((c) => (
               <button
                 key={c}
                 type="button"
                 className={'cat-pill' + (category === c ? ' active' : '')}
-                onClick={() => setCategory(c as 'todas' | Categoria)}
+                onClick={() => setCategory(c)}
               >
                 {c === 'todas' ? 'Todos' : c}
               </button>
@@ -280,12 +270,26 @@ export function CatalogoClient({ productos }: { productos: Producto[] }) {
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 64px' }}>
         {empty ? (
           <div className="card" style={{ maxWidth: 720, margin: '0 auto' }}>
-            <p style={{ color: 'var(--muted)' }}>
-              Aún no se ha conectado Supabase. Configura las variables en{' '}
-              <code>.env.local</code>, ejecuta el schema y corre{' '}
-              <code>npm run seed</code> para poblar el catálogo desde el YAML
-              original.
-            </p>
+            <div className="cat-empty">
+              <div className="cat-empty-icon">
+                <svg
+                  width="20"
+                  height="20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </div>
+              <h3>Catálogo vacío</h3>
+              <p>
+                Estamos trabajando para llenar este catálogo con increíbles
+                productos. ¡Vuelve pronto para descubrir nuestras creaciones!
+              </p>
+            </div>
           </div>
         ) : visible.length === 0 ? (
           <div>

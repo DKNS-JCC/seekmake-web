@@ -10,7 +10,7 @@ export type Acabado =
   | 'Mate'
   | 'Flexible';
 
-export type Categoria = 'Keycaps' | 'Figuras';
+export type Categoria = string;
 
 // `type` (not `interface`) — supabase-js v2 generics require entities to be
 // assignable to Record<string, unknown>, which interfaces are not.
@@ -32,6 +32,19 @@ export type Color = {
   combina_con: string[];
   oferta: boolean;
   orden: number;
+};
+
+export type BlogPost = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  cover_image: string;
+  published: boolean;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Producto = {
@@ -82,6 +95,16 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Producto>;
+        Relationships: [];
+      };
+      blog_posts: {
+        Row: BlogPost;
+        Insert: Omit<BlogPost, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<BlogPost>;
         Relationships: [];
       };
     };

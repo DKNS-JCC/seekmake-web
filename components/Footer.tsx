@@ -9,6 +9,10 @@ export function Footer() {
           &copy; {year} Impresión 3DCC Salamanca. Todos los derechos reservados.
         </span>
         <span className="footer-copy">
+          <Link href="/blog" className="footer-link">
+            Blog
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/terminos" className="footer-link">
             Términos y Condiciones
           </Link>
