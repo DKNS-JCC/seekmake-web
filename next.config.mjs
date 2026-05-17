@@ -14,9 +14,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'makerworld.bblmw.com' },
       { protocol: 'https', hostname: '*.supabase.co' }
     ]
-  },
-  eslint: {
-    ignoreDuringBuilds: true
   }
 };
 

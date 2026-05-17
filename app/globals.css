@@ -1,14 +1,14 @@
+/* @import rules must come before any other CSS. */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;600&family=Barlow:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ================================================================
    3DCC DESIGN SYSTEM — ported verbatim from legacy/styles.css
-   Aesthetic: Industrial Precision · Sky Blue accent
 ================================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;600&family=Barlow:wght@400;500;600;700&display=swap');
 
-/* ── Theme Variables ─────────────────────────────────────────── */
 :root {
     --bg:        #F2EDE6;
     --surface:   #E8E2D9;
@@ -32,7 +32,6 @@
     --border-h:  rgba(255,255,255,0.15);
 }
 
-/* ── Reset & Base ────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
@@ -56,7 +55,7 @@ img { max-width: 100%; height: auto; }
 }
 .container-3dcc { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-/* ── Navigation ──────────────────────────────────────────────── */
+/* Navigation */
 #navbar {
     position: fixed; top: 0; left: 0; right: 0;
     height: var(--nav-h);
@@ -121,14 +120,12 @@ img { max-width: 100%; height: auto; }
 }
 .nav-theme:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Hamburger */
 .hamburger {
     display: none; flex-direction: column; gap: 5px;
     background: none; border: none; cursor: pointer; padding: 4px;
 }
 .hamburger span { width: 22px; height: 2px; background: var(--text); transition: all 0.3s; display: block; }
 
-/* Mobile nav */
 .nav-mobile {
     display: none; flex-direction: column;
     background: var(--surface); border-bottom: 1px solid var(--border);
@@ -150,7 +147,6 @@ img { max-width: 100%; height: auto; }
     .hamburger { display: flex; }
 }
 
-/* ── Mobile Enhancements ────────────────────────────────────── */
 @media (max-width: 768px) {
     .container-3dcc { padding: 0 16px; }
     .section-header { margin-bottom: 36px; }
@@ -175,7 +171,6 @@ img { max-width: 100%; height: auto; }
     .card { padding: 20px; }
 }
 
-/* ── Section Headers ─────────────────────────────────────────── */
 .section-tag {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
@@ -194,7 +189,6 @@ img { max-width: 100%; height: auto; }
 }
 .section-header { margin-bottom: 56px; }
 
-/* ── Buttons ─────────────────────────────────────────────────── */
 .btn-primary {
     background: var(--accent); color: #fff;
     padding: 14px 30px; border-radius: var(--r);
@@ -227,7 +221,6 @@ img { max-width: 100%; height: auto; }
 }
 .btn-white:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,0.22); }
 
-/* Contact buttons */
 .cbtn {
     display: flex; align-items: center; justify-content: center; gap: 12px;
     padding: 15px 28px; border-radius: var(--r);
@@ -243,7 +236,6 @@ img { max-width: 100%; height: auto; }
 .cbtn-wa { background: #25D366; color: #fff; }
 .cbtn-wa:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(37,211,102,0.35); }
 
-/* ── Footer ──────────────────────────────────────────────────── */
 footer.site-footer {
     background: var(--bg); border-top: 1px solid var(--border); padding: 36px 0;
 }
@@ -258,7 +250,6 @@ footer.site-footer {
 .footer-link { color: var(--accent); text-decoration: none; }
 .footer-link:hover { text-decoration: underline; }
 
-/* ── Floating Elements ───────────────────────────────────────── */
 #backToTop {
     position: fixed; bottom: 88px; right: 24px;
     width: 42px; height: 42px; background: var(--surface);
@@ -279,7 +270,6 @@ footer.site-footer {
 }
 .wa-fab:hover { transform: scale(1.1); box-shadow: 0 6px 26px rgba(37,211,102,0.65); }
 
-/* ── Cookie / Terms Banner ───────────────────────────────────── */
 #cookieBanner {
     position: fixed; bottom: -100%; left: 0; right: 0;
     background: var(--surface); border-top: 2px solid var(--accent);
@@ -312,7 +302,6 @@ footer.site-footer {
 }
 .cookie-close:hover { background: var(--border-h); }
 
-/* ── Scroll Animations ───────────────────────────────────────── */
 .fade-up {
     opacity: 0; transform: translateY(22px);
     transition: opacity 0.55s ease, transform 0.55s ease;
@@ -322,13 +311,11 @@ footer.site-footer {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ── Content Sections (for inner pages using Tailwind) ───────── */
 .page-content {
     padding-top: var(--nav-h);
     min-height: 100vh;
 }
 
-/* ── Contact shared styles ───────────────────────────────────── */
 .contact-icon {
     width: 42px; height: 42px; background: var(--surface-2);
     border-radius: var(--r); display: flex; align-items: center; justify-content: center;
@@ -345,7 +332,6 @@ footer.site-footer {
 }
 a.contact-value:hover { color: var(--accent); }
 
-/* ── Card base ───────────────────────────────────────────────── */
 .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -355,7 +341,7 @@ a.contact-value:hover { color: var(--accent); }
 }
 .card:hover { border-color: var(--border-h); }
 
-/* ── Hamburger open state (driven by React, not script.js) ───── */
+/* Hamburger open state (driven by React, not script.js) */
 .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }

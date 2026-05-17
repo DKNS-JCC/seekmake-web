@@ -1,13 +1,22 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types';
 
-// Browser-side Supabase client. Reads/writes happen with the user's session.
-// In static-export mode this is the only client variant used at runtime.
+// Static-export mode: the client runs entirely in the browser, so we don't
+// need the @supabase/ssr cookie helpers. Using the underlying createClient
+// from @supabase/supabase-js keeps generics aligned with the postgrest types
+// and persists the auth session in localStorage by default.
 export function createClient() {
-  return createBrowserClient<Database>(
+  return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    }
   );
 }

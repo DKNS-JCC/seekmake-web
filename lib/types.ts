@@ -29,6 +29,8 @@ export type Color = {
   hex: string;
   texto: 'black' | 'white';
   acabado: Acabado | null;
+  combina_con: string[];
+  oferta: boolean;
   orden: number;
 };
 

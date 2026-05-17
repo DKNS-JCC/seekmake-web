@@ -31,6 +31,12 @@ export default function AdminDashboard() {
     });
   }, []);
 
+  async function logout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setAuthed(false);
+  }
+
   if (authed === false) {
     return (
       <div>
@@ -42,7 +48,10 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="section-title" style={{ fontSize: 32, marginBottom: 32 }}>Panel</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        <h1 className="section-title" style={{ fontSize: 32 }}>Panel</h1>
+        <button type="button" className="btn-outline" onClick={logout}>Cerrar sesión</button>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {[
           { label: 'Filamentos', value: counts?.filamentos, href: '/admin/filamentos' },

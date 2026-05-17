@@ -28,6 +28,8 @@ interface YamlFilamentoColor {
   hex: string;
   texto?: 'black' | 'white';
   acabado?: Acabado;
+  combina_con?: string[];
+  oferta?: boolean;
 }
 
 interface YamlFilamento {
@@ -97,6 +99,8 @@ async function main() {
       hex: c.hex,
       texto: c.texto ?? 'black',
       acabado: c.acabado ?? null,
+      combina_con: c.combina_con ?? [],
+      oferta: c.oferta ?? false,
       orden: i
     }));
 
