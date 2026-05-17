@@ -2,13 +2,30 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import type { Producto, Categoria } from '@/lib/types';
 import './catalogo.css';
 
 type SortKey = 'destacado' | 'precio-asc' | 'precio-desc' | 'nombre';
 type ViewMode = 'grid' | 'list';
 
-export function CatalogoClient({ productos }: { productos: Producto[] }) {
+export function CatalogoClient({ productos: initialProductos }: { productos: Producto[] }) {
+  const [productos, setProductos] = useState<Producto[]>(initialProductos);
+
+  // Client-side refresh to ensure dynamic updates for static exports
+  useEffect(() => {
+    const fetchFreshData = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('productos')
+        .select('*')
+        .order('destacado', { ascending: false })
+        .order('legacy_id');
+      if (data) setProductos(data);
+    };
+    fetchFreshData();
+  }, []);
+
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>('todas');
   const [sort, setSort] = useState<SortKey>('destacado');

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
 import './muestrario.css';
 
@@ -76,12 +77,29 @@ interface SelectedColor {
 type TestAnswers = Record<1 | 2 | 3 | 4, string | undefined>;
 
 export function MuestrarioClient({
-  filamentos,
-  colores
+  filamentos: initialFilamentos,
+  colores: initialColores
 }: {
   filamentos: Filamento[];
   colores: Color[];
 }) {
+  const [filamentos, setFilamentos] = useState<Filamento[]>(initialFilamentos);
+  const [colores, setColores] = useState<Color[]>(initialColores);
+
+  // Client-side refresh for static exports
+  useEffect(() => {
+    const fetchFreshData = async () => {
+      const supabase = createClient();
+      const [{ data: f }, { data: c }] = await Promise.all([
+        supabase.from('filamentos').select('*').order('orden'),
+        supabase.from('colores').select('*').order('orden')
+      ]);
+      if (f) setFilamentos(f);
+      if (c) setColores(c);
+    };
+    fetchFreshData();
+  }, []);
+
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | string>('all');
   const [selected, setSelected] = useState<SelectedColor | null>(null);
