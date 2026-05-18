@@ -27,12 +27,20 @@ export function ImageUploadField({
     setUploading(true);
     setError(null);
 
-    const ext = file.name.split('.').pop() || 'jpg';
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    let mime = file.type;
+    if (!mime || mime === 'application/octet-stream') {
+      if (ext === 'png') mime = 'image/png';
+      else if (ext === 'webp') mime = 'image/webp';
+      else if (ext === 'svg') mime = 'image/svg+xml';
+      else mime = 'image/jpeg';
+    }
+
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const supabase = createClient();
     const { error: upErr } = await supabase.storage
       .from('product-images')
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, { contentType: mime, upsert: false });
 
     if (upErr) {
       setError(upErr.message);

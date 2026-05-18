@@ -69,6 +69,82 @@ function normalize(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
+// ─── Color theory helpers ────────────────────────────────────────────────
+// Combinations are computed automatically from each color's HSL value:
+// neutrals pair with anything; saturated colors pair with their harmonic
+// hue partners (mono, analogous, triadic, split-complementary, complementary).
+// The metric is symmetric: if A → B is a match, B → A is too.
+
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const v = hex.replace('#', '');
+  const n = v.length === 3
+    ? v.split('').map((c) => c + c).join('')
+    : v.padEnd(6, '0');
+  const r = parseInt(n.slice(0, 2), 16) / 255;
+  const g = parseInt(n.slice(2, 4), 16) / 255;
+  const b = parseInt(n.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+      case g: h = ((b - r) / d + 2) * 60; break;
+      case b: h = ((r - g) / d + 4) * 60; break;
+    }
+  }
+  return { h, s, l };
+}
+
+function isNeutral(hsl: { h: number; s: number; l: number }): boolean {
+  return hsl.s < 0.12 || hsl.l < 0.08 || hsl.l > 0.95;
+}
+
+// Lower = more harmonious. Returns Infinity for identical colors.
+function harmonyScore(a: Color, b: Color): number {
+  if (a.id === b.id) return Infinity;
+  const A = hexToHsl(a.hex);
+  const B = hexToHsl(b.hex);
+  const aN = isNeutral(A);
+  const bN = isNeutral(B);
+  // Neutrals pair with anything; small penalty between two near-identical
+  // neutrals so we surface more interesting matches first.
+  if (aN || bN) {
+    // Two near-identical neutrals (white+white) get a small penalty so
+    // contrasting neutrals (black+white) and neutral+color pairs win.
+    if (aN && bN) return Math.abs(A.l - B.l) < 0.08 ? 8 : 2;
+    return 2;
+  }
+  const dh = Math.abs(A.h - B.h);
+  const wrap = Math.min(dh, 360 - dh); // 0..180
+  // Classic harmonic angles relative to the base hue.
+  const targets = [0, 30, 120, 150, 180];
+  let best = Infinity;
+  for (const t of targets) {
+    const d = Math.abs(wrap - t);
+    if (d < best) best = d;
+  }
+  // Penalty for two colors that are basically the same hue AND same
+  // lightness — they "match" but look like the same chip twice.
+  const lightnessGap = Math.abs(A.l - B.l);
+  if (best < 8 && lightnessGap < 0.1) best += 20;
+  return best;
+}
+
+function computeMatches(base: Color, all: Color[], limit = 6): Color[] {
+  return all
+    .filter((c) => c.id !== base.id)
+    .map((c) => ({ c, score: harmonyScore(base, c) }))
+    .filter((x) => x.score < 18) // harmonic threshold
+    .sort((a, b) => a.score - b.score)
+    .slice(0, limit)
+    .map((x) => x.c);
+}
+
 interface SelectedColor {
   color: Color;
   material: string;
@@ -567,8 +643,7 @@ export function MuestrarioClient({
         onClose={closeModal}
         hexCopied={hexCopied}
         onCopyHex={copyHex}
-        byFilamento={byFilamento}
-        filamentos={filamentos}
+        colores={colores}
         onJumpToColor={(c, material) => openModal(c, material)}
       />
     </>
@@ -580,16 +655,14 @@ function ColorModal({
   onClose,
   hexCopied,
   onCopyHex,
-  byFilamento,
-  filamentos,
+  colores,
   onJumpToColor
 }: {
   selected: SelectedColor | null;
   onClose: () => void;
   hexCopied: boolean;
   onCopyHex: () => void;
-  byFilamento: Map<string, Color[]>;
-  filamentos: Filamento[];
+  colores: Color[];
   onJumpToColor: (c: Color, material: string) => void;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -609,12 +682,13 @@ function ColorModal({
       ? ({ ['--glow-color' as any]: color.hex } as React.CSSProperties)
       : {};
 
-  // Find matching colors via name lookup within the same material.
-  const filamento = filamentos.find((f) => f.nombre === material || f.material === materialKey);
-  const materialColors = filamento ? byFilamento.get(filamento.id) ?? [] : [];
-  const matchingColors: Color[] = (color.combina_con ?? [])
-    .map((n) => materialColors.find((c) => c.nombre === n))
-    .filter((c): c is Color => Boolean(c));
+  // Auto-computed matching colors based on color theory (HSL harmony).
+  // Restricted to the SAME material — two filaments only combine if you
+  // can physically print them on the same machine/setup.
+  const sameMaterial = colores.filter(
+    (c) => c.filamento_id === color.filamento_id
+  );
+  const matchingColors = computeMatches(color, sameMaterial);
 
   const waMsg = encodeURIComponent(
     `Hola, me gustaría recibir una foto real del color ${color.nombre} (${color.hex}) en ${material}. Gracias.`

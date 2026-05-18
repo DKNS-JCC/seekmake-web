@@ -1,520 +1,305 @@
 productos:
+# --- Servicios personalizados (destacados) ---
 - id: 1
-  nombre: "Keycap Pikachu"
-  descripcion: "Tecla artesanal de Pikachu para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Amarillo (Pikachu)", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "15g"
-  imagen: "https://media.printables.com/media/prints/e25e16e3-110c-4289-9487-bda7594c0b08/images/10989170_d74199eb-2ae2-47cd-ba38-fdf468556e07_61a31ff4-0baa-4dfb-be5d-0a87130ec5ea/thumbs/inside/320x240/png/pikachu-photo.webp"
+  nombre: "Impresión 3D desde tu archivo"
+  descripcion: "Tienes el modelo (.stl o .3mf) y quieres una pieza física. Lo imprimimos con el material y color que elijas. Presupuesto cerrado al subir el archivo en el cotizador."
+  precio: 5.00
+  categoria: "Personalizado"
+  material: "A elegir (PLA, PETG, ABS, ASA, TPU)"
+  colores: [ "Todos los del muestrario" ]
+  dimensiones: "Hasta 256x256x256 mm por pieza"
+  peso: "Según modelo"
+  imagen: ""
   destacado: true
-  etiquetas: [ "pokemon", "pikachu", "teclado", "mecanico", "gaming" ]
+  etiquetas: [ "personalizado", "stl", "bajo-pedido", "cotizar", "servicio" ]
 
 - id: 2
-  nombre: "Keycap Flareon"
-  descripcion: "Tecla artesanal de Flareon para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Naranja y Blanco", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "12g"
-  imagen: "https://media.printables.com/media/prints/eafc4f3f-0715-4fc7-a984-9a65d6bcdcf9/images/11005754_2bdf66c3-f193-4306-8f6b-1b636b0b2d1e_5e77ecb3-6fd8-4e39-a7fa-d401ca3bb925/thumbs/inside/320x240/png/flareon-photo.webp"
+  nombre: "Diseño 3D a medida"
+  descripcion: "No tienes archivo: tienes una idea, una foto o un boceto. Te lo modelamos en 3D y lo dejamos listo para imprimir. Incluye una revisión gratuita del diseño."
+  precio: 25.00
+  categoria: "Personalizado"
+  material: "Cualquiera disponible"
+  colores: [ "Personalizable" ]
+  dimensiones: "Según proyecto"
+  peso: "—"
+  imagen: ""
   destacado: true
-  etiquetas: [ "pokemon", "flareon", "teclado", "mecanico", "gaming" ]
+  etiquetas: [ "diseño", "modelado", "cad", "a-medida", "servicio" ]
 
 - id: 3
-  nombre: "Keycap Charizard"
-  descripcion: "Tecla artesanal de Charizard para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Naranja (Charizard)", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "15g"
-  imagen: "https://media.printables.com/media/prints/cf06b2f9-eaef-4e79-a1e3-ac045adb8abe/images/11005823_71385c53-0fe3-42ce-a967-a2e425cbbd1f_9fc55c28-a0e8-4d0a-b18a-4a24c7153195/thumbs/inside/320x240/png/charizard-photo.webp"
-  destacado: false
-  etiquetas: [ "pokemon", "charizard", "teclado", "mecanico", "fuego" ]
+  nombre: "Réplica de pieza rota"
+  descripcion: "Una pieza que se ha roto y el fabricante no la vende. Medimos o escaneamos el original y lo replicamos, normalmente en PETG o ASA para que aguante el uso real."
+  precio: 18.00
+  categoria: "Personalizado"
+  material: "PETG / ASA recomendados"
+  colores: [ "Negro", "Blanco", "Gris", "A juego" ]
+  dimensiones: "Hasta tamaño folio"
+  peso: "Según pieza"
+  imagen: ""
+  destacado: true
+  etiquetas: [ "reparación", "repuesto", "replica", "servicio", "rescatar" ]
 
 - id: 4
-  nombre: "Keycap Ditto"
-  descripcion: "Tecla artesanal de Ditto para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Verde (Shiny)", "Morado", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "15g"
-  imagen: "https://media.printables.com/media/prints/58f7c38f-f38e-4a3d-ab4b-4701cf80252a/images/11005515_d79677c6-21b7-44f0-9c3a-eb5581d63e51_092f653d-be83-47ff-95b6-9ec9b64275b6/thumbs/inside/320x240/png/ditto-photo.webp"
-  destacado: false
-  etiquetas: [ "pokemon", "ditto", "teclado", "mecanico", "planta" ]
-
-- id: 5
-  nombre: "Keycap Charmander"
-  descripcion: "Tecla artesanal de Charmander para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Azul (Squirtle)", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "15g"
-  imagen: "https://media.printables.com/media/prints/aef15c96-d58e-41bf-9227-273d1defcde1/images/10989163_b604623c-0aec-4544-9db8-d9c232e06316_b7efc3cc-4663-4e25-9994-29be174b1585/thumbs/inside/320x240/png/charmander.webp"
+  nombre: "Litofanía personalizada"
+  descripcion: "Una foto convertida en una placa de luz: a contraluz revela la imagen con un detalle sorprendente. Regalo emocional que dura años."
+  precio: 14.00
+  categoria: "Personalizado"
+  material: "PLA blanco"
+  colores: [ "Blanco translúcido" ]
+  dimensiones: "10x15 cm (otros tamaños bajo pedido)"
+  peso: "60g"
+  imagen: ""
   destacado: true
-  etiquetas: [ "pokemon", "charmander", "teclado", "mecanico", "fuego" ]
+  etiquetas: [ "regalo", "foto", "litofania", "personalizado", "luz" ]
 
-- id: 6
-  nombre: "Keycap Gengar"
-  descripcion: "Tecla artesanal de Gengar para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Morado (Gengar)", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "16g"
-  imagen: "https://media.printables.com/media/prints/c7c7746a-a999-427e-b235-d81943c98c2a/images/11005697_2d45e417-5ec3-4fd9-9ffe-82db9f2c9715_71642190-7f8c-4298-b1b1-81ef20944606/thumbs/inside/640x480/png/gengar-photo.webp"
-  destacado: false
-  etiquetas: [ "pokemon", "gengar", "teclado", "mecanico", "fantasma" ]
-
-- id: 7
-  nombre: "Figura Grande Rayquaza"
-  descripcion: "Figura coleccionable de Rayquaza de 25cm de altura, alta calidad y detalle"
-  precio: 65.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Shiny (bajo pedido)" ]
-  dimensiones: "25x20x15 cm"
-  peso: "350g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US9318d78e735379/design/2025-06-27_753263860a2fb.jpg?x-oss-process=image%2Fresize%2Cw_400%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "rayquaza", "figura", "coleccionable", "dragon" ]
-
-- id: 8
-  nombre: "Figura Grande Dialga"
-  descripcion: "Figura coleccionable de Dialga de 28cm de altura, pose icónica y acabado premium"
-  precio: 50.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "28x18x15 cm"
-  peso: "400g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USacb560b19f4e91/design/2025-04-27_92167cff4c5d8.jpg?x-oss-process=image%2Fresize%2Cw_400%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "dialga", "figura", "coleccionable", "legendario" ]
-
-- id: 9
-  nombre: "Figura Grande Palkia"
-  descripcion: "Figura coleccionable de Palkia de 24cm de altura con alas desplegadas"
-  precio: 65.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Shiny (bajo pedido)" ]
-  dimensiones: "24x28x18 cm"
-  peso: "380g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US39f4e3f695c0df/design/2025-04-27_4829e4e4dd0208.jpeg?x-oss-process=image%2Fresize%2Cw_400%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "palkia", "figura", "coleccionable", "dragon" ]
-
+# --- Hogar y Decoración ---
 - id: 10
-  nombre: "Figura Grande Mewtwo"
-  descripcion: "Figura coleccionable de Mewtwo de 30cm de altura en pose de ataque"
-  precio: 40.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Shiny rojo (bajo pedido)" ]
-  dimensiones: "30x25x20 cm"
-  peso: "450g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US8f2ed425bb470b/design/2025-02-04_ef308e4da7cb8.jpg?x-oss-process=image%2Fresize%2Cw_400%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "mewtwo", "figura", "coleccionable", "psiquico" ]
+  nombre: "Maceta hexagonal modular"
+  descripcion: "Macetas hexagonales que encajan entre sí formando paneles. Para suculentas, hierbas aromáticas o decoración de pared."
+  precio: 9.00
+  categoria: "Hogar y Decoración"
+  material: "PETG"
+  colores: [ "Blanco", "Negro mate", "Terracota", "Verde salvia" ]
+  dimensiones: "10x10x8 cm"
+  peso: "85g"
+  imagen: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=800&auto=format&fit=crop"
+  destacado: false
+  etiquetas: [ "maceta", "decoración", "modular", "plantas", "hogar" ]
 
 - id: 11
-  nombre: "Figura Grande Giratina"
-  descripcion: "Figura coleccionable de Giratina de 18cm de altura, diseño imponente y detallado"
-  precio: 40.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "18x15x12 cm"
-  peso: "250g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US575579fd9f3fc4/design/2025-02-07_f0a5a23964a0b.jpg?x-oss-process=image%2Fresize%2Cw_400%2Fformat%2Cwebp"
+  nombre: "Lámpara de mesa geométrica"
+  descripcion: "Difusor impreso en PLA translúcido sobre base de madera. Encaja en cualquier bombilla E27 LED de bajo consumo. Patrón geométrico que proyecta sombras."
+  precio: 32.00
+  categoria: "Hogar y Decoración"
+  material: "PLA translúcido + base madera"
+  colores: [ "Blanco", "Ámbar", "Azul translúcido" ]
+  dimensiones: "18x18x25 cm"
+  peso: "320g"
+  imagen: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?q=80&w=800&auto=format&fit=crop"
   destacado: true
-  etiquetas: [ "pokemon", "giratina", "figura", "coleccionable", "fantasma" ]
+  etiquetas: [ "lampara", "iluminación", "decoración", "geometrico", "salon" ]
 
 - id: 12
-  nombre: "Keycap Snorlax"
-  descripcion: "Tecla artesanal de Snorlax dormido para teclados mecánicos Cherry MX"
-  precio: 7.00
-  categoria: "Keycaps"
-  material: "PLA"
-  colores: [ "Azul oscuro (Snorlax)", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "16g"
-  imagen: "https://media.printables.com/media/prints/ca59e263-17f5-4884-a4db-7a02579208f0/images/11005477_811a6bbd-6dda-4fda-b185-29d238e6ceeb_d7c673fc-91ec-40a4-9e40-668f50c2a02a/thumbs/inside/320x240/png/snorlax-photo.webp"
-  destacado: false
-  etiquetas: [ "pokemon", "snorlax", "teclado", "mecanico", "normal" ]
+  nombre: "Organizador Gridfinity (módulo 2x2)"
+  descripcion: "Cubilete estándar Gridfinity para cajones y mesa de trabajo. Encaja en bases del mismo sistema para crear organizadores totalmente a medida."
+  precio: 4.50
+  categoria: "Hogar y Decoración"
+  material: "PETG"
+  colores: [ "Negro", "Gris", "Blanco" ]
+  dimensiones: "84x84x40 mm (2x2 unidades)"
+  peso: "35g"
+  imagen: "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "gridfinity", "organización", "cajón", "modular", "taller" ]
 
 - id: 13
-  nombre: "Figura Grande Lugia"
-  descripcion: "Figura coleccionable de Lugia de 30cm de altura en pose de vuelo"
-  precio: 40.00
-  categoria: "Figuras"
+  nombre: "Soporte de pared para auriculares"
+  descripcion: "Gancho atornillable o adhesivo para los auriculares del escritorio o gaming. Acabado mate, no rayados al apoyar la diadema."
+  precio: 8.00
+  categoria: "Hogar y Decoración"
   material: "PLA"
-  colores: [ "Azul oscuro (Snorlax)", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "16g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USce6e543efed481/design/2024-11-11_87f4b20bc089f.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "lugia", "figura", "coleccionable", "volador" ]
+  colores: [ "Negro mate", "Blanco", "Gris" ]
+  dimensiones: "12x6x4 cm"
+  peso: "55g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "soporte", "auriculares", "escritorio", "gaming", "pared" ]
 
 - id: 14
-  nombre: "Figura Grande Ho-Oh"
-  descripcion: "Figura coleccionable de Ho-Oh de 28cm de altura con colores vibrantes"
-  precio: 45.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "28x22x18 cm"
-  peso: "420g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US3fe54baef6ca69/design/2024-12-25_37db1b5748d7f.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
+  nombre: "Perchero modular para llaves"
+  descripcion: "Panel magnético + ganchos imprimibles para entrada o vestíbulo. Añade tantos ganchos como llaves tengas, ampliable cuando llega gente nueva a casa."
+  precio: 15.00
+  categoria: "Hogar y Decoración"
+  material: "PLA + imanes"
+  colores: [ "Roble simulado", "Blanco", "Negro" ]
+  dimensiones: "20x8x2 cm"
+  peso: "120g"
+  imagen: ""
   destacado: false
-  etiquetas: [ "pokemon", "ho-oh", "figura", "coleccionable", "fuego" ]
+  etiquetas: [ "perchero", "llaves", "entrada", "magnetico", "modular" ]
 
-- id: 15
-  nombre: "Figura Grande Charizard"
-  descripcion: "Figura coleccionable de Charizard de 26cm de altura en pose dinámica"
-  precio: 45.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Shiny" ]
-  dimensiones: "26x20x15 cm"
-  peso: "390g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USd06710c9215870/design/2024-12-16_d310e1bfc9b57.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "charizard", "figura", "coleccionable", "fuego" ]
-
-- id: 16
-  nombre: "Figura Mediana Zapdos"
-  descripcion: "Figura coleccionable de Zapdos con detalles precisos"
-  precio: 21.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "3x3x3 cm"
-  peso: "15g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USf579b0f03aa66/design/2024-10-13_d3294b0ddc688.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "zapdos", "figura", "coleccionable", "electrico" ]
-
-- id: 18
-  nombre: "Figura Krabby"
-  descripcion: "El Pokemon cangrejo conocido por sus poderosas pinzas y su carácter territorial"
-  precio: 26.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "10x8x6 cm"
-  peso: "150g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USe0e062037fd208/design/2025-10-03_d430fd8a44ef88.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "krabby", "figura", "coleccionable", "agua" ]
-
-- id: 19
-  nombre: "Figura Corphish"
-  descripcion: "Pokemon agresivo de agua dulce que se adapta a cualquier entorno con sus fuertes pinzas"
-  precio: 26.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "10x8x6 cm"
-  peso: "150g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USf902be171ddc7/design/2025-09-26_c87a0a88f35e08.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "corphish", "figura", "coleccionable", "agua" ]
-
+# --- Regalos ---
 - id: 20
-  nombre: "Figura Venusaur Quest"
-  descripcion: "Versión Pokemon Quest del poderoso inicial de tipo planta con su icónica flor en la espalda"
-  precio: 38.00
-  categoria: "Figuras"
+  nombre: "Llavero con nombre"
+  descripcion: "Llavero con tu nombre, una palabra o una iniciales. Doble color con relieve, terminación suave al tacto. Texto y color a tu elección."
+  precio: 4.00
+  categoria: "Regalos"
   material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "14x12x10 cm"
-  peso: "280g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USb2afff3fdde754/design/2025-09-17_6cc9ee67f47a18.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "venusaur", "figura", "coleccionable", "planta", "quest" ]
+  colores: [ "Combinación a elegir (2 colores)" ]
+  dimensiones: "6x2 cm"
+  peso: "8g"
+  imagen: "https://images.unsplash.com/photo-1607344645866-009c320b63e0?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "llavero", "regalo", "personalizado", "nombre", "barato" ]
 
 - id: 21
-  nombre: "Figura Blastoise Quest"
-  descripcion: "Versión Pokemon Quest del tortuga de agua con potentes cañones en su caparazón"
-  precio: 32.00
-  categoria: "Figuras"
+  nombre: "Placa para puerta personalizada"
+  descripcion: "Placa para puerta de habitación, despacho o consulta. Texto, icono y dos colores a elegir. Atornillable o con adhesivo de doble cara."
+  precio: 12.00
+  categoria: "Regalos"
   material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "15x13x11 cm"
-  peso: "320g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US727e82542ba020/design/2025-09-06_bacbe16453f6c.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "blastoise", "figura", "coleccionable", "agua", "quest" ]
+  colores: [ "Hasta 2 colores combinables" ]
+  dimensiones: "15x6 cm (otros tamaños bajo pedido)"
+  peso: "45g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "placa", "puerta", "personalizado", "regalo", "oficina" ]
 
 - id: 22
-  nombre: "Figura Grande Sceptile"
-  descripcion: "El veloz Pokemon planta de Hoenn con hojas afiladas como cuchillas en sus brazos"
-  precio: 48.00
-  categoria: "Figuras"
+  nombre: "Marco para foto con dedicatoria"
+  descripcion: "Marco para foto 10x15 con frase, fecha o nombre grabado en el reverso o frontal. Sustituye al marco genérico de tienda para regalos con significado."
+  precio: 16.00
+  categoria: "Regalos"
   material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "17x14x12 cm"
-  peso: "380g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US4cd811f98fe58b/design/2025-08-12_4ff28775f7c83.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "sceptile", "figura", "coleccionable", "planta" ]
+  colores: [ "Madera simulada", "Negro", "Pastel" ]
+  dimensiones: "18x13 cm"
+  peso: "110g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "marco", "foto", "regalo", "dedicatoria", "aniversario" ]
 
 - id: 23
-  nombre: "Figura Regice"
-  descripcion: "Golem legendario de hielo con temperatura corporal de -200°C, miembro del trío legendario de Hoenn"
-  precio: 48.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "17x15x12 cm"
-  peso: "360g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US3e39aeabb229ff/design/2025-05-19_ceb031abf291e8.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
+  nombre: "Topper para tarta personalizado"
+  descripcion: "El detalle de la tarta de cumpleaños, boda o comunión. Nombre, edad, figura temática. Apto para contacto indirecto con alimento (varilla bajo el bizcocho)."
+  precio: 9.00
+  categoria: "Regalos"
+  material: "PLA food-contact-safe envoltorio"
+  colores: [ "A elegir" ]
+  dimensiones: "10x10 cm"
+  peso: "15g"
+  imagen: ""
   destacado: false
-  etiquetas: [ "pokemon", "regice", "figura", "coleccionable", "legendario", "hielo" ]
+  etiquetas: [ "topper", "tarta", "cumpleaños", "boda", "comunion" ]
 
-- id: 24
-  nombre: "Figura Grande Groudon"
-  descripcion: "Pokemon legendario que expandió los continentes y creador de la tierra firme"
-  precio: 58.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "20x18x14 cm"
-  peso: "420g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US4a1b31e0b32260/design/2025-02-16_6a9567aab2981.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "groudon", "figura", "coleccionable", "legendario", "tierra" ]
-
-- id: 25
-  nombre: "Figura Grande Reshiram"
-  descripcion: "Dragon legendario de Unova que representa la verdad con fuego blanco abrasador"
-  precio: 58.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "20x22x16 cm"
-  peso: "450g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USb3593f9c657624/design/2025-01-19_369bc790d68f8.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "reshiram", "figura", "coleccionable", "legendario", "fuego", "dragon" ]
-
-- id: 26
-  nombre: "Figura Gengar"
-  descripcion: "El Pokemon fantasma travieso que acecha en las sombras con su inquietante sonrisa"
-  precio: 32.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "9x8x7 cm"
-  peso: "180g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US7a147784621f73/design/2025-01-12_f61c2125e7c4a.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "gengar", "figura", "coleccionable", "fantasma" ]
-
-- id: 27
-  nombre: "Figura Grande Steelix"
-  descripcion: "Serpiente de acero que vive bajo tierra, su cuerpo es más duro que el diamante"
-  precio: 52.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "17x14x12 cm"
-  peso: "380g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USf942809f889a68/design/2025-01-08_03d07d5e4f575.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "steelix", "figura", "coleccionable", "acero" ]
-
-- id: 28
-  nombre: "Figura Mega Ampharos"
-  descripcion: "Mega evolución del Pokemon eléctrico con brillante melena que irradia luz"
-  precio: 35.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "9x8x7 cm"
-  peso: "170g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USc1994daf4ce408/design/2025-01-03_b2ddd8850322d.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "ampharos", "mega", "figura", "coleccionable", "electrico" ]
-
-- id: 29
-  nombre: "Figura Ash Greninja"
-  descripcion: "Forma especial de Greninja vinculado con Ash, con poder ninja mejorado"
-  precio: 35.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "9x7x8 cm"
-  peso: "160g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USe9876a42f20006/design/2024-12-28_eea695aa22b3f.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "greninja", "ash", "figura", "coleccionable", "agua" ]
-
+# --- Gaming y Tabletop ---
 - id: 30
-  nombre: "Figura Chimchar"
-  descripcion: "Pokemon inicial de fuego de Sinnoh con su cola siempre encendida"
-  precio: 28.00
-  categoria: "Figuras"
+  nombre: "Torre de dados plegable"
+  descripcion: "Torre de tiradas para D&D y juegos de mesa. Se desmonta para guardarse plana. Tiradas justas y sin rebotes por la mesa."
+  precio: 18.00
+  categoria: "Gaming y Tabletop"
   material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "5x4x5 cm"
-  peso: "80g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US70003cfb890302/design/2024-12-05_52cc728af659a.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "chimchar", "figura", "coleccionable", "fuego", "inicial" ]
+  colores: [ "Negro", "Madera", "Rojo dragón", "Verde elfo" ]
+  dimensiones: "12x12x20 cm montada"
+  peso: "180g"
+  imagen: "https://images.unsplash.com/photo-1611996575749-79a3a250f948?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "dnd", "rol", "dados", "torre", "tabletop" ]
 
 - id: 31
-  nombre: "Figura Crobat"
-  descripcion: "Pokemon murciélago evolucionado con cuatro alas para vuelo silencioso"
-  precio: 32.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "8x10x6 cm"
+  nombre: "Bandeja de dados con logo"
+  descripcion: "Bandeja antirruido para tiradas. Personalizable con nombre del grupo de rol o logo. Borde alto para que ningún dado se escape."
+  precio: 14.00
+  categoria: "Gaming y Tabletop"
+  material: "PLA + fieltro adhesivo"
+  colores: [ "Negro", "Burdeos", "Azul medianoche" ]
+  dimensiones: "22x16x3 cm"
   peso: "150g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US895b9b57aaff98/design/2024-12-03_dfc5f0f8bfe2f.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
+  imagen: ""
   destacado: false
-  etiquetas: [ "pokemon", "crobat", "figura", "coleccionable", "volador", "veneno" ]
+  etiquetas: [ "dados", "bandeja", "rol", "personalizado", "tabletop" ]
 
 - id: 32
-  nombre: "Figura Munchlax"
-  descripcion: "Pre-evolución de Snorlax, famoso por su apetito insaciable y guardar comida en su pelaje"
-  precio: 28.00
-  categoria: "Figuras"
+  nombre: "Pack bases para miniaturas (10 uds)"
+  descripcion: "Bases de 25 mm con textura para miniaturas de Warhammer, D&D o juegos compatibles. Opciones: lisa, piedra, tierra y madera."
+  precio: 6.00
+  categoria: "Gaming y Tabletop"
   material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "5x5x4 cm"
-  peso: "90g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US6be97713badb05/design/2024-11-26_91c33b10bd6a28.jpeg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
+  colores: [ "Gris piedra", "Tierra", "Negro" ]
+  dimensiones: "25 mm cada base (otros tamaños disponibles)"
+  peso: "30g (pack)"
+  imagen: ""
   destacado: false
-  etiquetas: [ "pokemon", "munchlax", "figura", "coleccionable", "normal" ]
+  etiquetas: [ "miniaturas", "warhammer", "bases", "tabletop", "pintura" ]
 
 - id: 33
-  nombre: "Figura Feraligatr"
-  descripcion: "Evolución final del inicial de agua de Johto, cocodrilo feroz con mandíbulas devastadoras"
-  precio: 35.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "9x7x8 cm"
-  peso: "180g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US81f3e5c6ccee5f/design/2024-11-21_015900a07f3b1.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
+  nombre: "Soporte para mandos de consola"
+  descripcion: "Doble soporte para mandos de PS5, Xbox o Nintendo Switch Pro. Atornillable bajo el mueble o de sobremesa."
+  precio: 12.00
+  categoria: "Gaming y Tabletop"
+  material: "PETG"
+  colores: [ "Negro mate", "Blanco" ]
+  dimensiones: "20x10x8 cm"
+  peso: "120g"
+  imagen: ""
   destacado: false
-  etiquetas: [ "pokemon", "feraligatr", "figura", "coleccionable", "agua", "inicial" ]
+  etiquetas: [ "mando", "ps5", "xbox", "switch", "gaming" ]
 
-- id: 34
-  nombre: "Figura Chikorita"
-  descripcion: "Pokemon inicial de planta de Johto con hoja aromática que calma a otros Pokemon"
-  precio: 26.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "5x4x5 cm"
-  peso: "75g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US9cc510fed0c4ac/design/2024-11-15_e1106d8b3a4cd.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "chikorita", "figura", "coleccionable", "planta", "inicial" ]
-
-- id: 35
-  nombre: "Figura Eevee"
-  descripcion: "Pokemon con ADN irregular que puede evolucionar en 8 formas diferentes según el entorno"
-  precio: 28.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "5x4x5 cm"
-  peso: "80g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USd07196ec2bffbd/design/2024-11-04_0c2ddff828fe3.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "eevee", "figura", "coleccionable", "normal", "evolucion" ]
-
-- id: 36
-  nombre: "Figura Dragonite"
-  descripcion: "Dragon amigable que circunnavega el globo en 16 horas y rescata náufragos"
-  precio: 35.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "10x9x8 cm"
-  peso: "220g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US187bfa4cbabacb/design/2024-10-07_a8d206c29d777.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "dragonite", "figura", "coleccionable", "volador", "dragon" ]
-
-- id: 37
-  nombre: "Figura Totodile"
-  descripcion: "Pokemon inicial de agua de Johto, pequeño cocodrilo juguetón con mandíbulas poderosas"
-  precio: 26.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "5x4x5 cm"
-  peso: "85g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US2b1b56742ef969/design/2024-10-29_4f3a6699028eb.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "totodile", "figura", "coleccionable", "agua", "inicial" ]
-
-- id: 38
-  nombre: "Figura Grande Articuno"
-  descripcion: "Ave legendaria de hielo que controla el clima con sus alas cristalinas"
-  precio: 52.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "11x10x9 cm"
-  peso: "280g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US2bcdfdb1b95f22/design/2024-10-26_c45d217b5d65c8.jpeg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "articuno", "figura", "coleccionable", "legendario", "hielo", "volador" ]
-
-- id: 39
-  nombre: "Figura Cyndaquil"
-  descripcion: "Pokemon inicial de fuego de Johto que enciende su lomo cuando se asusta"
-  precio: 26.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "4x4x5 cm"
-  peso: "75g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US90ed22ada545f9/design/2024-10-22_3fb962e823916.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: false
-  etiquetas: [ "pokemon", "cyndaquil", "figura", "coleccionable", "fuego", "inicial" ]
-
+# --- Funcional / Repuestos ---
 - id: 40
-  nombre: "Figura Psyduck"
-  descripcion: "Pokemon pato con constantes dolores de cabeza que desatan poderes psíquicos involuntarios"
-  precio: 28.00
-  categoria: "Figuras"
-  material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "5x4x6 cm"
-  peso: "95g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/US3f834f30ad85f/design/2025-09-24_d258dba5dadef8.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
+  nombre: "Adaptador para manguera de jardín"
+  descripcion: "Adaptador entre roscas de manguera no estándar. Imprimimos el modelo concreto que necesites con las medidas que nos pases."
+  precio: 7.00
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Negro" ]
+  dimensiones: "Bajo pedido"
+  peso: "20g"
+  imagen: ""
   destacado: false
-  etiquetas: [ "pokemon", "psyduck", "figura", "coleccionable", "agua", "psiquico" ]
+  etiquetas: [ "jardin", "manguera", "adaptador", "repuesto", "funcional" ]
 
 - id: 41
-  nombre: "Figura Typhlosion"
-  descripcion: "Evolución final de Cyndaquil con collar de fuego explosivo alrededor del cuello"
-  precio: 35.00
-  categoria: "Figuras"
+  nombre: "Soporte de móvil ajustable"
+  descripcion: "Soporte de sobremesa con ángulo regulable para videollamadas, ver series o seguir recetas. Antideslizante en la base."
+  precio: 9.00
+  categoria: "Funcional"
   material: "PLA"
-  colores: [ "Colores originales", "Personalizable" ]
-  dimensiones: "9x7x8 cm"
-  peso: "190g"
-  imagen: "https://makerworld.bblmw.com/makerworld/model/USb81b49a55b4868/design/2024-10-18_0b3d9af175844.jpg?x-oss-process=image%2Fresize%2Cw_800%2Fformat%2Cwebp"
-  destacado: true
-  etiquetas: [ "pokemon", "typhlosion", "figura", "coleccionable", "fuego", "inicial" ]
+  colores: [ "Negro", "Blanco", "Madera" ]
+  dimensiones: "9x7x10 cm"
+  peso: "70g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "movil", "soporte", "escritorio", "videollamada", "funcional" ]
+
+- id: 42
+  nombre: "Pinzas cierra-bolsas (set 6)"
+  descripcion: "Pinzas para cerrar bolsas de café, cereales o pasta. Sistema de cierre con encaje a presión que conserva el aroma mejor que una pinza de la ropa."
+  precio: 8.00
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Surtido (azul, verde, rojo, amarillo)" ]
+  dimensiones: "10 cm cada una"
+  peso: "60g (set)"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "cocina", "bolsa", "pinza", "set", "funcional" ]
+
+- id: 43
+  nombre: "Sujetacables magnéticos para escritorio"
+  descripcion: "Pack de 5 organizadores de cable con imán. Se pegan al canto del escritorio y mantienen USB, cargadores y auriculares siempre a mano."
+  precio: 6.00
+  categoria: "Funcional"
+  material: "PLA + imanes neodimio"
+  colores: [ "Negro", "Blanco" ]
+  dimensiones: "3x2 cm cada uno"
+  peso: "25g (pack)"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "cables", "organizador", "escritorio", "magnetico", "funcional" ]
+
+# --- Empresas y eventos ---
+- id: 50
+  nombre: "Llaveros corporativos con logo"
+  descripcion: "Pedidos a partir de 25 unidades. Tu logo en doble color, terminación pulida. Ideal para detalles de evento, ferias o entrada a clientes nuevos."
+  precio: 2.50
+  categoria: "Empresas y Eventos"
+  material: "PLA"
+  colores: [ "A elegir (corporativos)" ]
+  dimensiones: "Diseño propio sobre 6x3 cm"
+  peso: "8g unidad"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "empresa", "corporativo", "logo", "evento", "merchandising" ]
+
+- id: 51
+  nombre: "Expositor / display de producto"
+  descripcion: "Expositor de mostrador para tu producto físico: cosmética, electrónica, complementos. Diseño hecho a medida de tu envase."
+  precio: 35.00
+  categoria: "Empresas y Eventos"
+  material: "PLA o PETG"
+  colores: [ "A elegir" ]
+  dimensiones: "Bajo pedido"
+  peso: "Según diseño"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "expositor", "display", "tienda", "empresa", "merchandising" ]

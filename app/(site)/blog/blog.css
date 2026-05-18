@@ -126,17 +126,33 @@
 }
 
 .blog-content {
-  font-size: 16px;
+  font-size: 17px;
   color: var(--text);
-  line-height: 1.8;
+  line-height: 1.75;
+}
+.blog-content > p:first-of-type {
+  font-size: 19px;
+  line-height: 1.65;
+  color: var(--text);
 }
 .blog-content h2 {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 32px;
   letter-spacing: 0.02em;
   line-height: 1.1;
-  margin: 48px 0 16px;
+  margin: 56px 0 18px;
+  padding-top: 12px;
   color: var(--text);
+  position: relative;
+}
+.blog-content h2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 2px;
+  background: var(--accent);
 }
 .blog-content h3 {
   font-family: 'Bebas Neue', sans-serif;
@@ -146,24 +162,63 @@
   color: var(--text);
 }
 .blog-content p { margin-bottom: 18px; color: var(--muted); }
+.blog-content strong { color: var(--text); font-weight: 600; }
 .blog-content a {
   color: var(--accent);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
+.blog-content a:hover { opacity: 0.75; }
 .blog-content ul, .blog-content ol {
   margin: 16px 0 24px 28px;
   color: var(--muted);
 }
-.blog-content li { margin-bottom: 6px; }
+.blog-content li { margin-bottom: 8px; line-height: 1.65; }
+.blog-content li::marker { color: var(--accent); }
 .blog-content blockquote {
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  padding: 6px 0 6px 20px;
-  margin: 24px 0;
-  color: var(--muted);
-  font-style: italic;
+  border-radius: var(--r);
+  padding: 16px 22px;
+  margin: 28px 0;
+  color: var(--text);
+  font-style: normal;
 }
+.blog-content blockquote p { margin: 0; color: var(--text); }
+.blog-content blockquote p + p { margin-top: 10px; }
+
+/* GFM tables */
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 28px 0;
+  font-size: 14px;
+  font-family: 'Barlow', sans-serif;
+}
+.blog-content thead {
+  background: var(--surface);
+}
+.blog-content th {
+  text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.blog-content td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+.blog-content tbody tr:last-child td { border-bottom: none; }
+.blog-content tbody tr:hover { background: var(--surface); }
+.blog-content table strong { color: var(--text); }
 .blog-content code {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.9em;

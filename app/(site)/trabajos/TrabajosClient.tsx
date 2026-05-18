@@ -17,7 +17,7 @@ export function TrabajosClient({ trabajos }: { trabajos: Trabajo[] }) {
   }, []);
 
   return (
-    <div className="tr-page fade-up">
+    <div className="tr-page">
       <div className="tr-hero">
         <h1 className="bebas" style={{ fontSize: 52, margin: '0 0 16px' }}>
           Nuestros Trabajos

@@ -514,6 +514,11 @@
     color: var(--text);
     white-space: nowrap;
 }
+.mu-modal-combina-mat {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
 .mu-modal-actions { display: flex; gap: 10px; }
 .mu-modal-actions a { flex: 1; text-align: center; }
 

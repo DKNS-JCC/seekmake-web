@@ -1,0 +1,308 @@
+posts:
+- slug: "introduccion-impresion-3d-guia-principiantes"
+  title: "Qué es realmente la impresión 3D (y para qué la usa la gente en 2026)"
+  excerpt: "Una introducción honesta a la impresión 3D FDM desde el taller: cómo funciona, qué resuelve hoy, y dónde la fabricación tradicional sigue siendo mejor."
+  content: |
+    Un cliente entró el otro día con la tapa de un robot de cocina en una bolsa. Se le había roto la pestaña en 2018 y el fabricante llevaba años sin venderla. En 40 minutos la modelamos, en una hora la imprimimos en PETG negro, y el aparato volvió a casa funcionando. Coste: 6 €. Coste del aparato nuevo equivalente: 180 €.
+
+    Esto es la impresión 3D en la práctica. No el chiste de "imprime tu propia casa", ni la fantasía de un Star Trek replicator: una herramienta concreta que resuelve problemas concretos.
+
+    > **En resumen:** la impresión 3D FDM construye piezas de plástico capa a capa. Es perfecta para piezas únicas, prototipos y repuestos. No compite con la inyección a gran escala ni con el metal mecanizado, pero rellena un hueco que antes no tenía solución.
+
+    ## Cómo funciona, en una frase
+    Un hilo de plástico de 1.75 mm entra en un cabezal, se calienta a 200–260 °C, sale por una boquilla de 0.4 mm y se va depositando capa sobre capa hasta formar la pieza. La cama (la superficie sobre la que imprime) se calienta para que la primera capa se adhiera y no se levante al enfriarse.
+
+    El método se llama **FDM** (*Fused Deposition Modeling*) y es el que hace el 95% de la impresión 3D doméstica. Existen otras tecnologías —resina (SLA/MSLA), polvo (SLS), metal— pero todas son significativamente más caras y técnicas.
+
+    ## Los tres números que mandan en una impresión
+
+    | Parámetro | Rango habitual | Qué cambia |
+    |---|---|---|
+    | **Altura de capa** | 0.12–0.28 mm | Acabado y tiempo. Capa fina = más detalle, hasta 3× más tiempo. |
+    | **Velocidad** | 50–500 mm/s | Las máquinas modernas (Bambu X1, Prusa Core One) llegan a 300–500 mm/s reales sin perder calidad. Las antiguas, a 60. |
+    | **Relleno** | 10–60% | Las piezas nunca son macizas: el interior es un patrón en panal. 15% para decoración, 40–60% para piezas funcionales. |
+
+    ## Qué resuelve bien
+
+    - **Repuestos descatalogados.** Pomos, tapas, engranajes pequeños, sujeciones de plástico que el fabricante ya no vende.
+    - **Prototipos.** Validar una idea físicamente antes de pedir un molde de 3.000 €.
+    - **Organización a medida.** Cubiletes que encajan exactos en tu cajón, no genéricos.
+    - **Regalos personalizados.** Cosas únicas con nombre, foto o fecha.
+    - **Soportes y adaptadores.** Para móviles, mandos, herramientas, montajes en pared.
+    - **Miniaturas y figuras coleccionables.**
+
+    ## Para qué *no* es la herramienta adecuada
+
+    - **Series largas.** Pasados los 200–500 ejemplares, una inyección por molde sale más barata.
+    - **Piezas que aguantan tensión continua bajo sol.** El PLA cede sobre los 60 °C; el ABS o ASA aguantan mejor, pero ninguna se acerca al aluminio.
+    - **Acabado tipo cristal sin postprocesado.** Las capas siempre se ven. Se pueden lijar, vaporizar (ABS) o pintar, pero da trabajo.
+    - **Estanqueidad perfecta.** Las capas dejan microporos. Se mejoran con paredes gruesas y materiales específicos, pero no es lo natural.
+
+    ## El flujo, paso a paso
+
+    1. **Modelo 3D**, en formato STL o 3MF. Lo descargas (Printables, MakerWorld) o lo encargas a un diseñador.
+    2. **Laminado**: un programa (Orca Slicer, Bambu Studio, PrusaSlicer) traduce el modelo en las instrucciones que la impresora ejecuta capa a capa.
+    3. **Impresión**: de 20 minutos a varios días, según tamaño.
+    4. **Postprocesado**: retirar soportes, lijar uniones si es necesario, pintar si quieres.
+
+    ## Si te ronda una idea
+
+    Lo más útil suele ser una conversación corta. Trae el objeto roto, una foto de lo que necesitas o un enlace al modelo, y te decimos en el momento si tiene sentido imprimirlo, qué material conviene y cuánto cuesta. Puedes [pedir presupuesto online](/instant-quote) en un minuto o ver el [catálogo](/catalogo) para inspirarte.
+  cover_image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1200&auto=format&fit=crop"
+  published: true
+  published_at: "2026-05-18T10:00:00Z"
+
+- slug: "pla-vs-petg-que-filamento-elegir"
+  title: "PLA, PETG, ABS, ASA y TPU: qué material elegir según para qué"
+  excerpt: "Una tabla comparativa real, temperaturas exactas, y una regla de decisión simple para los cinco filamentos más usados en impresión FDM."
+  content: |
+    El material decide más que la impresora. Una pieza bien diseñada en el material equivocado se rompe; una pieza mediocre en el material correcto aguanta años. Estos son los cinco filamentos que cubren el 99% de nuestros encargos, con datos que podemos defender.
+
+    ## Tabla comparativa
+
+    | Material | T° imprimir | T° cama | Resiste hasta | Exterior | Imprime fácil |
+    |---|---|---|---|---|---|
+    | **PLA** | 200–220 °C | 55–60 °C | ~60 °C | ✗ | ★★★★★ |
+    | **PETG** | 230–250 °C | 75–85 °C | ~80 °C | ✓ (años) | ★★★★ |
+    | **ABS** | 240–260 °C | 100–110 °C | ~100 °C | ✓ pero amarillea | ★★ (cámara cerrada) |
+    | **ASA** | 240–260 °C | 100–110 °C | ~100 °C | ★ Excelente | ★★ (cámara cerrada) |
+    | **TPU 95A** | 220–235 °C | 50–60 °C | ~70 °C | ✓ | ★★★ (lento) |
+
+    > **Glass transition** = temperatura a la que el plástico empieza a reblandecerse y deformarse bajo carga. Por encima de ese punto, la pieza pierde rigidez.
+
+    ## PLA — el por defecto, y con razón
+
+    Bioplástico derivado del almidón de maíz. No huele al imprimir, da muchísimo detalle, y aguanta cualquier uso de interior sin problemas.
+
+    - **Cuándo elegirlo:** figuras, decoración, prototipos visuales, regalos, organizadores que no aguantan peso, juguetes.
+    - **Cuándo NO:** dentro de un coche en agosto (el coche llega a 70 °C), soportes para el horno, anillos para tornillos que se aprietan a menudo (se rompen en frágil).
+    - **Variantes útiles:** *PLA+* (más resistente al impacto), *PLA seda* (acabado brillante), *PLA madera* (mezcla con polvo de madera real, queda muy bien).
+
+    ## PETG — el todoterreno
+
+    El mismo plástico que las botellas de agua, modificado para imprimirse. Es el material que más usamos para piezas funcionales: aguanta golpes, sol y humedad sin despeinarse.
+
+    - **Cuándo elegirlo:** soportes mecánicos, piezas para coche que no van al sol directo, organizadores que cargan peso, todo lo que se moje.
+    - **Pegas reales:** produce más *stringing* (hilos finos entre paredes) que el PLA, y a veces se pega *demasiado* a la cama —puede arrancar trozos si no se separa con cuidado.
+
+    ## ABS — el plástico de Lego
+
+    El clásico. Resistente, mecanizable (se puede taladrar, lijar, atornillar). Su gran ventaja: se puede *vaporizar con acetona* para dejar un acabado liso casi como inyección.
+
+    - **Cuándo elegirlo:** carcasas industriales, piezas que vayan a llevar tornillos auto-perforantes, prototipos que necesitan acabado.
+    - **Pegas reales:** huele al imprimir (necesita cámara cerrada y ventilación), se contrae mucho —las piezas grandes pueden agrietarse o despegarse de la cama.
+
+    ## ASA — el ABS moderno
+
+    Misma resistencia mecánica que el ABS, pero con resistencia UV mucho mejor. Si una pieza va a vivir al sol durante años (coche, jardín, fachada), va en ASA.
+
+    - **Cuándo elegirlo:** señalética exterior, retrovisores, soportes de placa solar, accesorios de jardín que aguanten.
+    - **Misma pega que el ABS:** huele, necesita cámara cerrada.
+
+    ## TPU — goma técnica
+
+    Filamento flexible. La dureza se mide en *shore A*: 85A es muy blando (gomas elásticas), 95A es tipo zapatilla deportiva, 98A se acerca al PETG. El estándar es 95A.
+
+    - **Cuándo elegirlo:** fundas para móvil, tacos antideslizantes, juntas, mangos blandos, ruedas de rover RC.
+    - **Pegas reales:** imprime más lento (20–40 mm/s con la mayoría de impresoras), necesita extrusor *direct drive* (no Bowden).
+
+    ## La regla rápida
+
+    1. ¿Va a estar en interior y se ve? → **PLA**.
+    2. ¿Va a aguantar peso, golpes o humedad? → **PETG**.
+    3. ¿Va al sol durante años? → **ASA**.
+    4. ¿Tiene que doblarse o amortiguar? → **TPU**.
+    5. Si dudas entre PLA y PETG y no es decorativo → **PETG**. Siempre.
+
+    Si quieres ver los colores que tenemos en stock por material, mira el [muestrario](/muestrario). Y si todavía no lo tienes claro, hay un pequeño test de 4 preguntas al principio que te dice cuál encaja en tu caso.
+  cover_image: "https://images.unsplash.com/photo-1631284531903-8947690623a9?q=80&w=1200&auto=format&fit=crop"
+  published: true
+  published_at: "2026-05-18T11:00:00Z"
+
+- slug: "como-calibrar-tu-impresora-3d"
+  title: "Primera capa perfecta: por qué casi todo falla aquí, y cómo arreglarlo"
+  excerpt: "El 90% de los fracasos en impresión 3D ocurren en los primeros 0.2 mm. Una rutina concreta de 5 pasos con valores reales y diagnóstico visual."
+  content: |
+    Una pieza que se cae a las ocho horas casi siempre falló en el minuto uno. Lo notas al despegarla: si la base se desprende con el dedo, ya empezó mal. Esta es la rutina exacta con la que repasamos una impresora cuando algo no sale como debería.
+
+    > **Si solo lees una cosa, que sea esta:** la primera capa tiene que verse uniforme, con las líneas pegadas entre sí, sin huecos y sin que se note ningún surco al pasar la uña. Cualquier otra cosa es síntoma de algo mal.
+
+    ## 1. Cama plana antes que nivelada
+
+    Las impresoras modernas (Bambu, Prusa, Creality K-series) tienen un sensor que compensa la inclinación. Lo que no compensan es una cama **deformada**.
+
+    Pon una regla metálica de canto sobre la cama, con la luz por detrás. Si ves luz colándose por debajo de la regla en alguna zona, la cama está abombada. El sensor solo puede compensar parcialmente: lo que ves en pantalla como "auto-level OK" en realidad es "ajustado lo que ha podido".
+
+    **Solución rápida:** una cama nueva (PEI flexible, 25–35 €). Es la única forma de partir de algo plano.
+
+    ## 2. Z-Offset: el número que más duele afinar
+
+    Es la distancia real entre la boquilla y la cama durante la impresión. Aunque la auto-nivelación detecte la cama, este número se ajusta a mano y la diferencia entre 0.04 mm está bien y 0.06 mm está mal.
+
+    **Cómo calibrarlo:**
+
+    1. Imprime un cuadrado de una sola capa que cubra toda la zona útil.
+    2. Mira las líneas paralelas que forman la superficie:
+
+    | Síntoma | Diagnóstico | Acción |
+    |---|---|---|
+    | Líneas transparentes, plástico aplastado, brillante | Z demasiado bajo | Súbelo 0.02–0.04 mm |
+    | Huecos visibles entre línea y línea | Z demasiado alto | Bájalo 0.02–0.04 mm |
+    | Líneas que se ondulan o se mueven al imprimir | Z muy alto, no se pega | Bájalo 0.05 mm y limpia la cama |
+    | Superficie lisa y mate, líneas pegadas | Correcto | No tocar |
+
+    Repite cada 0.02 mm hasta clavarlo. Suelen ser 5 minutos.
+
+    ## 3. Adhesión: la grasa es el enemigo
+
+    Una cama nueva agarra cualquier cosa. Después de 50 impresiones acumula sebo de los dedos, polvo, restos de filamento.
+
+    - **Para limpiar:** alcohol isopropílico al 90% (no al 70%, no rinde). Frota seco. Cada 10 impresiones.
+    - **Si una zona concreta falla siempre:** un toque de barra de pegamento (Pritt sirve). Añade adherencia controlada y se quita con agua tibia. No abuses: pegamento sobre pegamento se acumula y luego despega trozos de cama.
+    - **Errores frecuentes:** limpiar con producto desengrasante (deja residuo), tocar la cama con los dedos después de limpiar.
+
+    ## 4. Temperatura: la etiqueta no es la verdad
+
+    Las temperaturas que vienen en la bobina son una *recomendación*, no una verdad universal. Dos PLAs de marcas distintas con la misma etiqueta pueden necesitar 10 °C de diferencia.
+
+    - **¿Las capas se separan en vertical?** Sube 5 °C el extrusor.
+    - **¿Demasiado *stringing* (hilos entre paredes)?** Baja 5 °C.
+    - **¿La primera capa no se pega y todo lo demás va bien?** Sube 5 °C la cama.
+    - **¿Cambias de marca de filamento?** Imprime una torre de calibración de temperatura. Te ahorra horas de prueba y error.
+
+    ## 5. La primera capa va más lenta. Siempre.
+
+    Aunque tu impresora vaya a 300 mm/s, la primera capa debe ir a **20–30 mm/s**. Es la configuración por defecto del laminador; si la has tocado pensando que ibas a ganar tiempo, vuelve a los valores originales.
+
+    El motivo: la primera capa necesita que el plástico tenga tiempo de fundirse contra la cama. A 100 mm/s no se pega. Los 60 segundos extra que tarda la primera capa se compensan con cero piezas tiradas a la basura.
+
+    ## Cómo saber que está bien
+
+    Pasa el dedo por la primera capa de cualquier impresión nuevita. Tiene que notarse **lisa**, sin crestas entre líneas. Si suena rugosa al rozar con la uña, todavía está alta y conviene bajar 0.02 mm el Z-offset.
+
+    Diez minutos calibrando al principio te ahorran diez horas tirando piezas a la basura.
+  cover_image: "https://images.unsplash.com/photo-1565034946487-077786996e27?q=80&w=1200&auto=format&fit=crop"
+  published: true
+  published_at: "2026-05-18T12:00:00Z"
+
+- slug: "mejores-sitios-descargar-modelos-3d-gratis"
+  title: "Dónde encontrar modelos 3D buenos en 2026 (y cómo no perder horas en los malos)"
+  excerpt: "Cinco repositorios, qué brilla en cada uno, qué evitar, y cómo leer las licencias antes de imprimir algo que vayas a vender."
+  content: |
+    Internet está lleno de modelos 3D gratis y la calidad varía entre obra maestra y cubo mal exportado. Estos son los sitios que usamos y para qué brilla cada uno. Pista: el orden no es casualidad.
+
+    > **Antes de descargar nada**, comprueba el número de descargas y los comentarios. Un modelo con 50.000 descargas y comentarios recientes está probado por mucha gente. Uno con 12 descargas y ningún comentario, no.
+
+    ## 1. Printables — el más sano
+
+    Lo lleva Prusa. Tiene un sistema de **recompensas que paga a los diseñadores** cuando alguien imprime sus modelos, y eso atrae a creadores serios. La interfaz es limpia, los modelos vienen con fotos reales (no solo renders) y los comentarios son genuinamente útiles.
+
+    - **Brilla en:** funcional, organización (Gridfinity en particular), piezas de repuesto, mejoras de impresoras.
+    - **Formato preferido:** STL y 3MF.
+    - **Licencia más común:** Creative Commons (varias variantes).
+
+    ## 2. MakerWorld — el más cómodo si tienes Bambu
+
+    Es el sitio de Bambu Lab. Su gran ventaja: muchos modelos vienen con **perfiles preconfigurados** que incluyen pintado por color (sistema AMS), soportes ya colocados y altura de capa óptima. Si tienes una Bambu, descargas y pulsas imprimir.
+
+    - **Brilla en:** figuras coleccionables, multicolor, modelos con piezas móviles (*print-in-place*).
+    - **Formato preferido:** 3MF (con perfiles incluidos).
+    - **Pega:** los perfiles solo aprovechan al máximo en impresoras Bambu; en otras marcas pierdes algo de optimización.
+
+    ## 3. Thingiverse — el archivo histórico
+
+    El veterano. Su interfaz envejece mal y los modelos nuevos están casi todos en los otros dos, pero contiene **20 años de creación libre**. Para modelos antiguos, oscuros, educativos o de repuestos de aparatos descatalogados, sigue siendo insustituible.
+
+    - **Brilla en:** repuestos de electrodomésticos descatalogados, modelos educativos, archivos clásicos.
+    - **Pega:** muchos modelos sin actualizar, fotos antiguas, comentarios fríos.
+
+    ## 4. Cults3D — la galería premium
+
+    Mezcla modelos gratis y de pago. Lo de pago es de **muy** alta calidad, sobre todo en figuras de fantasía, miniaturas detalladas para tabletop y modelos artísticos. Es donde compran diseños los creadores profesionales que luego venden las impresiones.
+
+    - **Brilla en:** figuras detalladas, miniaturas (Warhammer-compatible y similares), modelos artísticos.
+    - **Pega:** los modelos gratis son muchas veces "el primer episodio" de una serie de pago.
+
+    ## 5. Thangs — el buscador transversal
+
+    No aloja modelos: **indexa los demás sitios** y permite buscarlos a la vez. Incluye búsqueda geométrica: subes una foto o un modelo y te enseña parecidos. Útil cuando sabes lo que quieres pero no sabes en qué repositorio está.
+
+    ## Las licencias importan (si vas a vender)
+
+    Si imprimes solo para ti, da igual la licencia. Si vendes la impresión:
+
+    | Licencia | ¿Vender? | ¿Modificar? | Crédito obligatorio |
+    |---|---|---|---|
+    | CC0 / Dominio público | ✓ | ✓ | No |
+    | CC BY | ✓ | ✓ | Sí |
+    | CC BY-SA | ✓ | ✓ (la derivada también libre) | Sí |
+    | CC BY-NC | ✗ (NC = Non-Commercial) | ✓ | Sí |
+    | CC BY-ND | ✓ | ✗ (ND = No Derivatives) | Sí |
+
+    Si el modelo no tiene licencia clara, escribe al autor. La mayoría de diseñadores conceden permiso comercial por un acuerdo simple, a veces a cambio de una pequeña regalía o un crédito en el producto.
+
+    ## Si lo que buscas no existe
+
+    A veces el modelo que necesitas no lo ha hecho nadie. Es más habitual de lo que parece, sobre todo para repuestos específicos o regalos personalizados. Podemos diseñártelo a medida en unas horas. [Pide presupuesto](/instant-quote) con un boceto, una foto de referencia o las medidas, y te decimos viabilidad y precio el mismo día.
+  cover_image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?q=80&w=1200&auto=format&fit=crop"
+  published: true
+  published_at: "2026-05-18T13:00:00Z"
+
+- slug: "aplicaciones-practicas-impresion-3d-hogar"
+  title: "10 cosas que imprimimos cada mes (y ninguna es una figurita)"
+  excerpt: "Casos reales de impresión 3D útil en casa: reparaciones que salvan electrodomésticos, organización a medida y mejoras del día a día."
+  content: |
+    La imagen popular de la impresión 3D es la figurita decorativa. En el taller, las figuritas son la minoría. Esto es lo que de verdad imprimimos semana tras semana para clientes de Salamanca, con precios reales.
+
+    ## 1. Repuestos de electrodomésticos descatalogados
+
+    Caso típico: el bote de la batidora pierde la tapa en 2018, el fabricante ya no la hace, y la batidora pasa a la basura. Un repuesto impreso suele costar **4–8 €** y llega en 24–48 h. Salva un aparato de 80–200 €.
+
+    El más satisfactorio de los usos. La pieza no tiene por qué ser idéntica al original: lo que importa es que encaje y aguante.
+
+    ## 2. Pomos, tiradores y patas de mueble
+
+    Muebles antiguos con un pomo perdido se replican a partir de los que quedan. Lo medimos o lo escaneamos y lo imprimimos en color a juego. **De 3 a 12 € por pomo**, depende del detalle.
+
+    ## 3. Organización de cajones con Gridfinity
+
+    Gridfinity es un estándar de la comunidad: una cuadrícula modular de 42×42 mm sobre la que encajan compartimentos de diferentes tamaños. Imprimes una base que se adapta exacta a tu cajón y vas montando cubiletes encima como Tetris.
+
+    Funciona en cajones de cocina (cubiertos, especias), de taller (tornillos, brocas, llaves), de escritorio (cables, USB) y de baño. **8–15 € por cajón completo**.
+
+    ## 4. Soportes de pared
+
+    Para auriculares, cepillo de dientes eléctrico, mandos de consola, teléfonos antiguos, herramientas. Cualquier objeto con forma conocida puede colgar de la pared en una pieza hecha para encajar exactamente. **5–15 € por soporte**.
+
+    ## 5. Adaptadores y conectores
+
+    Una manguera de jardín que no se ajusta a una boquilla rara, dos tubos de aspirador con diámetros diferentes, una junta perdida de la cafetera. Pequeñas piezas que **ningún fabricante hace** y que un taller resuelve en una tarde. **5–10 €**.
+
+    ## 6. Regalos personalizados
+
+    Llaveros con nombre, placas para puertas, soportes con dedicatoria, marcos con la fecha de una boda. Pequeños, baratos (**4–18 €**) y con un valor sentimental que un objeto industrial nunca tiene.
+
+    ## 7. Lithophanes (litofanías)
+
+    Una foto convertida en una placa que, a contraluz, revela la imagen con sorprendente detalle. Regalo emocional que dura años. **12–20 €** según tamaño.
+
+    ## 8. Réplicas y "prótesis" para juguetes
+
+    El brazo del muñeco favorito se rompió. Lo modelamos, lo imprimimos, queda como nuevo. Si está fuera de producción esto puede salvar literalmente la Navidad.
+
+    ## 9. Accesorios de jardín
+
+    Etiquetas para macetas, soportes para riego por goteo, sujetadores para tutores de plantas. Se imprime en **PETG** (interior) o **ASA** (exterior expuesto al sol durante años) para que aguanten.
+
+    ## 10. Mejoras de muebles IKEA
+
+    Existe toda una subcultura de piezas impresas que añaden funciones que IKEA no incluyó: divisores extra para la cómoda Malm, soportes ocultos para el armario Pax, asas más cómodas para el carrito Råskog. Búscalo como "*IKEA hack*" en Printables y verás.
+
+    ---
+
+    > **Si tienes una de estas necesidades** y no quieres comprar una impresora ni aprender a diseñar, podemos hacerlo nosotros. Trae el objeto, una foto o describelo bien por WhatsApp y te decimos viabilidad y precio el mismo día.
+
+    [Calcular precio →](/instant-quote)
+  cover_image: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?q=80&w=1200&auto=format&fit=crop"
+  published: true
+  published_at: "2026-05-18T14:00:00Z"

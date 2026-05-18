@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import type { Producto, Categoria } from '@/lib/types';
+import type { Producto } from '@/lib/types';
 import './catalogo.css';
 
 type SortKey = 'destacado' | 'precio-asc' | 'precio-desc' | 'nombre';
@@ -333,53 +333,57 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
             </div>
           </div>
         ) : (
-          <div className={'cat-grid' + (view === 'list' ? ' cat-grid-list' : '')}>
+          <div className={'cat-grid' + (view === 'list' ? ' list-view' : '')}>
             {visible.map((p) => (
               <article
                 key={p.id}
-                className="cat-card"
+                className="p-card"
                 onClick={() => setActive(p)}
               >
                 {p.destacado && (
-                  <span className="cat-card-badge">★ Destacado</span>
+                  <span className="p-card-badge">★ Destacado</span>
                 )}
-                <div className="cat-card-image">
+                <div className="p-card-img">
                   {p.imagen ? (
                     <img src={p.imagen} alt={p.nombre} loading="lazy" />
                   ) : (
-                    <svg
-                      width="48"
-                      height="48"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1}
-                      style={{ color: 'var(--muted)', opacity: 0.3 }}
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <path d="m21 15-5-5L5 21" />
-                    </svg>
+                    <div className="p-card-img-placeholder">
+                      <svg
+                        width="48"
+                        height="48"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1}
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="m21 15-5-5L5 21" />
+                      </svg>
+                    </div>
                   )}
                 </div>
-                <div className="cat-card-body">
-                  <div className="cat-card-tag">{p.categoria}</div>
-                  <h3 className="cat-card-title">{p.nombre}</h3>
-                  <p className="cat-card-desc">{p.descripcion}</p>
-                  <div className="cat-card-footer">
-                    <span className="cat-card-price">
-                      {p.precio.toFixed(2)}€
+                <div className="p-card-body">
+                  <div className="p-card-category">{p.categoria}</div>
+                  <h3 className="p-card-name">{p.nombre}</h3>
+                  <p className="p-card-desc">{p.descripcion}</p>
+                  <div className="p-card-footer">
+                    <span className="p-card-price">
+                      {Math.floor(p.precio)}
+                      <span className="eur">
+                        .{((p.precio % 1) * 100).toString().padStart(2, '0')}€
+                      </span>
                     </span>
                     <button
                       type="button"
-                      className="cat-card-btn"
+                      className="p-card-action"
+                      aria-label="Ver detalles"
                       onClick={(e) => {
                         e.stopPropagation();
                         setActive(p);
                       }}
-                    >
-                      Ver detalles
-                    </button>
+                    />
+
                   </div>
                 </div>
               </article>
