@@ -1,10 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
 import './muestrario.css';
+
+// Lazy-load the 3D visualizer so three.js (~150 KB gzipped) doesn't ship
+// with the muestrario bundle until the user opens it.
+const Visualizer3D = dynamic(
+  () => import('./Visualizer3D').then((m) => m.Visualizer3D),
+  { ssr: false }
+);
 
 const WA_BASE = 'https://wa.me/34665148956';
 
@@ -200,6 +208,9 @@ export function MuestrarioClient({
   }, [colores]);
 
   const empty = filamentos.length === 0;
+
+  // 3D visualizer
+  const [vizOpen, setVizOpen] = useState(false);
 
   // ----- Modal helpers ------------------------------------------------------
 
@@ -646,6 +657,50 @@ export function MuestrarioClient({
         colores={colores}
         onJumpToColor={(c, material) => openModal(c, material)}
       />
+
+      {/* Floating 3D visualizer button */}
+      {!empty && (
+        <button
+          type="button"
+          className="viz-fab"
+          onClick={() => setVizOpen(true)}
+          aria-label="Abrir visualizador 3D"
+        >
+          <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" />
+          </svg>
+          Visualizador 3D
+        </button>
+      )}
+
+      {vizOpen && (
+        <Visualizer3D
+          filamentos={filamentos}
+          colores={colores}
+          initialSelected={
+            selected
+              ? {
+                  color: selected.color,
+                  filamento:
+                    filamentos.find(
+                      (f) =>
+                        f.nombre === selected.material ||
+                        f.material === selected.material
+                    ) ?? filamentos[0]
+                }
+              : null
+          }
+          onClose={() => setVizOpen(false)}
+        />
+      )}
     </>
   );
 }

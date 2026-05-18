@@ -2,11 +2,13 @@
 
 import { ChangeEvent, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { compressImage, formatBytes } from '@/lib/image-compress';
 
 /**
- * URL input + live preview + "Subir imagen" button that uploads the
- * selected file to the public `product-images` bucket and writes the
- * resulting URL back into the field.
+ * URL input + live preview + "Subir imagen" button that compresses the
+ * selected file (resizes to ≤1600px max edge, re-encodes to WebP) before
+ * uploading to the public `product-images` bucket. Keeps storage usage
+ * tiny — typical 5 MB photo ends up at ~120–200 KB.
  */
 export function ImageUploadField({
   value,
@@ -18,41 +20,70 @@ export function ImageUploadField({
   folder?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [stage, setStage] = useState<'idle' | 'compressing' | 'uploading'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [savings, setSavings] = useState<string | null>(null);
 
   async function upload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
     setError(null);
+    setSavings(null);
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    let mime = file.type;
-    if (!mime || mime === 'application/octet-stream') {
-      if (ext === 'png') mime = 'image/png';
-      else if (ext === 'webp') mime = 'image/webp';
-      else if (ext === 'svg') mime = 'image/svg+xml';
-      else mime = 'image/jpeg';
+    let compressed;
+    try {
+      setStage('compressing');
+      compressed = await compressImage(file);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo comprimir');
+      setStage('idle');
+      return;
     }
 
+    const ext = compressed.filename.split('.').pop() || 'webp';
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    setStage('uploading');
     const supabase = createClient();
     const { error: upErr } = await supabase.storage
       .from('product-images')
-      .upload(path, file, { contentType: mime, upsert: false });
+      .upload(path, compressed.blob, {
+        contentType: compressed.contentType,
+        upsert: false
+      });
 
     if (upErr) {
       setError(upErr.message);
-      setUploading(false);
+      setStage('idle');
       return;
     }
 
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
     onChange(data.publicUrl);
-    setUploading(false);
+
+    if (!compressed.skipped) {
+      const ratio = Math.round(
+        (1 - compressed.finalBytes / compressed.originalBytes) * 100
+      );
+      setSavings(
+        `${formatBytes(compressed.originalBytes)} → ${formatBytes(
+          compressed.finalBytes
+        )} (–${ratio}%)`
+      );
+    } else {
+      setSavings(`Subido tal cual (${formatBytes(compressed.finalBytes)})`);
+    }
+
+    setStage('idle');
     if (fileRef.current) fileRef.current.value = '';
   }
+
+  const buttonLabel =
+    stage === 'compressing'
+      ? 'Comprimiendo…'
+      : stage === 'uploading'
+      ? 'Subiendo…'
+      : 'Subir';
 
   return (
     <div>
@@ -76,11 +107,11 @@ export function ImageUploadField({
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          disabled={uploading}
+          disabled={stage !== 'idle'}
           className="btn-outline"
           style={{ padding: '8px 16px', fontSize: 11, whiteSpace: 'nowrap' }}
         >
-          {uploading ? 'Subiendo…' : 'Subir'}
+          {buttonLabel}
         </button>
         <input
           ref={fileRef}
@@ -93,6 +124,20 @@ export function ImageUploadField({
 
       {error && (
         <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{error}</div>
+      )}
+
+      {savings && (
+        <div
+          style={{
+            color: 'var(--accent)',
+            fontSize: 11,
+            fontFamily: 'IBM Plex Mono, monospace',
+            letterSpacing: '0.08em',
+            marginBottom: 8
+          }}
+        >
+          {savings}
+        </div>
       )}
 
       <div

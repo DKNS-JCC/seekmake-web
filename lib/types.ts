@@ -43,6 +43,10 @@ export type Trabajo = {
   etiquetas: string[];
   destacado: boolean;
   orden: number;
+  likes: number;
+  dislikes: number;
+  fecha_realizacion: string | null;  // YYYY-MM-DD; null = use created_at
+  fecha_efectiva: string;             // computed: fecha_realizacion ?? created_at
   created_at: string;
   updated_at: string;
 };
@@ -122,12 +126,13 @@ export type Database = {
       };
       trabajos: {
         Row: Trabajo;
-        Insert: Omit<Trabajo, 'id' | 'created_at' | 'updated_at'> & {
+        // fecha_efectiva is a STORED generated column — cannot be written.
+        Insert: Omit<Trabajo, 'id' | 'created_at' | 'updated_at' | 'fecha_efectiva'> & {
           id?: string;
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Trabajo>;
+        Update: Partial<Omit<Trabajo, 'fecha_efectiva'>>;
         Relationships: [];
       };
     };

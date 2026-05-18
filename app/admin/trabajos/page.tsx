@@ -11,7 +11,10 @@ import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
 
-type Draft = Omit<Trabajo, 'id' | 'created_at' | 'updated_at'>;
+type Draft = Omit<
+  Trabajo,
+  'id' | 'created_at' | 'updated_at' | 'fecha_efectiva' | 'likes' | 'dislikes'
+>;
 
 const emptyDraft = (): Draft => ({
   titulo: '',
@@ -20,7 +23,8 @@ const emptyDraft = (): Draft => ({
   material: '',
   etiquetas: [],
   destacado: true,
-  orden: 0
+  orden: 0,
+  fecha_realizacion: null
 });
 
 export default function AdminTrabajos() {
@@ -71,7 +75,8 @@ export default function AdminTrabajos() {
       material: t.material,
       etiquetas: t.etiquetas,
       destacado: t.destacado,
-      orden: t.orden
+      orden: t.orden,
+      fecha_realizacion: t.fecha_realizacion
     });
     setEditingId(t.id);
     setSaveState('idle');
@@ -362,6 +367,46 @@ export default function AdminTrabajos() {
                 placeholder="Una línea sobre el trabajo, qué cliente, qué retos hubo…"
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
+            </Field>
+
+            <Field
+              label="Fecha de realización"
+              hint="Cuándo terminaste la pieza. Si lo dejas vacío se usa la fecha de subida."
+            >
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="date"
+                  value={draft.fecha_realizacion ?? ''}
+                  onChange={(e) =>
+                    patch('fecha_realizacion', e.target.value || null)
+                  }
+                  max={new Date().toISOString().slice(0, 10)}
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn-outline"
+                  style={{ padding: '8px 14px', fontSize: 11, whiteSpace: 'nowrap' }}
+                  onClick={() =>
+                    patch(
+                      'fecha_realizacion',
+                      new Date().toISOString().slice(0, 10)
+                    )
+                  }
+                >
+                  Hoy
+                </button>
+                {draft.fecha_realizacion && (
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    style={{ padding: '8px 14px', fontSize: 11, whiteSpace: 'nowrap' }}
+                    onClick={() => patch('fecha_realizacion', null)}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
             </Field>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
