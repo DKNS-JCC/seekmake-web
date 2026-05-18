@@ -9,6 +9,7 @@ import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
+import { RebuildButton } from '../_components/RebuildButton';
 import './blog-admin.css';
 
 type Draft = Omit<BlogPost, 'id' | 'created_at' | 'updated_at'>;
@@ -183,9 +184,30 @@ export default function AdminBlog() {
         <h1 className="section-title" style={{ fontSize: 32 }}>
           Blog
         </h1>
-        <button type="button" className="btn-primary" onClick={startCreate}>
-          + Nuevo post
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <RebuildButton small />
+          <button type="button" className="btn-primary" onClick={startCreate}>
+            + Nuevo post
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderLeft: '3px solid var(--accent)',
+          borderRadius: 'var(--r)',
+          padding: '10px 14px',
+          marginBottom: 20,
+          fontSize: 12,
+          color: 'var(--muted)',
+          lineHeight: 1.5
+        }}
+      >
+        Los posts nuevos aparecen automáticamente en máximo ~15 min
+        (rebuild programado). Para verlo al instante pulsa{' '}
+        <strong>Republicar sitio</strong> arriba — ~2 min hasta que esté live.
       </div>
 
       <div

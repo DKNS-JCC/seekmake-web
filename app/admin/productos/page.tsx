@@ -9,6 +9,7 @@ import { Field, inputStyle } from '../_components/Field';
 import { ChipInput } from '../_components/ChipInput';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
+import { RebuildButton } from '../_components/RebuildButton';
 
 type Draft = Omit<Producto, 'id' | 'created_at' | 'updated_at'>;
 
@@ -170,9 +171,12 @@ export default function AdminProductos() {
         <h1 className="section-title" style={{ fontSize: 32 }}>
           Productos
         </h1>
-        <button type="button" className="btn-primary" onClick={startCreate}>
-          + Nuevo
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <RebuildButton small />
+          <button type="button" className="btn-primary" onClick={startCreate}>
+            + Nuevo
+          </button>
+        </div>
       </div>
 
       {/* Search + filter */}

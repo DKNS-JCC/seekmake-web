@@ -8,6 +8,7 @@ import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { ColorPickerField } from '../_components/ColorPickerField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
+import { RebuildButton } from '../_components/RebuildButton';
 import './filamentos.css';
 
 const ACABADOS: Acabado[] = [
@@ -233,9 +234,12 @@ export default function AdminFilamentos() {
         <h1 className="section-title" style={{ fontSize: 32 }}>
           Filamentos
         </h1>
-        <button type="button" className="btn-primary" onClick={startMatCreate}>
-          + Material
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <RebuildButton small />
+          <button type="button" className="btn-primary" onClick={startMatCreate}>
+            + Material
+          </button>
+        </div>
       </div>
 
       {error && (
