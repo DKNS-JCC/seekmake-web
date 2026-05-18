@@ -39,6 +39,7 @@
     "node_modules",
     "legacy",
     "out",
-    ".next"
+    ".next",
+    "supabase/functions"
   ]
 }

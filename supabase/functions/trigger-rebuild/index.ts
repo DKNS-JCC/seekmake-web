@@ -18,6 +18,8 @@
 //   curl -X POST 'https://<project-ref>.supabase.co/functions/v1/trigger-rebuild' \
 //     -H 'Authorization: Bearer <user-jwt>'
 
+// @ts-nocheck — this file targets Deno (Supabase Edge runtime), not Node.
+// The Node TypeScript compiler doesn't understand URL imports nor `Deno.*`.
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
