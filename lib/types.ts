@@ -34,6 +34,19 @@ export type Color = {
   orden: number;
 };
 
+export type Trabajo = {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  imagen: string;
+  material: string;
+  etiquetas: string[];
+  destacado: boolean;
+  orden: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type BlogPost = {
   id: string;
   slug: string;
@@ -105,6 +118,16 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<BlogPost>;
+        Relationships: [];
+      };
+      trabajos: {
+        Row: Trabajo;
+        Insert: Omit<Trabajo, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Trabajo>;
         Relationships: [];
       };
     };

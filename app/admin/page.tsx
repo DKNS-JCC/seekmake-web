@@ -9,6 +9,7 @@ interface Counts {
   colores: number;
   productos: number;
   posts: number;
+  trabajos: number;
 }
 
 export default function AdminDashboard() {
@@ -23,13 +24,15 @@ export default function AdminDashboard() {
       supabase.from('filamentos').select('id',  { count: 'exact', head: true }),
       supabase.from('colores').select('id',     { count: 'exact', head: true }),
       supabase.from('productos').select('id',   { count: 'exact', head: true }),
-      supabase.from('blog_posts').select('id',  { count: 'exact', head: true }).eq('published', true)
-    ]).then(([f, c, p, b]) => {
+      supabase.from('blog_posts').select('id',  { count: 'exact', head: true }).eq('published', true),
+      supabase.from('trabajos').select('id',    { count: 'exact', head: true })
+    ]).then(([f, c, p, b, t]) => {
       setCounts({
         filamentos: f.count ?? 0,
         colores:    c.count ?? 0,
         productos:  p.count ?? 0,
-        posts:      b.count ?? 0
+        posts:      b.count ?? 0,
+        trabajos:   t.count ?? 0
       });
     });
   }, []);
@@ -60,6 +63,7 @@ export default function AdminDashboard() {
           { label: 'Filamentos', value: counts?.filamentos, href: '/admin/filamentos' },
           { label: 'Colores',    value: counts?.colores,    href: '/admin/filamentos' },
           { label: 'Productos',  value: counts?.productos,  href: '/admin/productos' },
+          { label: 'Trabajos',   value: counts?.trabajos,   href: '/admin/trabajos' },
           { label: 'Posts',      value: counts?.posts,      href: '/admin/blog' }
         ].map((c) => (
           <Link key={c.label} href={c.href} className="card" style={{ textDecoration: 'none' }}>

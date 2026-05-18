@@ -27,6 +27,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </Link>
         <Link href="/admin/productos" className="nav-link">Productos</Link>
         <Link href="/admin/filamentos" className="nav-link">Filamentos</Link>
+        <Link href="/admin/trabajos" className="nav-link">Trabajos</Link>
         <Link href="/admin/blog" className="nav-link">Blog</Link>
         <Link href="/" className="nav-link">Ver sitio</Link>
       </header>

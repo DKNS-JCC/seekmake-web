@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useFadeUp } from '@/components/useFadeUp';
 import { WA_LINK } from '@/components/WhatsAppFAB';
+import { TrabajosSection } from '@/components/TrabajosSection';
 import './page.css';
 
 export default function HomePage() {
@@ -199,44 +200,7 @@ export default function HomePage() {
       </section>
 
       {/* ── TRABAJOS ─────────────────────────────────────────── */}
-      <section id="trabajos">
-        <div className="container-3dcc">
-          <div className="section-header">
-            <div className="section-tag">Portfolio</div>
-            <h2 className="section-title">Algunos Trabajos</h2>
-          </div>
-        </div>
-        <div className="portfolio-grid">
-          {[
-            {
-              src: '/images/examples/corporativa.jpg',
-              alt: 'Productos corporativos',
-              title: 'Productos Corporativos',
-              sub: 'Detalles simples a medida'
-            },
-            {
-              src: '/images/examples/Decoracion.jpeg',
-              alt: 'Figuras Decorativas',
-              title: 'Figuras Decorativas',
-              sub: 'Diseños personalizados y detallados'
-            },
-            {
-              src: '/images/examples/repuesto.png',
-              alt: 'Repuestos y Recambios',
-              title: 'Repuestos y Recambios',
-              sub: 'Soluciones a medida'
-            }
-          ].map((p) => (
-            <div key={p.src} className="portfolio-item fade-up">
-              <img src={p.src} alt={p.alt} loading="lazy" />
-              <div className="portfolio-cap">
-                <div className="portfolio-title">{p.title}</div>
-                <div className="portfolio-sub">{p.sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <TrabajosSection />
 
       {/* ── RESEÑAS ──────────────────────────────────────────── */}
       <section id="resenas">
