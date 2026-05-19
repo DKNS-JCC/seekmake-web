@@ -1,0 +1,146 @@
+/* /contacto */
+
+.contacto-page {
+  padding-top: calc(var(--nav-h) + 56px);
+  padding-bottom: 96px;
+}
+
+.contacto-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+@media (max-width: 800px) {
+  .contacto-wrap {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.contacto-hero {
+  margin-bottom: 32px;
+}
+
+.contacto-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contacto-field { display: flex; flex-direction: column; gap: 6px; }
+.contacto-field label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.contacto-field input,
+.contacto-field select,
+.contacto-field textarea {
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.contacto-field textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.6;
+}
+.contacto-field input:focus,
+.contacto-field select:focus,
+.contacto-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.contacto-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  .contacto-row { grid-template-columns: 1fr; }
+}
+
+/* Honeypot — invisible to humans, attractive to dumb bots. */
+.contacto-honeypot {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.contacto-submit {
+  margin-top: 4px;
+  width: 100%;
+  justify-content: center;
+}
+
+.contacto-msg {
+  padding: 12px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.contacto-msg.ok {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  color: #065f46;
+}
+.contacto-msg.err {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #991b1b;
+}
+
+.contacto-aside h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+}
+.contacto-aside p,
+.contacto-aside a {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.contacto-aside a {
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.contacto-aside a:hover { text-decoration: underline; }
+.contacto-aside-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.contacto-aside-item:last-child { border-bottom: none; }
+.contacto-aside-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
