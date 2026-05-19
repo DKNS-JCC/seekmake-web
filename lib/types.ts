@@ -137,7 +137,16 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      vote_trabajo: {
+        Args: { p_id: string; p_voter_id: string; p_target: string };
+        Returns: { likes: number; dislikes: number; my_vote: string | null }[];
+      };
+      get_my_trabajo_votes: {
+        Args: { p_voter_id: string; p_trabajo_ids: string[] };
+        Returns: { trabajo_id: string; vote: string }[];
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };
