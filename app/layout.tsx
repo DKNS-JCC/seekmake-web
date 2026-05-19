@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
+import Script from 'next/script';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -48,6 +49,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <Providers>{children}</Providers>
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2879714749440744"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
       </body>
     </html>
   );

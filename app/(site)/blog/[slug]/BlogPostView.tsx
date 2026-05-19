@@ -46,8 +46,25 @@ export function BlogPostView({ slug }: { slug: string }) {
     );
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: post.cover_image || undefined,
+    datePublished: post.published_at ?? post.created_at,
+    dateModified: post.updated_at,
+    author: { '@type': 'Organization', name: '3DCC Salamanca', url: 'https://impresion3dcc.com' },
+    publisher: { '@type': 'Organization', name: '3DCC Salamanca', url: 'https://impresion3dcc.com' },
+    mainEntityOfPage: `https://impresion3dcc.com/blog/${post.slug}`,
+  };
+
   return (
     <article className="blog-article">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header>
         <Link
           href="/blog"
