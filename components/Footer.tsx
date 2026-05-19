@@ -17,6 +17,10 @@ export function Footer() {
             Términos y Condiciones
           </Link>
           <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/privacidad" className="footer-link">
+            Política de Privacidad
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           Servicio ofrecido como hobby sin ánimo de lucro
         </span>
       </div>

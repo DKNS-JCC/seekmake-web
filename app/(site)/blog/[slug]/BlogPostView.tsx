@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { renderMarkdown } from '@/lib/markdown';
+import { AdSlot } from '@/components/AdSlot';
 import type { BlogPost } from '@/lib/types';
 
 export function BlogPostView({ slug }: { slug: string }) {
@@ -84,6 +85,8 @@ export function BlogPostView({ slug }: { slug: string }) {
         // The markdown comes from our admin only and we trust the input.
         dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
       />
+
+      <AdSlot slot="blog-post-bottom" format="rectangle" style={{ marginTop: 32 }} />
 
       <Link href="/blog" className="blog-back">
         ← Volver al blog

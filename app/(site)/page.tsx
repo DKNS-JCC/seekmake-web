@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useFadeUp } from '@/components/useFadeUp';
 import { WA_LINK } from '@/components/WhatsAppFAB';
 import { TrabajosSection } from '@/components/TrabajosSection';
+import { AdSlot } from '@/components/AdSlot';
 import './page.css';
 
 export default function HomePage() {
@@ -260,6 +261,11 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── AD SLOT ─────────────────────────────────────────── */}
+      <div className="container-3dcc" style={{ padding: '16px var(--container-px)' }}>
+        <AdSlot slot="home-between-sections" format="horizontal" />
+      </div>
 
       {/* ── PRESUPUESTO CTA ─────────────────────────────────── */}
       <section id="presupuesto">
