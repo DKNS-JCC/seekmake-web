@@ -20,7 +20,7 @@ const ITEMS: NavItem[] = [
   { href: '/catalogo',   label: 'Catálogo' },
   { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true },
   { href: '/impresoras', label: 'Impresoras' },
-  { href: '/contacto',   label: 'Contacto' }
+  { href: '/#contacto',  label: 'Contacto',   isHomeAnchor: true }
 ];
 
 export function Navigation() {
