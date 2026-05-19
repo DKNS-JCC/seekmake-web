@@ -36,7 +36,7 @@ export function TrabajosSection() {
         </div>
       </div>
 
-      <TrabajosTimeline trabajos={items} />
+      <TrabajosTimeline trabajos={items} autoScroll />
     </section>
   );
 }

@@ -23,17 +23,20 @@ function formatDate(iso: string): string {
 export function TrabajosTimeline({
   trabajos: initial,
   showHint = true,
-  emptyText = 'Aún no hay trabajos publicados.'
+  emptyText = 'Aún no hay trabajos publicados.',
+  autoScroll = false,
 }: {
   trabajos: Trabajo[];
   showHint?: boolean;
   emptyText?: string;
+  autoScroll?: boolean;
 }) {
   const [trabajos, setTrabajos] = useState<Trabajo[]>(initial);
   const [votes, setVotes] = useState<Record<string, Vote>>({});
   const [selected, setSelected] = useState<Trabajo | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const voterIdRef = useRef<string>('');
+  const [marquePaused, setMarquePaused] = useState(false);
 
   // Sync from parent when initial changes (e.g. server hot-refresh in dev).
   useEffect(() => {
@@ -82,6 +85,7 @@ export function TrabajosTimeline({
       document.body.style.overflow = '';
     };
   }, [selected]);
+
 
   const vote = async (t: Trabajo, target: 'like' | 'dislike') => {
     const voterId = voterIdRef.current;
@@ -168,6 +172,96 @@ export function TrabajosTimeline({
     return <div className="tr-empty">{emptyText}</div>;
   }
 
+  // ── Marquee variant (home page) ───────────────────────────────────────
+  if (autoScroll) {
+    const duration = `${Math.max(trabajos.length * 5, 30)}s`;
+    return (
+      <>
+        <div
+          className="tr-marquee-wrap"
+          onMouseEnter={() => setMarquePaused(true)}
+          onMouseLeave={() => setMarquePaused(false)}
+          onTouchStart={() => setMarquePaused(true)}
+          onTouchEnd={() => setMarquePaused(false)}
+        >
+          <div
+            className={'tr-marquee-inner' + (marquePaused ? ' paused' : '')}
+            style={{ '--marquee-duration': duration } as React.CSSProperties}
+          >
+            {[...trabajos, ...trabajos].map((t, i) => {
+              const v = votes[t.id];
+              return (
+                <article
+                  key={`${t.id}-${i}`}
+                  className="tr-card tr-marquee-card"
+                  onClick={() => setSelected(t)}
+                >
+                  <div className="tr-card-inner">
+                    <div className="tr-card-img">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={t.imagen} alt={t.titulo} loading="lazy" />
+                    </div>
+                    <div className="tr-card-body">
+                      <h3 className="tr-card-title">{t.titulo}</h3>
+                      <p className="tr-card-desc">{t.descripcion}</p>
+                      {(t.material || t.etiquetas?.length > 0) && (
+                        <div className="tr-card-meta">
+                          {t.material && <span className="tr-card-material">{t.material}</span>}
+                          {t.etiquetas?.slice(0, 2).map((e) => (
+                            <span key={e} className="tr-card-tag">{e}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Modal reutilizado */}
+        <div
+          className={'tr-modal-overlay' + (selected ? ' open' : '')}
+          onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
+        >
+          {selected && (
+            <div className="tr-modal">
+              <div className="tr-modal-img">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={selected.imagen} alt={selected.titulo} />
+              </div>
+              <div className="tr-modal-body">
+                <button className="tr-modal-close" onClick={() => setSelected(null)} aria-label="Cerrar">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                <div className="tr-modal-date">{formatDate(selected.fecha_efectiva)}</div>
+                <div className="tr-modal-title">{selected.titulo}</div>
+                <div className="tr-modal-desc" style={{ whiteSpace: 'pre-wrap' }}>{selected.descripcion}</div>
+                {(selected.material || selected.etiquetas?.length > 0) && (
+                  <div className="tr-card-meta" style={{ marginBottom: 20 }}>
+                    {selected.material && <span className="tr-card-material">{selected.material}</span>}
+                    {selected.etiquetas?.map((et) => <span key={et} className="tr-card-tag">{et}</span>)}
+                  </div>
+                )}
+                <div className="tr-vote-row">
+                  <button type="button" className={'tr-vote tr-like' + (votes[selected.id] === 'like' ? ' active' : '')} onClick={() => vote(selected, 'like')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={votes[selected.id] === 'like' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H7l3-12L13 2a2.38 2.38 0 0 1 2 2z" /></svg>
+                    <span>{selected.likes}</span>
+                  </button>
+                  <button type="button" className={'tr-vote tr-dislike' + (votes[selected.id] === 'dislike' ? ' active' : '')} onClick={() => vote(selected, 'dislike')}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={votes[selected.id] === 'dislike' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M17 14V2M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H17l-3 12-3 8a2.38 2.38 0 0 1-2-2z" /></svg>
+                    <span>{selected.dislikes}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="tr-timeline">
@@ -194,7 +288,14 @@ export function TrabajosTimeline({
 
         <div className="tr-rail" />
 
-        <div className="tr-track" ref={scrollRef}>
+        <div
+          className="tr-track"
+          ref={scrollRef}
+          onMouseEnter={pauseScroll}
+          onMouseLeave={() => resumeScroll(1500)}
+          onTouchStart={pauseScroll}
+          onTouchEnd={() => resumeScroll(2500)}
+        >
           <div className="tr-track-pad" />
           {trabajos.map((t) => {
             const v = votes[t.id];
