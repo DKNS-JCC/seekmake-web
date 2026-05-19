@@ -399,28 +399,25 @@
 
 /* ── Marquee (home auto-scroll) ───────────────────────────────────────── */
 
-@keyframes tr-marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
 .tr-marquee-wrap {
-  overflow: hidden;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   width: 100%;
+  cursor: grab;
+  user-select: none;
   mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
 }
+.tr-marquee-wrap::-webkit-scrollbar { display: none; }
+.tr-marquee-wrap.dragging { cursor: grabbing; }
 
 .tr-marquee-inner {
   display: flex;
   gap: 24px;
   width: max-content;
-  animation: tr-marquee var(--marquee-duration, 40s) linear infinite;
   padding: 8px 0 16px;
-}
-
-.tr-marquee-inner.paused {
-  animation-play-state: paused;
 }
 
 .tr-marquee-card {

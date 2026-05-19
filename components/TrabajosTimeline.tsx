@@ -36,7 +36,14 @@ export function TrabajosTimeline({
   const [selected, setSelected] = useState<Trabajo | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const voterIdRef = useRef<string>('');
-  const [marquePaused, setMarquePaused] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const userScrollingRef = useRef(false);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartScrollRef = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Sync from parent when initial changes (e.g. server hot-refresh in dev).
   useEffect(() => {
@@ -162,6 +169,82 @@ export function TrabajosTimeline({
     }
   };
 
+  // Pause auto-scroll while modal is open.
+  useEffect(() => {
+    if (autoScroll) pausedRef.current = !!selected;
+  }, [selected, autoScroll]);
+
+  // RAF auto-scroll. Pauses when the user is touching or dragging.
+  // We detect interaction via touchstart/end and pointer events — NOT via
+  // the scroll event, which would also fire when the RAF itself moves scrollLeft.
+  useEffect(() => {
+    if (!autoScroll) return;
+    const el = wrapRef.current;
+    if (!el || trabajos.length === 0) return;
+
+    const SPEED = 0.8;
+    let animId: number;
+
+    const tick = () => {
+      if (!pausedRef.current && !userScrollingRef.current) {
+        const half = el.scrollWidth / 2;
+        if (half > 0) {
+          el.scrollLeft += SPEED;
+          if (el.scrollLeft >= half) el.scrollLeft -= half;
+        }
+      }
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+
+    const pause = () => {
+      userScrollingRef.current = true;
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    };
+    const resume = () => {
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = setTimeout(() => { userScrollingRef.current = false; }, 1500);
+    };
+
+    el.addEventListener('touchstart', pause, { passive: true });
+    el.addEventListener('touchend',   resume, { passive: true });
+    el.addEventListener('touchcancel',resume, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(animId);
+      el.removeEventListener('touchstart',  pause);
+      el.removeEventListener('touchend',    resume);
+      el.removeEventListener('touchcancel', resume);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    };
+  }, [autoScroll, trabajos]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return; // touch handled by native scroll + touchstart/end
+    isDraggingRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragStartScrollRef.current = wrapRef.current?.scrollLeft ?? 0;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    userScrollingRef.current = true;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    setIsDragging(true);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !wrapRef.current) return;
+    e.preventDefault();
+    wrapRef.current.scrollLeft = dragStartScrollRef.current + (dragStartXRef.current - e.clientX);
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch' || !isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => { userScrollingRef.current = false; }, 1500);
+  };
+
   const scrollBy = (dir: 1 | -1) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -174,20 +257,19 @@ export function TrabajosTimeline({
 
   // ── Marquee variant (home page) ───────────────────────────────────────
   if (autoScroll) {
-    const duration = `${Math.max(trabajos.length * 5, 30)}s`;
     return (
       <>
         <div
-          className="tr-marquee-wrap"
-          onMouseEnter={() => setMarquePaused(true)}
-          onMouseLeave={() => setMarquePaused(false)}
-          onTouchStart={() => setMarquePaused(true)}
-          onTouchEnd={() => setMarquePaused(false)}
+          className={'tr-marquee-wrap' + (isDragging ? ' dragging' : '')}
+          ref={wrapRef}
+          onMouseEnter={() => { pausedRef.current = true; }}
+          onMouseLeave={() => { pausedRef.current = !!selected; }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
         >
-          <div
-            className={'tr-marquee-inner' + (marquePaused ? ' paused' : '')}
-            style={{ '--marquee-duration': duration } as React.CSSProperties}
-          >
+          <div className="tr-marquee-inner">
             {[...trabajos, ...trabajos].map((t, i) => {
               const v = votes[t.id];
               return (
