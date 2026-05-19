@@ -288,14 +288,7 @@ export function TrabajosTimeline({
 
         <div className="tr-rail" />
 
-        <div
-          className="tr-track"
-          ref={scrollRef}
-          onMouseEnter={pauseScroll}
-          onMouseLeave={() => resumeScroll(1500)}
-          onTouchStart={pauseScroll}
-          onTouchEnd={() => resumeScroll(2500)}
-        >
+        <div className="tr-track" ref={scrollRef}>
           <div className="tr-track-pad" />
           {trabajos.map((t) => {
             const v = votes[t.id];
