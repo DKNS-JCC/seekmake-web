@@ -100,7 +100,7 @@ export default function AdminTrabajos() {
     setError(null);
     const res = editingId
       ? await supabase().from('trabajos').update(draft).eq('id', editingId)
-      : await supabase().from('trabajos').insert(draft);
+      : await supabase().from('trabajos').insert({ ...draft, likes: 0, dislikes: 0 });
     if (res.error) {
       setError(res.error.message);
       setSaveState('error');
