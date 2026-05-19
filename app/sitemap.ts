@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types';
 
+export const dynamic = 'force-static';
+
 const BASE = 'https://impresion3dcc.com';
 
 const STATIC: MetadataRoute.Sitemap = [
