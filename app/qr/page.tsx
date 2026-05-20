@@ -181,7 +181,7 @@ export default function QrPage() {
             </a>
 
             <a
-              href="mailto:impresion3dslmc@gmail.com?subject=Consulta%20desde%20QR"
+              href="mailto:info@impresion3dcc.com?subject=Consulta%20desde%20QR"
               className="qr-link qr-fade"
             >
               <div className="qr-link-icon">
@@ -191,7 +191,7 @@ export default function QrPage() {
               </div>
               <div className="qr-link-body">
                 <div className="qr-link-title">Email</div>
-                <div className="qr-link-desc">impresion3dslmc@gmail.com</div>
+                <div className="qr-link-desc">info@impresion3dcc.com</div>
               </div>
               <Chevron />
             </a>

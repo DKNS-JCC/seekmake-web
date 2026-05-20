@@ -354,10 +354,10 @@ export default function HomePage() {
                 <div>
                   <div className="contact-label">Email</div>
                   <a
-                    href="mailto:impresion3dslmc@gmail.com"
+                    href="mailto:info@impresion3dcc.com"
                     className="contact-value"
                   >
-                    impresion3dslmc@gmail.com
+                    info@impresion3dcc.com
                   </a>
                 </div>
               </div>

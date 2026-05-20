@@ -50,7 +50,7 @@ export default function PrivacidadPage() {
               <li><strong>Titular:</strong> Jorge Cuadrado Criado</li>
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:impresion3dslmc@gmail.com">impresion3dslmc@gmail.com</a>
+                <a href="mailto:info@impresion3dcc.com">info@impresion3dcc.com</a>
               </li>
               <li><strong>Ubicación:</strong> Salamanca, España</li>
             </ul>
@@ -196,7 +196,7 @@ export default function PrivacidadPage() {
               En cualquier momento puedes ejercer los derechos de acceso,
               rectificación, supresión, oposición, limitación y portabilidad
               escribiéndonos a{' '}
-              <a href="mailto:impresion3dslmc@gmail.com">impresion3dslmc@gmail.com</a>
+              <a href="mailto:info@impresion3dcc.com">info@impresion3dcc.com</a>
               , acreditando tu identidad. También puedes reclamar ante la{' '}
               <a
                 href="https://www.aepd.es"

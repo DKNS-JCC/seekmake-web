@@ -70,8 +70,8 @@ export default function TerminosPage() {
               </li>
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:impresion3dslmc@gmail.com">
-                  impresion3dslmc@gmail.com
+                <a href="mailto:info@impresion3dcc.com">
+                  info@impresion3dcc.com
                 </a>
               </li>
               <li>
@@ -425,8 +425,8 @@ export default function TerminosPage() {
             <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:impresion3dslmc@gmail.com">
-                  impresion3dslmc@gmail.com
+                <a href="mailto:info@impresion3dcc.com">
+                  info@impresion3dcc.com
                 </a>
               </li>
               <li>

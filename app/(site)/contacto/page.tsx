@@ -42,8 +42,8 @@ export default function ContactoPage() {
 
           <div className="contacto-aside-item">
             <div className="contacto-aside-label">Email</div>
-            <a href="mailto:impresion3dslmc@gmail.com">
-              impresion3dslmc@gmail.com
+            <a href="mailto:info@impresion3dcc.com">
+              info@impresion3dcc.com
             </a>
           </div>
 
