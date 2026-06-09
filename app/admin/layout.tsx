@@ -29,6 +29,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/admin/filamentos" className="nav-link">Filamentos</Link>
         <Link href="/admin/trabajos" className="nav-link">Trabajos</Link>
         <Link href="/admin/blog" className="nav-link">Blog</Link>
+        <Link href="/admin/presupuestos" className="nav-link">Presupuestos</Link>
+        <Link href="/admin/tarifas" className="nav-link">Tarifas</Link>
         <Link href="/" className="nav-link">Ver sitio</Link>
       </header>
       <main style={{ padding: '32px 24px', maxWidth: 1200, margin: '0 auto' }}>

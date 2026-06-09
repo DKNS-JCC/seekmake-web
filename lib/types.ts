@@ -82,6 +82,48 @@ export type Producto = {
   updated_at: string;
 };
 
+// Tasador (instant quote)
+
+export type QuoteEstado = 'nuevo' | 'revisado' | 'aceptado' | 'rechazado' | 'completado';
+
+export type QuoteColorSnapshot = {
+  nombre: string;
+  hex: string;
+  acabado: string | null;
+  /** Part name the color applies to (multicolor 3MF), '' for the whole piece. */
+  parte: string;
+};
+
+export type Quote = {
+  id: string;
+  codigo: string;
+  estado: QuoteEstado;
+  nombre: string;
+  email: string;
+  telefono: string;
+  mensaje: string;
+  archivo_nombre: string;
+  archivo_url: string;
+  archivo_tamano: number;
+  material: string;
+  colores: QuoteColorSnapshot[];
+  resistencia: string;
+  detalle: string;
+  cantidad: number;
+  metricas: Record<string, unknown>;
+  desglose: Record<string, unknown>;
+  precio_total: number;
+  notas_admin: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type QuoteSettingsRow = {
+  id: number;
+  config: Record<string, unknown>;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -122,6 +164,23 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<BlogPost>;
+        Relationships: [];
+      };
+      quotes: {
+        Row: Quote;
+        Insert: Omit<Quote, 'id' | 'codigo' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          codigo?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Quote>;
+        Relationships: [];
+      };
+      quote_settings: {
+        Row: QuoteSettingsRow;
+        Insert: Omit<QuoteSettingsRow, 'updated_at'> & { updated_at?: string };
+        Update: Partial<QuoteSettingsRow>;
         Relationships: [];
       };
       trabajos: {

@@ -1,24 +1,32 @@
-import Script from 'next/script';
+import { createClient as createServerClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
+import type { Database } from '@/lib/types';
+import { QuoteClient } from './QuoteClient';
 
 export const metadata: Metadata = {
   title: 'Calculadora de Precio | 3DCC Salamanca',
-  description: 'Obtén el precio de tu pieza 3D al instante.'
+  description:
+    'Sube tu pieza 3D (STL, 3MF, OBJ) y obtén el precio al instante. Elige material, color y acabado del muestrario real.'
 };
 
-// SeekMake iframe embed (REQUIREMENTS §9.4).
-export default function InstantQuotePage() {
-  return (
-    <div className="page-content">
-      <Script src="https://seekmake.com/assets/public/iq-api-latest.js" strategy="afterInteractive" />
-      <iframe
-        sandbox="allow-downloads allow-scripts allow-same-origin allow-forms allow-popups"
-        id="seekmake-embed-iq"
-        src="https://seekmake.com/instant-quote/?isEmbed=true&manufacturer=68dc31e8d996e3f4cdd284c2"
-        style={{ width: '100%', height: 'calc(100vh - var(--nav-h))', border: 0 }}
-        scrolling="no"
-        title="Calculadora de precio instantánea"
-      />
-    </div>
-  );
+// Static-export: filamentos/colores are fetched at build time (same model as
+// the muestrario). Pricing settings are fetched client-side at runtime so
+// tariff changes in /admin/tarifas apply without a rebuild.
+async function loadData() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    return { filamentos: [], colores: [] };
+  }
+  const supabase = createServerClient<Database>(url, key);
+  const [{ data: filamentos }, { data: colores }] = await Promise.all([
+    supabase.from('filamentos').select('*').order('orden'),
+    supabase.from('colores').select('*').order('orden')
+  ]);
+  return { filamentos: filamentos ?? [], colores: colores ?? [] };
+}
+
+export default async function InstantQuotePage() {
+  const { filamentos, colores } = await loadData();
+  return <QuoteClient filamentos={filamentos} colores={colores} />;
 }
