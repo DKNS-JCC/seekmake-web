@@ -86,6 +86,15 @@ export type Producto = {
 
 export type QuoteEstado = 'nuevo' | 'revisado' | 'aceptado' | 'rechazado' | 'completado';
 
+export type QuoteEntrega = 'recogida' | 'envio';
+
+export type QuoteDireccion = {
+  calle?: string;
+  ciudad?: string;
+  cp?: string;
+  provincia?: string;
+};
+
 export type QuoteColorSnapshot = {
   nombre: string;
   hex: string;
@@ -110,6 +119,8 @@ export type Quote = {
   resistencia: string;
   detalle: string;
   cantidad: number;
+  entrega: QuoteEntrega;
+  direccion: QuoteDireccion;
   metricas: Record<string, unknown>;
   desglose: Record<string, unknown>;
   precio_total: number;
@@ -197,6 +208,18 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      get_quote_status: {
+        Args: { p_codigo: string };
+        Returns: {
+          codigo: string;
+          estado: QuoteEstado;
+          material: string;
+          cantidad: number;
+          precio_total: number;
+          created_at: string;
+          updated_at: string;
+        }[];
+      };
       vote_trabajo: {
         Args: { p_id: string; p_voter_id: string; p_target: string };
         Returns: { likes: number; dislikes: number; my_vote: string | null }[];

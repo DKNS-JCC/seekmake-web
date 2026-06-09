@@ -45,6 +45,8 @@ insert into public.quote_settings (id, config) values (1, '{
   "precio_minimo": 5.00,
   "caudal_g_h": 18,
   "fraccion_pared": 0.35,
+  "plazo_horas_dia": 8,
+  "plazo_dias_margen": 1,
   "recargo_acabado_pct": {
     "Metálico": 10, "Fluorescente": 10, "Translucido": 5, "Textura": 10,
     "Brillante": 5, "Purpurina": 10, "Mate": 0, "Flexible": 15
@@ -106,6 +108,10 @@ create table if not exists public.quotes (
   resistencia    text not null default 'estandar',
   detalle        text not null default 'estandar',
   cantidad       integer not null default 1 check (cantidad >= 1),
+  -- delivery: pickup in Salamanca (free) or national shipping (cost agreed
+  -- after review — informative only, never priced by the calculator)
+  entrega        text not null default 'recogida' check (entrega in ('recogida', 'envio')),
+  direccion      jsonb not null default '{}',   -- {calle, ciudad, cp, provincia} when entrega='envio'
   -- computed at submit time (snapshot — settings may change later)
   metricas       jsonb not null default '{}',  -- volumen_cm3, area_cm2, bbox_mm, peso_g, tiempo_h, triangulos
   desglose       jsonb not null default '{}',  -- pricing breakdown lines
@@ -131,6 +137,33 @@ drop policy if exists "quotes: admin all" on public.quotes;
 
 create policy "quotes: admin all" on public.quotes
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- Public status lookup by code (/presupuesto). SECURITY DEFINER bypasses
+-- RLS but only exposes non-personal fields; the code itself is the secret
+-- (non-guessable enough for a status page, like a parcel tracking number).
+create or replace function public.get_quote_status(p_codigo text)
+returns table (
+  codigo       text,
+  estado       text,
+  material     text,
+  cantidad     integer,
+  precio_total numeric,
+  created_at   timestamptz,
+  updated_at   timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select q.codigo, q.estado, q.material, q.cantidad, q.precio_total,
+         q.created_at, q.updated_at
+  from public.quotes q
+  where upper(trim(p_codigo)) = q.codigo
+  limit 1;
+$$;
+
+grant execute on function public.get_quote_status(text) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Storage bucket for quote model files

@@ -41,6 +41,10 @@ export interface QuoteSettings {
    * regardless of infill. effective = pared + (1 - pared) × relleno.
    */
   fraccion_pared: number;
+  /** Printing hours available per working day (for the lead-time estimate). */
+  plazo_horas_dia: number;
+  /** Extra working days for preparation/queue added to every estimate. */
+  plazo_dias_margen: number;
   recargo_acabado_pct: Record<string, number>;
   recargo_multicolor: { base_pct: number; por_color_extra: number };
   resistencia: ResistenciaPreset[];
@@ -62,6 +66,8 @@ export const DEFAULT_QUOTE_SETTINGS: QuoteSettings = {
   precio_minimo: 5,
   caudal_g_h: 18,
   fraccion_pared: 0.35,
+  plazo_horas_dia: 8,
+  plazo_dias_margen: 1,
   recargo_acabado_pct: {
     'Metálico': 10,
     'Fluorescente': 10,
@@ -140,6 +146,8 @@ export interface QuoteResult {
   total: number;
   /** True when precio_minimo kicked in. */
   minimoAplicado: boolean;
+  /** Estimated working days until the order is ready for pickup/shipping. */
+  diasEstimados: number;
 }
 
 function round2(n: number): number {
@@ -223,6 +231,10 @@ export function computeQuote(
   const minimoAplicado = total < settings.precio_minimo;
   if (minimoAplicado) total = settings.precio_minimo;
 
+  const diasEstimados =
+    Math.ceil((tiempoH * cantidad) / Math.max(settings.plazo_horas_dia, 1)) +
+    Math.max(0, Math.round(settings.plazo_dias_margen));
+
   return {
     pesoG: round2(pesoG),
     tiempoH: round2(tiempoH),
@@ -231,6 +243,7 @@ export function computeQuote(
     lineas,
     descuentoPct,
     total: round2(total),
-    minimoAplicado
+    minimoAplicado,
+    diasEstimados
   };
 }

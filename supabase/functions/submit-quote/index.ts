@@ -107,6 +107,15 @@ Deno.serve(async (req: Request) => {
   const resistencia = String(body?.resistencia ?? 'estandar').slice(0, 50);
   const detalle     = String(body?.detalle     ?? 'estandar').slice(0, 50);
   const cantidad    = Math.max(1, Math.min(999, Number(body?.cantidad) || 1));
+  const entrega     = body?.entrega === 'envio' ? 'envio' : 'recogida';
+  const direccion   = entrega === 'envio'
+    ? {
+        calle:     String(body?.direccion?.calle     ?? '').trim().slice(0, 200),
+        ciudad:    String(body?.direccion?.ciudad    ?? '').trim().slice(0, 100),
+        cp:        String(body?.direccion?.cp        ?? '').trim().slice(0, 10),
+        provincia: String(body?.direccion?.provincia ?? '').trim().slice(0, 100)
+      }
+    : {};
   const precioTotal = Math.max(0, Math.min(99999, Number(body?.precio_total) || 0));
 
   const colores = (Array.isArray(body?.colores) ? body.colores : [])
@@ -144,6 +153,9 @@ Deno.serve(async (req: Request) => {
   if (!material)                    return json({ error: 'Material requerido.' }, 400, allowedOrigin);
   if (!archivoOk)                   return json({ error: 'Archivo de modelo inválido.' }, 400, allowedOrigin);
   if (!colores.length)              return json({ error: 'Elige al menos un color.' }, 400, allowedOrigin);
+  if (entrega === 'envio' && (!direccion.calle || !direccion.ciudad || !direccion.cp)) {
+    return json({ error: 'Para envío necesitamos la dirección completa.' }, 400, allowedOrigin);
+  }
 
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
@@ -179,6 +191,8 @@ Deno.serve(async (req: Request) => {
       resistencia,
       detalle,
       cantidad,
+      entrega,
+      direccion,
       metricas,
       desglose,
       precio_total: precioTotal
@@ -207,6 +221,10 @@ Deno.serve(async (req: Request) => {
       .join(', ');
 
     const m: any = metricas;
+    const entregaTxt =
+      entrega === 'envio'
+        ? `Envío a: ${direccion.calle}, ${direccion.cp} ${direccion.ciudad} (${direccion.provincia})`
+        : 'Recogida en Salamanca';
     const text = `
 Nuevo presupuesto ${codigo} — impresion3dcc.com
 ──────────────────────────────────────
@@ -224,6 +242,8 @@ Material:   ${material} — ${coloresTxt}
 Resistencia: ${resistencia} (relleno ${m?.relleno_pct ?? '—'}%)
 Detalle:    ${detalle}
 Cantidad:   ${cantidad}
+Entrega:    ${entregaTxt}
+Plazo est.: ~${m?.dias_estimados ?? '—'} días laborables
 
 Desglose:
 ${lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
@@ -250,6 +270,8 @@ IP ${ip} · ${new Date().toISOString()}
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Medidas</td><td>${m?.bbox_mm ? `${m.bbox_mm.x} × ${m.bbox_mm.z} × ${m.bbox_mm.y} mm` : '—'} · ${m?.volumen_cm3 ?? '—'} cm³ · ~${m?.peso_g ?? '—'} g</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Material</td><td>${escapeHtml(material)} — ${escapeHtml(coloresTxt)}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Ajustes</td><td>${escapeHtml(resistencia)} · ${escapeHtml(detalle)} · × ${cantidad}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${escapeHtml(entregaTxt)}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables</td></tr>
   </table>
   <h3 style="margin:24px 0 8px 0;font-size:14px;color:#666;text-transform:uppercase;letter-spacing:0.1em;">Desglose</h3>
   <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f5f5f5;border-radius:6px;">
@@ -270,6 +292,60 @@ IP ${ip} · ${new Date().toISOString()}
       }
     });
 
+    // Confirmation email for the customer.
+    const clienteText = `
+Hola ${nombre},
+
+Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
+
+    ${codigo}
+
+Resumen:
+  Pieza:        ${archivoNombre}${cantidad > 1 ? ` × ${cantidad}` : ''}
+  Material:     ${material} — ${coloresTxt}
+  Acabado:      ${resistencia} · ${detalle}
+  Entrega:      ${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}
+  Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}
+
+  TOTAL ESTIMADO: ${precioTotal.toFixed(2)} €${entrega === 'envio' ? ' (sin envío)' : ''}
+
+Es una estimación orientativa: revisaremos tu pieza y te confirmaremos el
+precio final en breve. Puedes consultar el estado de tu presupuesto en
+https://www.impresion3dcc.com/presupuesto introduciendo tu código.
+
+¿Dudas? Responde a este email o escríbenos por WhatsApp: +34 665 14 89 56.
+
+— 3DCC Salamanca · impresion3dcc.com
+`.trim();
+
+    const clienteHtml = `
+<div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <h2 style="margin:0 0 4px 0;color:#0EA5E9;font-family:Arial,sans-serif;">¡Solicitud recibida!</h2>
+  <p style="margin:0 0 20px 0;color:#444;">Hola ${escapeHtml(nombre)}, hemos recibido tu solicitud de presupuesto. Tu código de referencia:</p>
+  <div style="text-align:center;margin:0 0 24px 0;">
+    <span style="display:inline-block;padding:10px 28px;background:#f0f9ff;border:1px solid #0EA5E9;border-radius:6px;font-family:monospace;font-size:22px;font-weight:700;color:#0EA5E9;letter-spacing:0.06em;">${escapeHtml(codigo)}</span>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Pieza</td><td>${escapeHtml(archivoNombre)}${cantidad > 1 ? ` × ${cantidad}` : ''}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Material</td><td>${escapeHtml(material)} — ${escapeHtml(coloresTxt)}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Acabado</td><td>${escapeHtml(resistencia)} · ${escapeHtml(detalle)}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}</td></tr>
+    <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioTotal.toFixed(2)} €${entrega === 'envio' ? ' <span style="font-size:11px;color:#999;font-weight:400;">(sin envío)</span>' : ''}</td></tr>
+  </table>
+  <p style="margin:20px 0;color:#444;line-height:1.6;font-size:13px;">
+    Es una estimación orientativa: revisaremos tu pieza y te confirmaremos el precio final en breve.
+    Puedes consultar el estado de tu presupuesto en
+    <a href="https://www.impresion3dcc.com/presupuesto" style="color:#0EA5E9;">impresion3dcc.com/presupuesto</a>.
+  </p>
+  <p style="margin:0;color:#444;font-size:13px;">
+    ¿Dudas? Responde a este email o escríbenos por
+    <a href="https://wa.me/34665148956" style="color:#0EA5E9;">WhatsApp</a>.
+  </p>
+  <p style="margin:24px 0 0 0;font-size:11px;color:#999;">— 3DCC Salamanca · <a href="https://www.impresion3dcc.com" style="color:#999;">impresion3dcc.com</a></p>
+</div>
+`.trim();
+
     try {
       await client.send({
         from: `3DCC Tasador <${gmailUser}>`,
@@ -283,6 +359,19 @@ IP ${ip} · ${new Date().toISOString()}
     } catch (err) {
       // Quote is already stored; log and carry on.
       console.error('SMTP send failed for', codigo, err);
+    }
+
+    try {
+      await client.send({
+        from: `3DCC Salamanca <${gmailUser}>`,
+        to: email,
+        replyTo: recipient,
+        subject: `Tu presupuesto ${codigo} — 3DCC Salamanca`,
+        content: clienteText,
+        html: clienteHtml
+      });
+    } catch (err) {
+      console.error('SMTP customer send failed for', codigo, err);
     } finally {
       try { await client.close(); } catch { /* ignore */ }
     }

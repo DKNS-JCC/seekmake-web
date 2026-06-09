@@ -21,7 +21,7 @@ import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createClient } from '@/lib/supabase/client';
-import type { Color, Filamento } from '@/lib/types';
+import type { Color, Filamento, QuoteEntrega } from '@/lib/types';
 import {
   acabadoMaterialProps,
   applyMaterialUpdate,
@@ -109,6 +109,7 @@ export function QuoteClient({
   const [resistenciaId, setResistenciaId] = useState('estandar');
   const [detalleId, setDetalleId] = useState('estandar');
   const [cantidad, setCantidad] = useState(1);
+  const [entrega, setEntrega] = useState<QuoteEntrega>('recogida');
 
   // ─── request form ───────────────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false);
@@ -116,6 +117,11 @@ export function QuoteClient({
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [calle, setCalle] = useState('');
+  const [ciudad, setCiudad] = useState('');
+  const [cp, setCp] = useState('');
+  const [provincia, setProvincia] = useState('');
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
 
@@ -501,6 +507,9 @@ export function QuoteClient({
           resistencia: resistenciaId,
           detalle: detalleId,
           cantidad,
+          entrega,
+          direccion:
+            entrega === 'envio' ? { calle, ciudad, cp, provincia } : {},
           metricas: {
             volumen_cm3: Math.round(metrics.volumenCm3 * 100) / 100,
             area_cm2: Math.round(metrics.areaCm2 * 10) / 10,
@@ -509,7 +518,8 @@ export function QuoteClient({
             mallas: metrics.mallas,
             peso_g: quote.pesoG,
             tiempo_h: quote.tiempoH,
-            relleno_pct: quote.rellenoPct
+            relleno_pct: quote.rellenoPct,
+            dias_estimados: quote.diasEstimados
           },
           desglose: {
             lineas: quote.lineas,
@@ -822,6 +832,29 @@ export function QuoteClient({
             </div>
           </div>
 
+          {/* entrega */}
+          <div className="qt-step">
+            <div className="qt-step-label">6 · Entrega</div>
+            <div className="qt-cards">
+              <button
+                type="button"
+                className={'qt-card' + (entrega === 'recogida' ? ' active' : '')}
+                onClick={() => setEntrega('recogida')}
+              >
+                <strong>Recogida en Salamanca</strong>
+                <span>Gratis · Plza. Barrio Vidal</span>
+              </button>
+              <button
+                type="button"
+                className={'qt-card' + (entrega === 'envio' ? ' active' : '')}
+                onClick={() => setEntrega('envio')}
+              >
+                <strong>Envío nacional</strong>
+                <span>Coste a convenir — te lo confirmamos junto al presupuesto</span>
+              </button>
+            </div>
+          </div>
+
           {/* breakdown */}
           <div className="qt-total">
             {!file && <p className="qt-total-empty">Sube una pieza para ver el precio.</p>}
@@ -841,6 +874,20 @@ export function QuoteClient({
                 </div>
                 {quote.minimoAplicado && (
                   <p className="qt-total-note">Se aplica el pedido mínimo.</p>
+                )}
+                <p className="qt-total-plazo">
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 3" />
+                  </svg>
+                  Listo en ~{quote.diasEstimados} día{quote.diasEstimados !== 1 ? 's' : ''} laborables
+                  {entrega === 'envio' ? ' + envío' : ''}
+                </p>
+                {entrega === 'envio' && (
+                  <p className="qt-total-note">
+                    El coste del envío no está incluido: te lo confirmamos junto al
+                    presupuesto (recogida en Salamanca gratis).
+                  </p>
                 )}
                 <p className="qt-total-note">
                   Estimación orientativa con relleno al {quote.rellenoPct}% y ~
@@ -888,11 +935,65 @@ export function QuoteClient({
                 onChange={(e) => setTelefono(e.target.value)}
                 autoComplete="tel"
               />
+              {entrega === 'envio' && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Dirección (calle y número)"
+                    required
+                    value={calle}
+                    onChange={(e) => setCalle(e.target.value)}
+                    autoComplete="street-address"
+                  />
+                  <div className="qt-form-row">
+                    <input
+                      type="text"
+                      placeholder="Ciudad"
+                      required
+                      value={ciudad}
+                      onChange={(e) => setCiudad(e.target.value)}
+                      autoComplete="address-level2"
+                    />
+                    <input
+                      type="text"
+                      placeholder="C.P."
+                      required
+                      pattern="[0-9]{5}"
+                      title="Código postal de 5 dígitos"
+                      value={cp}
+                      onChange={(e) => setCp(e.target.value)}
+                      autoComplete="postal-code"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Provincia"
+                      required
+                      value={provincia}
+                      onChange={(e) => setProvincia(e.target.value)}
+                      autoComplete="address-level1"
+                    />
+                  </div>
+                </>
+              )}
               <textarea
                 placeholder="Notas: reparto de colores, plazo, lo que necesites…"
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value)}
               />
+              <label className="qt-toggle qt-terms">
+                <input
+                  type="checkbox"
+                  required
+                  checked={aceptaTerminos}
+                  onChange={(e) => setAceptaTerminos(e.target.checked)}
+                />
+                <span>
+                  He leído y acepto los{' '}
+                  <a href="/terminos" target="_blank" rel="noopener noreferrer">
+                    Términos y Condiciones
+                  </a>
+                </span>
+              </label>
               {/* honeypot */}
               <div className="qt-honeypot" aria-hidden="true">
                 <input
@@ -916,8 +1017,10 @@ export function QuoteClient({
                 {status.kind === 'sending' ? 'Enviando…' : 'Enviar solicitud'}
               </button>
               <p className="qt-form-legal">
-                Al enviar aceptas nuestros <a href="/terminos">Términos</a>. Tu
-                archivo se usa únicamente para preparar el presupuesto.
+                Tus datos y tu archivo se usan únicamente para preparar y gestionar
+                este presupuesto, y se eliminan periódicamente. Puedes ejercer tus
+                derechos escribiendo a info@impresion3dcc.com. Más información en
+                nuestra <a href="/privacidad">Política de Privacidad</a>.
               </p>
             </form>
           )}
@@ -926,8 +1029,12 @@ export function QuoteClient({
             <div className="qt-success" role="status">
               <div className="qt-success-code">{status.codigo}</div>
               <p>
-                ¡Solicitud recibida! Te responderemos muy pronto por email con la
-                confirmación. Guarda tu código de presupuesto.
+                ¡Solicitud recibida! Te hemos enviado un email de confirmación con
+                el resumen. Puedes consultar el estado cuando quieras en{' '}
+                <a href="/presupuesto" style={{ color: 'var(--accent)' }}>
+                  impresion3dcc.com/presupuesto
+                </a>{' '}
+                con tu código.
               </p>
               <a
                 className="btn-outline"

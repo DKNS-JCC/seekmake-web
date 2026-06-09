@@ -231,6 +231,12 @@ export default function AdminTarifas() {
           <Field label="Fracción de pared (0-1)" hint="Parte del volumen que imprime sólida (paredes/tapas)">
             <Num value={settings.fraccion_pared} step={0.05} onChange={(v) => patch((s) => ({ ...s, fraccion_pared: Math.min(1, v) }))} />
           </Field>
+          <Field label="Horas de impresión / día" hint="Para el plazo estimado que ve el cliente">
+            <Num value={settings.plazo_horas_dia} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_horas_dia: v }))} />
+          </Field>
+          <Field label="Días de margen" hint="Preparación y cola, se suman a todo plazo">
+            <Num value={settings.plazo_dias_margen} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_dias_margen: v }))} />
+          </Field>
         </div>
       </section>
 

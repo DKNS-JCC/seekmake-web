@@ -312,6 +312,21 @@ export default function AdminPresupuestos() {
               </div>
             </Field>
 
+            <Field label="Entrega">
+              <div style={{ fontSize: 13, lineHeight: 1.8 }}>
+                {open.entrega === 'envio' ? (
+                  <>
+                    <strong>Envío nacional</strong> (coste a convenir)
+                    <br />
+                    {open.direccion?.calle}, {open.direccion?.cp}{' '}
+                    {open.direccion?.ciudad} ({open.direccion?.provincia})
+                  </>
+                ) : (
+                  <strong>Recogida en Salamanca</strong>
+                )}
+              </div>
+            </Field>
+
             <Field label="Pieza">
               <div style={{ fontSize: 13, lineHeight: 1.8 }}>
                 <a
