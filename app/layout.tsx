@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
-import Script from 'next/script';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -32,28 +31,21 @@ export const viewport: Viewport = {
 
 // Inline FOUC-prevention script. Must run before the body renders.
 // Mirrors the legacy contract: localStorage('theme') === 'dark'.
-const noFlashScript = `
-(function(){
+const noFlashScript = `(function(){
   try {
     var v = localStorage.getItem('theme');
     if (v === 'dark') document.documentElement.classList.add('dark');
   } catch (e) {}
-})();
-`;
+})();`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: noFlashScript }} />
+        <script dangerouslySetInnerHTML={{ __html: noFlashScript }} suppressHydrationWarning />
       </head>
       <body>
         <Providers>{children}</Providers>
-        <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2879714749440744"
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-        />
       </body>
     </html>
   );

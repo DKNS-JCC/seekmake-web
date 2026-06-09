@@ -22,6 +22,14 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'));
+
+    // Inject AdSense script
+    const adsenseClient = 'ca-pub-2879714749440744';
+    const script = document.createElement('script');
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    document.head.appendChild(script);
   }, []);
 
   const setDark = useCallback((value: boolean) => {

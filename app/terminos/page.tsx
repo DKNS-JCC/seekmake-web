@@ -373,13 +373,12 @@ export default function TerminosPage() {
             <h2>13. Servicios de terceros (presupuesto online)</h2>
             <p>
               El sistema de presupuestos disponible en la web puede estar
-              prestado por una plataforma externa (por ejemplo, Seekmake u
-              otras). El uso de dicha herramienta se rige también por los
-              términos y la política de privacidad de su proveedor, que se
-              facilitarán o enlazarán al cliente antes de utilizarla. El
-              titular de este sitio web no es responsable de las prácticas de
-              tratamiento de datos ni del funcionamiento técnico de dichos
-              servicios externos.
+              prestado por una plataforma externa. El uso de dicha herramienta
+              se rige también por los términos y la política de privacidad de
+              su proveedor, que se facilitarán o enlazarán al cliente antes de
+              utilizarla. El titular de este sitio web no es responsable de las
+              prácticas de tratamiento de datos ni del funcionamiento técnico de
+              dichos servicios externos.
             </p>
 
             <h2>14. Modificación de los Términos</h2>
@@ -459,6 +458,16 @@ export default function TerminosPage() {
           <span className="footer-copy">
             <Link href="/terminos" className="footer-link">
               Términos y Condiciones
+            </Link>
+          </span>
+        </div>
+      </footer>
+    </>
+  );
+}
+style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+            <Link href="/privacidad" className="footer-link">
+              Política de Privacidad
             </Link>
           </span>
         </div>
