@@ -41,7 +41,7 @@ export default function TerminosPage() {
               letterSpacing: '0.1em'
             }}
           >
-            Última actualización: 1 de mayo de 2026
+            Última actualización: 19 de mayo de 2026
           </p>
 
           <div className="terms-card">
@@ -278,8 +278,8 @@ export default function TerminosPage() {
             <ul>
               <li>
                 Los envíos se realizan a través de servicios de mensajería
-                estándar (la concreta empresa transportista se comunicará con
-                el seguimiento).
+                estándar (se informará sobre la empresa transportista
+                seleccionada junto con el número de seguimiento).
               </li>
               <li>
                 Los plazos de entrega del transportista son los publicados por
@@ -459,13 +459,7 @@ export default function TerminosPage() {
             <Link href="/terminos" className="footer-link">
               Términos y Condiciones
             </Link>
-          </span>
-        </div>
-      </footer>
-    </>
-  );
-}
-style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+            <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
             <Link href="/privacidad" className="footer-link">
               Política de Privacidad
             </Link>
