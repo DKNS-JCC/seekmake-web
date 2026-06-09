@@ -1,0 +1,57 @@
+trabajos:
+  - titulo: "Engranajes de Precisión"
+    descripcion: "Repuestos industriales en Nylon"
+    imagen: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800"
+    material: "Nylon"
+    etiquetas: ["industrial", "repuesto", "mecanico"]
+    destacado: true
+    orden: 1
+  - titulo: "Maqueta Arquitectónica"
+    descripcion: "Proyecto urbanístico a escala 1:200"
+    imagen: "https://images.unsplash.com/photo-1503387762-592dea58ef23?q=80&w=800"
+    material: "PLA"
+    etiquetas: ["arquitectura", "maqueta", "detalle"]
+    destacado: true
+    orden: 2
+  - titulo: "Soporte para Cámaras"
+    descripcion: "Accesorio a medida para estudio"
+    imagen: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=800"
+    material: "PETG"
+    etiquetas: ["fotografia", "soporte", "estudio"]
+    destacado: true
+    orden: 3
+  - titulo: "Figura Coleccionable"
+    descripcion: "Personaje original pintado a mano"
+    imagen: "https://images.unsplash.com/photo-1608889175123-8ee362201f81?q=80&w=800"
+    material: "Resina"
+    etiquetas: ["figura", "arte", "coleccionable"]
+    destacado: true
+    orden: 4
+  - titulo: "Prototipo Médico"
+    descripcion: "Guía quirúrgica personalizada"
+    imagen: "https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=800"
+    material: "Resina Bio"
+    etiquetas: ["medicina", "prototipo", "quirurgico"]
+    destacado: true
+    orden: 5
+  - titulo: "Panel Decorativo"
+    descripcion: "Textura Voronoi para pared"
+    imagen: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800"
+    material: "PLA"
+    etiquetas: ["decoracion", "interiorismo", "voronoi"]
+    destacado: true
+    orden: 6
+  - titulo: "Carcasa de Dron"
+    descripcion: "Diseño ultraligero y resistente"
+    imagen: "https://images.unsplash.com/photo-1473968512647-3e44a224fe8f?q=80&w=800"
+    material: "Fibra de Carbono (PETG)"
+    etiquetas: ["dron", "aeromodelismo", "carcasa"]
+    destacado: true
+    orden: 7
+  - titulo: "Lámpara de Diseño"
+    descripcion: "Iluminación ambiental paramétrica"
+    imagen: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800"
+    material: "PLA Translucido"
+    etiquetas: ["iluminacion", "lampara", "diseño"]
+    destacado: true
+    orden: 8

@@ -1,0 +1,305 @@
+productos:
+# --- Servicios personalizados (destacados) ---
+- id: 1
+  nombre: "Impresión 3D desde tu archivo"
+  descripcion: "Tienes el modelo (.stl o .3mf) y quieres una pieza física. Lo imprimimos con el material y color que elijas. Presupuesto cerrado al subir el archivo en el cotizador."
+  precio: 5.00
+  categoria: "Personalizado"
+  material: "A elegir (PLA, PETG, ABS, ASA, TPU)"
+  colores: [ "Todos los del muestrario" ]
+  dimensiones: "Hasta 256x256x256 mm por pieza"
+  peso: "Según modelo"
+  imagen: ""
+  destacado: true
+  etiquetas: [ "personalizado", "stl", "bajo-pedido", "cotizar", "servicio" ]
+
+- id: 2
+  nombre: "Diseño 3D a medida"
+  descripcion: "No tienes archivo: tienes una idea, una foto o un boceto. Te lo modelamos en 3D y lo dejamos listo para imprimir. Incluye una revisión gratuita del diseño."
+  precio: 25.00
+  categoria: "Personalizado"
+  material: "Cualquiera disponible"
+  colores: [ "Personalizable" ]
+  dimensiones: "Según proyecto"
+  peso: "—"
+  imagen: ""
+  destacado: true
+  etiquetas: [ "diseño", "modelado", "cad", "a-medida", "servicio" ]
+
+- id: 3
+  nombre: "Réplica de pieza rota"
+  descripcion: "Una pieza que se ha roto y el fabricante no la vende. Medimos o escaneamos el original y lo replicamos, normalmente en PETG o ASA para que aguante el uso real."
+  precio: 18.00
+  categoria: "Personalizado"
+  material: "PETG / ASA recomendados"
+  colores: [ "Negro", "Blanco", "Gris", "A juego" ]
+  dimensiones: "Hasta tamaño folio"
+  peso: "Según pieza"
+  imagen: ""
+  destacado: true
+  etiquetas: [ "reparación", "repuesto", "replica", "servicio", "rescatar" ]
+
+- id: 4
+  nombre: "Litofanía personalizada"
+  descripcion: "Una foto convertida en una placa de luz: a contraluz revela la imagen con un detalle sorprendente. Regalo emocional que dura años."
+  precio: 14.00
+  categoria: "Personalizado"
+  material: "PLA blanco"
+  colores: [ "Blanco translúcido" ]
+  dimensiones: "10x15 cm (otros tamaños bajo pedido)"
+  peso: "60g"
+  imagen: ""
+  destacado: true
+  etiquetas: [ "regalo", "foto", "litofania", "personalizado", "luz" ]
+
+# --- Hogar y Decoración ---
+- id: 10
+  nombre: "Maceta hexagonal modular"
+  descripcion: "Macetas hexagonales que encajan entre sí formando paneles. Para suculentas, hierbas aromáticas o decoración de pared."
+  precio: 9.00
+  categoria: "Hogar y Decoración"
+  material: "PETG"
+  colores: [ "Blanco", "Negro mate", "Terracota", "Verde salvia" ]
+  dimensiones: "10x10x8 cm"
+  peso: "85g"
+  imagen: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=800&auto=format&fit=crop"
+  destacado: false
+  etiquetas: [ "maceta", "decoración", "modular", "plantas", "hogar" ]
+
+- id: 11
+  nombre: "Lámpara de mesa geométrica"
+  descripcion: "Difusor impreso en PLA translúcido sobre base de madera. Encaja en cualquier bombilla E27 LED de bajo consumo. Patrón geométrico que proyecta sombras."
+  precio: 32.00
+  categoria: "Hogar y Decoración"
+  material: "PLA translúcido + base madera"
+  colores: [ "Blanco", "Ámbar", "Azul translúcido" ]
+  dimensiones: "18x18x25 cm"
+  peso: "320g"
+  imagen: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "lampara", "iluminación", "decoración", "geometrico", "salon" ]
+
+- id: 12
+  nombre: "Organizador Gridfinity (módulo 2x2)"
+  descripcion: "Cubilete estándar Gridfinity para cajones y mesa de trabajo. Encaja en bases del mismo sistema para crear organizadores totalmente a medida."
+  precio: 4.50
+  categoria: "Hogar y Decoración"
+  material: "PETG"
+  colores: [ "Negro", "Gris", "Blanco" ]
+  dimensiones: "84x84x40 mm (2x2 unidades)"
+  peso: "35g"
+  imagen: "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "gridfinity", "organización", "cajón", "modular", "taller" ]
+
+- id: 13
+  nombre: "Soporte de pared para auriculares"
+  descripcion: "Gancho atornillable o adhesivo para los auriculares del escritorio o gaming. Acabado mate, no rayados al apoyar la diadema."
+  precio: 8.00
+  categoria: "Hogar y Decoración"
+  material: "PLA"
+  colores: [ "Negro mate", "Blanco", "Gris" ]
+  dimensiones: "12x6x4 cm"
+  peso: "55g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "soporte", "auriculares", "escritorio", "gaming", "pared" ]
+
+- id: 14
+  nombre: "Perchero modular para llaves"
+  descripcion: "Panel magnético + ganchos imprimibles para entrada o vestíbulo. Añade tantos ganchos como llaves tengas, ampliable cuando llega gente nueva a casa."
+  precio: 15.00
+  categoria: "Hogar y Decoración"
+  material: "PLA + imanes"
+  colores: [ "Roble simulado", "Blanco", "Negro" ]
+  dimensiones: "20x8x2 cm"
+  peso: "120g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "perchero", "llaves", "entrada", "magnetico", "modular" ]
+
+# --- Regalos ---
+- id: 20
+  nombre: "Llavero con nombre"
+  descripcion: "Llavero con tu nombre, una palabra o una iniciales. Doble color con relieve, terminación suave al tacto. Texto y color a tu elección."
+  precio: 4.00
+  categoria: "Regalos"
+  material: "PLA"
+  colores: [ "Combinación a elegir (2 colores)" ]
+  dimensiones: "6x2 cm"
+  peso: "8g"
+  imagen: "https://images.unsplash.com/photo-1607344645866-009c320b63e0?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "llavero", "regalo", "personalizado", "nombre", "barato" ]
+
+- id: 21
+  nombre: "Placa para puerta personalizada"
+  descripcion: "Placa para puerta de habitación, despacho o consulta. Texto, icono y dos colores a elegir. Atornillable o con adhesivo de doble cara."
+  precio: 12.00
+  categoria: "Regalos"
+  material: "PLA"
+  colores: [ "Hasta 2 colores combinables" ]
+  dimensiones: "15x6 cm (otros tamaños bajo pedido)"
+  peso: "45g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "placa", "puerta", "personalizado", "regalo", "oficina" ]
+
+- id: 22
+  nombre: "Marco para foto con dedicatoria"
+  descripcion: "Marco para foto 10x15 con frase, fecha o nombre grabado en el reverso o frontal. Sustituye al marco genérico de tienda para regalos con significado."
+  precio: 16.00
+  categoria: "Regalos"
+  material: "PLA"
+  colores: [ "Madera simulada", "Negro", "Pastel" ]
+  dimensiones: "18x13 cm"
+  peso: "110g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "marco", "foto", "regalo", "dedicatoria", "aniversario" ]
+
+- id: 23
+  nombre: "Topper para tarta personalizado"
+  descripcion: "El detalle de la tarta de cumpleaños, boda o comunión. Nombre, edad, figura temática. Apto para contacto indirecto con alimento (varilla bajo el bizcocho)."
+  precio: 9.00
+  categoria: "Regalos"
+  material: "PLA food-contact-safe envoltorio"
+  colores: [ "A elegir" ]
+  dimensiones: "10x10 cm"
+  peso: "15g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "topper", "tarta", "cumpleaños", "boda", "comunion" ]
+
+# --- Gaming y Tabletop ---
+- id: 30
+  nombre: "Torre de dados plegable"
+  descripcion: "Torre de tiradas para D&D y juegos de mesa. Se desmonta para guardarse plana. Tiradas justas y sin rebotes por la mesa."
+  precio: 18.00
+  categoria: "Gaming y Tabletop"
+  material: "PLA"
+  colores: [ "Negro", "Madera", "Rojo dragón", "Verde elfo" ]
+  dimensiones: "12x12x20 cm montada"
+  peso: "180g"
+  imagen: "https://images.unsplash.com/photo-1611996575749-79a3a250f948?q=80&w=800&auto=format&fit=crop"
+  destacado: true
+  etiquetas: [ "dnd", "rol", "dados", "torre", "tabletop" ]
+
+- id: 31
+  nombre: "Bandeja de dados con logo"
+  descripcion: "Bandeja antirruido para tiradas. Personalizable con nombre del grupo de rol o logo. Borde alto para que ningún dado se escape."
+  precio: 14.00
+  categoria: "Gaming y Tabletop"
+  material: "PLA + fieltro adhesivo"
+  colores: [ "Negro", "Burdeos", "Azul medianoche" ]
+  dimensiones: "22x16x3 cm"
+  peso: "150g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "dados", "bandeja", "rol", "personalizado", "tabletop" ]
+
+- id: 32
+  nombre: "Pack bases para miniaturas (10 uds)"
+  descripcion: "Bases de 25 mm con textura para miniaturas de Warhammer, D&D o juegos compatibles. Opciones: lisa, piedra, tierra y madera."
+  precio: 6.00
+  categoria: "Gaming y Tabletop"
+  material: "PLA"
+  colores: [ "Gris piedra", "Tierra", "Negro" ]
+  dimensiones: "25 mm cada base (otros tamaños disponibles)"
+  peso: "30g (pack)"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "miniaturas", "warhammer", "bases", "tabletop", "pintura" ]
+
+- id: 33
+  nombre: "Soporte para mandos de consola"
+  descripcion: "Doble soporte para mandos de PS5, Xbox o Nintendo Switch Pro. Atornillable bajo el mueble o de sobremesa."
+  precio: 12.00
+  categoria: "Gaming y Tabletop"
+  material: "PETG"
+  colores: [ "Negro mate", "Blanco" ]
+  dimensiones: "20x10x8 cm"
+  peso: "120g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "mando", "ps5", "xbox", "switch", "gaming" ]
+
+# --- Funcional / Repuestos ---
+- id: 40
+  nombre: "Adaptador para manguera de jardín"
+  descripcion: "Adaptador entre roscas de manguera no estándar. Imprimimos el modelo concreto que necesites con las medidas que nos pases."
+  precio: 7.00
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Negro" ]
+  dimensiones: "Bajo pedido"
+  peso: "20g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "jardin", "manguera", "adaptador", "repuesto", "funcional" ]
+
+- id: 41
+  nombre: "Soporte de móvil ajustable"
+  descripcion: "Soporte de sobremesa con ángulo regulable para videollamadas, ver series o seguir recetas. Antideslizante en la base."
+  precio: 9.00
+  categoria: "Funcional"
+  material: "PLA"
+  colores: [ "Negro", "Blanco", "Madera" ]
+  dimensiones: "9x7x10 cm"
+  peso: "70g"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "movil", "soporte", "escritorio", "videollamada", "funcional" ]
+
+- id: 42
+  nombre: "Pinzas cierra-bolsas (set 6)"
+  descripcion: "Pinzas para cerrar bolsas de café, cereales o pasta. Sistema de cierre con encaje a presión que conserva el aroma mejor que una pinza de la ropa."
+  precio: 8.00
+  categoria: "Funcional"
+  material: "PETG"
+  colores: [ "Surtido (azul, verde, rojo, amarillo)" ]
+  dimensiones: "10 cm cada una"
+  peso: "60g (set)"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "cocina", "bolsa", "pinza", "set", "funcional" ]
+
+- id: 43
+  nombre: "Sujetacables magnéticos para escritorio"
+  descripcion: "Pack de 5 organizadores de cable con imán. Se pegan al canto del escritorio y mantienen USB, cargadores y auriculares siempre a mano."
+  precio: 6.00
+  categoria: "Funcional"
+  material: "PLA + imanes neodimio"
+  colores: [ "Negro", "Blanco" ]
+  dimensiones: "3x2 cm cada uno"
+  peso: "25g (pack)"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "cables", "organizador", "escritorio", "magnetico", "funcional" ]
+
+# --- Empresas y eventos ---
+- id: 50
+  nombre: "Llaveros corporativos con logo"
+  descripcion: "Pedidos a partir de 25 unidades. Tu logo en doble color, terminación pulida. Ideal para detalles de evento, ferias o entrada a clientes nuevos."
+  precio: 2.50
+  categoria: "Empresas y Eventos"
+  material: "PLA"
+  colores: [ "A elegir (corporativos)" ]
+  dimensiones: "Diseño propio sobre 6x3 cm"
+  peso: "8g unidad"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "empresa", "corporativo", "logo", "evento", "merchandising" ]
+
+- id: 51
+  nombre: "Expositor / display de producto"
+  descripcion: "Expositor de mostrador para tu producto físico: cosmética, electrónica, complementos. Diseño hecho a medida de tu envase."
+  precio: 35.00
+  categoria: "Empresas y Eventos"
+  material: "PLA o PETG"
+  colores: [ "A elegir" ]
+  dimensiones: "Bajo pedido"
+  peso: "Según diseño"
+  imagen: ""
+  destacado: false
+  etiquetas: [ "expositor", "display", "tienda", "empresa", "merchandising" ]

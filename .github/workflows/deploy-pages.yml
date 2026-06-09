@@ -1,0 +1,78 @@
+name: Deploy to GitHub Pages
+
+# Static export of the Next.js app, deployed to GitHub Pages with the CNAME
+# (impresion3dcc.com) preserved via public/CNAME.
+#
+# Required repo secrets:
+#   NEXT_PUBLIC_SUPABASE_URL       — Supabase project URL (public)
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY  — Supabase anon key (public)
+#   NEXT_PUBLIC_ADSENSE_CLIENT     — Google AdSense publisher ID (ca-pub-...)
+
+on:
+  # Rebuild on every push (immediate when code changes).
+  push:
+    branches: [next-supabase, main]
+
+  # Manual trigger from the Actions tab.
+  workflow_dispatch:
+
+  # External trigger from a Supabase Edge Function or webhook.
+  # Body: { "event_type": "rebuild" }
+  repository_dispatch:
+    types: [rebuild]
+
+  # Scheduled rebuild every 15 minutes so blog posts and catalog changes go
+  # live without any manual action. GitHub may queue a few minutes late on
+  # the free tier; expect 15–25 min worst case.
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_ADSENSE_CLIENT: ${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT }}
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

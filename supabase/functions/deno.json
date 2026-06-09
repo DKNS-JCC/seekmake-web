@@ -1,0 +1,7 @@
+{
+  "_comment": "Marks this directory as a Deno project. Supabase CLI picks this up when deploying Edge Functions. The Node-side TypeScript build excludes this folder via tsconfig.json.",
+  "compilerOptions": {
+    "lib": ["deno.window", "dom"],
+    "strict": true
+  }
+}
