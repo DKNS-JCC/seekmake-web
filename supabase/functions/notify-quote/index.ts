@@ -70,7 +70,7 @@ const PLANTILLAS: Record<
     cuerpo: (q, precio) =>
       `Hemos comprobado tus piezas y el precio queda confirmado en ${precio.toFixed(2)} €` +
       (q.entrega === 'envio' ? ' (más envío, que te detallamos aparte).' : '.') +
-      ' Si quieres seguir adelante, responde a este email o escríbenos por WhatsApp y lo ponemos en cola.'
+      ' Si quieres seguir adelante, pulsa el botón de abajo y acéptalo en un clic — sin escribir nada.'
   },
   aceptado: {
     asunto: 'Pedido confirmado',
@@ -172,6 +172,16 @@ Deno.serve(async (req: Request) => {
   const precio = Number(q.precio_final ?? q.precio_total) || 0;
   const cuerpo = plantilla.cuerpo(q, precio);
 
+  // Deep link to the status page; for "revisado" include the personal accept
+  // token so the customer can confirm the order in one click.
+  const statusUrl = `https://www.impresion3dcc.com/presupuesto?codigo=${encodeURIComponent(q.codigo)}`;
+  const linkUrl =
+    q.estado === 'revisado' && q.acepta_token
+      ? `${statusUrl}&token=${encodeURIComponent(q.acepta_token)}`
+      : statusUrl;
+  const linkLabel =
+    q.estado === 'revisado' ? 'Ver y aceptar mi presupuesto' : 'Seguir mi pedido';
+
   const pagoTxt =
     q.pago === 'pagado'
       ? 'Pago recibido — gracias.'
@@ -188,7 +198,7 @@ ${cuerpo}
 ${pagoTxt ? '\n' + pagoTxt + '\n' : ''}
 Código:  ${q.codigo}
 Estado:  ${q.estado}
-Sigue tu pedido en https://www.impresion3dcc.com/presupuesto
+${linkLabel}: ${linkUrl}
 
 ¿Dudas? Responde a este email o WhatsApp: +34 665 14 89 56.
 
@@ -204,9 +214,11 @@ Sigue tu pedido en https://www.impresion3dcc.com/presupuesto
   <div style="text-align:center;margin:24px 0;">
     <span style="display:inline-block;padding:8px 22px;background:#f0f9ff;border:1px solid #0EA5E9;border-radius:6px;font-family:monospace;font-size:18px;font-weight:700;color:#0EA5E9;letter-spacing:0.06em;">${escapeHtml(q.codigo)}</span>
   </div>
+  <div style="text-align:center;margin:0 0 20px 0;">
+    <a href="${linkUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">${escapeHtml(linkLabel)}</a>
+  </div>
   <p style="margin:0;color:#444;font-size:13px;">
-    Sigue tu pedido en <a href="https://www.impresion3dcc.com/presupuesto" style="color:#0EA5E9;">impresion3dcc.com/presupuesto</a>
-    · ¿Dudas? Responde a este email o <a href="https://wa.me/34665148956" style="color:#0EA5E9;">WhatsApp</a>.
+    ¿Dudas? Responde a este email o <a href="https://wa.me/34665148956" style="color:#0EA5E9;">WhatsApp</a>.
   </p>
   <p style="margin:24px 0 0 0;font-size:11px;color:#999;">— 3DCC Salamanca · <a href="https://www.impresion3dcc.com" style="color:#999;">impresion3dcc.com</a></p>
 </div>

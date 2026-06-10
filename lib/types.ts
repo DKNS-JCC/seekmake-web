@@ -154,8 +154,28 @@ export type Quote = {
   importe_pagado: number;
   archivado: boolean;
   notas_admin: string;
+  /** Secret accept-link token (emailed to the customer). */
+  acepta_token?: string;
+  aceptado_at: string | null;
+  valido_hasta: string;
+  /** SHA-256 of the requester IP — rate limiting only. */
+  ip_hash?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type QuoteEventoTipo =
+  | 'pieza_anadida'
+  | 'solicitud_enviada'
+  | 'pdf_descargado'
+  | 'aceptado';
+
+export type QuoteEvento = {
+  id: number;
+  session_id: string;
+  evento: QuoteEventoTipo;
+  payload: Record<string, unknown>;
+  created_at: string;
 };
 
 export type QuoteSettingsRow = {
@@ -212,6 +232,7 @@ export type Database = {
           Quote,
           | 'id' | 'codigo' | 'created_at' | 'updated_at'
           | 'pago' | 'importe_pagado' | 'precio_final' | 'archivado'
+          | 'aceptado_at' | 'valido_hasta'
         > & {
           id?: string;
           codigo?: string;
@@ -219,10 +240,20 @@ export type Database = {
           importe_pagado?: number;
           precio_final?: number | null;
           archivado?: boolean;
+          aceptado_at?: string | null;
+          valido_hasta?: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Quote>;
+        Relationships: [];
+      };
+      quote_events: {
+        Row: QuoteEvento;
+        Insert: Omit<QuoteEvento, 'id' | 'created_at'> & {
+          created_at?: string;
+        };
+        Update: Partial<QuoteEvento>;
         Relationships: [];
       };
       quote_settings: {
@@ -256,9 +287,15 @@ export type Database = {
           cantidad: number;
           precio_total: number;
           precio_final: number | null;
+          valido_hasta: string;
+          aceptado_at: string | null;
           created_at: string;
           updated_at: string;
         }[];
+      };
+      accept_quote: {
+        Args: { p_codigo: string; p_token: string };
+        Returns: { ok: boolean; estado: string | null }[];
       };
       vote_trabajo: {
         Args: { p_id: string; p_voter_id: string; p_target: string };

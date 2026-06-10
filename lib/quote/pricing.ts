@@ -9,6 +9,17 @@ export interface MaterialPricing {
   precio_g: number;
   /** Filament density in g/cm³ (PLA ≈ 1.24). */
   densidad: number;
+  /**
+   * Print-speed factor relative to PLA (1 = PLA, TPU ≈ 0.4). Scales the
+   * mass-deposition rate `caudal_g_h` for this material.
+   */
+  factor_velocidad?: number;
+}
+
+export interface EnvioTramo {
+  /** Tier applies up to this many grams (total order weight). */
+  max_g: number;
+  precio: number;
 }
 
 export interface ResistenciaPreset {
@@ -37,6 +48,23 @@ export interface QuoteSettings {
   /** Average machine throughput in grams/hour at the standard profile. */
   caudal_g_h: number;
   /**
+   * Fixed per-layer overhead in seconds (Z-hop, perimeter starts, travel).
+   * Layer count = part height ÷ layer height, so thin layers honestly cost
+   * more time instead of relying only on the flat `factor_tiempo`.
+   */
+  tiempo_capa_s: number;
+  /**
+   * Sparse density of support structures (0-1, slicers default ~0.15).
+   * Multiplies the raw prism volume estimated by the geometry analysis.
+   */
+  soporte_relleno: number;
+  /** Largest printable axis in mm (warn above this). */
+  max_bed_mm: number;
+  /** Days the estimate stays valid (shown to the customer + accept window). */
+  validez_dias: number;
+  /** Shipping tiers by total order weight, sorted ascending by max_g. */
+  envio_tramos: EnvioTramo[];
+  /**
    * Fraction of the solid volume that is walls/top/bottom and prints solid
    * regardless of infill. effective = pared + (1 - pared) × relleno.
    */
@@ -56,15 +84,24 @@ export interface QuoteSettings {
 export const DEFAULT_QUOTE_SETTINGS: QuoteSettings = {
   version: 1,
   materiales: {
-    PLA: { precio_g: 0.05, densidad: 1.24 },
-    PETG: { precio_g: 0.06, densidad: 1.27 },
-    ASA: { precio_g: 0.07, densidad: 1.07 },
-    TPU: { precio_g: 0.08, densidad: 1.21 }
+    PLA: { precio_g: 0.05, densidad: 1.24, factor_velocidad: 1 },
+    PETG: { precio_g: 0.06, densidad: 1.27, factor_velocidad: 0.9 },
+    ASA: { precio_g: 0.07, densidad: 1.07, factor_velocidad: 0.85 },
+    TPU: { precio_g: 0.08, densidad: 1.21, factor_velocidad: 0.4 }
   },
   precio_hora: 0.3,
   tarifa_preparacion: 1.5,
   precio_minimo: 5,
   caudal_g_h: 18,
+  tiempo_capa_s: 6,
+  soporte_relleno: 0.15,
+  max_bed_mm: 256,
+  validez_dias: 15,
+  envio_tramos: [
+    { max_g: 500, precio: 4.5 },
+    { max_g: 2000, precio: 6.9 },
+    { max_g: 999999, precio: 9.9 }
+  ],
   fraccion_pared: 0.35,
   plazo_horas_dia: 8,
   plazo_dias_margen: 1,
@@ -117,7 +154,10 @@ export function normalizeSettings(raw: unknown): QuoteSettings {
     detalle: r.detalle?.length ? r.detalle : DEFAULT_QUOTE_SETTINGS.detalle,
     descuentos_cantidad: r.descuentos_cantidad?.length
       ? [...r.descuentos_cantidad].sort((a, b) => a.min - b.min)
-      : DEFAULT_QUOTE_SETTINGS.descuentos_cantidad
+      : DEFAULT_QUOTE_SETTINGS.descuentos_cantidad,
+    envio_tramos: r.envio_tramos?.length
+      ? [...r.envio_tramos].sort((a, b) => a.max_g - b.max_g)
+      : DEFAULT_QUOTE_SETTINGS.envio_tramos
   };
 }
 
@@ -137,8 +177,10 @@ export interface PiezaResult {
   nombre: string;
   material: string;
   rellenoPct: number;
-  /** Per unit. */
+  /** Per unit, support material included. */
   pesoG: number;
+  /** Estimated support material per unit (already in pesoG). */
+  soporteG: number;
   /** Per unit. */
   tiempoH: number;
   cantidad: number;
@@ -164,6 +206,8 @@ export interface QuoteResult {
   minimoAplicado: boolean;
   /** Estimated working days until the order is ready for pickup/shipping. */
   diasEstimados: number;
+  /** Shipping line included in the total (0 for pickup). */
+  envio: number;
 }
 
 function round2(n: number): number {
@@ -172,7 +216,8 @@ function round2(n: number): number {
 
 export function computeQuote(
   piezas: PiezaInput[],
-  settings: QuoteSettings
+  settings: QuoteSettings,
+  entrega: 'recogida' | 'envio' = 'recogida'
 ): QuoteResult {
   const lineas: QuoteLine[] = [];
   const piezasOut: PiezaResult[] = [];
@@ -194,11 +239,24 @@ export function computeQuote(
     const fraccion =
       settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
     const cantidad = Math.max(1, Math.floor(p.cantidad));
-    const pesoG = p.metrics.volumenCm3 * mat.densidad * fraccion;
-    const tiempoH = (pesoG / Math.max(settings.caudal_g_h, 1)) * det.factor_tiempo;
+    const pesoPieza = p.metrics.volumenCm3 * mat.densidad * fraccion;
+    // Support material: raw prism volume × sparse support infill.
+    const soporteG =
+      (p.metrics.soporteCm3 ?? 0) * settings.soporte_relleno * mat.densidad;
+    const pesoG = pesoPieza + soporteG;
+
+    // Time model: mass deposition (material-speed adjusted, quality factor)
+    // plus a fixed per-layer overhead so layer height truly matters.
+    const caudal =
+      Math.max(settings.caudal_g_h, 1) * Math.max(mat.factor_velocidad ?? 1, 0.05);
+    const capas = det.altura_capa_mm > 0 ? p.metrics.bboxMm.y / det.altura_capa_mm : 0;
+    const tiempoH =
+      (pesoG / caudal) * det.factor_tiempo + (capas * settings.tiempo_capa_s) / 3600;
+
     let unidad = pesoG * mat.precio_g + tiempoH * settings.precio_hora;
 
     const extras: string[] = [];
+    if (soporteG >= 1) extras.push(`soportes ~${Math.round(soporteG)} g`);
 
     // Specialty finish surcharge — the priciest finish among this piece's colors.
     const acabadoPct = Math.max(
@@ -226,6 +284,7 @@ export function computeQuote(
       material: p.material,
       rellenoPct: res.relleno_pct,
       pesoG: round2(pesoG),
+      soporteG: round2(soporteG),
       tiempoH: round2(tiempoH),
       cantidad,
       subtotal: round2(subtotal)
@@ -267,6 +326,23 @@ export function computeQuote(
   const minimoAplicado = total < settings.precio_minimo;
   if (minimoAplicado) total = settings.precio_minimo;
 
+  // Shipping estimate by total weight — applied after the minimum so pickup
+  // and shipping orders share the same base price.
+  let envio = 0;
+  if (entrega === 'envio') {
+    const tramo =
+      settings.envio_tramos.find((t) => pesoTotal <= t.max_g) ??
+      settings.envio_tramos[settings.envio_tramos.length - 1];
+    envio = tramo?.precio ?? 0;
+    if (envio > 0) {
+      lineas.push({
+        concepto: `Envío nacional (≈${Math.round(pesoTotal)} g)`,
+        importe: round2(envio)
+      });
+      total += envio;
+    }
+  }
+
   const diasEstimados =
     Math.ceil(tiempoTotal / Math.max(settings.plazo_horas_dia, 1)) +
     Math.max(0, Math.round(settings.plazo_dias_margen));
@@ -280,6 +356,7 @@ export function computeQuote(
     descuentoPct,
     total: round2(total),
     minimoAplicado,
-    diasEstimados
+    diasEstimados,
+    envio: round2(envio)
   };
 }

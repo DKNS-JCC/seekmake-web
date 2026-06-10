@@ -29,7 +29,12 @@ import {
   applyMaterialUpdate,
   buildMaterialUpdate
 } from '@/lib/three/materials';
-import { analyzeObject, looksDegenerate, type MeshMetrics } from '@/lib/quote/geometry';
+import {
+  analyzeObject,
+  looksDegenerate,
+  suggestScales,
+  type MeshMetrics
+} from '@/lib/quote/geometry';
 import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import {
   computeQuote,
@@ -41,9 +46,11 @@ import './quote.css';
 
 const MAX_FILE_MB = 50;
 const MAX_FILES = 5;
-const MAX_BED_MM = 256; // largest printable axis before we warn
 const ACCEPT = '.stl,.3mf,.obj';
 const WHATSAPP = '34665148956';
+
+// Anonymous funnel id for quote_events (per page load, never identifies).
+const SESSION_ID = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
 
 interface PiezaConfig {
   filamentoId: string;
@@ -133,6 +140,9 @@ export function QuoteClient({
 
   // ─── settings (runtime fetch so tariff edits apply instantly) ───────────
   const [settings, setSettings] = useState<QuoteSettings>(DEFAULT_QUOTE_SETTINGS);
+  // Don't show prices computed with defaults — wait for the real tariffs so
+  // the total never visibly jumps after the fetch resolves.
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   // ─── model state ────────────────────────────────────────────────────────
   const [piezas, setPiezas] = useState<Pieza[]>([]);
@@ -174,8 +184,17 @@ export function QuoteClient({
       .maybeSingle()
       .then(({ data }) => {
         if (data?.config) setSettings(normalizeSettings(data.config));
+        setSettingsLoaded(true);
       });
   }, []);
+
+  // Fire-and-forget funnel event (errors are irrelevant to the customer).
+  function trackEvent(evento: 'pieza_anadida' | 'solicitud_enviada' | 'pdf_descargado', payload: Record<string, unknown> = {}) {
+    void createClient()
+      .from('quote_events')
+      .insert({ session_id: SESSION_ID, evento, payload })
+      .then(() => undefined, () => undefined);
+  }
 
   // ─── scene setup (same studio as the muestrario visualizer) ─────────────
   useEffect(() => {
@@ -394,6 +413,11 @@ export function QuoteClient({
           setPiezas((prev) => [...prev, pieza]);
           count++;
           added = pieza;
+          trackEvent('pieza_anadida', {
+            ext,
+            volumen_cm3: Math.round(metrics.volumenCm3 * 10) / 10,
+            triangulos: metrics.triangulos
+          });
         } catch (err) {
           console.error(err);
           errors.push(`${f.name}: no se pudo leer (¿archivo dañado?).`);
@@ -435,6 +459,25 @@ export function QuoteClient({
       }
       return next;
     });
+  }
+
+  // Rescale a piece whose file came in non-mm units (inches/metres):
+  // scale the model, rest it back on the plate and re-measure.
+  function rescalePieza(id: string, factor: number) {
+    const model = modelsRef.current.get(id);
+    if (!model) return;
+    model.root.scale.multiplyScalar(factor);
+    model.root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(model.root);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    model.root.position.x -= center.x;
+    model.root.position.z -= center.z;
+    model.root.position.y -= box.min.y;
+    model.root.updateMatrixWorld(true);
+    const metrics = analyzeObject(model.root);
+    setPiezas((prev) => prev.map((p) => (p.id === id ? { ...p, metrics } : p)));
+    if (shownRef.current === id) showModel(id); // refit the camera
   }
 
   function setCantidad(id: string, v: number) {
@@ -517,7 +560,7 @@ export function QuoteClient({
   const activeColors = activePieza ? piezaColors(activePieza) : [];
 
   const quote = useMemo(() => {
-    if (!piezas.length) return null;
+    if (!piezas.length || !settingsLoaded) return null;
     return computeQuote(
       piezas.map((p) => {
         const fil = filamentos.find((f) => f.id === p.config.filamentoId);
@@ -535,15 +578,19 @@ export function QuoteClient({
           detalleId: p.config.detalleId
         };
       }),
-      settings
+      settings,
+      entrega
     );
-  }, [piezas, filamentos, settings]);
+  }, [piezas, filamentos, settings, settingsLoaded, entrega]);
 
+  const maxBedMm = settings.max_bed_mm;
   const tooBig = piezas.some(
-    (p) => Math.max(p.metrics.bboxMm.x, p.metrics.bboxMm.y, p.metrics.bboxMm.z) > MAX_BED_MM
+    (p) => Math.max(p.metrics.bboxMm.x, p.metrics.bboxMm.y, p.metrics.bboxMm.z) > maxBedMm
   );
   const degenerate = piezas.some((p) => looksDegenerate(p.metrics));
   const piezasSinColor = piezas.filter((p) => piezaColors(p).length === 0);
+  // Suspiciously tiny model → probably exported in inches/metres.
+  const scaleSuggestions = activePieza ? suggestScales(activePieza.metrics) : [];
 
   // ─── interactions ───────────────────────────────────────────────────────
   function changeMaterial(f: Filamento) {
@@ -678,10 +725,13 @@ export function QuoteClient({
           metricas: {
             volumen_cm3: Math.round(p.metrics.volumenCm3 * 100) / 100,
             area_cm2: Math.round(p.metrics.areaCm2 * 10) / 10,
+            soporte_cm3: Math.round(p.metrics.soporteCm3 * 10) / 10,
+            overhang_cm2: Math.round(p.metrics.overhangCm2 * 10) / 10,
             bbox_mm: p.metrics.bboxMm,
             triangulos: p.metrics.triangulos,
             mallas: p.metrics.mallas,
             peso_g: pr?.pesoG ?? null,
+            soporte_g: pr?.soporteG ?? null,
             tiempo_h: pr?.tiempoH ?? null,
             relleno_pct: pr?.rellenoPct ?? null
           }
@@ -727,7 +777,8 @@ export function QuoteClient({
           desglose: {
             lineas: quote.lineas,
             descuento_pct: quote.descuentoPct,
-            minimo_aplicado: quote.minimoAplicado
+            minimo_aplicado: quote.minimoAplicado,
+            envio: quote.envio
           },
           precio_total: quote.total
         }
@@ -741,6 +792,11 @@ export function QuoteClient({
         setStatus({ kind: 'err', message: data.error });
         return;
       }
+      trackEvent('solicitud_enviada', {
+        codigo: data?.codigo,
+        piezas: piezas.length,
+        total: quote.total
+      });
       setStatus({ kind: 'ok', codigo: data?.codigo ?? '' });
     } catch {
       setStatus({
@@ -748,6 +804,51 @@ export function QuoteClient({
         message: 'Error de red. Inténtalo de nuevo o escríbenos a info@impresion3dcc.com.'
       });
     }
+  }
+
+  // Printable summary — the browser's "save as PDF" does the heavy lifting,
+  // no PDF library needed for a static-export site.
+  function downloadPdf() {
+    if (!quote) return;
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const fecha = new Date().toLocaleDateString('es-ES', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+    const validez = new Date(
+      Date.now() + settings.validez_dias * 24 * 60 * 60 * 1000
+    ).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    const filas = quote.lineas
+      .map(
+        (l) =>
+          `<tr><td>${esc(l.concepto)}</td><td style="text-align:right;white-space:nowrap;">${l.importe.toFixed(2)} €</td></tr>`
+      )
+      .join('');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Presupuesto 3DCC</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,sans-serif;color:#111;max-width:640px;margin:32px auto;padding:0 16px;}
+  h1{color:#0EA5E9;margin:0;font-size:24px;} .sub{color:#666;font-size:13px;margin:2px 0 24px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  td{padding:8px 10px;border-bottom:1px solid #eee;}
+  .total td{font-weight:700;font-size:16px;border-top:2px solid #111;border-bottom:none;}
+  .nota{color:#666;font-size:12px;margin-top:24px;line-height:1.6;}
+</style></head><body>
+<h1>3DCC Salamanca — Estimación de impresión 3D</h1>
+<p class="sub">${fecha} · impresion3dcc.com · Estimación orientativa, válida hasta el ${validez}</p>
+<table>${filas}<tr class="total"><td>TOTAL ESTIMADO</td><td style="text-align:right;">${quote.total.toFixed(2)} €</td></tr></table>
+<p class="nota">
+  ~${Math.round(quote.pesoG)} g de material · ~${quote.tiempoH.toFixed(1)} h de impresión ·
+  listo en ~${quote.diasEstimados} día${quote.diasEstimados !== 1 ? 's' : ''} laborables.<br>
+  El precio final se confirma tras revisar las piezas. Contacto: info@impresion3dcc.com · WhatsApp +34 665 14 89 56.
+</p>
+<script>window.onload=function(){window.print();}</script>
+</body></html>`;
+    const w = window.open('', '_blank', 'width=760,height=900');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    trackEvent('pdf_descargado', { total: quote.total, piezas: piezas.length });
   }
 
   const waText = encodeURIComponent(
@@ -840,11 +941,37 @@ export function QuoteClient({
 
         {/* ── options panel ── */}
         <aside className="qt-panel">
-          {(tooBig || degenerate) && (
+          {(tooBig || degenerate || scaleSuggestions.length > 0) && (
             <div className="qt-warn">
+              {scaleSuggestions.length > 0 && activePieza && (
+                <div>
+                  <p>
+                    ⚠ <strong>{activePieza.name}</strong> mide solo{' '}
+                    {Math.max(
+                      activePieza.metrics.bboxMm.x,
+                      activePieza.metrics.bboxMm.y,
+                      activePieza.metrics.bboxMm.z
+                    ).toFixed(1)}{' '}
+                    mm. ¿Quizá el archivo no está en milímetros?
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                    {scaleSuggestions.map((s) => (
+                      <button
+                        key={s.unidad}
+                        type="button"
+                        className="btn-outline"
+                        style={{ padding: '6px 14px', fontSize: 11 }}
+                        onClick={() => rescalePieza(activePieza.id, s.factor)}
+                      >
+                        Convertir de {s.unidad} (×{s.factor})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {tooBig && (
                 <p>
-                  ⚠ Alguna pieza supera los {MAX_BED_MM} mm en algún eje. Puede que
+                  ⚠ Alguna pieza supera los {maxBedMm} mm en algún eje. Puede que
                   haya que imprimirla en varias partes — te lo confirmamos al revisar.
                 </p>
               )}
@@ -1133,7 +1260,7 @@ export function QuoteClient({
                   onClick={() => setEntrega('envio')}
                 >
                   <strong>Envío nacional</strong>
-                  <span>Coste a convenir — te lo confirmamos junto al presupuesto</span>
+                  <span>Coste estimado por peso, incluido en el total</span>
                 </button>
               </div>
             </div>
@@ -1143,6 +1270,9 @@ export function QuoteClient({
           <div className="qt-total">
             {!piezas.length && (
               <p className="qt-total-empty">Sube una pieza para ver el precio.</p>
+            )}
+            {piezas.length > 0 && !settingsLoaded && (
+              <p className="qt-total-empty">Cargando tarifas…</p>
             )}
             {piezas.length > 0 && quote && (
               <>
@@ -1169,16 +1299,25 @@ export function QuoteClient({
                   Listo en ~{quote.diasEstimados} día{quote.diasEstimados !== 1 ? 's' : ''} laborables
                   {entrega === 'envio' ? ' + envío' : ''}
                 </p>
-                {entrega === 'envio' && (
+                {entrega === 'envio' && quote.envio > 0 && (
                   <p className="qt-total-note">
-                    El coste del envío no está incluido: te lo confirmamos junto al
-                    presupuesto (recogida en Salamanca gratis).
+                    Envío estimado por peso incluido en el total — lo confirmamos
+                    junto al presupuesto (recogida en Salamanca gratis).
                   </p>
                 )}
                 <p className="qt-total-note">
                   Estimación orientativa con ~{quote.tiempoH.toFixed(1)} h de impresión
-                  en total. Te confirmamos el precio final al revisar las piezas.
+                  en total, válida {settings.validez_dias} días. Te confirmamos el
+                  precio final al revisar las piezas.
                 </p>
+                <button
+                  type="button"
+                  className="btn-outline qt-pdf"
+                  style={{ marginTop: 10, padding: '8px 16px', fontSize: 11 }}
+                  onClick={downloadPdf}
+                >
+                  Descargar resumen (PDF)
+                </button>
               </>
             )}
           </div>
@@ -1325,11 +1464,15 @@ export function QuoteClient({
               <div className="qt-success-code">{status.codigo}</div>
               <p>
                 ¡Solicitud recibida! Te hemos enviado un email de confirmación con
-                el resumen. Puedes consultar el estado cuando quieras en{' '}
-                <a href="/presupuesto" style={{ color: 'var(--accent)' }}>
+                el resumen y un enlace personal para aceptar el presupuesto cuando
+                lo revisemos. Puedes consultar el estado cuando quieras en{' '}
+                <a
+                  href={`/presupuesto?codigo=${encodeURIComponent(status.codigo)}`}
+                  style={{ color: 'var(--accent)' }}
+                >
                   impresion3dcc.com/presupuesto
-                </a>{' '}
-                con tu código.
+                </a>
+                .
               </p>
               <a
                 className="btn-outline"

@@ -1,6 +1,6 @@
 'use client';
 
-// Pricing knobs for the tasador. Edits the single jsonb row in
+// Pricing knobs for the tasador — edits the single jsonb row in
 // quote_settings — the quote page fetches it at runtime, so changes apply
 // instantly (no rebuild needed).
 
@@ -173,6 +173,7 @@ export default function AdminTarifas() {
               <th style={{ padding: '4px 16px 4px 0' }}>Material</th>
               <th style={{ padding: '4px 16px 4px 0' }}>€ / gramo</th>
               <th style={{ padding: '4px 16px 4px 0' }}>Densidad (g/cm³)</th>
+              <th style={{ padding: '4px 16px 4px 0' }}>Velocidad (×PLA)</th>
             </tr>
           </thead>
           <tbody>
@@ -205,6 +206,19 @@ export default function AdminTarifas() {
                       }
                     />
                   </td>
+                  <td style={{ padding: '6px 16px 6px 0' }}>
+                    <Num
+                      value={m.factor_velocidad ?? 1}
+                      step={0.05}
+                      width={80}
+                      onChange={(v) =>
+                        patch((s) => {
+                          s.materiales[key] = { ...m, factor_velocidad: v };
+                          return s;
+                        })
+                      }
+                    />
+                  </td>
                 </tr>
               );
             })}
@@ -230,6 +244,18 @@ export default function AdminTarifas() {
           </Field>
           <Field label="Fracción de pared (0-1)" hint="Parte del volumen que imprime sólida (paredes/tapas)">
             <Num value={settings.fraccion_pared} step={0.05} onChange={(v) => patch((s) => ({ ...s, fraccion_pared: Math.min(1, v) }))} />
+          </Field>
+          <Field label="Tiempo por capa (s)" hint="Sobrecoste fijo por capa: Z-hop, arranques de perímetro, viajes">
+            <Num value={settings.tiempo_capa_s} step={1} onChange={(v) => patch((s) => ({ ...s, tiempo_capa_s: v }))} />
+          </Field>
+          <Field label="Relleno de soportes (0-1)" hint="Densidad de los soportes estimados (laminadores ≈ 0.15)">
+            <Num value={settings.soporte_relleno} step={0.05} onChange={(v) => patch((s) => ({ ...s, soporte_relleno: Math.min(1, v) }))} />
+          </Field>
+          <Field label="Cama máxima (mm)" hint="Eje imprimible más largo — por encima se avisa al cliente">
+            <Num value={settings.max_bed_mm} step={1} onChange={(v) => patch((s) => ({ ...s, max_bed_mm: v }))} />
+          </Field>
+          <Field label="Validez del presupuesto (días)" hint="Ventana para aceptar; pasada la fecha caduca">
+            <Num value={settings.validez_dias} step={1} onChange={(v) => patch((s) => ({ ...s, validez_dias: Math.max(1, Math.round(v)) }))} />
           </Field>
           <Field label="Horas de impresión / día" hint="Para el plazo estimado que ve el cliente">
             <Num value={settings.plazo_horas_dia} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_horas_dia: v }))} />
@@ -380,6 +406,80 @@ export default function AdminTarifas() {
             <span style={{ alignSelf: 'center', fontSize: 12, color: 'var(--muted)' }}>× tiempo</span>
           </div>
         ))}
+      </section>
+
+      {/* Envío */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Envío nacional (tramos por peso)</h2>
+        {settings.envio_tramos.map((t, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>Hasta</span>
+            <Num
+              value={t.max_g}
+              step={100}
+              width={100}
+              onChange={(v) =>
+                patch((s) => {
+                  s.envio_tramos[i].max_g = Math.max(1, Math.round(v));
+                  return s;
+                })
+              }
+            />
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>g →</span>
+            <Num
+              value={t.precio}
+              step={0.1}
+              width={90}
+              onChange={(v) =>
+                patch((s) => {
+                  s.envio_tramos[i].precio = v;
+                  return s;
+                })
+              }
+            />
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>€</span>
+            <button
+              type="button"
+              onClick={() =>
+                patch((s) => {
+                  s.envio_tramos.splice(i, 1);
+                  return s;
+                })
+              }
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r)',
+                color: 'var(--muted)',
+                width: 28,
+                height: 28
+              }}
+              aria-label="Eliminar tramo de envío"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-outline"
+          style={{ padding: '8px 16px', fontSize: 11 }}
+          onClick={() =>
+            patch((s) => {
+              const last = s.envio_tramos[s.envio_tramos.length - 1];
+              s.envio_tramos.push({
+                max_g: (last?.max_g ?? 500) * 2,
+                precio: (last?.precio ?? 4.5) + 2
+              });
+              return s;
+            })
+          }
+        >
+          + Añadir tramo
+        </button>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
+          El último tramo hace de tope: cualquier pedido más pesado usa su precio.
+        </p>
       </section>
 
       {/* Descuentos */}
