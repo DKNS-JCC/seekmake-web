@@ -169,6 +169,22 @@ export function QuoteClient({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sticky price pill: visible only while the real breakdown is off-screen,
+  // so the price follows you through the config steps without duplicating.
+  const totalRef = useRef<HTMLDivElement>(null);
+  const [totalInView, setTotalInView] = useState(true);
+
+  useEffect(() => {
+    const el = totalRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setTotalInView(entry.isIntersecting),
+      { threshold: 0.2 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   const activePieza = piezas.find((p) => p.id === activeId) ?? null;
   const activeFilamento = activePieza
     ? filamentos.find((f) => f.id === activePieza.config.filamentoId) ?? filamentos[0] ?? null
@@ -1267,7 +1283,7 @@ export function QuoteClient({
           )}
 
           {/* breakdown */}
-          <div className="qt-total">
+          <div className="qt-total" ref={totalRef}>
             {!piezas.length && (
               <p className="qt-total-empty">Sube una pieza para ver el precio.</p>
             )}
@@ -1486,6 +1502,24 @@ export function QuoteClient({
           )}
         </aside>
       </div>
+
+      {/* Sticky price — follows the user while configuring; tapping it jumps
+          to the full breakdown. Hidden once the breakdown itself is visible
+          or after the request is sent. */}
+      {quote && status.kind !== 'ok' && !totalInView && (
+        <button
+          type="button"
+          className="qt-sticky-price"
+          onClick={() =>
+            totalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+          aria-label="Ver desglose del precio"
+        >
+          <span className="qt-sticky-label">Total estimado</span>
+          <strong>{quote.total.toFixed(2)} €</strong>
+          <span className="qt-sticky-days">~{quote.diasEstimados} d</span>
+        </button>
+      )}
     </div>
   );
 }

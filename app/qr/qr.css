@@ -447,3 +447,129 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+        /* ── Primary action CTAs (quote + tracking) ───────────── */
+        .qr-cta-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .qr-cta {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            transition: all 0.22s ease;
+        }
+
+        .qr-cta:hover {
+            border-color: var(--border-h);
+            transform: translateY(-2px);
+        }
+
+        .qr-cta:active { transform: scale(0.98); }
+
+        .qr-cta--primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .qr-cta--primary:hover { box-shadow: 0 6px 24px var(--accent-dim); }
+
+        .qr-cta--primary .qr-cta-sub,
+        .qr-cta--primary .qr-chevron { color: rgba(255,255,255,0.85); }
+
+        .qr-cta-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--r);
+            background: rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .qr-cta:not(.qr-cta--primary) .qr-cta-icon {
+            background: var(--surface-2);
+            color: var(--accent);
+        }
+
+        .qr-cta-body { flex: 1; min-width: 0; }
+
+        .qr-cta-title {
+            font-family: 'Barlow', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 1.3;
+        }
+
+        .qr-cta-sub {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* ── Order-scan thank-you banner ──────────────────────── */
+        .qr-pedido {
+            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: var(--r);
+            padding: 18px 16px;
+            margin-bottom: 16px;
+        }
+
+        .qr-pedido-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+        }
+
+        .qr-pedido-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 6px 0 12px;
+            line-height: 1.5;
+        }
+
+        .qr-pedido-btn {
+            display: inline-block;
+            padding: 10px 22px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: var(--r);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .qr-pedido-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px var(--accent-dim);
+        }
+
+        /* ── Gallery "see all" link ───────────────────────────── */
+        .qr-gallery-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.06em;
+        }
+
+        .qr-gallery-more:hover { text-decoration: underline; }
