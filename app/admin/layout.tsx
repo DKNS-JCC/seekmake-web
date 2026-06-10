@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
+import { NuevosBadge } from './_components/NuevosBadge';
 
 // Standalone admin chrome — does not share the public nav.
 // Auth gate is enforced client-side inside each page (acceptable for the
@@ -29,7 +30,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/admin/filamentos" className="nav-link">Filamentos</Link>
         <Link href="/admin/trabajos" className="nav-link">Trabajos</Link>
         <Link href="/admin/blog" className="nav-link">Blog</Link>
-        <Link href="/admin/presupuestos" className="nav-link">Presupuestos</Link>
+        <Link href="/admin/presupuestos" className="nav-link">
+          Presupuestos<NuevosBadge />
+        </Link>
         <Link href="/admin/tarifas" className="nav-link">Tarifas</Link>
         <Link href="/" className="nav-link">Ver sitio</Link>
       </header>

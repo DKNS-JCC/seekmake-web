@@ -1,10 +1,10 @@
 'use client';
 
 // Tasador propio — replaces the SeekMake embed.
-// Flow: drop a model file → analyze geometry in-browser → pick material,
-// color(s) and intuitive presets → live price breakdown → submit the quote
-// (file goes to the quote-uploads bucket, data through the submit-quote
-// Edge Function).
+// Flow: drop up to 5 model files → analyze geometry in-browser → pick
+// material, color(s) and intuitive presets (shared by the whole order, each
+// piece has its own quantity) → live price breakdown → submit the quote.
+// STL/OBJ are gzipped client-side before upload to protect Storage quota.
 
 import {
   ChangeEvent,
@@ -28,6 +28,7 @@ import {
   buildMaterialUpdate
 } from '@/lib/three/materials';
 import { analyzeObject, looksDegenerate, type MeshMetrics } from '@/lib/quote/geometry';
+import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import {
   computeQuote,
   normalizeSettings,
@@ -37,36 +38,48 @@ import {
 import './quote.css';
 
 const MAX_FILE_MB = 50;
+const MAX_FILES = 5;
 const MAX_BED_MM = 256; // largest printable axis before we warn
 const ACCEPT = '.stl,.3mf,.obj';
 const WHATSAPP = '34665148956';
 
-interface Part {
-  name: string;
-}
-
-interface FileInfo {
-  raw: File;
+interface Pieza {
+  id: string;
+  file: File;
   name: string;
   size: number;
   ext: string;
+  metrics: MeshMetrics;
+  cantidad: number;
+  partNames: string[];
+}
+
+interface ParsedModel {
+  root: THREE.Group;
+  meshes: THREE.Mesh[];
 }
 
 type Status =
   | { kind: 'idle' }
-  | { kind: 'sending' }
+  | { kind: 'sending'; progress: string }
   | { kind: 'ok'; codigo: string }
   | { kind: 'err'; message: string };
 
-function humanSize(bytes: number): string {
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
-  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-}
-
-function randomPath(name: string): string {
-  const ext = name.split('.').pop()?.toLowerCase() || 'bin';
+function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);
   return `quotes/${safe}.${ext}`;
+}
+
+function disposeModel(model: ParsedModel): void {
+  model.root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (mesh.isMesh) {
+      mesh.geometry.dispose();
+      const m = mesh.material;
+      if (Array.isArray(m)) m.forEach((x) => x.dispose());
+      else if (m) (m as THREE.Material).dispose();
+    }
+  });
 }
 
 export function QuoteClient({
@@ -84,31 +97,32 @@ export function QuoteClient({
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     controls: OrbitControls;
-    root: THREE.Group | null;
-    meshes: THREE.Mesh[];
   } | null>(null);
+  // Parsed models cached per pieza id so switching pieces is instant.
+  const modelsRef = useRef<Map<string, ParsedModel>>(new Map());
+  const shownRef = useRef<string | null>(null);
   const textureCacheRef = useRef<Map<string, THREE.Texture>>(new Map());
 
   // ─── settings (runtime fetch so tariff edits apply instantly) ───────────
   const [settings, setSettings] = useState<QuoteSettings>(DEFAULT_QUOTE_SETTINGS);
 
   // ─── model state ────────────────────────────────────────────────────────
-  const [file, setFile] = useState<FileInfo | null>(null);
-  const [parts, setParts] = useState<Part[]>([]);
-  const [metrics, setMetrics] = useState<MeshMetrics | null>(null);
+  const [piezas, setPiezas] = useState<Pieza[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [loadingFile, setLoadingFile] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   // ─── selection state ────────────────────────────────────────────────────
   const [filamento, setFilamento] = useState<Filamento | null>(null);
+  // Single multi-part 3MF: one color per part. Otherwise: main + extras.
   const [partColors, setPartColors] = useState<(Color | null)[]>([]);
   const [activePart, setActivePart] = useState(0);
+  const [mainColor, setMainColor] = useState<Color | null>(null);
   const [multicolor, setMulticolor] = useState(false);
   const [extraColors, setExtraColors] = useState<Color[]>([]);
   const [resistenciaId, setResistenciaId] = useState('estandar');
   const [detalleId, setDetalleId] = useState('estandar');
-  const [cantidad, setCantidad] = useState(1);
   const [entrega, setEntrega] = useState<QuoteEntrega>('recogida');
 
   // ─── request form ───────────────────────────────────────────────────────
@@ -126,6 +140,10 @@ export function QuoteClient({
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const activePieza = piezas.find((p) => p.id === activeId) ?? null;
+  // Per-part coloring only applies to a single multi-part 3MF order.
+  const partsMode = piezas.length === 1 && piezas[0].partNames.length > 1;
 
   useEffect(() => {
     if (!filamento && filamentos.length) setFilamento(filamentos[0]);
@@ -192,7 +210,7 @@ export function QuoteClient({
     controls.minDistance = 5;
     controls.maxDistance = 800;
 
-    stateRef.current = { renderer, scene, camera, controls, root: null, meshes: [] };
+    stateRef.current = { renderer, scene, camera, controls };
 
     let raf = 0;
     const tick = () => {
@@ -211,146 +229,205 @@ export function QuoteClient({
     });
     ro.observe(wrap);
 
+    const models = modelsRef.current;
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       controls.dispose();
       renderer.dispose();
-      scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry.dispose();
-          const m = obj.material;
-          if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-          else (m as THREE.Material).dispose();
-        }
-      });
+      models.forEach(disposeModel);
+      models.clear();
     };
   }, []);
 
   // ─── file parsing ───────────────────────────────────────────────────────
-  async function handleFile(f: File) {
+  async function parseModel(f: File, ext: string): Promise<ParsedModel> {
+    const root = new THREE.Group();
+    if (ext === 'stl') {
+      const geometry = new STLLoader().parse(await f.arrayBuffer());
+      geometry.computeVertexNormals();
+      root.add(new THREE.Mesh(geometry));
+    } else if (ext === '3mf') {
+      root.add(new ThreeMFLoader().parse(await f.arrayBuffer()));
+    } else {
+      root.add(new OBJLoader().parse(await f.text()));
+    }
+    // STL/3MF are Z-up by convention; rotate into three.js Y-up.
+    if (ext !== 'obj') root.rotation.x = -Math.PI / 2;
+
+    const meshes: THREE.Mesh[] = [];
+    root.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh && mesh.geometry) meshes.push(mesh);
+    });
+    for (const mesh of meshes) {
+      const old = mesh.material;
+      if (Array.isArray(old)) old.forEach((m) => m.dispose());
+      else if (old) (old as THREE.Material).dispose();
+      mesh.material = new THREE.MeshPhysicalMaterial(
+        acabadoMaterialProps('#cccccc', null)
+      );
+    }
+
+    // Center on the plate: x/z centered, base resting on y=0.
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    root.position.x -= center.x;
+    root.position.z -= center.z;
+    root.position.y -= box.min.y;
+    root.updateMatrixWorld(true);
+
+    return { root, meshes };
+  }
+
+  function showModel(id: string): void {
+    const state = stateRef.current;
+    const model = modelsRef.current.get(id);
+    if (!state || !model) return;
+
+    if (shownRef.current) {
+      const prev = modelsRef.current.get(shownRef.current);
+      if (prev) state.scene.remove(prev.root);
+    }
+    state.scene.add(model.root);
+    shownRef.current = id;
+
+    const sphere = new THREE.Sphere();
+    new THREE.Box3().setFromObject(model.root).getBoundingSphere(sphere);
+    const radius = Math.max(sphere.radius, 5);
+    const dist = radius * 2.6;
+    state.camera.position.set(dist, dist * 0.75, dist);
+    state.camera.near = Math.max(0.1, radius / 100);
+    state.camera.far = radius * 50;
+    state.camera.updateProjectionMatrix();
+    state.controls.target.set(0, radius * 0.5, 0);
+    state.controls.update();
+
+    const ground = state.scene.getObjectByName('ground');
+    if (ground) ground.scale.setScalar(Math.max(1, radius / 60));
+  }
+
+  async function addFiles(files: FileList | File[]) {
     setFileError(null);
-    if (f.size > MAX_FILE_MB * 1024 * 1024) {
-      setFileError(`Archivo demasiado grande (máx. ${MAX_FILE_MB} MB).`);
-      return;
-    }
-    const ext = f.name.toLowerCase().split('.').pop() ?? '';
-    if (!['stl', '3mf', 'obj'].includes(ext)) {
-      setFileError('Formato no soportado. Sube un STL, 3MF u OBJ.');
-      return;
-    }
+    const list = Array.from(files);
+    const errors: string[] = [];
+    let added: Pieza | null = null;
 
     setLoadingFile(true);
     try {
-      const root = new THREE.Group();
+      for (const f of list) {
+        if (piezas.length + (added ? 1 : 0) >= MAX_FILES) {
+          errors.push(`Máximo ${MAX_FILES} piezas por presupuesto.`);
+          break;
+        }
+        if (f.size > MAX_FILE_MB * 1024 * 1024) {
+          errors.push(`${f.name}: supera los ${MAX_FILE_MB} MB.`);
+          continue;
+        }
+        const ext = f.name.toLowerCase().split('.').pop() ?? '';
+        if (!['stl', '3mf', 'obj'].includes(ext)) {
+          errors.push(`${f.name}: formato no soportado (STL, 3MF, OBJ).`);
+          continue;
+        }
 
-      if (ext === 'stl') {
-        const geometry = new STLLoader().parse(await f.arrayBuffer());
-        geometry.computeVertexNormals();
-        root.add(new THREE.Mesh(geometry));
-      } else if (ext === '3mf') {
-        const group = new ThreeMFLoader().parse(await f.arrayBuffer());
-        root.add(group);
-      } else {
-        const group = new OBJLoader().parse(await f.text());
-        root.add(group);
-      }
-
-      // STL/3MF are Z-up by convention; rotate into three.js Y-up.
-      if (ext !== 'obj') root.rotation.x = -Math.PI / 2;
-
-      // Collect printable meshes and give each its own physical material.
-      const meshes: THREE.Mesh[] = [];
-      root.traverse((obj) => {
-        const mesh = obj as THREE.Mesh;
-        if (mesh.isMesh && mesh.geometry) meshes.push(mesh);
-      });
-      if (!meshes.length) {
-        setFileError('El archivo no contiene ninguna malla imprimible.');
-        return;
-      }
-      for (const mesh of meshes) {
-        const old = mesh.material;
-        if (Array.isArray(old)) old.forEach((m) => m.dispose());
-        else if (old) (old as THREE.Material).dispose();
-        mesh.material = new THREE.MeshPhysicalMaterial(
-          acabadoMaterialProps('#cccccc', null)
-        );
-      }
-
-      // Center on the plate: x/z centered, base resting on y=0.
-      root.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(root);
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      root.position.x -= center.x;
-      root.position.z -= center.z;
-      root.position.y -= box.min.y;
-      root.updateMatrixWorld(true);
-
-      const m = analyzeObject(root);
-
-      const state = stateRef.current;
-      if (!state) return;
-
-      // Swap previous model out.
-      if (state.root) {
-        state.scene.remove(state.root);
-        state.root.traverse((obj) => {
-          const mesh = obj as THREE.Mesh;
-          if (mesh.isMesh) {
-            mesh.geometry.dispose();
-            const mm = mesh.material;
-            if (Array.isArray(mm)) mm.forEach((x) => x.dispose());
-            else (mm as THREE.Material).dispose();
+        try {
+          const model = await parseModel(f, ext);
+          if (!model.meshes.length) {
+            errors.push(`${f.name}: no contiene ninguna malla imprimible.`);
+            disposeModel(model);
+            continue;
           }
-        });
+          const metrics = analyzeObject(model.root);
+          const id = Math.random().toString(36).slice(2, 10);
+          modelsRef.current.set(id, model);
+
+          const pieza: Pieza = {
+            id,
+            file: f,
+            name: f.name,
+            size: f.size,
+            ext,
+            metrics,
+            cantidad: 1,
+            partNames: model.meshes.map(
+              (m, i) => m.name?.trim() || `Parte ${i + 1}`
+            )
+          };
+          setPiezas((prev) => [...prev, pieza]);
+          added = pieza;
+        } catch (err) {
+          console.error(err);
+          errors.push(`${f.name}: no se pudo leer (¿archivo dañado?).`);
+        }
       }
-      state.scene.add(root);
-      state.root = root;
-      state.meshes = meshes;
-
-      // Reframe camera around the model.
-      const sphere = new THREE.Sphere();
-      new THREE.Box3().setFromObject(root).getBoundingSphere(sphere);
-      const radius = Math.max(sphere.radius, 5);
-      const dist = radius * 2.6;
-      state.camera.position.set(dist, dist * 0.75, dist);
-      state.camera.near = Math.max(0.1, radius / 100);
-      state.camera.far = radius * 50;
-      state.camera.updateProjectionMatrix();
-      state.controls.target.set(0, radius * 0.5, 0);
-      state.controls.update();
-
-      const ground = state.scene.getObjectByName('ground');
-      if (ground) ground.scale.setScalar(Math.max(1, radius / 60));
-
-      setFile({ raw: f, name: f.name, size: f.size, ext });
-      setParts(
-        meshes.map((mesh, i) => ({ name: mesh.name?.trim() || `Parte ${i + 1}` }))
-      );
-      setPartColors(new Array(meshes.length).fill(null));
-      setActivePart(0);
-      setMulticolor(false);
-      setExtraColors([]);
-      setMetrics(m);
-      setShowForm(false);
-      setStatus({ kind: 'idle' });
-    } catch (err) {
-      console.error(err);
-      setFileError('No se pudo leer el archivo. Comprueba que no esté dañado.');
     } finally {
       setLoadingFile(false);
     }
+
+    if (errors.length) setFileError(errors.join(' · '));
+    if (added) {
+      setActiveId(added.id);
+      setStatus({ kind: 'idle' });
+    }
   }
 
-  // ─── apply colors to meshes ─────────────────────────────────────────────
+  // Show the active pieza in the viewer whenever it changes.
   useEffect(() => {
-    const state = stateRef.current;
-    if (!state || !filamento) return;
-    state.meshes.forEach((mesh, i) => {
+    if (activeId) showModel(activeId);
+  }, [activeId]);
+
+  // Reset per-part colors when entering/leaving parts mode.
+  useEffect(() => {
+    if (partsMode) {
+      setPartColors((prev) =>
+        prev.length === piezas[0].partNames.length
+          ? prev
+          : new Array(piezas[0].partNames.length).fill(null)
+      );
+      setActivePart(0);
+    } else {
+      setPartColors([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partsMode, piezas.length]);
+
+  function removePieza(id: string) {
+    const model = modelsRef.current.get(id);
+    if (model) {
+      const state = stateRef.current;
+      if (state && shownRef.current === id) {
+        state.scene.remove(model.root);
+        shownRef.current = null;
+      }
+      disposeModel(model);
+      modelsRef.current.delete(id);
+    }
+    setPiezas((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      if (activeId === id) setActiveId(next[0]?.id ?? null);
+      return next;
+    });
+  }
+
+  function setCantidad(id: string, v: number) {
+    setPiezas((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, cantidad: Math.max(1, Math.min(999, v)) } : p
+      )
+    );
+  }
+
+  // ─── apply colors to the displayed model ────────────────────────────────
+  useEffect(() => {
+    if (!filamento || !activeId) return;
+    const model = modelsRef.current.get(activeId);
+    if (!model) return;
+
+    model.meshes.forEach((mesh, i) => {
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
-      const c = partColors[i];
+      const c = partsMode ? partColors[i] : mainColor;
       if (c) {
         const { props, map } = buildMaterialUpdate(
           { color: c, filamento },
@@ -361,7 +438,7 @@ export function QuoteClient({
         applyMaterialUpdate(mat, acabadoMaterialProps('#cccccc', null), null);
       }
     });
-  }, [partColors, filamento]);
+  }, [partColors, mainColor, filamento, activeId, partsMode]);
 
   useEffect(() => {
     const cache = textureCacheRef.current;
@@ -379,15 +456,19 @@ export function QuoteClient({
 
   const selectedColors = useMemo(() => {
     const seen = new Map<string, Color>();
-    for (const c of partColors) if (c) seen.set(c.id, c);
-    if (multicolor) for (const c of extraColors) seen.set(c.id, c);
+    if (partsMode) {
+      for (const c of partColors) if (c) seen.set(c.id, c);
+    } else {
+      if (mainColor) seen.set(mainColor.id, mainColor);
+      if (multicolor) for (const c of extraColors) seen.set(c.id, c);
+    }
     return [...seen.values()];
-  }, [partColors, extraColors, multicolor]);
+  }, [partsMode, partColors, mainColor, extraColors, multicolor]);
 
   const quote = useMemo(() => {
-    if (!metrics || !filamento) return null;
+    if (!piezas.length || !filamento) return null;
     return computeQuote(
-      metrics,
+      piezas.map((p) => ({ nombre: p.name, metrics: p.metrics, cantidad: p.cantidad })),
       {
         material: filamento.material,
         colores: selectedColors.map((c) => ({
@@ -396,39 +477,39 @@ export function QuoteClient({
           acabado: c.acabado
         })),
         resistenciaId,
-        detalleId,
-        cantidad
+        detalleId
       },
       settings
     );
-  }, [metrics, filamento, selectedColors, resistenciaId, detalleId, cantidad, settings]);
+  }, [piezas, filamento, selectedColors, resistenciaId, detalleId, settings]);
 
-  const tooBig =
-    metrics &&
-    Math.max(metrics.bboxMm.x, metrics.bboxMm.y, metrics.bboxMm.z) > MAX_BED_MM;
-  const degenerate = metrics ? looksDegenerate(metrics) : false;
-  const colorsMissing = parts.length > 0 && partColors.some((c) => c === null);
+  const tooBig = piezas.some(
+    (p) => Math.max(p.metrics.bboxMm.x, p.metrics.bboxMm.y, p.metrics.bboxMm.z) > MAX_BED_MM
+  );
+  const degenerate = piezas.some((p) => looksDegenerate(p.metrics));
 
   // ─── interactions ───────────────────────────────────────────────────────
   function changeMaterial(f: Filamento) {
     if (f.id === filamento?.id) return;
     setFilamento(f);
-    setPartColors(new Array(parts.length).fill(null));
+    setPartColors((prev) => prev.map(() => null));
+    setMainColor(null);
     setExtraColors([]);
   }
 
   function pickColor(c: Color) {
-    setPartColors((prev) => {
-      const next = [...prev];
-      next[activePart] = c;
-      return next;
-    });
-    // Multi-part: jump to the next part without a color yet.
-    if (parts.length > 1) {
+    if (partsMode) {
+      setPartColors((prev) => {
+        const next = [...prev];
+        next[activePart] = c;
+        return next;
+      });
       setActivePart((cur) => {
         const next = partColors.findIndex((x, i) => i !== cur && x === null);
         return next === -1 ? cur : next;
       });
+    } else {
+      setMainColor(c);
     }
   }
 
@@ -443,50 +524,99 @@ export function QuoteClient({
   function onDrop(e: DragEvent) {
     e.preventDefault();
     setDragging(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) void handleFile(f);
+    if (e.dataTransfer.files?.length) void addFiles(e.dataTransfer.files);
   }
 
   function onPick(e: ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) void handleFile(f);
+    if (e.target.files?.length) void addFiles(e.target.files);
     e.target.value = '';
   }
 
   // ─── submit ─────────────────────────────────────────────────────────────
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!file || !metrics || !quote || !filamento) return;
+    if (!piezas.length || !quote || !filamento) return;
     if (selectedColors.length === 0) {
       setStatus({ kind: 'err', message: 'Elige al menos un color del muestrario.' });
       return;
     }
 
-    setStatus({ kind: 'sending' });
     const supabase = createClient();
 
     try {
-      // 1. Model file → quote-uploads bucket.
-      const path = randomPath(file.name);
-      const { error: upErr } = await supabase.storage
-        .from('quote-uploads')
-        .upload(path, file.raw, {
-          contentType: 'application/octet-stream',
-          upsert: false
+      // 1. Upload every model file (gzipped when it pays off).
+      const archivos: Record<string, unknown>[] = [];
+      for (let i = 0; i < piezas.length; i++) {
+        const p = piezas[i];
+        setStatus({
+          kind: 'sending',
+          progress: `Subiendo pieza ${i + 1} de ${piezas.length}…`
         });
-      if (upErr) {
-        setStatus({ kind: 'err', message: 'No se pudo subir el archivo: ' + upErr.message });
-        return;
-      }
-      const { data: pub } = supabase.storage.from('quote-uploads').getPublicUrl(path);
 
-      // 2. Quote request → Edge Function (inserts row + emails the admin).
-      const coloresPayload = parts.length > 1
-        ? partColors.map((c, i) =>
-            c
-              ? { nombre: c.nombre, hex: c.hex, acabado: c.acabado, parte: parts[i].name }
-              : null
-          ).filter(Boolean)
+        let blob: Blob = p.file;
+        let path = randomPath(p.ext);
+        let comprimido = false;
+        if (shouldCompress(p.ext)) {
+          const gz = await gzipFile(p.file);
+          if (gz && gz.size < p.size) {
+            blob = gz;
+            path += '.gz';
+            comprimido = true;
+          }
+        }
+
+        const { error: upErr } = await supabase.storage
+          .from('quote-uploads')
+          .upload(path, blob, {
+            contentType: 'application/octet-stream',
+            upsert: false
+          });
+        if (upErr) {
+          setStatus({
+            kind: 'err',
+            message: `No se pudo subir ${p.name}: ${upErr.message}`
+          });
+          return;
+        }
+        const { data: pub } = supabase.storage.from('quote-uploads').getPublicUrl(path);
+
+        const pr = quote.piezas[i];
+        archivos.push({
+          nombre: p.name,
+          url: pub.publicUrl,
+          path,
+          tamano: blob.size,
+          tamano_original: p.size,
+          comprimido,
+          cantidad: p.cantidad,
+          metricas: {
+            volumen_cm3: Math.round(p.metrics.volumenCm3 * 100) / 100,
+            area_cm2: Math.round(p.metrics.areaCm2 * 10) / 10,
+            bbox_mm: p.metrics.bboxMm,
+            triangulos: p.metrics.triangulos,
+            mallas: p.metrics.mallas,
+            peso_g: pr?.pesoG ?? null,
+            tiempo_h: pr?.tiempoH ?? null
+          }
+        });
+      }
+
+      setStatus({ kind: 'sending', progress: 'Registrando solicitud…' });
+
+      // 2. Quote request → Edge Function (inserts row + emails).
+      const coloresPayload = partsMode
+        ? partColors
+            .map((c, i) =>
+              c
+                ? {
+                    nombre: c.nombre,
+                    hex: c.hex,
+                    acabado: c.acabado,
+                    parte: piezas[0].partNames[i]
+                  }
+                : null
+            )
+            .filter(Boolean)
         : selectedColors.map((c) => ({
             nombre: c.nombre,
             hex: c.hex,
@@ -501,30 +631,25 @@ export function QuoteClient({
           telefono,
           mensaje,
           website,
-          archivo: { nombre: file.name, url: pub.publicUrl, tamano: file.size },
+          archivos,
           material: filamento.material,
           colores: coloresPayload,
           resistencia: resistenciaId,
           detalle: detalleId,
-          cantidad,
+          cantidad: quote.unidades,
           entrega,
           direccion:
             entrega === 'envio' ? { calle, ciudad, cp, provincia } : {},
           metricas: {
-            volumen_cm3: Math.round(metrics.volumenCm3 * 100) / 100,
-            area_cm2: Math.round(metrics.areaCm2 * 10) / 10,
-            bbox_mm: metrics.bboxMm,
-            triangulos: metrics.triangulos,
-            mallas: metrics.mallas,
             peso_g: quote.pesoG,
             tiempo_h: quote.tiempoH,
             relleno_pct: quote.rellenoPct,
-            dias_estimados: quote.diasEstimados
+            dias_estimados: quote.diasEstimados,
+            piezas: quote.piezas.length
           },
           desglose: {
             lineas: quote.lineas,
             descuento_pct: quote.descuentoPct,
-            precio_unidad: quote.precioUnidad,
             minimo_aplicado: quote.minimoAplicado
           },
           precio_total: quote.total
@@ -563,7 +688,7 @@ export function QuoteClient({
         </div>
         <h1>Calcula el precio de tu pieza</h1>
         <p className="qt-hero-desc">
-          Sube tu modelo 3D, elige material y color del muestrario real y obtén
+          Sube tus modelos 3D, elige material y color del muestrario real y obtén
           una estimación al instante. Sin registros, sin esperas.
         </p>
       </section>
@@ -582,7 +707,7 @@ export function QuoteClient({
         >
           <canvas ref={canvasRef} className="qt-canvas" />
 
-          {!file && !loadingFile && (
+          {!piezas.length && !loadingFile && (
             <button
               type="button"
               className="qt-drop"
@@ -593,29 +718,35 @@ export function QuoteClient({
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                 </svg>
               </div>
-              <div className="qt-drop-title">Arrastra aquí tu archivo 3D</div>
-              <div className="qt-drop-sub">STL · 3MF · OBJ — hasta {MAX_FILE_MB} MB</div>
+              <div className="qt-drop-title">Arrastra aquí tus archivos 3D</div>
+              <div className="qt-drop-sub">
+                STL · 3MF · OBJ — hasta {MAX_FILE_MB} MB · máx. {MAX_FILES} piezas
+              </div>
             </button>
           )}
           {loadingFile && <div className="qt-overlay-msg">Analizando pieza…</div>}
           {fileError && <div className="qt-overlay-err">{fileError}</div>}
 
-          {file && metrics && (
+          {activePieza && (
             <div className="qt-meta">
-              <span className="qt-meta-file" title={file.name}>{file.name}</span>
-              <span>{metrics.bboxMm.x} × {metrics.bboxMm.z} × {metrics.bboxMm.y} mm</span>
-              <span>{metrics.volumenCm3.toFixed(1)} cm³</span>
-              {quote && <span>~{Math.round(quote.pesoG)} g</span>}
+              <span className="qt-meta-file" title={activePieza.name}>
+                {activePieza.name}
+              </span>
+              <span>
+                {activePieza.metrics.bboxMm.x} × {activePieza.metrics.bboxMm.z} ×{' '}
+                {activePieza.metrics.bboxMm.y} mm
+              </span>
+              <span>{activePieza.metrics.volumenCm3.toFixed(1)} cm³</span>
             </div>
           )}
 
-          {file && (
+          {piezas.length > 0 && piezas.length < MAX_FILES && (
             <button
               type="button"
               className="qt-changefile"
               onClick={() => fileInputRef.current?.click()}
             >
-              Cambiar archivo
+              + Añadir pieza
             </button>
           )}
 
@@ -623,6 +754,7 @@ export function QuoteClient({
             ref={fileInputRef}
             type="file"
             accept={ACCEPT}
+            multiple
             onChange={onPick}
             style={{ display: 'none' }}
           />
@@ -634,14 +766,68 @@ export function QuoteClient({
             <div className="qt-warn">
               {tooBig && (
                 <p>
-                  ⚠ La pieza supera los {MAX_BED_MM} mm en algún eje. Puede que haya
-                  que imprimirla en varias partes — te lo confirmamos al revisar.
+                  ⚠ Alguna pieza supera los {MAX_BED_MM} mm en algún eje. Puede que
+                  haya que imprimirla en varias partes — te lo confirmamos al revisar.
                 </p>
               )}
               {degenerate && (
                 <p>
-                  ⚠ La malla parece abierta o dañada; la estimación de peso puede no
-                  ser fiable. La revisaremos manualmente.
+                  ⚠ Alguna malla parece abierta o dañada; la estimación de peso puede
+                  no ser fiable. La revisaremos manualmente.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* piezas */}
+          {piezas.length > 0 && (
+            <div className="qt-step">
+              <div className="qt-step-label">Tus piezas</div>
+              <ul className="qt-piezas">
+                {piezas.map((p) => (
+                  <li
+                    key={p.id}
+                    className={'qt-pieza' + (p.id === activeId ? ' active' : '')}
+                  >
+                    <button
+                      type="button"
+                      className="qt-pieza-name"
+                      title={p.name}
+                      onClick={() => setActiveId(p.id)}
+                    >
+                      {p.name}
+                    </button>
+                    <div className="qt-pieza-qty">
+                      <button
+                        type="button"
+                        onClick={() => setCantidad(p.id, p.cantidad - 1)}
+                        aria-label="Menos"
+                      >
+                        −
+                      </button>
+                      <span>{p.cantidad}</span>
+                      <button
+                        type="button"
+                        onClick={() => setCantidad(p.id, p.cantidad + 1)}
+                        aria-label="Más"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="qt-pieza-remove"
+                      onClick={() => removePieza(p.id)}
+                      aria-label={`Quitar ${p.name}`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {quote && quote.descuentoPct > 0 && (
+                <p className="qt-step-hint" style={{ color: 'var(--accent)' }}>
+                  -{quote.descuentoPct}% por cantidad ({quote.unidades} unidades en total)
                 </p>
               )}
             </div>
@@ -670,12 +856,12 @@ export function QuoteClient({
           {/* color */}
           <div className="qt-step">
             <div className="qt-step-label">
-              2 · Color{parts.length > 1 ? ' por parte' : ''}
+              2 · Color{partsMode ? ' por parte' : ''}
             </div>
 
-            {parts.length > 1 && (
+            {partsMode && (
               <div className="qt-parts">
-                {parts.map((p, i) => (
+                {piezas[0].partNames.map((name, i) => (
                   <button
                     key={i}
                     type="button"
@@ -686,7 +872,7 @@ export function QuoteClient({
                       className="qt-part-swatch"
                       style={{ backgroundColor: partColors[i]?.hex ?? 'transparent' }}
                     />
-                    {p.name}
+                    {name}
                   </button>
                 ))}
               </div>
@@ -694,8 +880,10 @@ export function QuoteClient({
 
             <div className="qt-swatches">
               {materialColors.map((c) => {
-                const isMain = partColors.some((x) => x?.id === c.id);
-                const isExtra = multicolor && extraColors.some((x) => x.id === c.id);
+                const isMain = partsMode
+                  ? partColors.some((x) => x?.id === c.id)
+                  : mainColor?.id === c.id;
+                const isExtra = !partsMode && multicolor && extraColors.some((x) => x.id === c.id);
                 return (
                   <button
                     key={c.id}
@@ -709,7 +897,7 @@ export function QuoteClient({
               })}
             </div>
 
-            {parts.length === 1 && (
+            {!partsMode && (
               <>
                 <label className="qt-toggle">
                   <input
@@ -731,7 +919,7 @@ export function QuoteClient({
                     </p>
                     <div className="qt-swatches">
                       {materialColors
-                        .filter((c) => !partColors.some((x) => x?.id === c.id))
+                        .filter((c) => c.id !== mainColor?.id)
                         .map((c) => (
                           <button
                             key={c.id}
@@ -799,42 +987,9 @@ export function QuoteClient({
             </div>
           </div>
 
-          {/* cantidad */}
-          <div className="qt-step">
-            <div className="qt-step-label">5 · Cantidad</div>
-            <div className="qt-qty">
-              <button
-                type="button"
-                onClick={() => setCantidad((q) => Math.max(1, q - 1))}
-                aria-label="Menos"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                min={1}
-                max={999}
-                value={cantidad}
-                onChange={(e) =>
-                  setCantidad(Math.max(1, Math.min(999, Number(e.target.value) || 1)))
-                }
-              />
-              <button
-                type="button"
-                onClick={() => setCantidad((q) => Math.min(999, q + 1))}
-                aria-label="Más"
-              >
-                +
-              </button>
-              {quote && quote.descuentoPct > 0 && (
-                <span className="qt-qty-dto">-{quote.descuentoPct}% por cantidad</span>
-              )}
-            </div>
-          </div>
-
           {/* entrega */}
           <div className="qt-step">
-            <div className="qt-step-label">6 · Entrega</div>
+            <div className="qt-step-label">5 · Entrega</div>
             <div className="qt-cards">
               <button
                 type="button"
@@ -857,8 +1012,10 @@ export function QuoteClient({
 
           {/* breakdown */}
           <div className="qt-total">
-            {!file && <p className="qt-total-empty">Sube una pieza para ver el precio.</p>}
-            {file && quote && (
+            {!piezas.length && (
+              <p className="qt-total-empty">Sube una pieza para ver el precio.</p>
+            )}
+            {piezas.length > 0 && quote && (
               <>
                 <ul className="qt-lines">
                   {quote.lineas.map((l, i) => (
@@ -891,19 +1048,19 @@ export function QuoteClient({
                 )}
                 <p className="qt-total-note">
                   Estimación orientativa con relleno al {quote.rellenoPct}% y ~
-                  {quote.tiempoH.toFixed(1)} h de impresión. Te confirmamos el precio
-                  final al revisar la pieza.
+                  {quote.tiempoH.toFixed(1)} h de impresión en total. Te confirmamos
+                  el precio final al revisar las piezas.
                 </p>
               </>
             )}
           </div>
 
           {/* request */}
-          {file && quote && status.kind !== 'ok' && !showForm && (
+          {piezas.length > 0 && quote && status.kind !== 'ok' && !showForm && (
             <button
               type="button"
               className="btn-primary qt-cta"
-              disabled={colorsMissing && selectedColors.length === 0}
+              disabled={selectedColors.length === 0}
               onClick={() => setShowForm(true)}
             >
               Solicitar este presupuesto
@@ -930,7 +1087,9 @@ export function QuoteClient({
               />
               <input
                 type="tel"
-                placeholder="Teléfono (opcional)"
+                placeholder="Teléfono"
+                required
+                minLength={9}
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
                 autoComplete="tel"
@@ -1014,10 +1173,10 @@ export function QuoteClient({
                 className="btn-primary qt-cta"
                 disabled={status.kind === 'sending'}
               >
-                {status.kind === 'sending' ? 'Enviando…' : 'Enviar solicitud'}
+                {status.kind === 'sending' ? status.progress : 'Enviar solicitud'}
               </button>
               <p className="qt-form-legal">
-                Tus datos y tu archivo se usan únicamente para preparar y gestionar
+                Tus datos y tus archivos se usan únicamente para preparar y gestionar
                 este presupuesto, y se eliminan periódicamente. Puedes ejercer tus
                 derechos escribiendo a info@impresion3dcc.com. Más información en
                 nuestra <a href="/privacidad">Política de Privacidad</a>.

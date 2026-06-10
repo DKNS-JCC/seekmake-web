@@ -130,28 +130,40 @@ Deno.serve(async (req: Request) => {
   const metricas = typeof body?.metricas === 'object' && body.metricas ? body.metricas : {};
   const desglose = typeof body?.desglose === 'object' && body.desglose ? body.desglose : {};
 
-  // The model file was uploaded to the quote-uploads bucket before submit;
+  // The model files were uploaded to the quote-uploads bucket before submit;
   // only accept URLs pointing at our own project.
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const supabaseHost = (() => {
     try { return new URL(supabaseUrl).host; } catch { return ''; }
   })();
-  const archivoNombre = String(body?.archivo?.nombre ?? 'modelo').slice(0, 200);
-  const archivoUrl    = String(body?.archivo?.url ?? '');
-  const archivoTamano = Number(body?.archivo?.tamano ?? 0) || 0;
-  const archivoOk = (() => {
-    try {
-      const u = new URL(archivoUrl);
-      return supabaseHost && u.host === supabaseHost && u.pathname.includes('/quote-uploads/');
-    } catch { return false; }
-  })();
+  const archivos = (Array.isArray(body?.archivos) ? body.archivos : [])
+    .slice(0, 5)
+    .map((a: any) => ({
+      nombre:          String(a?.nombre ?? 'modelo').slice(0, 200),
+      url:             String(a?.url ?? ''),
+      path:            String(a?.path ?? '').slice(0, 300),
+      tamano:          Number(a?.tamano ?? 0) || 0,
+      tamano_original: Number(a?.tamano_original ?? 0) || 0,
+      comprimido:      Boolean(a?.comprimido),
+      cantidad:        Math.max(1, Math.min(999, Number(a?.cantidad) || 1)),
+      metricas:        typeof a?.metricas === 'object' && a.metricas ? a.metricas : {}
+    }))
+    .filter((a: any) => {
+      try {
+        const u = new URL(a.url);
+        return supabaseHost && u.host === supabaseHost && u.pathname.includes('/quote-uploads/');
+      } catch { return false; }
+    });
 
   // ── Validate ──
   if (hp) return json({ ok: true, codigo: 'Q-0000-0000' }, 200, allowedOrigin); // bot
   if (!nombre || nombre.length < 2) return json({ error: 'Nombre requerido.' }, 400, allowedOrigin);
   if (!isValidEmail(email))         return json({ error: 'Email inválido.' }, 400, allowedOrigin);
+  if (telefono.replace(/[^\d]/g, '').length < 9) {
+    return json({ error: 'Teléfono requerido (mínimo 9 dígitos).' }, 400, allowedOrigin);
+  }
   if (!material)                    return json({ error: 'Material requerido.' }, 400, allowedOrigin);
-  if (!archivoOk)                   return json({ error: 'Archivo de modelo inválido.' }, 400, allowedOrigin);
+  if (!archivos.length)             return json({ error: 'Ningún archivo de modelo válido.' }, 400, allowedOrigin);
   if (!colores.length)              return json({ error: 'Elige al menos un color.' }, 400, allowedOrigin);
   if (entrega === 'envio' && (!direccion.calle || !direccion.ciudad || !direccion.cp)) {
     return json({ error: 'Para envío necesitamos la dirección completa.' }, 400, allowedOrigin);
@@ -183,9 +195,7 @@ Deno.serve(async (req: Request) => {
       email,
       telefono,
       mensaje,
-      archivo_nombre: archivoNombre,
-      archivo_url: archivoUrl,
-      archivo_tamano: archivoTamano,
+      archivos,
       material,
       colores,
       resistencia,
@@ -221,6 +231,35 @@ Deno.serve(async (req: Request) => {
       .join(', ');
 
     const m: any = metricas;
+    const piezasTxt = archivos
+      .map((a: any) => {
+        const am = a.metricas ?? {};
+        const dims = am.bbox_mm
+          ? `${am.bbox_mm.x} × ${am.bbox_mm.z} × ${am.bbox_mm.y} mm · `
+          : '';
+        return (
+          `  • ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''}` +
+          ` (${(a.tamano / 1024 / 1024).toFixed(1)} MB${a.comprimido ? ' gz' : ''})\n` +
+          `    ${dims}${am.volumen_cm3 ?? '—'} cm³ · ~${am.peso_g ?? '—'} g\n` +
+          `    ${a.url}`
+        );
+      })
+      .join('\n');
+    const piezasHtml = archivos
+      .map((a: any) => {
+        const am = a.metricas ?? {};
+        const dims = am.bbox_mm
+          ? `${am.bbox_mm.x} × ${am.bbox_mm.z} × ${am.bbox_mm.y} mm · `
+          : '';
+        return `
+    <li style="padding:10px 14px;background:#f5f5f5;border-radius:6px;margin-bottom:6px;">
+      <a href="${escapeHtml(a.url)}" style="color:#0EA5E9;font-weight:600;text-decoration:none;">${escapeHtml(a.nombre)}</a>
+      ${a.cantidad > 1 ? `<strong>× ${a.cantidad}</strong>` : ''}
+      <span style="color:#999;font-family:monospace;font-size:11px;margin-left:8px;">${(a.tamano / 1024 / 1024).toFixed(1)} MB${a.comprimido ? ' (gzip)' : ''}</span>
+      <div style="color:#666;font-size:12px;margin-top:2px;">${dims}${am.volumen_cm3 ?? '—'} cm³ · ~${am.peso_g ?? '—'} g</div>
+    </li>`;
+      })
+      .join('');
     const entregaTxt =
       entrega === 'envio'
         ? `Envío a: ${direccion.calle}, ${direccion.cp} ${direccion.ciudad} (${direccion.provincia})`
@@ -233,10 +272,10 @@ Cliente:    ${nombre}
 Email:      ${email}
 Teléfono:   ${telefono || '(no facilitado)'}
 
-Pieza:      ${archivoNombre} (${(archivoTamano / 1024 / 1024).toFixed(1)} MB)
-            ${archivoUrl}
-Tamaño:     ${m?.bbox_mm ? `${m.bbox_mm.x} × ${m.bbox_mm.z} × ${m.bbox_mm.y} mm` : '—'}
-Volumen:    ${m?.volumen_cm3 ?? '—'} cm³ · ~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h
+Piezas (${archivos.length}):
+${piezasTxt}
+
+Total:      ~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión
 
 Material:   ${material} — ${coloresTxt}
 Resistencia: ${resistencia} (relleno ${m?.relleno_pct ?? '—'}%)
@@ -266,13 +305,14 @@ IP ${ip} · ${new Date().toISOString()}
     <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Cliente</td><td><strong>${escapeHtml(nombre)}</strong></td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Email</td><td><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Teléfono</td><td>${telefono ? escapeHtml(telefono) : '<em style="color:#999">no facilitado</em>'}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Pieza</td><td><a href="${escapeHtml(archivoUrl)}" style="color:#0EA5E9;font-weight:600;">${escapeHtml(archivoNombre)}</a> <span style="color:#999;font-size:11px;">${(archivoTamano / 1024 / 1024).toFixed(1)} MB</span></td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Medidas</td><td>${m?.bbox_mm ? `${m.bbox_mm.x} × ${m.bbox_mm.z} × ${m.bbox_mm.y} mm` : '—'} · ${m?.volumen_cm3 ?? '—'} cm³ · ~${m?.peso_g ?? '—'} g</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Total</td><td>~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Material</td><td>${escapeHtml(material)} — ${escapeHtml(coloresTxt)}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Ajustes</td><td>${escapeHtml(resistencia)} · ${escapeHtml(detalle)} · × ${cantidad}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${escapeHtml(entregaTxt)}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables</td></tr>
   </table>
+  <h3 style="margin:24px 0 8px 0;font-size:14px;color:#666;text-transform:uppercase;letter-spacing:0.1em;">Piezas (${archivos.length})</h3>
+  <ul style="list-style:none;padding:0;margin:0;">${piezasHtml}</ul>
   <h3 style="margin:24px 0 8px 0;font-size:14px;color:#666;text-transform:uppercase;letter-spacing:0.1em;">Desglose</h3>
   <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f5f5f5;border-radius:6px;">
     ${lineas.map((l) => `<tr><td style="padding:6px 14px;color:#444;">${escapeHtml(l.concepto)}</td><td style="padding:6px 14px;text-align:right;font-family:monospace;">${Number(l.importe).toFixed(2)} €</td></tr>`).join('')}
@@ -301,7 +341,7 @@ Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
     ${codigo}
 
 Resumen:
-  Pieza:        ${archivoNombre}${cantidad > 1 ? ` × ${cantidad}` : ''}
+${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''}`).join('\n')}
   Material:     ${material} — ${coloresTxt}
   Acabado:      ${resistencia} · ${detalle}
   Entrega:      ${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}
@@ -326,7 +366,7 @@ https://www.impresion3dcc.com/presupuesto introduciendo tu código.
     <span style="display:inline-block;padding:10px 28px;background:#f0f9ff;border:1px solid #0EA5E9;border-radius:6px;font-family:monospace;font-size:22px;font-weight:700;color:#0EA5E9;letter-spacing:0.06em;">${escapeHtml(codigo)}</span>
   </div>
   <table style="width:100%;border-collapse:collapse;font-size:14px;">
-    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Pieza</td><td>${escapeHtml(archivoNombre)}${cantidad > 1 ? ` × ${cantidad}` : ''}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''}`).join('<br/>')}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Material</td><td>${escapeHtml(material)} — ${escapeHtml(coloresTxt)}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Acabado</td><td>${escapeHtml(resistencia)} · ${escapeHtml(detalle)}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}</td></tr>

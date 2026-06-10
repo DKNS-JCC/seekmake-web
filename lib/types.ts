@@ -84,9 +84,31 @@ export type Producto = {
 
 // Tasador (instant quote)
 
-export type QuoteEstado = 'nuevo' | 'revisado' | 'aceptado' | 'rechazado' | 'completado';
+export type QuoteEstado =
+  | 'nuevo'
+  | 'revisado'
+  | 'aceptado'
+  | 'imprimiendo'
+  | 'listo'
+  | 'entregado'
+  | 'rechazado';
+
+export type QuotePago = 'pendiente' | 'adelanto' | 'pagado';
 
 export type QuoteEntrega = 'recogida' | 'envio';
+
+export type QuoteArchivo = {
+  nombre: string;
+  url: string;
+  /** Storage path inside the quote-uploads bucket (used by the cleanup job). */
+  path: string;
+  /** Bytes actually stored (compressed when `comprimido`). */
+  tamano: number;
+  tamano_original: number;
+  comprimido: boolean;
+  cantidad: number;
+  metricas: Record<string, unknown>;
+};
 
 export type QuoteDireccion = {
   calle?: string;
@@ -111,9 +133,7 @@ export type Quote = {
   email: string;
   telefono: string;
   mensaje: string;
-  archivo_nombre: string;
-  archivo_url: string;
-  archivo_tamano: number;
+  archivos: QuoteArchivo[];
   material: string;
   colores: QuoteColorSnapshot[];
   resistencia: string;
@@ -124,6 +144,10 @@ export type Quote = {
   metricas: Record<string, unknown>;
   desglose: Record<string, unknown>;
   precio_total: number;
+  precio_final: number | null;
+  pago: QuotePago;
+  importe_pagado: number;
+  archivado: boolean;
   notas_admin: string;
   created_at: string;
   updated_at: string;
@@ -179,9 +203,17 @@ export type Database = {
       };
       quotes: {
         Row: Quote;
-        Insert: Omit<Quote, 'id' | 'codigo' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<
+          Quote,
+          | 'id' | 'codigo' | 'created_at' | 'updated_at'
+          | 'pago' | 'importe_pagado' | 'precio_final' | 'archivado'
+        > & {
           id?: string;
           codigo?: string;
+          pago?: QuotePago;
+          importe_pagado?: number;
+          precio_final?: number | null;
+          archivado?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -213,9 +245,12 @@ export type Database = {
         Returns: {
           codigo: string;
           estado: QuoteEstado;
+          pago: QuotePago;
+          entrega: QuoteEntrega;
           material: string;
           cantidad: number;
           precio_total: number;
+          precio_final: number | null;
           created_at: string;
           updated_at: string;
         }[];

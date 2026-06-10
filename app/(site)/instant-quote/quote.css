@@ -123,6 +123,49 @@
 }
 .qt-step-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
 
+.qt-piezas { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.qt-pieza {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    transition: border-color 0.2s;
+}
+.qt-pieza.active { border-color: var(--accent); }
+.qt-pieza-name {
+    flex: 1; min-width: 0;
+    background: none; border: 0; text-align: left;
+    font-size: 13px; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.qt-pieza-qty {
+    display: flex; align-items: center; gap: 4px;
+    flex-shrink: 0;
+}
+.qt-pieza-qty button {
+    width: 24px; height: 24px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    font-size: 14px; color: var(--text); line-height: 1;
+}
+.qt-pieza-qty button:hover { border-color: var(--accent); }
+.qt-pieza-qty span {
+    min-width: 26px; text-align: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+}
+.qt-pieza-remove {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--muted); font-size: 14px; line-height: 1;
+    transition: all 0.2s;
+}
+.qt-pieza-remove:hover { color: #e0524d; border-color: #e0524d; }
+
 .qt-pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .qt-pill {
     padding: 7px 16px;

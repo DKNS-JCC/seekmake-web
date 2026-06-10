@@ -127,7 +127,23 @@ export interface QuoteSelection {
   colores: { nombre: string; hex: string; acabado: string | null }[];
   resistenciaId: string;
   detalleId: string;
+}
+
+export interface PiezaInput {
+  nombre: string;
+  metrics: MeshMetrics;
   cantidad: number;
+}
+
+export interface PiezaResult {
+  nombre: string;
+  /** Per unit. */
+  pesoG: number;
+  /** Per unit. */
+  tiempoH: number;
+  cantidad: number;
+  /** Material + machine time for all units of this piece (no surcharges). */
+  subtotal: number;
 }
 
 export interface QuoteLine {
@@ -136,11 +152,12 @@ export interface QuoteLine {
 }
 
 export interface QuoteResult {
+  /** Across every unit of every piece. */
   pesoG: number;
   tiempoH: number;
+  unidades: number;
   rellenoPct: number;
-  /** Per-unit price before quantity effects. */
-  precioUnidad: number;
+  piezas: PiezaResult[];
   lineas: QuoteLine[];
   descuentoPct: number;
   total: number;
@@ -155,7 +172,7 @@ function round2(n: number): number {
 }
 
 export function computeQuote(
-  metrics: MeshMetrics,
+  piezas: PiezaInput[],
   sel: QuoteSelection,
   settings: QuoteSettings
 ): QuoteResult {
@@ -170,58 +187,78 @@ export function computeQuote(
   // Effective printed weight: walls print solid, the interior at infill %.
   const fraccion =
     settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
-  const pesoG = metrics.volumenCm3 * mat.densidad * fraccion;
 
-  // Print time from throughput, scaled by the detail profile.
-  const tiempoH = (pesoG / Math.max(settings.caudal_g_h, 1)) * det.factor_tiempo;
+  const lineas: QuoteLine[] = [];
+  const piezasOut: PiezaResult[] = [];
+  let base = 0;
+  let pesoTotal = 0;
+  let tiempoTotal = 0;
+  let unidades = 0;
 
-  const costeMaterial = pesoG * mat.precio_g;
-  const costeTiempo = tiempoH * settings.precio_hora;
-  let unidad = costeMaterial + costeTiempo;
+  for (const p of piezas) {
+    const cantidad = Math.max(1, Math.floor(p.cantidad));
+    const pesoG = p.metrics.volumenCm3 * mat.densidad * fraccion;
+    const tiempoH = (pesoG / Math.max(settings.caudal_g_h, 1)) * det.factor_tiempo;
+    const unidad = pesoG * mat.precio_g + tiempoH * settings.precio_hora;
+    const subtotal = unidad * cantidad;
 
-  const lineas: QuoteLine[] = [
-    { concepto: `Material (${Math.round(pesoG)} g de ${sel.material})`, importe: round2(costeMaterial) },
-    { concepto: `Impresión (~${tiempoH.toFixed(1)} h)`, importe: round2(costeTiempo) }
-  ];
+    piezasOut.push({
+      nombre: p.nombre,
+      pesoG: round2(pesoG),
+      tiempoH: round2(tiempoH),
+      cantidad,
+      subtotal: round2(subtotal)
+    });
+    lineas.push({
+      concepto:
+        `${p.nombre}${cantidad > 1 ? ` × ${cantidad}` : ''} ` +
+        `(~${Math.round(pesoG)} g, ~${tiempoH.toFixed(1)} h${cantidad > 1 ? ' c/u' : ''})`,
+      importe: round2(subtotal)
+    });
+
+    base += subtotal;
+    pesoTotal += pesoG * cantidad;
+    tiempoTotal += tiempoH * cantidad;
+    unidades += cantidad;
+  }
+
+  let subtotal = base;
 
   // Specialty finish surcharge — the priciest finish among selected colors.
   const acabadoPct = Math.max(
     0,
     ...sel.colores.map((c) => (c.acabado ? settings.recargo_acabado_pct[c.acabado] ?? 0 : 0))
   );
-  if (acabadoPct > 0) {
-    const extra = unidad * (acabadoPct / 100);
+  if (acabadoPct > 0 && base > 0) {
+    const extra = base * (acabadoPct / 100);
     lineas.push({ concepto: `Acabado especial (+${acabadoPct}%)`, importe: round2(extra) });
-    unidad += extra;
+    subtotal += extra;
   }
 
-  // Multicolor surcharge: % on the unit + flat per extra color.
+  // Multicolor surcharge: % on the base + flat per extra color (per unit).
   const numColores = sel.colores.length;
-  if (numColores > 1) {
+  if (numColores > 1 && base > 0) {
     const extra =
-      unidad * (settings.recargo_multicolor.base_pct / 100) +
-      settings.recargo_multicolor.por_color_extra * (numColores - 1);
+      base * (settings.recargo_multicolor.base_pct / 100) +
+      settings.recargo_multicolor.por_color_extra * (numColores - 1) * unidades;
     lineas.push({
       concepto: `Multicolor (${numColores} colores)`,
       importe: round2(extra)
     });
-    unidad += extra;
+    subtotal += extra;
   }
 
-  const cantidad = Math.max(1, Math.floor(sel.cantidad));
-  let subtotal = unidad * cantidad;
-  if (cantidad > 1) {
-    lineas.push({ concepto: `× ${cantidad} unidades`, importe: round2(subtotal) });
-  }
-
-  // Quantity discount — highest tier whose `min` is met.
+  // Quantity discount — highest tier met by the total unit count.
   let descuentoPct = 0;
   for (const tier of settings.descuentos_cantidad) {
-    if (cantidad >= tier.min) descuentoPct = tier.pct;
+    if (unidades >= tier.min) descuentoPct = tier.pct;
   }
   if (descuentoPct > 0) {
     const dto = subtotal * (descuentoPct / 100);
-    lineas.push({ concepto: `Descuento por cantidad (-${descuentoPct}%)`, importe: round2(-dto) });
+    lineas.push({
+      concepto: `Descuento por cantidad (-${descuentoPct}%)`,
+      importe: round2(-dto)
+    });
     subtotal -= dto;
   }
 
@@ -232,14 +269,15 @@ export function computeQuote(
   if (minimoAplicado) total = settings.precio_minimo;
 
   const diasEstimados =
-    Math.ceil((tiempoH * cantidad) / Math.max(settings.plazo_horas_dia, 1)) +
+    Math.ceil(tiempoTotal / Math.max(settings.plazo_horas_dia, 1)) +
     Math.max(0, Math.round(settings.plazo_dias_margen));
 
   return {
-    pesoG: round2(pesoG),
-    tiempoH: round2(tiempoH),
+    pesoG: round2(pesoTotal),
+    tiempoH: round2(tiempoTotal),
+    unidades,
     rellenoPct: res.relleno_pct,
-    precioUnidad: round2(unidad),
+    piezas: piezasOut,
     lineas,
     descuentoPct,
     total: round2(total),

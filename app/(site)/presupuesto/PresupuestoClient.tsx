@@ -5,25 +5,36 @@
 
 import { FormEvent, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { QuoteEstado } from '@/lib/types';
+import type { QuoteEntrega, QuoteEstado, QuotePago } from '@/lib/types';
 import './presupuesto.css';
 
 interface StatusRow {
   codigo: string;
   estado: QuoteEstado;
+  pago: QuotePago;
+  entrega: QuoteEntrega;
   material: string;
   cantidad: number;
   precio_total: number;
+  precio_final: number | null;
   created_at: string;
   updated_at: string;
 }
 
 const PASOS: { id: QuoteEstado; label: string; desc: string }[] = [
   { id: 'nuevo', label: 'Recibido', desc: 'Tu solicitud está en cola de revisión' },
-  { id: 'revisado', label: 'Revisado', desc: 'Hemos comprobado la pieza y el precio' },
-  { id: 'aceptado', label: 'En producción', desc: 'Tu pieza se está imprimiendo' },
-  { id: 'completado', label: 'Completado', desc: 'Lista para recoger o enviada' }
+  { id: 'revisado', label: 'Revisado', desc: 'Pieza comprobada y precio confirmado' },
+  { id: 'aceptado', label: 'En cola', desc: 'Pedido confirmado, esperando impresora' },
+  { id: 'imprimiendo', label: 'Imprimiendo', desc: 'Tus piezas están en la impresora' },
+  { id: 'listo', label: 'Listo', desc: 'Terminado, listo para recoger o enviar' },
+  { id: 'entregado', label: 'Entregado', desc: '¡Disfrútalo!' }
 ];
+
+const PAGO_LABEL: Record<QuotePago, string> = {
+  pendiente: 'Pago pendiente',
+  adelanto: 'Adelanto recibido',
+  pagado: 'Pagado — gracias'
+};
 
 function fecha(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', {
@@ -151,7 +162,15 @@ export function PresupuestoClient() {
             <div className="pr-meta">
               <span>{result.material}</span>
               <span>× {result.cantidad}</span>
-              <span>{Number(result.precio_total).toFixed(2)} € estimados</span>
+              <span>
+                {result.precio_final != null
+                  ? `${Number(result.precio_final).toFixed(2)} € confirmados`
+                  : `${Number(result.precio_total).toFixed(2)} € estimados`}
+              </span>
+              <span>{result.entrega === 'envio' ? 'Envío nacional' : 'Recogida'}</span>
+              <span className={'pr-pago pr-pago--' + result.pago}>
+                {PAGO_LABEL[result.pago] ?? result.pago}
+              </span>
               <span>Actualizado el {fecha(result.updated_at)}</span>
             </div>
 
