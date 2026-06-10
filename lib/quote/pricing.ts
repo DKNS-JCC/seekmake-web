@@ -121,28 +121,28 @@ export function normalizeSettings(raw: unknown): QuoteSettings {
   };
 }
 
-export interface QuoteSelection {
+export interface PiezaInput {
+  nombre: string;
+  metrics: MeshMetrics;
+  cantidad: number;
+  /** Each piece carries its own full configuration. */
   material: string;
-  /** Distinct muestrario colors applied (1 = single color). */
+  /** Distinct muestrario colors applied to this piece (1 = single color). */
   colores: { nombre: string; hex: string; acabado: string | null }[];
   resistenciaId: string;
   detalleId: string;
 }
 
-export interface PiezaInput {
-  nombre: string;
-  metrics: MeshMetrics;
-  cantidad: number;
-}
-
 export interface PiezaResult {
   nombre: string;
+  material: string;
+  rellenoPct: number;
   /** Per unit. */
   pesoG: number;
   /** Per unit. */
   tiempoH: number;
   cantidad: number;
-  /** Material + machine time for all units of this piece (no surcharges). */
+  /** All units of this piece, surcharges included. */
   subtotal: number;
 }
 
@@ -156,7 +156,6 @@ export interface QuoteResult {
   pesoG: number;
   tiempoH: number;
   unidades: number;
-  rellenoPct: number;
   piezas: PiezaResult[];
   lineas: QuoteLine[];
   descuentoPct: number;
@@ -173,21 +172,8 @@ function round2(n: number): number {
 
 export function computeQuote(
   piezas: PiezaInput[],
-  sel: QuoteSelection,
   settings: QuoteSettings
 ): QuoteResult {
-  const mat = settings.materiales[sel.material] ?? settings.materiales['PLA'] ?? {
-    precio_g: 0.05,
-    densidad: 1.24
-  };
-  const res =
-    settings.resistencia.find((r) => r.id === sel.resistenciaId) ?? settings.resistencia[0];
-  const det = settings.detalle.find((d) => d.id === sel.detalleId) ?? settings.detalle[0];
-
-  // Effective printed weight: walls print solid, the interior at infill %.
-  const fraccion =
-    settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
-
   const lineas: QuoteLine[] = [];
   const piezasOut: PiezaResult[] = [];
   let base = 0;
@@ -196,14 +182,49 @@ export function computeQuote(
   let unidades = 0;
 
   for (const p of piezas) {
+    const mat = settings.materiales[p.material] ?? settings.materiales['PLA'] ?? {
+      precio_g: 0.05,
+      densidad: 1.24
+    };
+    const res =
+      settings.resistencia.find((r) => r.id === p.resistenciaId) ?? settings.resistencia[0];
+    const det = settings.detalle.find((d) => d.id === p.detalleId) ?? settings.detalle[0];
+
+    // Effective printed weight: walls print solid, the interior at infill %.
+    const fraccion =
+      settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
     const cantidad = Math.max(1, Math.floor(p.cantidad));
     const pesoG = p.metrics.volumenCm3 * mat.densidad * fraccion;
     const tiempoH = (pesoG / Math.max(settings.caudal_g_h, 1)) * det.factor_tiempo;
-    const unidad = pesoG * mat.precio_g + tiempoH * settings.precio_hora;
+    let unidad = pesoG * mat.precio_g + tiempoH * settings.precio_hora;
+
+    const extras: string[] = [];
+
+    // Specialty finish surcharge — the priciest finish among this piece's colors.
+    const acabadoPct = Math.max(
+      0,
+      ...p.colores.map((c) => (c.acabado ? settings.recargo_acabado_pct[c.acabado] ?? 0 : 0))
+    );
+    if (acabadoPct > 0) {
+      unidad *= 1 + acabadoPct / 100;
+      extras.push(`acabado +${acabadoPct}%`);
+    }
+
+    // Multicolor surcharge on this piece: % + flat per extra color.
+    const numColores = p.colores.length;
+    if (numColores > 1) {
+      unidad =
+        unidad * (1 + settings.recargo_multicolor.base_pct / 100) +
+        settings.recargo_multicolor.por_color_extra * (numColores - 1);
+      extras.push(`${numColores} colores`);
+    }
+
     const subtotal = unidad * cantidad;
 
     piezasOut.push({
       nombre: p.nombre,
+      material: p.material,
+      rellenoPct: res.relleno_pct,
       pesoG: round2(pesoG),
       tiempoH: round2(tiempoH),
       cantidad,
@@ -211,8 +232,10 @@ export function computeQuote(
     });
     lineas.push({
       concepto:
-        `${p.nombre}${cantidad > 1 ? ` × ${cantidad}` : ''} ` +
-        `(~${Math.round(pesoG)} g, ~${tiempoH.toFixed(1)} h${cantidad > 1 ? ' c/u' : ''})`,
+        `${p.nombre}${cantidad > 1 ? ` × ${cantidad}` : ''} — ${p.material} ` +
+        `(~${Math.round(pesoG)} g, ~${tiempoH.toFixed(1)} h${cantidad > 1 ? ' c/u' : ''}` +
+        (extras.length ? `, ${extras.join(', ')}` : '') +
+        ')',
       importe: round2(subtotal)
     });
 
@@ -223,30 +246,6 @@ export function computeQuote(
   }
 
   let subtotal = base;
-
-  // Specialty finish surcharge — the priciest finish among selected colors.
-  const acabadoPct = Math.max(
-    0,
-    ...sel.colores.map((c) => (c.acabado ? settings.recargo_acabado_pct[c.acabado] ?? 0 : 0))
-  );
-  if (acabadoPct > 0 && base > 0) {
-    const extra = base * (acabadoPct / 100);
-    lineas.push({ concepto: `Acabado especial (+${acabadoPct}%)`, importe: round2(extra) });
-    subtotal += extra;
-  }
-
-  // Multicolor surcharge: % on the base + flat per extra color (per unit).
-  const numColores = sel.colores.length;
-  if (numColores > 1 && base > 0) {
-    const extra =
-      base * (settings.recargo_multicolor.base_pct / 100) +
-      settings.recargo_multicolor.por_color_extra * (numColores - 1) * unidades;
-    lineas.push({
-      concepto: `Multicolor (${numColores} colores)`,
-      importe: round2(extra)
-    });
-    subtotal += extra;
-  }
 
   // Quantity discount — highest tier met by the total unit count.
   let descuentoPct = 0;
@@ -276,7 +275,6 @@ export function computeQuote(
     pesoG: round2(pesoTotal),
     tiempoH: round2(tiempoTotal),
     unidades,
-    rellenoPct: res.relleno_pct,
     piezas: piezasOut,
     lineas,
     descuentoPct,

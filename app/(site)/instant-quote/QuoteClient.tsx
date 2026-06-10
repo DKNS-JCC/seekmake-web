@@ -1,9 +1,11 @@
 'use client';
 
 // Tasador propio — replaces the SeekMake embed.
-// Flow: drop up to 5 model files → analyze geometry in-browser → pick
-// material, color(s) and intuitive presets (shared by the whole order, each
-// piece has its own quantity) → live price breakdown → submit the quote.
+// Flow: drop up to 5 model files → analyze geometry in-browser → configure
+// EACH piece independently (material, colors, resistance, detail, quantity;
+// the steps panel edits the selected piece) → live price breakdown →
+// submit. New pieces inherit the active piece's config so the common
+// same-settings order needs zero extra clicks.
 // STL/OBJ are gzipped client-side before upload to protect Storage quota.
 
 import {
@@ -43,6 +45,17 @@ const MAX_BED_MM = 256; // largest printable axis before we warn
 const ACCEPT = '.stl,.3mf,.obj';
 const WHATSAPP = '34665148956';
 
+interface PiezaConfig {
+  filamentoId: string;
+  mainColor: Color | null;
+  multicolor: boolean;
+  extraColors: Color[];
+  /** Per-part colors — only meaningful for multi-part 3MF pieces. */
+  partColors: (Color | null)[];
+  resistenciaId: string;
+  detalleId: string;
+}
+
 interface Pieza {
   id: string;
   file: File;
@@ -52,6 +65,7 @@ interface Pieza {
   metrics: MeshMetrics;
   cantidad: number;
   partNames: string[];
+  config: PiezaConfig;
 }
 
 interface ParsedModel {
@@ -82,6 +96,20 @@ function disposeModel(model: ParsedModel): void {
   });
 }
 
+/** Distinct colors a piece will print with, per its config. */
+function piezaColors(p: Pieza): Color[] {
+  const seen = new Map<string, Color>();
+  if (p.partNames.length > 1) {
+    for (const c of p.config.partColors) if (c) seen.set(c.id, c);
+  } else {
+    if (p.config.mainColor) seen.set(p.config.mainColor.id, p.config.mainColor);
+    if (p.config.multicolor) {
+      for (const c of p.config.extraColors) seen.set(c.id, c);
+    }
+  }
+  return [...seen.values()];
+}
+
 export function QuoteClient({
   filamentos,
   colores
@@ -109,20 +137,10 @@ export function QuoteClient({
   // ─── model state ────────────────────────────────────────────────────────
   const [piezas, setPiezas] = useState<Pieza[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activePart, setActivePart] = useState(0);
   const [loadingFile, setLoadingFile] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-
-  // ─── selection state ────────────────────────────────────────────────────
-  const [filamento, setFilamento] = useState<Filamento | null>(null);
-  // Single multi-part 3MF: one color per part. Otherwise: main + extras.
-  const [partColors, setPartColors] = useState<(Color | null)[]>([]);
-  const [activePart, setActivePart] = useState(0);
-  const [mainColor, setMainColor] = useState<Color | null>(null);
-  const [multicolor, setMulticolor] = useState(false);
-  const [extraColors, setExtraColors] = useState<Color[]>([]);
-  const [resistenciaId, setResistenciaId] = useState('estandar');
-  const [detalleId, setDetalleId] = useState('estandar');
   const [entrega, setEntrega] = useState<QuoteEntrega>('recogida');
 
   // ─── request form ───────────────────────────────────────────────────────
@@ -142,12 +160,11 @@ export function QuoteClient({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activePieza = piezas.find((p) => p.id === activeId) ?? null;
-  // Per-part coloring only applies to a single multi-part 3MF order.
-  const partsMode = piezas.length === 1 && piezas[0].partNames.length > 1;
-
-  useEffect(() => {
-    if (!filamento && filamentos.length) setFilamento(filamentos[0]);
-  }, [filamentos, filamento]);
+  const activeFilamento = activePieza
+    ? filamentos.find((f) => f.id === activePieza.config.filamentoId) ?? filamentos[0] ?? null
+    : null;
+  // Per-part coloring for the active piece (multi-part 3MF).
+  const partsMode = (activePieza?.partNames.length ?? 0) > 1;
 
   useEffect(() => {
     createClient()
@@ -309,16 +326,34 @@ export function QuoteClient({
     if (ground) ground.scale.setScalar(Math.max(1, radius / 60));
   }
 
+  function defaultConfig(partCount: number): PiezaConfig {
+    // New pieces inherit the active piece's config so a same-settings
+    // multi-piece order needs no extra clicks.
+    const base = activePieza?.config;
+    return {
+      filamentoId: base?.filamentoId ?? filamentos[0]?.id ?? '',
+      mainColor: base?.mainColor ?? null,
+      multicolor: false,
+      extraColors: [],
+      partColors: new Array(partCount).fill(
+        partCount > 1 ? null : (base?.mainColor ?? null)
+      ),
+      resistenciaId: base?.resistenciaId ?? 'estandar',
+      detalleId: base?.detalleId ?? 'estandar'
+    };
+  }
+
   async function addFiles(files: FileList | File[]) {
     setFileError(null);
     const list = Array.from(files);
     const errors: string[] = [];
     let added: Pieza | null = null;
+    let count = piezas.length;
 
     setLoadingFile(true);
     try {
       for (const f of list) {
-        if (piezas.length + (added ? 1 : 0) >= MAX_FILES) {
+        if (count >= MAX_FILES) {
           errors.push(`Máximo ${MAX_FILES} piezas por presupuesto.`);
           break;
         }
@@ -353,9 +388,11 @@ export function QuoteClient({
             cantidad: 1,
             partNames: model.meshes.map(
               (m, i) => m.name?.trim() || `Parte ${i + 1}`
-            )
+            ),
+            config: defaultConfig(model.meshes.length)
           };
           setPiezas((prev) => [...prev, pieza]);
+          count++;
           added = pieza;
         } catch (err) {
           console.error(err);
@@ -369,6 +406,7 @@ export function QuoteClient({
     if (errors.length) setFileError(errors.join(' · '));
     if (added) {
       setActiveId(added.id);
+      setActivePart(0);
       setStatus({ kind: 'idle' });
     }
   }
@@ -377,21 +415,6 @@ export function QuoteClient({
   useEffect(() => {
     if (activeId) showModel(activeId);
   }, [activeId]);
-
-  // Reset per-part colors when entering/leaving parts mode.
-  useEffect(() => {
-    if (partsMode) {
-      setPartColors((prev) =>
-        prev.length === piezas[0].partNames.length
-          ? prev
-          : new Array(piezas[0].partNames.length).fill(null)
-      );
-      setActivePart(0);
-    } else {
-      setPartColors([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partsMode, piezas.length]);
 
   function removePieza(id: string) {
     const model = modelsRef.current.get(id);
@@ -406,7 +429,10 @@ export function QuoteClient({
     }
     setPiezas((prev) => {
       const next = prev.filter((p) => p.id !== id);
-      if (activeId === id) setActiveId(next[0]?.id ?? null);
+      if (activeId === id) {
+        setActiveId(next[0]?.id ?? null);
+        setActivePart(0);
+      }
       return next;
     });
   }
@@ -419,18 +445,49 @@ export function QuoteClient({
     );
   }
 
+  function patchActiveConfig(patch: Partial<PiezaConfig>) {
+    if (!activeId) return;
+    setPiezas((prev) =>
+      prev.map((p) => (p.id === activeId ? { ...p, config: { ...p.config, ...patch } } : p))
+    );
+  }
+
+  function applyToAll() {
+    if (!activePieza) return;
+    const src = activePieza.config;
+    setPiezas((prev) =>
+      prev.map((p) => {
+        if (p.id === activePieza.id) return p;
+        return {
+          ...p,
+          config: {
+            filamentoId: src.filamentoId,
+            mainColor: src.mainColor,
+            multicolor: src.multicolor,
+            extraColors: [...src.extraColors],
+            // Other pieces keep one color per part: paint everything in the
+            // source's main color (the customer can refine per piece).
+            partColors: p.partNames.map(() => src.mainColor),
+            resistenciaId: src.resistenciaId,
+            detalleId: src.detalleId
+          }
+        };
+      })
+    );
+  }
+
   // ─── apply colors to the displayed model ────────────────────────────────
   useEffect(() => {
-    if (!filamento || !activeId) return;
-    const model = modelsRef.current.get(activeId);
+    if (!activePieza || !activeFilamento) return;
+    const model = modelsRef.current.get(activePieza.id);
     if (!model) return;
 
     model.meshes.forEach((mesh, i) => {
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
-      const c = partsMode ? partColors[i] : mainColor;
+      const c = partsMode ? activePieza.config.partColors[i] : activePieza.config.mainColor;
       if (c) {
         const { props, map } = buildMaterialUpdate(
-          { color: c, filamento },
+          { color: c, filamento: activeFilamento },
           textureCacheRef.current
         );
         applyMaterialUpdate(mat, props, map);
@@ -438,7 +495,7 @@ export function QuoteClient({
         applyMaterialUpdate(mat, acabadoMaterialProps('#cccccc', null), null);
       }
     });
-  }, [partColors, mainColor, filamento, activeId, partsMode]);
+  }, [activePieza, activeFilamento, partsMode]);
 
   useEffect(() => {
     const cache = textureCacheRef.current;
@@ -450,75 +507,80 @@ export function QuoteClient({
 
   // ─── derived data ───────────────────────────────────────────────────────
   const materialColors = useMemo(
-    () => (filamento ? colores.filter((c) => c.filamento_id === filamento.id) : []),
-    [colores, filamento]
+    () =>
+      activeFilamento
+        ? colores.filter((c) => c.filamento_id === activeFilamento.id)
+        : [],
+    [colores, activeFilamento]
   );
 
-  const selectedColors = useMemo(() => {
-    const seen = new Map<string, Color>();
-    if (partsMode) {
-      for (const c of partColors) if (c) seen.set(c.id, c);
-    } else {
-      if (mainColor) seen.set(mainColor.id, mainColor);
-      if (multicolor) for (const c of extraColors) seen.set(c.id, c);
-    }
-    return [...seen.values()];
-  }, [partsMode, partColors, mainColor, extraColors, multicolor]);
+  const activeColors = activePieza ? piezaColors(activePieza) : [];
 
   const quote = useMemo(() => {
-    if (!piezas.length || !filamento) return null;
+    if (!piezas.length) return null;
     return computeQuote(
-      piezas.map((p) => ({ nombre: p.name, metrics: p.metrics, cantidad: p.cantidad })),
-      {
-        material: filamento.material,
-        colores: selectedColors.map((c) => ({
-          nombre: c.nombre,
-          hex: c.hex,
-          acabado: c.acabado
-        })),
-        resistenciaId,
-        detalleId
-      },
+      piezas.map((p) => {
+        const fil = filamentos.find((f) => f.id === p.config.filamentoId);
+        return {
+          nombre: p.name,
+          metrics: p.metrics,
+          cantidad: p.cantidad,
+          material: fil?.material ?? 'PLA',
+          colores: piezaColors(p).map((c) => ({
+            nombre: c.nombre,
+            hex: c.hex,
+            acabado: c.acabado
+          })),
+          resistenciaId: p.config.resistenciaId,
+          detalleId: p.config.detalleId
+        };
+      }),
       settings
     );
-  }, [piezas, filamento, selectedColors, resistenciaId, detalleId, settings]);
+  }, [piezas, filamentos, settings]);
 
   const tooBig = piezas.some(
     (p) => Math.max(p.metrics.bboxMm.x, p.metrics.bboxMm.y, p.metrics.bboxMm.z) > MAX_BED_MM
   );
   const degenerate = piezas.some((p) => looksDegenerate(p.metrics));
+  const piezasSinColor = piezas.filter((p) => piezaColors(p).length === 0);
 
   // ─── interactions ───────────────────────────────────────────────────────
   function changeMaterial(f: Filamento) {
-    if (f.id === filamento?.id) return;
-    setFilamento(f);
-    setPartColors((prev) => prev.map(() => null));
-    setMainColor(null);
-    setExtraColors([]);
+    if (!activePieza || f.id === activePieza.config.filamentoId) return;
+    patchActiveConfig({
+      filamentoId: f.id,
+      mainColor: null,
+      extraColors: [],
+      partColors: activePieza.partNames.map(() => null)
+    });
   }
 
   function pickColor(c: Color) {
+    if (!activePieza) return;
     if (partsMode) {
-      setPartColors((prev) => {
-        const next = [...prev];
-        next[activePart] = c;
-        return next;
-      });
-      setActivePart((cur) => {
-        const next = partColors.findIndex((x, i) => i !== cur && x === null);
-        return next === -1 ? cur : next;
-      });
+      const next = [...activePieza.config.partColors];
+      next[activePart] = c;
+      patchActiveConfig({ partColors: next });
+      // Jump to the next part without a color yet.
+      const idx = next.findIndex((x, i) => i !== activePart && x === null);
+      if (idx !== -1) setActivePart(idx);
     } else {
-      setMainColor(c);
+      patchActiveConfig({
+        mainColor: c,
+        partColors: activePieza.partNames.map(() => c)
+      });
     }
   }
 
   function toggleExtraColor(c: Color) {
-    setExtraColors((prev) => {
-      if (prev.some((x) => x.id === c.id)) return prev.filter((x) => x.id !== c.id);
-      if (prev.length >= 3) return prev; // main + 3 extras max
-      return [...prev, c];
-    });
+    if (!activePieza) return;
+    const prev = activePieza.config.extraColors;
+    if (prev.some((x) => x.id === c.id)) {
+      patchActiveConfig({ extraColors: prev.filter((x) => x.id !== c.id) });
+    } else if (prev.length < 3) {
+      patchActiveConfig({ extraColors: [...prev, c] }); // main + 3 extras max
+    }
   }
 
   function onDrop(e: DragEvent) {
@@ -535,9 +597,12 @@ export function QuoteClient({
   // ─── submit ─────────────────────────────────────────────────────────────
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!piezas.length || !quote || !filamento) return;
-    if (selectedColors.length === 0) {
-      setStatus({ kind: 'err', message: 'Elige al menos un color del muestrario.' });
+    if (!piezas.length || !quote) return;
+    if (piezasSinColor.length) {
+      setStatus({
+        kind: 'err',
+        message: `Falta elegir color en: ${piezasSinColor.map((p) => p.name).join(', ')}.`
+      });
       return;
     }
 
@@ -580,6 +645,23 @@ export function QuoteClient({
         }
         const { data: pub } = supabase.storage.from('quote-uploads').getPublicUrl(path);
 
+        const fil = filamentos.find((f) => f.id === p.config.filamentoId);
+        const coloresPieza =
+          p.partNames.length > 1
+            ? p.config.partColors
+                .map((c, j) =>
+                  c
+                    ? { nombre: c.nombre, hex: c.hex, acabado: c.acabado, parte: p.partNames[j] }
+                    : null
+                )
+                .filter(Boolean)
+            : piezaColors(p).map((c) => ({
+                nombre: c.nombre,
+                hex: c.hex,
+                acabado: c.acabado,
+                parte: ''
+              }));
+
         const pr = quote.piezas[i];
         archivos.push({
           nombre: p.name,
@@ -589,6 +671,10 @@ export function QuoteClient({
           tamano_original: p.size,
           comprimido,
           cantidad: p.cantidad,
+          material: fil?.material ?? 'PLA',
+          colores: coloresPieza,
+          resistencia: p.config.resistenciaId,
+          detalle: p.config.detalleId,
           metricas: {
             volumen_cm3: Math.round(p.metrics.volumenCm3 * 100) / 100,
             area_cm2: Math.round(p.metrics.areaCm2 * 10) / 10,
@@ -596,34 +682,26 @@ export function QuoteClient({
             triangulos: p.metrics.triangulos,
             mallas: p.metrics.mallas,
             peso_g: pr?.pesoG ?? null,
-            tiempo_h: pr?.tiempoH ?? null
+            tiempo_h: pr?.tiempoH ?? null,
+            relleno_pct: pr?.rellenoPct ?? null
           }
         });
       }
 
       setStatus({ kind: 'sending', progress: 'Registrando solicitud…' });
 
-      // 2. Quote request → Edge Function (inserts row + emails).
-      const coloresPayload = partsMode
-        ? partColors
-            .map((c, i) =>
-              c
-                ? {
-                    nombre: c.nombre,
-                    hex: c.hex,
-                    acabado: c.acabado,
-                    parte: piezas[0].partNames[i]
-                  }
-                : null
-            )
-            .filter(Boolean)
-        : selectedColors.map((c) => ({
-            nombre: c.nombre,
-            hex: c.hex,
-            acabado: c.acabado,
-            parte: ''
-          }));
+      // Top-level summary fields (the per-piece detail lives in archivos).
+      const materiales = [...new Set(archivos.map((a) => a.material as string))];
+      const resistencias = [...new Set(piezas.map((p) => p.config.resistenciaId))];
+      const detalles = [...new Set(piezas.map((p) => p.config.detalleId))];
+      const coloresGlobal = archivos.flatMap((a, i) =>
+        (a.colores as any[]).map((c) => ({
+          ...c,
+          parte: piezas.length > 1 ? `${piezas[i].name}${c.parte ? ` · ${c.parte}` : ''}` : c.parte
+        }))
+      );
 
+      // 2. Quote request → Edge Function (inserts row + emails).
       const { data, error } = await supabase.functions.invoke('submit-quote', {
         body: {
           nombre,
@@ -632,10 +710,10 @@ export function QuoteClient({
           mensaje,
           website,
           archivos,
-          material: filamento.material,
-          colores: coloresPayload,
-          resistencia: resistenciaId,
-          detalle: detalleId,
+          material: materiales.join(', '),
+          colores: coloresGlobal,
+          resistencia: resistencias.length === 1 ? resistencias[0] : 'mixto',
+          detalle: detalles.length === 1 ? detalles[0] : 'mixto',
           cantidad: quote.unidades,
           entrega,
           direccion:
@@ -643,7 +721,6 @@ export function QuoteClient({
           metricas: {
             peso_g: quote.pesoG,
             tiempo_h: quote.tiempoH,
-            relleno_pct: quote.rellenoPct,
             dias_estimados: quote.diasEstimados,
             piezas: quote.piezas.length
           },
@@ -688,8 +765,9 @@ export function QuoteClient({
         </div>
         <h1>Calcula el precio de tu pieza</h1>
         <p className="qt-hero-desc">
-          Sube tus modelos 3D, elige material y color del muestrario real y obtén
-          una estimación al instante. Sin registros, sin esperas.
+          Sube tus modelos 3D, configura cada pieza con material y color del
+          muestrario real y obtén una estimación al instante. Sin registros, sin
+          esperas.
         </p>
       </section>
 
@@ -793,9 +871,17 @@ export function QuoteClient({
                       type="button"
                       className="qt-pieza-name"
                       title={p.name}
-                      onClick={() => setActiveId(p.id)}
+                      onClick={() => {
+                        setActiveId(p.id);
+                        setActivePart(0);
+                      }}
                     >
                       {p.name}
+                      <span className="qt-pieza-dots">
+                        {piezaColors(p).slice(0, 4).map((c) => (
+                          <span key={c.id} style={{ backgroundColor: c.hex }} />
+                        ))}
+                      </span>
                     </button>
                     <div className="qt-pieza-qty">
                       <button
@@ -833,182 +919,225 @@ export function QuoteClient({
             </div>
           )}
 
-          {/* material */}
-          <div className="qt-step">
-            <div className="qt-step-label">1 · Material</div>
-            <div className="qt-pills">
-              {filamentos.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  className={'qt-pill' + (filamento?.id === f.id ? ' active' : '')}
-                  onClick={() => changeMaterial(f)}
-                >
-                  {f.material}
-                </button>
-              ))}
+          {!piezas.length && (
+            <div className="qt-step">
+              <p className="qt-step-hint">
+                Sube una o varias piezas para configurar material, color y acabado
+                de cada una.
+              </p>
             </div>
-            {filamento?.descripcion && (
-              <p className="qt-step-hint">{filamento.descripcion}</p>
-            )}
-          </div>
+          )}
 
-          {/* color */}
-          <div className="qt-step">
-            <div className="qt-step-label">
-              2 · Color{partsMode ? ' por parte' : ''}
-            </div>
-
-            {partsMode && (
-              <div className="qt-parts">
-                {piezas[0].partNames.map((name, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className={'qt-part' + (activePart === i ? ' active' : '')}
-                    onClick={() => setActivePart(i)}
-                  >
-                    <span
-                      className="qt-part-swatch"
-                      style={{ backgroundColor: partColors[i]?.hex ?? 'transparent' }}
-                    />
-                    {name}
+          {activePieza && (
+            <>
+              {piezas.length > 1 && (
+                <div className="qt-configuring">
+                  <span>
+                    Configurando: <strong>{activePieza.name}</strong>
+                  </span>
+                  <button type="button" onClick={applyToAll}>
+                    Aplicar a todas
                   </button>
-                ))}
+                </div>
+              )}
+
+              {/* material */}
+              <div className="qt-step">
+                <div className="qt-step-label">1 · Material</div>
+                <div className="qt-pills">
+                  {filamentos.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={
+                        'qt-pill' + (activePieza.config.filamentoId === f.id ? ' active' : '')
+                      }
+                      onClick={() => changeMaterial(f)}
+                    >
+                      {f.material}
+                    </button>
+                  ))}
+                </div>
+                {activeFilamento?.descripcion && (
+                  <p className="qt-step-hint">{activeFilamento.descripcion}</p>
+                )}
               </div>
-            )}
 
-            <div className="qt-swatches">
-              {materialColors.map((c) => {
-                const isMain = partsMode
-                  ? partColors.some((x) => x?.id === c.id)
-                  : mainColor?.id === c.id;
-                const isExtra = !partsMode && multicolor && extraColors.some((x) => x.id === c.id);
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className={'qt-swatch' + (isMain || isExtra ? ' active' : '')}
-                    style={{ backgroundColor: c.hex }}
-                    title={c.nombre + (c.acabado ? ` · ${c.acabado}` : '')}
-                    onClick={() => pickColor(c)}
-                  />
-                );
-              })}
-            </div>
+              {/* color */}
+              <div className="qt-step">
+                <div className="qt-step-label">
+                  2 · Color{partsMode ? ' por parte' : ''}
+                </div>
 
-            {!partsMode && (
-              <>
-                <label className="qt-toggle">
-                  <input
-                    type="checkbox"
-                    checked={multicolor}
-                    onChange={(e) => {
-                      setMulticolor(e.target.checked);
-                      if (!e.target.checked) setExtraColors([]);
-                    }}
-                  />
-                  Quiero combinar varios colores
-                </label>
-                {multicolor && (
-                  <div className="qt-extra">
-                    <p className="qt-step-hint">
-                      Marca hasta 3 colores adicionales y cuéntanos en el mensaje
-                      cómo repartirlos. Si tu archivo es un 3MF por piezas, los
-                      colores se asignan automáticamente a cada parte.
-                    </p>
-                    <div className="qt-swatches">
-                      {materialColors
-                        .filter((c) => c.id !== mainColor?.id)
-                        .map((c) => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            className={
-                              'qt-swatch' +
-                              (extraColors.some((x) => x.id === c.id) ? ' active' : '')
-                            }
-                            style={{ backgroundColor: c.hex }}
-                            title={c.nombre}
-                            onClick={() => toggleExtraColor(c)}
-                          />
-                        ))}
-                    </div>
+                {partsMode && (
+                  <div className="qt-parts">
+                    {activePieza.partNames.map((name, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={'qt-part' + (activePart === i ? ' active' : '')}
+                        onClick={() => setActivePart(i)}
+                      >
+                        <span
+                          className="qt-part-swatch"
+                          style={{
+                            backgroundColor:
+                              activePieza.config.partColors[i]?.hex ?? 'transparent'
+                          }}
+                        />
+                        {name}
+                      </button>
+                    ))}
                   </div>
                 )}
-              </>
-            )}
 
-            {selectedColors.length > 0 && (
-              <div className="qt-chosen">
-                {selectedColors.map((c) => (
-                  <span key={c.id} className="qt-chosen-chip">
-                    <span style={{ backgroundColor: c.hex }} />
-                    {c.nombre}
-                  </span>
-                ))}
+                <div className="qt-swatches">
+                  {materialColors.map((c) => {
+                    const cfg = activePieza.config;
+                    const isMain = partsMode
+                      ? cfg.partColors.some((x) => x?.id === c.id)
+                      : cfg.mainColor?.id === c.id;
+                    const isExtra =
+                      !partsMode && cfg.multicolor && cfg.extraColors.some((x) => x.id === c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={'qt-swatch' + (isMain || isExtra ? ' active' : '')}
+                        style={{ backgroundColor: c.hex }}
+                        title={c.nombre + (c.acabado ? ` · ${c.acabado}` : '')}
+                        onClick={() => pickColor(c)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {!partsMode && (
+                  <>
+                    <label className="qt-toggle">
+                      <input
+                        type="checkbox"
+                        checked={activePieza.config.multicolor}
+                        onChange={(e) =>
+                          patchActiveConfig({
+                            multicolor: e.target.checked,
+                            extraColors: e.target.checked
+                              ? activePieza.config.extraColors
+                              : []
+                          })
+                        }
+                      />
+                      Quiero combinar varios colores en esta pieza
+                    </label>
+                    {activePieza.config.multicolor && (
+                      <div className="qt-extra">
+                        <p className="qt-step-hint">
+                          Marca hasta 3 colores adicionales y cuéntanos en el mensaje
+                          cómo repartirlos. Si tu archivo es un 3MF por piezas, los
+                          colores se asignan automáticamente a cada parte.
+                        </p>
+                        <div className="qt-swatches">
+                          {materialColors
+                            .filter((c) => c.id !== activePieza.config.mainColor?.id)
+                            .map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                className={
+                                  'qt-swatch' +
+                                  (activePieza.config.extraColors.some((x) => x.id === c.id)
+                                    ? ' active'
+                                    : '')
+                                }
+                                style={{ backgroundColor: c.hex }}
+                                title={c.nombre}
+                                onClick={() => toggleExtraColor(c)}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {activeColors.length > 0 && (
+                  <div className="qt-chosen">
+                    {activeColors.map((c) => (
+                      <span key={c.id} className="qt-chosen-chip">
+                        <span style={{ backgroundColor: c.hex }} />
+                        {c.nombre}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* resistencia */}
-          <div className="qt-step">
-            <div className="qt-step-label">3 · ¿Cómo de resistente la necesitas?</div>
-            <div className="qt-cards">
-              {settings.resistencia.map((r) => (
+              {/* resistencia */}
+              <div className="qt-step">
+                <div className="qt-step-label">3 · ¿Cómo de resistente la necesitas?</div>
+                <div className="qt-cards">
+                  {settings.resistencia.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      className={
+                        'qt-card' + (activePieza.config.resistenciaId === r.id ? ' active' : '')
+                      }
+                      onClick={() => patchActiveConfig({ resistenciaId: r.id })}
+                    >
+                      <strong>{r.nombre}</strong>
+                      <span>{r.descripcion}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* detalle */}
+              <div className="qt-step">
+                <div className="qt-step-label">4 · ¿Cuánto detalle?</div>
+                <div className="qt-cards">
+                  {settings.detalle.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className={
+                        'qt-card' + (activePieza.config.detalleId === d.id ? ' active' : '')
+                      }
+                      onClick={() => patchActiveConfig({ detalleId: d.id })}
+                    >
+                      <strong>{d.nombre}</strong>
+                      <span>{d.descripcion}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* entrega — global for the whole order */}
+          {piezas.length > 0 && (
+            <div className="qt-step">
+              <div className="qt-step-label">5 · Entrega del pedido</div>
+              <div className="qt-cards">
                 <button
-                  key={r.id}
                   type="button"
-                  className={'qt-card' + (resistenciaId === r.id ? ' active' : '')}
-                  onClick={() => setResistenciaId(r.id)}
+                  className={'qt-card' + (entrega === 'recogida' ? ' active' : '')}
+                  onClick={() => setEntrega('recogida')}
                 >
-                  <strong>{r.nombre}</strong>
-                  <span>{r.descripcion}</span>
+                  <strong>Recogida en Salamanca</strong>
+                  <span>Gratis · Plza. Barrio Vidal</span>
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* detalle */}
-          <div className="qt-step">
-            <div className="qt-step-label">4 · ¿Cuánto detalle?</div>
-            <div className="qt-cards">
-              {settings.detalle.map((d) => (
                 <button
-                  key={d.id}
                   type="button"
-                  className={'qt-card' + (detalleId === d.id ? ' active' : '')}
-                  onClick={() => setDetalleId(d.id)}
+                  className={'qt-card' + (entrega === 'envio' ? ' active' : '')}
+                  onClick={() => setEntrega('envio')}
                 >
-                  <strong>{d.nombre}</strong>
-                  <span>{d.descripcion}</span>
+                  <strong>Envío nacional</strong>
+                  <span>Coste a convenir — te lo confirmamos junto al presupuesto</span>
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
-
-          {/* entrega */}
-          <div className="qt-step">
-            <div className="qt-step-label">5 · Entrega</div>
-            <div className="qt-cards">
-              <button
-                type="button"
-                className={'qt-card' + (entrega === 'recogida' ? ' active' : '')}
-                onClick={() => setEntrega('recogida')}
-              >
-                <strong>Recogida en Salamanca</strong>
-                <span>Gratis · Plza. Barrio Vidal</span>
-              </button>
-              <button
-                type="button"
-                className={'qt-card' + (entrega === 'envio' ? ' active' : '')}
-                onClick={() => setEntrega('envio')}
-              >
-                <strong>Envío nacional</strong>
-                <span>Coste a convenir — te lo confirmamos junto al presupuesto</span>
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* breakdown */}
           <div className="qt-total">
@@ -1047,9 +1176,8 @@ export function QuoteClient({
                   </p>
                 )}
                 <p className="qt-total-note">
-                  Estimación orientativa con relleno al {quote.rellenoPct}% y ~
-                  {quote.tiempoH.toFixed(1)} h de impresión en total. Te confirmamos
-                  el precio final al revisar las piezas.
+                  Estimación orientativa con ~{quote.tiempoH.toFixed(1)} h de impresión
+                  en total. Te confirmamos el precio final al revisar las piezas.
                 </p>
               </>
             )}
@@ -1057,14 +1185,22 @@ export function QuoteClient({
 
           {/* request */}
           {piezas.length > 0 && quote && status.kind !== 'ok' && !showForm && (
-            <button
-              type="button"
-              className="btn-primary qt-cta"
-              disabled={selectedColors.length === 0}
-              onClick={() => setShowForm(true)}
-            >
-              Solicitar este presupuesto
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn-primary qt-cta"
+                disabled={piezasSinColor.length > 0}
+                onClick={() => setShowForm(true)}
+              >
+                Solicitar este presupuesto
+              </button>
+              {piezasSinColor.length > 0 && (
+                <p className="qt-step-hint">
+                  Falta elegir color en:{' '}
+                  {piezasSinColor.map((p) => p.name).join(', ')}.
+                </p>
+              )}
+            </>
           )}
 
           {showForm && status.kind !== 'ok' && (

@@ -107,6 +107,11 @@ export type QuoteArchivo = {
   tamano_original: number;
   comprimido: boolean;
   cantidad: number;
+  /** Per-piece configuration (quotes created before v3 may lack these). */
+  material?: string;
+  colores?: QuoteColorSnapshot[];
+  resistencia?: string;
+  detalle?: string;
   metricas: Record<string, unknown>;
 };
 

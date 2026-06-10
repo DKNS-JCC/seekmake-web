@@ -146,6 +146,18 @@ Deno.serve(async (req: Request) => {
       tamano_original: Number(a?.tamano_original ?? 0) || 0,
       comprimido:      Boolean(a?.comprimido),
       cantidad:        Math.max(1, Math.min(999, Number(a?.cantidad) || 1)),
+      // per-piece configuration
+      material:        String(a?.material ?? 'PLA').slice(0, 50),
+      resistencia:     String(a?.resistencia ?? 'estandar').slice(0, 50),
+      detalle:         String(a?.detalle ?? 'estandar').slice(0, 50),
+      colores:         (Array.isArray(a?.colores) ? a.colores : [])
+        .slice(0, 8)
+        .map((c: any) => ({
+          nombre:  String(c?.nombre  ?? '').slice(0, 100),
+          hex:     String(c?.hex     ?? '').slice(0, 9),
+          acabado: c?.acabado ? String(c.acabado).slice(0, 50) : null,
+          parte:   String(c?.parte   ?? '').slice(0, 100)
+        })),
       metricas:        typeof a?.metricas === 'object' && a.metricas ? a.metricas : {}
     }))
     .filter((a: any) => {
@@ -164,7 +176,9 @@ Deno.serve(async (req: Request) => {
   }
   if (!material)                    return json({ error: 'Material requerido.' }, 400, allowedOrigin);
   if (!archivos.length)             return json({ error: 'Ningún archivo de modelo válido.' }, 400, allowedOrigin);
-  if (!colores.length)              return json({ error: 'Elige al menos un color.' }, 400, allowedOrigin);
+  if (archivos.some((a: any) => !a.colores.length)) {
+    return json({ error: 'Cada pieza necesita al menos un color.' }, 400, allowedOrigin);
+  }
   if (entrega === 'envio' && (!direccion.calle || !direccion.ciudad || !direccion.cp)) {
     return json({ error: 'Para envío necesitamos la dirección completa.' }, 400, allowedOrigin);
   }
@@ -231,6 +245,10 @@ Deno.serve(async (req: Request) => {
       .join(', ');
 
     const m: any = metricas;
+    const coloresDe = (a: any) =>
+      (a.colores ?? [])
+        .map((c: any) => c.nombre + (c.parte ? ` (${c.parte})` : ''))
+        .join(', ');
     const piezasTxt = archivos
       .map((a: any) => {
         const am = a.metricas ?? {};
@@ -240,6 +258,8 @@ Deno.serve(async (req: Request) => {
         return (
           `  • ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''}` +
           ` (${(a.tamano / 1024 / 1024).toFixed(1)} MB${a.comprimido ? ' gz' : ''})\n` +
+          `    ${a.material} — ${coloresDe(a)}\n` +
+          `    ${a.resistencia}${am.relleno_pct != null ? ` (${am.relleno_pct}%)` : ''} · ${a.detalle}\n` +
           `    ${dims}${am.volumen_cm3 ?? '—'} cm³ · ~${am.peso_g ?? '—'} g\n` +
           `    ${a.url}`
         );
@@ -256,6 +276,7 @@ Deno.serve(async (req: Request) => {
       <a href="${escapeHtml(a.url)}" style="color:#0EA5E9;font-weight:600;text-decoration:none;">${escapeHtml(a.nombre)}</a>
       ${a.cantidad > 1 ? `<strong>× ${a.cantidad}</strong>` : ''}
       <span style="color:#999;font-family:monospace;font-size:11px;margin-left:8px;">${(a.tamano / 1024 / 1024).toFixed(1)} MB${a.comprimido ? ' (gzip)' : ''}</span>
+      <div style="color:#444;font-size:12px;margin-top:2px;"><strong>${escapeHtml(a.material)}</strong> — ${escapeHtml(coloresDe(a))} · ${escapeHtml(a.resistencia)}${am.relleno_pct != null ? ` (${am.relleno_pct}%)` : ''} · ${escapeHtml(a.detalle)}</div>
       <div style="color:#666;font-size:12px;margin-top:2px;">${dims}${am.volumen_cm3 ?? '—'} cm³ · ~${am.peso_g ?? '—'} g</div>
     </li>`;
       })
@@ -277,10 +298,7 @@ ${piezasTxt}
 
 Total:      ~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión
 
-Material:   ${material} — ${coloresTxt}
-Resistencia: ${resistencia} (relleno ${m?.relleno_pct ?? '—'}%)
-Detalle:    ${detalle}
-Cantidad:   ${cantidad}
+Unidades:   ${cantidad}
 Entrega:    ${entregaTxt}
 Plazo est.: ~${m?.dias_estimados ?? '—'} días laborables
 
@@ -306,8 +324,7 @@ IP ${ip} · ${new Date().toISOString()}
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Email</td><td><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Teléfono</td><td>${telefono ? escapeHtml(telefono) : '<em style="color:#999">no facilitado</em>'}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Total</td><td>~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Material</td><td>${escapeHtml(material)} — ${escapeHtml(coloresTxt)}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Ajustes</td><td>${escapeHtml(resistencia)} · ${escapeHtml(detalle)} · × ${cantidad}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Unidades</td><td>× ${cantidad}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${escapeHtml(entregaTxt)}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables</td></tr>
   </table>
@@ -341,9 +358,7 @@ Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
     ${codigo}
 
 Resumen:
-${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''}`).join('\n')}
-  Material:     ${material} — ${coloresTxt}
-  Acabado:      ${resistencia} · ${detalle}
+${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${a.material} (${coloresDe(a)})`).join('\n')}
   Entrega:      ${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}
   Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}
 
@@ -366,9 +381,7 @@ https://www.impresion3dcc.com/presupuesto introduciendo tu código.
     <span style="display:inline-block;padding:10px 28px;background:#f0f9ff;border:1px solid #0EA5E9;border-radius:6px;font-family:monospace;font-size:22px;font-weight:700;color:#0EA5E9;letter-spacing:0.06em;">${escapeHtml(codigo)}</span>
   </div>
   <table style="width:100%;border-collapse:collapse;font-size:14px;">
-    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''}`).join('<br/>')}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Material</td><td>${escapeHtml(material)} — ${escapeHtml(coloresTxt)}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Acabado</td><td>${escapeHtml(resistencia)} · ${escapeHtml(detalle)}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${escapeHtml(a.material)} (${escapeHtml(coloresDe(a))})`).join('<br/>')}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}</td></tr>
     <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioTotal.toFixed(2)} €${entrega === 'envio' ? ' <span style="font-size:11px;color:#999;font-weight:400;">(sin envío)</span>' : ''}</td></tr>

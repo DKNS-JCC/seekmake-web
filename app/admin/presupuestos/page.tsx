@@ -650,6 +650,49 @@ export default function AdminPresupuestos() {
                           ⬇ Descargar
                         </button>
                       </div>
+                      {a.material && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            flexWrap: 'wrap',
+                            fontSize: 12,
+                            marginTop: 5
+                          }}
+                        >
+                          <strong>{a.material}</strong>
+                          {(a.colores ?? []).map((c, j) => (
+                            <span
+                              key={j}
+                              title={c.nombre + (c.parte ? ` → ${c.parte}` : '')}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '1px 7px',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--r)'
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: 2,
+                                  background: c.hex,
+                                  border: '1px solid var(--border-h)'
+                                }}
+                              />
+                              {c.nombre}
+                            </span>
+                          ))}
+                          <span style={{ color: 'var(--muted)' }}>
+                            · {a.resistencia}
+                            {am.relleno_pct != null && ` (${am.relleno_pct}%)`} · {a.detalle}
+                          </span>
+                        </div>
+                      )}
                       <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>
                         {am.bbox_mm
                           ? `${am.bbox_mm.x} × ${am.bbox_mm.z} × ${am.bbox_mm.y} mm · `
