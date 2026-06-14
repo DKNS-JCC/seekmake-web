@@ -41,7 +41,7 @@ export default function TerminosPage() {
               letterSpacing: '0.1em'
             }}
           >
-            Última actualización: 19 de mayo de 2026
+            Última actualización: 14 de junio de 2026
           </p>
 
           <div className="terms-card">
@@ -338,12 +338,20 @@ export default function TerminosPage() {
                 encargo y datos económicos relativos al pago.
               </li>
               <li>
-                <strong>Destinatarios:</strong> los datos no se comunican a
-                terceros salvo a la empresa de mensajería seleccionada para el
-                envío y a los proveedores de pago, en la medida estrictamente
-                necesaria para la prestación del servicio. No se realizan
-                transferencias internacionales de datos fuera del Espacio
-                Económico Europeo.
+                <strong>Destinatarios:</strong> los datos que facilitas para tu
+                encargo no se comunican a terceros salvo a la empresa de
+                mensajería seleccionada para el envío y a los proveedores de
+                pago, en la medida estrictamente necesaria. El sitio se apoya
+                además en <strong>Supabase</strong> como proveedor de
+                alojamiento de la base de datos, que actúa como encargado del
+                tratamiento. Con carácter independiente, el sitio utiliza{' '}
+                <strong>Google AdSense</strong> con fines publicitarios, cuyas
+                cookies únicamente se activan si las aceptas en el banner de
+                cookies; en ese caso Google puede tratar datos de navegación y
+                realizar transferencias internacionales amparadas en las
+                Cláusulas Contractuales Tipo y en el marco EU-US Data Privacy
+                Framework. El detalle de estos servicios figura en la{' '}
+                <Link href="/privacidad">Política de Privacidad</Link>.
               </li>
               <li>
                 <strong>Plazo de conservación:</strong> los datos se
@@ -370,15 +378,23 @@ export default function TerminosPage() {
               </li>
             </ul>
 
-            <h2>13. Servicios de terceros (presupuesto online)</h2>
+            <h2>13. Servicios de terceros</h2>
             <p>
-              El sistema de presupuestos disponible en la web puede estar
-              prestado por una plataforma externa. El uso de dicha herramienta
-              se rige también por los términos y la política de privacidad de
-              su proveedor, que se facilitarán o enlazarán al cliente antes de
-              utilizarla. El titular de este sitio web no es responsable de las
-              prácticas de tratamiento de datos ni del funcionamiento técnico de
-              dichos servicios externos.
+              El sistema de presupuestos («tasador») es una herramienta propia
+              de este sitio web. Los datos que introduces (archivos del modelo,
+              parámetros del encargo y datos de contacto) se procesan para
+              calcular el presupuesto y gestionar el pedido, y se alojan en{' '}
+              <strong>Supabase</strong>, que actúa como encargado del
+              tratamiento por cuenta del titular.
+            </p>
+            <p>
+              El sitio utiliza además <strong>Google AdSense</strong> para
+              mostrar publicidad. Las cookies publicitarias solo se cargan si
+              las aceptas en el banner de cookies; puedes rechazarlas o retirar
+              tu consentimiento en cualquier momento. El tratamiento de datos
+              por parte de Google, incluidas las posibles transferencias
+              internacionales, se detalla en la{' '}
+              <Link href="/privacidad">Política de Privacidad</Link>.
             </p>
 
             <h2>14. Modificación de los Términos</h2>
