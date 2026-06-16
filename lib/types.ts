@@ -184,6 +184,29 @@ export type QuoteSettingsRow = {
   updated_at: string;
 };
 
+export type EnvioEstado =
+  | 'pendiente' | 'etiqueta' | 'en_transito' | 'entregado' | 'incidencia' | 'cancelado';
+
+export type Envio = {
+  id: string;
+  quote_id: string | null;
+  proveedor: string;
+  sendcloud_id: number | null;
+  metodo: string | null;
+  carrier: string | null;
+  cp_destino: string | null;
+  pais: string;
+  peso_g: number | null;
+  coste: number | null;
+  coste_carrier: number | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  estado: EnvioEstado;
+  estado_carrier: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -261,6 +284,23 @@ export type Database = {
         Insert: Omit<QuoteSettingsRow, 'updated_at'> & { updated_at?: string };
         Update: Partial<QuoteSettingsRow>;
         Relationships: [];
+      };
+      envios: {
+        Row: Envio;
+        Insert: Omit<Envio, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Envio>;
+        Relationships: [
+          {
+            foreignKeyName: 'envios_quote_id_fkey';
+            columns: ['quote_id'];
+            referencedRelation: 'quotes';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       trabajos: {
         Row: Trabajo;

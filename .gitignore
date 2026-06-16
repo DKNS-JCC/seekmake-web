@@ -28,3 +28,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Envíos (CLI Sendcloud)
+etiquetas/
+pedido*.json

@@ -12,6 +12,7 @@ import { downloadQuoteFile } from '@/lib/quote/compress';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
+import { EnvioPanel } from '../_components/EnvioPanel';
 import './presupuestos.css';
 
 const ESTADOS: { id: QuoteEstado; label: string }[] = [
@@ -614,6 +615,8 @@ export default function AdminPresupuestos() {
                 )}
               </div>
             </Field>
+
+            {open.entrega === 'envio' && <EnvioPanel quote={open} />}
 
             <Field label={`Piezas (${(open.archivos ?? []).length})`}>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>

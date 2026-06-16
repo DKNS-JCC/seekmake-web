@@ -1,0 +1,12 @@
+{
+  "name": "Nombre Apellido",
+  "address": "Calle Ejemplo",
+  "house_number": "12",
+  "city": "Madrid",
+  "postal_code": "28001",
+  "country": "ES",
+  "telephone": "600000000",
+  "email": "cliente@ejemplo.com",
+  "weight": 0.25,
+  "order_number": "3dcc-0001"
+}
