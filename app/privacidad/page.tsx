@@ -41,7 +41,7 @@ export default function PrivacidadPage() {
               letterSpacing: '0.1em'
             }}
           >
-            Última actualización: 19 de mayo de 2026
+            Última actualización: 14 de junio de 2026
           </p>
 
           <div className="terms-card">

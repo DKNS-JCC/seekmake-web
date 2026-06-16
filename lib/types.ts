@@ -84,9 +84,36 @@ export type Producto = {
 
 // Tasador (instant quote)
 
-export type QuoteEstado = 'nuevo' | 'revisado' | 'aceptado' | 'rechazado' | 'completado';
+export type QuoteEstado =
+  | 'nuevo'
+  | 'revisado'
+  | 'aceptado'
+  | 'imprimiendo'
+  | 'listo'
+  | 'entregado'
+  | 'rechazado';
+
+export type QuotePago = 'pendiente' | 'adelanto' | 'pagado';
 
 export type QuoteEntrega = 'recogida' | 'envio';
+
+export type QuoteArchivo = {
+  nombre: string;
+  url: string;
+  /** Storage path inside the quote-uploads bucket (used by the cleanup job). */
+  path: string;
+  /** Bytes actually stored (compressed when `comprimido`). */
+  tamano: number;
+  tamano_original: number;
+  comprimido: boolean;
+  cantidad: number;
+  /** Per-piece configuration (quotes created before v3 may lack these). */
+  material?: string;
+  colores?: QuoteColorSnapshot[];
+  resistencia?: string;
+  detalle?: string;
+  metricas: Record<string, unknown>;
+};
 
 export type QuoteDireccion = {
   calle?: string;
@@ -111,9 +138,7 @@ export type Quote = {
   email: string;
   telefono: string;
   mensaje: string;
-  archivo_nombre: string;
-  archivo_url: string;
-  archivo_tamano: number;
+  archivos: QuoteArchivo[];
   material: string;
   colores: QuoteColorSnapshot[];
   resistencia: string;
@@ -124,14 +149,61 @@ export type Quote = {
   metricas: Record<string, unknown>;
   desglose: Record<string, unknown>;
   precio_total: number;
+  precio_final: number | null;
+  pago: QuotePago;
+  importe_pagado: number;
+  archivado: boolean;
   notas_admin: string;
+  /** Secret accept-link token (emailed to the customer). */
+  acepta_token?: string;
+  aceptado_at: string | null;
+  valido_hasta: string;
+  /** SHA-256 of the requester IP — rate limiting only. */
+  ip_hash?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type QuoteEventoTipo =
+  | 'pieza_anadida'
+  | 'solicitud_enviada'
+  | 'pdf_descargado'
+  | 'aceptado';
+
+export type QuoteEvento = {
+  id: number;
+  session_id: string;
+  evento: QuoteEventoTipo;
+  payload: Record<string, unknown>;
+  created_at: string;
 };
 
 export type QuoteSettingsRow = {
   id: number;
   config: Record<string, unknown>;
+  updated_at: string;
+};
+
+export type EnvioEstado =
+  | 'pendiente' | 'etiqueta' | 'en_transito' | 'entregado' | 'incidencia' | 'cancelado';
+
+export type Envio = {
+  id: string;
+  quote_id: string | null;
+  proveedor: string;
+  sendcloud_id: number | null;
+  metodo: string | null;
+  carrier: string | null;
+  cp_destino: string | null;
+  pais: string;
+  peso_g: number | null;
+  coste: number | null;
+  coste_carrier: number | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  estado: EnvioEstado;
+  estado_carrier: string | null;
+  created_at: string;
   updated_at: string;
 };
 
@@ -179,13 +251,32 @@ export type Database = {
       };
       quotes: {
         Row: Quote;
-        Insert: Omit<Quote, 'id' | 'codigo' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<
+          Quote,
+          | 'id' | 'codigo' | 'created_at' | 'updated_at'
+          | 'pago' | 'importe_pagado' | 'precio_final' | 'archivado'
+          | 'aceptado_at' | 'valido_hasta'
+        > & {
           id?: string;
           codigo?: string;
+          pago?: QuotePago;
+          importe_pagado?: number;
+          precio_final?: number | null;
+          archivado?: boolean;
+          aceptado_at?: string | null;
+          valido_hasta?: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Quote>;
+        Relationships: [];
+      };
+      quote_events: {
+        Row: QuoteEvento;
+        Insert: Omit<QuoteEvento, 'id' | 'created_at'> & {
+          created_at?: string;
+        };
+        Update: Partial<QuoteEvento>;
         Relationships: [];
       };
       quote_settings: {
@@ -193,6 +284,23 @@ export type Database = {
         Insert: Omit<QuoteSettingsRow, 'updated_at'> & { updated_at?: string };
         Update: Partial<QuoteSettingsRow>;
         Relationships: [];
+      };
+      envios: {
+        Row: Envio;
+        Insert: Omit<Envio, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Envio>;
+        Relationships: [
+          {
+            foreignKeyName: 'envios_quote_id_fkey';
+            columns: ['quote_id'];
+            referencedRelation: 'quotes';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       trabajos: {
         Row: Trabajo;
@@ -213,12 +321,21 @@ export type Database = {
         Returns: {
           codigo: string;
           estado: QuoteEstado;
+          pago: QuotePago;
+          entrega: QuoteEntrega;
           material: string;
           cantidad: number;
           precio_total: number;
+          precio_final: number | null;
+          valido_hasta: string;
+          aceptado_at: string | null;
           created_at: string;
           updated_at: string;
         }[];
+      };
+      accept_quote: {
+        Args: { p_codigo: string; p_token: string };
+        Returns: { ok: boolean; estado: string | null }[];
       };
       vote_trabajo: {
         Args: { p_id: string; p_voter_id: string; p_target: string };

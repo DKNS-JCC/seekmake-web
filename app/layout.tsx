@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import { Providers } from './providers';
+import { CookieConsent } from '../components/CookieConsent';
 import './globals.css';
 
 // Default metadata — pages override what they need.
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <Providers>{children}</Providers>
+        <CookieConsent />
       </body>
     </html>
   );

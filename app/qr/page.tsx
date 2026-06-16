@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { QrFadeOnScroll } from './QrFadeOnScroll';
+import { QrPedidoBanner } from './QrPedidoBanner';
 import './qr.css';
 
 export const metadata: Metadata = {
@@ -88,6 +89,38 @@ export default function QrPage() {
               </div>
             </div>
           </section>
+
+          {/* Order-scan greeting (only with ?de=pedido or ?codigo=...) */}
+          <QrPedidoBanner />
+
+          {/* Primary actions — what a scanner actually came to do */}
+          <div className="qr-cta-row">
+            <Link href="/instant-quote" className="qr-cta qr-cta--primary qr-fade">
+              <div className="qr-cta-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width={22} height={22}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+              </div>
+              <div className="qr-cta-body">
+                <div className="qr-cta-title">Calcula tu precio al instante</div>
+                <div className="qr-cta-sub">Sube tu pieza 3D y mira cuánto cuesta — sin registros</div>
+              </div>
+              <Chevron size={18} />
+            </Link>
+            <Link href="/presupuesto" className="qr-cta qr-fade">
+              <div className="qr-cta-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width={22} height={22}>
+                  <circle cx="12" cy="12" r="9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 3" />
+                </svg>
+              </div>
+              <div className="qr-cta-body">
+                <div className="qr-cta-title">Seguir mi pedido</div>
+                <div className="qr-cta-sub">Consulta el estado con tu código Q-…</div>
+              </div>
+              <Chevron size={18} />
+            </Link>
+          </div>
 
           {/* Review CTA */}
           <a
@@ -196,18 +229,18 @@ export default function QrPage() {
               <Chevron />
             </a>
 
-            <Link href="/instant-quote" className="qr-link qr-fade">
+            <a href="/3dcc.vcf" download="3DCC-Salamanca.vcf" className="qr-link qr-fade">
               <div className="qr-link-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
                 </svg>
               </div>
               <div className="qr-link-body">
-                <div className="qr-link-title">Calculadora de Precio</div>
-                <div className="qr-link-desc">Presupuesto al instante</div>
+                <div className="qr-link-title">Guardar contacto</div>
+                <div className="qr-link-desc">Añade 3DCC a tu agenda en un toque</div>
               </div>
               <Chevron />
-            </Link>
+            </a>
           </div>
 
           {/* Gallery */}
@@ -223,6 +256,10 @@ export default function QrPage() {
               <img src="/images/examples/repuesto.png" alt="Repuestos 3D" loading="lazy" />
             </div>
           </div>
+          <Link href="/#trabajos" className="qr-gallery-more qr-fade">
+            Ver todos los trabajos
+            <Chevron size={14} />
+          </Link>
 
           {/* Location */}
           <div className="qr-label qr-fade">Ubicación</div>

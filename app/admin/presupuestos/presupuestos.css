@@ -1,0 +1,115 @@
+/* Admin presupuestos — responsive table that collapses to cards on mobile. */
+
+.pq-toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.pq-search {
+    flex: 1; min-width: 200px;
+    padding: 9px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text);
+    font-size: 13px; font-family: inherit;
+    outline: none;
+}
+.pq-search:focus { border-color: var(--accent); }
+.pq-sort {
+    padding: 9px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text); font-size: 12px; font-family: inherit;
+}
+
+.pq-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.pq-filter {
+    padding: 6px 12px;
+    border-radius: var(--r);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer;
+}
+.pq-filter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pq-filter span { opacity: 0.7; margin-left: 5px; }
+
+.pq-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pq-table thead tr {
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted);
+}
+.pq-table th { padding: 8px 10px; }
+.pq-table td { padding: 10px; }
+.pq-table tbody tr {
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+}
+.pq-table tbody tr:hover { background: var(--surface); }
+.pq-table tr.archived { opacity: 0.5; }
+
+.pq-codigo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; white-space: nowrap; }
+.pq-total { font-family: 'IBM Plex Mono', monospace; text-align: right; white-space: nowrap; }
+.pq-pieza-cell {
+    max-width: 200px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.pq-estado-select {
+    padding: 5px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer;
+}
+
+.pq-pago {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: var(--r);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid;
+}
+.pq-pago--pendiente { color: #ef4444; border-color: #ef4444; }
+.pq-pago--adelanto  { color: #eab308; border-color: #eab308; }
+.pq-pago--pagado    { color: #10b981; border-color: #10b981; }
+
+.pq-cards { display: none; }
+
+/* ── mobile: cards instead of table ── */
+@media (max-width: 760px) {
+    .pq-table { display: none; }
+    .pq-cards { display: flex; flex-direction: column; gap: 10px; }
+    .pq-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        padding: 14px;
+        cursor: pointer;
+    }
+    .pq-card.archived { opacity: 0.5; }
+    .pq-card-top {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 8px; margin-bottom: 6px;
+    }
+    .pq-card-mid {
+        font-size: 13px; color: var(--text);
+        margin-bottom: 8px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .pq-card-bottom {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 8px; flex-wrap: wrap;
+    }
+    .pq-card-fecha { font-size: 11px; color: var(--muted); }
+}

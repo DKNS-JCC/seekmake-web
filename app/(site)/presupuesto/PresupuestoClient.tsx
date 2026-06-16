@@ -1,29 +1,44 @@
 'use client';
 
 // Public quote-status lookup. The code (Q-YYYY-NNNN) acts like a parcel
-// tracking number: the RPC only returns non-personal fields.
+// tracking number — the RPC only returns non-personal fields.
+// With ?codigo=...&token=... (the personal link from the confirmation email)
+// the customer can also ACCEPT a reviewed quote — the token authorises it.
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { QuoteEstado } from '@/lib/types';
+import type { QuoteEntrega, QuoteEstado, QuotePago } from '@/lib/types';
 import './presupuesto.css';
 
 interface StatusRow {
   codigo: string;
   estado: QuoteEstado;
+  pago: QuotePago;
+  entrega: QuoteEntrega;
   material: string;
   cantidad: number;
   precio_total: number;
+  precio_final: number | null;
+  valido_hasta: string;
+  aceptado_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
 const PASOS: { id: QuoteEstado; label: string; desc: string }[] = [
   { id: 'nuevo', label: 'Recibido', desc: 'Tu solicitud está en cola de revisión' },
-  { id: 'revisado', label: 'Revisado', desc: 'Hemos comprobado la pieza y el precio' },
-  { id: 'aceptado', label: 'En producción', desc: 'Tu pieza se está imprimiendo' },
-  { id: 'completado', label: 'Completado', desc: 'Lista para recoger o enviada' }
+  { id: 'revisado', label: 'Revisado', desc: 'Pieza comprobada y precio confirmado' },
+  { id: 'aceptado', label: 'En cola', desc: 'Pedido confirmado, esperando impresora' },
+  { id: 'imprimiendo', label: 'Imprimiendo', desc: 'Tus piezas están en la impresora' },
+  { id: 'listo', label: 'Listo', desc: 'Terminado, listo para recoger o enviar' },
+  { id: 'entregado', label: 'Entregado', desc: '¡Disfrútalo!' }
 ];
+
+const PAGO_LABEL: Record<QuotePago, string> = {
+  pendiente: 'Pago pendiente',
+  adelanto: 'Adelanto recibido',
+  pagado: 'Pagado — gracias'
+};
 
 function fecha(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', {
@@ -39,15 +54,18 @@ export function PresupuestoClient() {
   const [result, setResult] = useState<StatusRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Accept-link token from the confirmation email (?codigo=..&token=..).
+  const [token, setToken] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
 
-  async function lookup(e: FormEvent) {
-    e.preventDefault();
-    const code = codigo.trim().toUpperCase();
+  async function doLookup(code: string) {
     if (!code) return;
     setLoading(true);
     setError(null);
     setNotFound(false);
     setResult(null);
+    setAcceptError(null);
     try {
       const { data, error: err } = await createClient().rpc('get_quote_status', {
         p_codigo: code
@@ -66,10 +84,63 @@ export function PresupuestoClient() {
     }
   }
 
+  function lookup(e: FormEvent) {
+    e.preventDefault();
+    void doLookup(codigo.trim().toUpperCase());
+  }
+
+  // Deep link from the confirmation email: autofill and look up directly.
+  // (window.location instead of useSearchParams — static export, no Suspense.)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get('codigo')?.trim().toUpperCase() ?? '';
+    const t = params.get('token')?.trim() || null;
+    if (t) setToken(t);
+    if (c) {
+      setCodigo(c);
+      void doLookup(c);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function acceptQuote() {
+    if (!result || !token) return;
+    setAccepting(true);
+    setAcceptError(null);
+    try {
+      const { data, error: err } = await createClient().rpc('accept_quote', {
+        p_codigo: result.codigo,
+        p_token: token
+      });
+      const row = data?.[0];
+      if (err || !row?.ok) {
+        setAcceptError(
+          'No se pudo aceptar el presupuesto. Puede que haya caducado o que el enlace no sea válido — escríbenos por WhatsApp y lo resolvemos.'
+        );
+      } else {
+        setResult({ ...result, estado: 'aceptado' });
+        void createClient()
+          .from('quote_events')
+          .insert({ session_id: '', evento: 'aceptado', payload: { codigo: result.codigo } })
+          .then(() => undefined, () => undefined);
+      }
+    } catch {
+      setAcceptError('Error de red. Inténtalo de nuevo.');
+    } finally {
+      setAccepting(false);
+    }
+  }
+
   const pasoIdx = result
     ? Math.max(0, PASOS.findIndex((p) => p.id === result.estado))
     : -1;
   const rechazado = result?.estado === 'rechazado';
+  const expirado =
+    !!result &&
+    (result.estado === 'nuevo' || result.estado === 'revisado') &&
+    new Date(result.valido_hasta).getTime() < Date.now();
+  // Accepting needs the personal token AND a reviewed, unexpired quote.
+  const puedeAceptar = !!result && !!token && result.estado === 'revisado' && !expirado;
 
   return (
     <div className="page-content pr-page">
@@ -148,10 +219,50 @@ export function PresupuestoClient() {
               </ol>
             )}
 
+            {puedeAceptar && (
+              <div className="pr-accept" style={{ margin: '20px 0', textAlign: 'center' }}>
+                <p style={{ marginBottom: 10 }}>
+                  Hemos revisado tu pieza y el precio está confirmado
+                  {result.precio_final != null
+                    ? `: ${Number(result.precio_final).toFixed(2)} €`
+                    : ''}
+                  . ¿Seguimos adelante?
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={accepting}
+                  onClick={acceptQuote}
+                >
+                  {accepting ? 'Aceptando…' : 'Aceptar presupuesto'}
+                </button>
+                {acceptError && <p className="pr-msg err" style={{ marginTop: 10 }}>{acceptError}</p>}
+              </div>
+            )}
+
+            {expirado && (
+              <p className="pr-msg" style={{ margin: '16px 0' }}>
+                Esta estimación caducó el {fecha(result.valido_hasta)}. Los precios
+                pueden haber cambiado — vuelve a calcularla o escríbenos y la
+                renovamos.
+              </p>
+            )}
+
             <div className="pr-meta">
               <span>{result.material}</span>
               <span>× {result.cantidad}</span>
-              <span>{Number(result.precio_total).toFixed(2)} € estimados</span>
+              <span>
+                {result.precio_final != null
+                  ? `${Number(result.precio_final).toFixed(2)} € confirmados`
+                  : `${Number(result.precio_total).toFixed(2)} € estimados`}
+              </span>
+              <span>{result.entrega === 'envio' ? 'Envío nacional' : 'Recogida'}</span>
+              <span className={'pr-pago pr-pago--' + result.pago}>
+                {PAGO_LABEL[result.pago] ?? result.pago}
+              </span>
+              {(result.estado === 'nuevo' || result.estado === 'revisado') && !expirado && (
+                <span>Válido hasta el {fecha(result.valido_hasta)}</span>
+              )}
               <span>Actualizado el {fecha(result.updated_at)}</span>
             </div>
 

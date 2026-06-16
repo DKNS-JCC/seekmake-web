@@ -1,6 +1,7 @@
 import { createClient as createServerClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import type { Database } from '@/lib/types';
+import { buildSafe } from '@/lib/supabase/buildSafe';
 import { MuestrarioClient } from './MuestrarioClient';
 
 export const metadata: Metadata = {
@@ -18,12 +19,16 @@ async function loadData() {
   if (!url || !key) {
     return { filamentos: [], colores: [] };
   }
-  const supabase = createServerClient<Database>(url, key);
-  const [{ data: filamentos }, { data: colores }] = await Promise.all([
-    supabase.from('filamentos').select('*').order('orden'),
-    supabase.from('colores').select('*').order('orden')
-  ]);
-  return { filamentos: filamentos ?? [], colores: colores ?? [] };
+  return buildSafe(async () => {
+    const supabase = createServerClient<Database>(url, key);
+    const [{ data: filamentos, error: e1 }, { data: colores, error: e2 }] = await Promise.all([
+      supabase.from('filamentos').select('*').order('orden'),
+      supabase.from('colores').select('*').order('orden')
+    ]);
+    if (e1) throw e1;
+    if (e2) throw e2;
+    return { filamentos: filamentos ?? [], colores: colores ?? [] };
+  }, { filamentos: [], colores: [] });
 }
 
 export default async function MuestrarioPage() {
