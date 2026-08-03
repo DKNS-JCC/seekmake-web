@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 const WA_LINK =
-  'https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D';
+  'https://wa.me/34923793123?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D';
 
 export default function ContactoPage() {
   return (
@@ -37,7 +37,7 @@ export default function ContactoPage() {
 
           <div className="contacto-aside-item">
             <div className="contacto-aside-label">WhatsApp / Llamadas</div>
-            <a href="tel:+34665148956">+34 665 14 89 56</a>
+            <a href="tel:+34923793123">+34 923 793 123</a>
           </div>
 
           <div className="contacto-aside-item">

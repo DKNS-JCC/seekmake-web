@@ -15,7 +15,7 @@ const jsonLd = {
       description:
         'Servicio de impresión 3D en Salamanca. Piezas a medida, prototipos y figuras. Envíos a toda España.',
       url: 'https://impresion3dcc.com',
-      telephone: '+34665148956',
+      telephone: '+34923793123',
       email: 'info@impresion3dcc.com',
       address: {
         '@type': 'PostalAddress',

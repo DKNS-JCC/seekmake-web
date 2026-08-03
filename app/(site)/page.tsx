@@ -329,8 +329,8 @@ export default function HomePage() {
                 </div>
                 <div>
                   <div className="contact-label">WhatsApp / Llamadas</div>
-                  <a href="tel:+34665148956" className="contact-value">
-                    +34 665 14 89 56
+                  <a href="tel:+34923793123" className="contact-value">
+                    +34 923 793 123
                   </a>
                 </div>
               </div>
@@ -391,7 +391,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: '2rem' }}>
-                <a href="tel:+34665148956" className="cbtn cbtn-border">
+                <a href="tel:+34923793123" className="cbtn cbtn-border">
                   <svg
                     width="18"
                     height="18"

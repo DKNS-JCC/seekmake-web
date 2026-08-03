@@ -92,6 +92,25 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+// denomailer 1.6.0 mis-encodes non-ASCII header values (it soft-wraps the
+// RFC 2047 encoded-word with `=\r\n` and keeps literal spaces), which breaks
+// header folding and makes clients render the whole message as raw MIME. Keep
+// header values pure ASCII so denomailer passes them through untouched; the
+// body still carries full UTF-8 via quoted-printable.
+function asciiHeader(s: string): string {
+  return (s ?? '')
+    .replace(/€/g, 'EUR')
+    .replace(/[·•∙]/g, '-')
+    .replace(/[—–]/g, '-')
+    .replace(/[“”«»]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '') // drop combining accent marks
+    .replace(/[^\x20-\x7E]/g, '')    // strip anything still non-ASCII
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 Deno.serve(async (req: Request) => {
   const allowedOrigin = pickOrigin(req.headers.get('origin'));
 
@@ -195,7 +214,7 @@ Deno.serve(async (req: Request) => {
     }
   });
 
-  const subject = `[Web 3DCC] ${tipo} — ${nombre}`;
+  const subject = asciiHeader(`[Web 3DCC] ${tipo} — ${nombre}`);
 
   const attachmentsText = archivos.length
     ? '\n\nArchivos adjuntos:\n' +
@@ -259,7 +278,7 @@ Fecha:     ${new Date().toISOString()}
     await client.send({
       from: `3DCC Web <${gmailUser}>`,
       to: recipient,
-      replyTo: `${nombre} <${email}>`,   // reply directly to the user
+      replyTo: `${asciiHeader(nombre)} <${email}>`,   // reply directly to the user
       subject,
       content: text,
       html

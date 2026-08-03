@@ -269,7 +269,7 @@ export function PresupuestoClient() {
             <p className="pr-contact">
               ¿Alguna duda sobre tu pedido? Escríbenos por{' '}
               <a
-                href={`https://wa.me/34665148956?text=${encodeURIComponent(
+                href={`https://wa.me/34923793123?text=${encodeURIComponent(
                   `Hola, tengo una consulta sobre mi presupuesto ${result.codigo}`
                 )}`}
                 target="_blank"

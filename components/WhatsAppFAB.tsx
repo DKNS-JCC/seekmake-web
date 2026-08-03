@@ -1,5 +1,5 @@
 export const WA_LINK =
-  'https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D';
+  'https://wa.me/34923793123?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D';
 
 export function WhatsAppFAB() {
   return (

@@ -76,7 +76,7 @@ export default function TerminosPage() {
               </li>
               <li>
                 <strong>Teléfono / WhatsApp:</strong>{' '}
-                <a href="tel:+34665148956">+34 665 14 89 56</a>
+                <a href="tel:+34923793123">+34 923 793 123</a>
               </li>
             </ul>
 
@@ -446,7 +446,7 @@ export default function TerminosPage() {
               </li>
               <li>
                 <strong>Teléfono/WhatsApp:</strong>{' '}
-                <a href="tel:+34665148956">+34 665 14 89 56</a>
+                <a href="tel:+34923793123">+34 923 793 123</a>
               </li>
               <li>
                 <strong>Ubicación:</strong> Salamanca, España

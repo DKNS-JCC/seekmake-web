@@ -14,7 +14,7 @@ const Visualizer3D = dynamic(
   { ssr: false }
 );
 
-const WA_BASE = 'https://wa.me/34665148956';
+const WA_BASE = 'https://wa.me/34923793123';
 
 // Material technical specs — same data the legacy JS embedded inline.
 const ESPECIFICACIONES: Record<

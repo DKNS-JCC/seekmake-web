@@ -47,7 +47,7 @@ import './quote.css';
 const MAX_FILE_MB = 50;
 const MAX_FILES = 5;
 const ACCEPT = '.stl,.3mf,.obj';
-const WHATSAPP = '34665148956';
+const WHATSAPP = '34923793123';
 
 // Anonymous funnel id for quote_events (per page load, never identifies).
 const SESSION_ID = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
@@ -856,7 +856,7 @@ export function QuoteClient({
 <p class="nota">
   ~${Math.round(quote.pesoG)} g de material · ~${quote.tiempoH.toFixed(1)} h de impresión ·
   listo en ~${quote.diasEstimados} día${quote.diasEstimados !== 1 ? 's' : ''} laborables.<br>
-  El precio final se confirma tras revisar las piezas. Contacto: info@impresion3dcc.com · WhatsApp +34 665 14 89 56.
+  El precio final se confirma tras revisar las piezas. Contacto: info@impresion3dcc.com · WhatsApp +34 923 793 123.
 </p>
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;
