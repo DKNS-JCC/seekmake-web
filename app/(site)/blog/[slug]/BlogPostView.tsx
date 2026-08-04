@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { renderMarkdown } from '@/lib/markdown';
 import { AdSlot } from '@/components/AdSlot';
 import type { BlogPost } from '@/lib/types';
+import { CONTACTO, siteUrl } from '@/lib/contacto';
 
 export function BlogPostView({ slug }: { slug: string }) {
   const [post, setPost] = useState<BlogPost | null | 'missing'>(null);
@@ -54,9 +55,9 @@ export function BlogPostView({ slug }: { slug: string }) {
     image: post.cover_image || undefined,
     datePublished: post.published_at ?? post.created_at,
     dateModified: post.updated_at,
-    author: { '@type': 'Organization', name: '3DCC Salamanca', url: 'https://impresion3dcc.com' },
-    publisher: { '@type': 'Organization', name: '3DCC Salamanca', url: 'https://impresion3dcc.com' },
-    mainEntityOfPage: `https://impresion3dcc.com/blog/${post.slug}`,
+    author: { '@type': 'Organization', name: CONTACTO.nombre, url: CONTACTO.sitio },
+    publisher: { '@type': 'Organization', name: CONTACTO.nombre, url: CONTACTO.sitio },
+    mainEntityOfPage: siteUrl(`/blog/${post.slug}`),
   };
 
   return (
@@ -93,7 +94,7 @@ export function BlogPostView({ slug }: { slug: string }) {
 
       {post.cover_image && (
         <div className="blog-article-cover">
-          <img src={post.cover_image} alt="" />
+          <img src={post.cover_image} alt="" loading="lazy" decoding="async" />
         </div>
       )}
 

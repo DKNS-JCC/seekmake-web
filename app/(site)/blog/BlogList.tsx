@@ -47,7 +47,7 @@ export function BlogList() {
         >
           {p.cover_image && (
             <div className="blog-card-cover">
-              <img src={p.cover_image} alt="" loading="lazy" />
+              <img src={p.cover_image} alt="" loading="lazy" decoding="async" />
             </div>
           )}
           <div className="blog-card-body">

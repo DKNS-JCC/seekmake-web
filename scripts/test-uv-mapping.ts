@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { buildMaterialUpdate, ensureUVs } from '../lib/three/materials';
 import type { Color, Filamento } from '../lib/types';
+import { check, done, section } from './_assert';
 
 // Minimal canvas stub so the texture builders run outside the browser.
 const ctxStub = {
@@ -20,17 +21,6 @@ const ctxStub = {
 (globalThis as any).document = {
   createElement: () => ({ width: 0, height: 0, getContext: () => ctxStub })
 };
-
-let failures = 0;
-
-function check(label: string, ok: boolean, detail = '') {
-  if (ok) {
-    console.log(`  ok   ${label}`);
-  } else {
-    failures++;
-    console.log(`  FAIL ${label}${detail ? ' — ' + detail : ''}`);
-  }
-}
 
 /**
  * A nameplate-ish slab: long in X, medium in Y, thin in Z — like the STL in
@@ -56,7 +46,7 @@ function range(attr: THREE.BufferAttribute, offset: number) {
   return { lo, hi };
 }
 
-console.log('ensureUVs');
+section('ensureUVs');
 const geo = slab();
 check('geometry starts without uv (as an STL does)', !geo.getAttribute('uv'));
 
@@ -91,7 +81,7 @@ for (let i = 0; i < pos.count; i++) {
 check('sweep follows the longest axis', alignedWithX);
 
 // What the shader will actually do: sample a 2-colour band texture.
-console.log('\nband sampling (2 tones, repeat 1x1)');
+section('\nband sampling (2 tones, repeat 1x1)');
 const seen = new Set<number>();
 for (let i = 0; i < pos.count; i++) {
   seen.add(uv1.getX(i) < 0.5 ? 0 : 1);
@@ -103,7 +93,7 @@ const bare = slab();
 check('without ensureUVs there is no uv1 (the old bug)', !bare.getAttribute('uv1'));
 
 // A 3MF/OBJ that already carries authored UVs must keep them.
-console.log('\nauthored UVs (3MF / OBJ)');
+section('\nauthored UVs (3MF / OBJ)');
 const authored = new THREE.BoxGeometry(80, 45, 4).toNonIndexed();
 authored.computeVertexNormals();
 const original = (authored.getAttribute('uv') as THREE.BufferAttribute).clone();
@@ -117,7 +107,7 @@ check('existing uv left untouched', same);
 check('uv1 still added alongside', !!authored.getAttribute('uv1'));
 
 // End-to-end wiring: the material the visualizers actually apply.
-console.log('\nbuildMaterialUpdate');
+section('\nbuildMaterialUpdate');
 
 const pla: Filamento = {
   id: 'f1',
@@ -176,5 +166,4 @@ const negro: Color = {
 const plain = buildMaterialUpdate({ color: negro, filamento: pla }, cache);
 check('solid colour gets no texture', plain.map === null);
 
-console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) failed.`);
-process.exit(failures === 0 ? 0 : 1);
+done();

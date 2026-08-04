@@ -19,7 +19,7 @@ import type { Acabado, Categoria, MuestraTipo } from '../lib/types';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: resolve(__dirname, '..', '.env.local') });
 
-const LEGACY = resolve(__dirname, '..', 'legacy');
+const SEED_DATA = resolve(__dirname, 'seed-data');
 
 // ---------- YAML shapes (input) ----------
 
@@ -71,7 +71,7 @@ async function main() {
 
   // --- Filamentos + Colores ---
   const filamentosYaml = yaml.load(
-    readFileSync(resolve(LEGACY, 'filamentos.yaml'), 'utf-8')
+    readFileSync(resolve(SEED_DATA, 'filamentos.yaml'), 'utf-8')
   ) as YamlFilamentos;
 
   console.log('→ Wiping existing filamentos/colores...');
@@ -118,7 +118,7 @@ async function main() {
 
   // --- Productos ---
   const productosYaml = yaml.load(
-    readFileSync(resolve(LEGACY, 'productos.yaml'), 'utf-8')
+    readFileSync(resolve(SEED_DATA, 'productos.yaml'), 'utf-8')
   ) as YamlProductos;
 
   console.log('→ Wiping existing productos...');

@@ -1,5 +1,5 @@
 // Productos-only seeder: wipes and reseeds the `productos` table from
-// legacy/productos.yaml. Leaves filamentos, colores, blog_posts and trabajos
+// supabase/seed-data/productos.yaml. Leaves filamentos, colores, blog_posts and trabajos
 // untouched.
 //
 // Usage:  npm run seed:productos
@@ -36,10 +36,10 @@ interface YamlProductos {
 
 async function main() {
   const supabase = createAdminClient();
-  const LEGACY = resolve(__dirname, '..', 'legacy');
+  const SEED_DATA = resolve(__dirname, 'seed-data');
 
   const productosYaml = yaml.load(
-    readFileSync(resolve(LEGACY, 'productos.yaml'), 'utf-8')
+    readFileSync(resolve(SEED_DATA, 'productos.yaml'), 'utf-8')
   ) as YamlProductos;
 
   console.log('→ Wiping existing productos...');

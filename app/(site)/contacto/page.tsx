@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
 import { ContactForm } from './ContactForm';
 import './contacto.css';
+import { CONTACTO, mailtoUrl, siteUrl, whatsappUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
   title: 'Contacto | 3DCC Salamanca',
   description:
     'Contacta con 3DCC Salamanca: presupuestos personalizados, consultas y soporte sobre impresión 3D.',
-  alternates: { canonical: 'https://impresion3dcc.com/contacto' }
+  alternates: { canonical: siteUrl('/contacto') }
 };
 
 const WA_LINK =
-  'https://wa.me/34923793123?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D';
+  whatsappUrl('Hola, quiero información sobre impresión 3D');
 
 export default function ContactoPage() {
   return (
@@ -37,13 +38,13 @@ export default function ContactoPage() {
 
           <div className="contacto-aside-item">
             <div className="contacto-aside-label">WhatsApp / Llamadas</div>
-            <a href="tel:+34923793123">+34 923 793 123</a>
+            <a href={`tel:${CONTACTO.telefonoTel}`}>{CONTACTO.telefono}</a>
           </div>
 
           <div className="contacto-aside-item">
             <div className="contacto-aside-label">Email</div>
-            <a href="mailto:info@impresion3dcc.com">
-              info@impresion3dcc.com
+            <a href={mailtoUrl()}>
+              {CONTACTO.email}
             </a>
           </div>
 

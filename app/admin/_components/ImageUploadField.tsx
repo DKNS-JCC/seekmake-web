@@ -3,6 +3,7 @@
 import { ChangeEvent, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { compressImage, formatBytes } from '@/lib/image-compress';
+import { mensajeDeError } from '@/lib/errors';
 
 /**
  * URL input + live preview + "Subir imagen" button that compresses the
@@ -35,7 +36,7 @@ export function ImageUploadField({
       setStage('compressing');
       compressed = await compressImage(file);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo comprimir');
+      setError(mensajeDeError(err, 'No se pudo comprimir la imagen'));
       setStage('idle');
       return;
     }
@@ -53,7 +54,7 @@ export function ImageUploadField({
       });
 
     if (upErr) {
-      setError(upErr.message);
+      setError(mensajeDeError(upErr, 'No se pudo subir la imagen'));
       setStage('idle');
       return;
     }
@@ -154,10 +155,12 @@ export function ImageUploadField({
         }}
       >
         {value ? (
+          // Eager on purpose: it is the subject of the drawer you just opened.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={value}
             alt="Preview"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = 'none';

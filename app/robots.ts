@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { siteUrl } from '@/lib/contacto';
 
 export const dynamic = 'force-static';
 
@@ -11,6 +12,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/qr/'],
       },
     ],
-    sitemap: 'https://impresion3dcc.com/sitemap.xml',
+    sitemap: siteUrl('/sitemap.xml'),
   };
 }

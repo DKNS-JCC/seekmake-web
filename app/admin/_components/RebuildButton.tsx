@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { mensajeDeError } from '@/lib/errors';
 
 type Status = 'idle' | 'sending' | 'ok' | 'error';
 
@@ -37,7 +38,7 @@ export function RebuildButton({ small = false }: { small?: boolean }) {
       });
       if (error) {
         setStatus('error');
-        setMessage(error.message);
+        setMessage(mensajeDeError(error));
         return;
       }
       if (data?.error) {
@@ -49,7 +50,7 @@ export function RebuildButton({ small = false }: { small?: boolean }) {
       setMessage(data?.message ?? 'Rebuild lanzado');
     } catch (err) {
       setStatus('error');
-      setMessage(err instanceof Error ? err.message : String(err));
+      setMessage(mensajeDeError(err));
     }
   }
 

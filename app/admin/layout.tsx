@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         }}
       >
         <Link href="/admin" className="nav-logo" style={{ marginRight: 'auto' }}>
-          <img src="/icons/android-chrome-192x192.png" alt="" />
+          <img src="/icons/android-chrome-192x192.png" alt="" width={192} height={192} />
           <div>
             <span className="nav-logo-name">3DCC</span>
             <span className="nav-logo-sub">Admin</span>

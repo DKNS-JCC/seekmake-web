@@ -3,16 +3,17 @@ import { ReactNode } from 'react';
 import { Providers } from './providers';
 import { CookieConsent } from '../components/CookieConsent';
 import './globals.css';
+import { CONTACTO, siteUrl } from '@/lib/contacto';
 
 // Default metadata — pages override what they need.
 export const metadata: Metadata = {
-  metadataBase: new URL('https://impresion3dcc.com'),
+  metadataBase: new URL(CONTACTO.sitio),
   title: '3DCC Salamanca | Impresión 3D',
   description:
     'Servicio de impresión 3D en Salamanca. Diseño, prototipado y figuras a medida. Calculadora de precio online y envío nacional.',
   authors: [{ name: '3DCC Salamanca' }],
   keywords: ['impresión 3D', 'Salamanca', 'prototipado', '3D printing', 'PLA', 'PETG'],
-  alternates: { canonical: 'https://impresion3dcc.com/' },
+  alternates: { canonical: siteUrl('/') },
   icons: {
     icon: [
       { url: '/icons/favicon.ico' },

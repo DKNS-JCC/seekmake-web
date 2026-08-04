@@ -8,6 +8,7 @@ import {
   useState
 } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { ESCRIBENOS } from '@/lib/contacto';
 
 type Status =
   | { kind: 'idle' }
@@ -205,7 +206,7 @@ export function ContactForm() {
           kind: 'err',
           message:
             error.message ??
-            'No se pudo enviar. Inténtalo más tarde o escríbenos directamente a info@impresion3dcc.com.'
+            `No se pudo enviar. Inténtalo más tarde o ${ESCRIBENOS}.`
         });
         return;
       }
@@ -225,7 +226,7 @@ export function ContactForm() {
       setStatus({
         kind: 'err',
         message:
-          'Error de red. Comprueba tu conexión o escríbenos a info@impresion3dcc.com.'
+          `Error de red. Comprueba tu conexión o ${ESCRIBENOS}.`
       });
     }
   }

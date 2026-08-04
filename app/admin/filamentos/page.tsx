@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
@@ -10,7 +8,12 @@ import { ColorEditor } from '../_components/ColorEditor';
 import { colorPreviewStyle, esMulticolor, paleta } from '@/lib/color-preview';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
+import { useConfirm } from '../_components/useConfirm';
 import './filamentos.css';
+import { mensajeDeError } from '@/lib/errors';
+import { activable } from '@/lib/a11y';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { ErrorBanner } from '../_components/ErrorBanner';
 
 const ACABADOS: Acabado[] = [
   'Metálico',
@@ -43,7 +46,6 @@ export default function AdminFilamentos() {
   const [filamentos, setFilamentos] = useState<Filamento[]>([]);
   const [colores, setColores] = useState<Color[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,10 +61,10 @@ export default function AdminFilamentos() {
   const [matSave, setMatSave] = useState<SaveState>('idle');
   const [matDirty, setMatDirty] = useState(false);
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -74,8 +76,8 @@ export default function AdminFilamentos() {
       s.from('filamentos').select('*').order('orden'),
       s.from('colores').select('*').order('orden')
     ]);
-    if (fres.error) setError(fres.error.message);
-    if (cres.error) setError(cres.error.message);
+    if (fres.error) setError(mensajeDeError(fres.error, 'No se pudieron cargar los materiales'));
+    if (cres.error) setError(mensajeDeError(cres.error, 'No se pudieron cargar los colores'));
     setFilamentos(fres.data ?? []);
     setColores(cres.data ?? []);
     if (!active && fres.data?.[0]) setActive(fres.data[0].id);
@@ -116,7 +118,7 @@ export default function AdminFilamentos() {
       ? await supabase().from('filamentos').update(matDraft).eq('id', editingMatId)
       : await supabase().from('filamentos').insert(matDraft).select().single();
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el material'));
       setMatSave('error');
       return;
     }
@@ -133,9 +135,16 @@ export default function AdminFilamentos() {
   }
 
   async function deleteFilamento(f: Filamento) {
-    if (!confirm(`¿Eliminar ${f.material} y todos sus colores?`)) return;
+    if (
+      !(await confirmar({
+        mensaje: `¿Eliminar el material ${f.material}?`,
+        detalle: 'Se borrarán también todos sus colores. No se puede deshacer.'
+      }))
+    ) {
+      return;
+    }
     const { error } = await supabase().from('filamentos').delete().eq('id', f.id);
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudo borrar el material'));
     await refresh();
   }
 
@@ -197,7 +206,7 @@ export default function AdminFilamentos() {
       ? await supabase().from('colores').update(payload).eq('id', editingColorId)
       : await supabase().from('colores').insert(payload);
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el color'));
       setColorSave('error');
       return;
     }
@@ -211,26 +220,15 @@ export default function AdminFilamentos() {
   }
 
   async function deleteColor(c: Color) {
-    if (!confirm(`¿Eliminar el color "${c.nombre}"?`)) return;
+    if (!(await confirmar({ mensaje: `¿Eliminar el color "${c.nombre}"?` }))) return;
     const { error } = await supabase().from('colores').delete().eq('id', c.id);
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudo borrar el color'));
     await refresh();
   }
 
   // ───────── Render ─────────
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
 
   const activeFilamento = filamentos.find((f) => f.id === active);
   const visibleColors = colores.filter((c) => c.filamento_id === active);
@@ -238,6 +236,7 @@ export default function AdminFilamentos() {
 
   return (
     <div>
+      {dialogo}
       <div
         style={{
           display: 'flex',
@@ -259,20 +258,7 @@ export default function AdminFilamentos() {
         </div>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: 12,
-            borderRadius: 'var(--r)',
-            marginBottom: 16,
-            fontSize: 13
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
@@ -396,7 +382,7 @@ export default function AdminFilamentos() {
                     <article
                       key={c.id}
                       className="color-card"
-                      onClick={() => startColorEdit(c)}
+                      {...activable(() => startColorEdit(c), `Editar el color ${c.nombre}`)}
                     >
                       <div
                         className="color-swatch"

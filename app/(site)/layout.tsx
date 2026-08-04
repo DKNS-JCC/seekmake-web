@@ -4,19 +4,20 @@ import { Footer } from '@/components/Footer';
 import { CookieBanner } from '@/components/CookieBanner';
 import { BackToTop } from '@/components/BackToTop';
 import { WhatsAppFAB } from '@/components/WhatsAppFAB';
+import { CONTACTO, siteUrl } from '@/lib/contacto';
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'LocalBusiness',
-      '@id': 'https://impresion3dcc.com/#business',
+      '@id': siteUrl('/#business'),
       name: '3DCC Salamanca — Impresión 3D',
       description:
         'Servicio de impresión 3D en Salamanca. Piezas a medida, prototipos y figuras. Envíos a toda España.',
-      url: 'https://impresion3dcc.com',
-      telephone: '+34923793123',
-      email: 'info@impresion3dcc.com',
+      url: CONTACTO.sitio,
+      telephone: CONTACTO.telefonoTel,
+      email: CONTACTO.email,
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'Plza. Barrio Vidal',
@@ -31,14 +32,14 @@ const jsonLd = {
       },
       areaServed: { '@type': 'Country', name: 'España' },
       priceRange: '€€',
-      image: 'https://impresion3dcc.com/images/main_banner.png',
+      image: siteUrl('/images/main_banner.png'),
       sameAs: [],
     },
     {
       '@type': 'Service',
-      '@id': 'https://impresion3dcc.com/#service',
+      '@id': siteUrl('/#service'),
       name: 'Impresión 3D a medida',
-      provider: { '@id': 'https://impresion3dcc.com/#business' },
+      provider: { '@id': siteUrl('/#business') },
       serviceType: 'Impresión 3D FDM',
       areaServed: { '@type': 'Country', name: 'España' },
       description:
@@ -47,7 +48,7 @@ const jsonLd = {
         '@type': 'Offer',
         priceCurrency: 'EUR',
         availability: 'https://schema.org/InStock',
-        url: 'https://impresion3dcc.com/instant-quote',
+        url: siteUrl('/instant-quote'),
       },
     },
   ],

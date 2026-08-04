@@ -11,7 +11,8 @@
     "export": "next build",
     "seed": "tsx supabase/seed.ts",
     "seed:productos": "tsx supabase/seed-productos.ts",
-    "envio": "tsx scripts/sendcloud.ts"
+    "envio": "tsx scripts/sendcloud.ts",
+    "test": "tsx scripts/test-pricing.ts && tsx scripts/test-uv-mapping.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.0",

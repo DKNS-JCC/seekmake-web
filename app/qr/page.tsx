@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { QrFadeOnScroll } from './QrFadeOnScroll';
 import { QrPedidoBanner } from './QrPedidoBanner';
 import './qr.css';
+import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
   title: '3DCC Salamanca',
@@ -11,9 +12,9 @@ export const metadata: Metadata = {
 };
 
 const WA_QR =
-  'https://wa.me/34923793123?text=Hola!%20Acabo%20de%20escanear%20tu%20QR%20y%20me%20gustar%C3%ADa%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D';
+  whatsappUrl('Hola! Acabo de escanear tu QR y me gustaría información sobre impresión 3D');
 const WA_FAB =
-  'https://wa.me/34923793123?text=Hola!%20Acabo%20de%20escanear%20tu%20QR';
+  whatsappUrl('Hola! Acabo de escanear tu QR');
 const REVIEW_URL = 'https://reviewthis.biz/3dcc';
 
 // Filled-star path used many times.
@@ -50,6 +51,8 @@ export default function QrPage() {
               src="/icons/android-chrome-512x512.png"
               alt="3DCC Logo"
               className="qr-avatar"
+              width={512}
+              height={512}
             />
             <h1 className="qr-name">3DCC Salamanca</h1>
             <p className="qr-tagline">Impresión 3D Profesional</p>
@@ -195,12 +198,12 @@ export default function QrPage() {
               </div>
               <div className="qr-link-body">
                 <div className="qr-link-title">Nuestra Web</div>
-                <div className="qr-link-desc">impresion3dcc.com</div>
+                <div className="qr-link-desc">{CONTACTO.dominio}</div>
               </div>
               <Chevron />
             </Link>
 
-            <a href="tel:+34923793123" className="qr-link qr-fade">
+            <a href={`tel:${CONTACTO.telefonoTel}`} className="qr-link qr-fade">
               <div className="qr-link-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
@@ -208,13 +211,13 @@ export default function QrPage() {
               </div>
               <div className="qr-link-body">
                 <div className="qr-link-title">Llamar</div>
-                <div className="qr-link-desc">+34 923 793 123</div>
+                <div className="qr-link-desc">{CONTACTO.telefono}</div>
               </div>
               <Chevron />
             </a>
 
             <a
-              href="mailto:info@impresion3dcc.com?subject=Consulta%20desde%20QR"
+              href={mailtoUrl('Consulta desde QR')}
               className="qr-link qr-fade"
             >
               <div className="qr-link-icon">
@@ -224,7 +227,7 @@ export default function QrPage() {
               </div>
               <div className="qr-link-body">
                 <div className="qr-link-title">Email</div>
-                <div className="qr-link-desc">info@impresion3dcc.com</div>
+                <div className="qr-link-desc">{CONTACTO.email}</div>
               </div>
               <Chevron />
             </a>
@@ -247,13 +250,34 @@ export default function QrPage() {
           <div className="qr-label qr-fade">Trabajos</div>
           <div className="qr-gallery qr-fade">
             <div className="qr-gallery-item">
-              <img src="/images/examples/corporativa.jpg" alt="Productos corporativos" loading="lazy" />
+              <img
+                src="/images/examples/corporativa.jpg"
+                alt="Productos corporativos"
+                loading="lazy"
+                decoding="async"
+                width={2784}
+                height={2784}
+              />
             </div>
             <div className="qr-gallery-item">
-              <img src="/images/examples/Decoracion.jpeg" alt="Decoración 3D" loading="lazy" />
+              <img
+                src="/images/examples/Decoracion.jpeg"
+                alt="Decoración 3D"
+                loading="lazy"
+                decoding="async"
+                width={2160}
+                height={3840}
+              />
             </div>
             <div className="qr-gallery-item">
-              <img src="/images/examples/repuesto.png" alt="Repuestos 3D" loading="lazy" />
+              <img
+                src="/images/examples/repuesto.png"
+                alt="Repuestos 3D"
+                loading="lazy"
+                decoding="async"
+                width={1059}
+                height={847}
+              />
             </div>
           </div>
           <Link href="/#trabajos" className="qr-gallery-more qr-fade">

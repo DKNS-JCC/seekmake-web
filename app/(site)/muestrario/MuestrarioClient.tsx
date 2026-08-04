@@ -6,7 +6,10 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
+import { useCatalogoColores } from '@/lib/useCatalogoColores';
 import './muestrario.css';
+import { whatsappUrl } from '@/lib/contacto';
+import { activable } from '@/lib/a11y';
 
 // Lazy-load the 3D visualizer so three.js (~150 KB gzipped) doesn't ship
 // with the muestrario bundle until the user opens it.
@@ -15,7 +18,7 @@ const Visualizer3D = dynamic(
   { ssr: false }
 );
 
-const WA_BASE = 'https://wa.me/34923793123';
+const WA_BASE = whatsappUrl();
 
 // Material technical specs — same data the legacy JS embedded inline.
 const ESPECIFICACIONES: Record<
@@ -168,22 +171,12 @@ export function MuestrarioClient({
   filamentos: Filamento[];
   colores: Color[];
 }) {
-  const [filamentos, setFilamentos] = useState<Filamento[]>(initialFilamentos);
-  const [colores, setColores] = useState<Color[]>(initialColores);
-
-  // Client-side refresh for static exports
-  useEffect(() => {
-    const fetchFreshData = async () => {
-      const supabase = createClient();
-      const [{ data: f }, { data: c }] = await Promise.all([
-        supabase.from('filamentos').select('*').order('orden'),
-        supabase.from('colores').select('*').order('orden')
-      ]);
-      if (f) setFilamentos(f);
-      if (c) setColores(c);
-    };
-    fetchFreshData();
-  }, []);
+  // Static export bakes these in at build time; the hook swaps in live data
+  // on mount so admin edits (new colours, agotado) show up without a rebuild.
+  const { filamentos, colores } = useCatalogoColores({
+    filamentos: initialFilamentos,
+    colores: initialColores
+  });
 
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | string>('all');
@@ -450,7 +443,10 @@ export function MuestrarioClient({
                         className="mu-test-result-swatch"
                         style={colorPreviewStyle(c)}
                         title={c.nombre}
-                        onClick={() => openModal(c, recommendedMaterial)}
+                        {...activable(
+                          () => openModal(c, recommendedMaterial),
+                          `Ver el color ${c.nombre}`
+                        )}
                       />
                     ))}
                 </div>
@@ -590,7 +586,7 @@ export function MuestrarioClient({
                         key={c.id}
                         className={'mu-color-card' + (matches ? '' : ' dimmed')}
                         title={c.nombre}
-                        onClick={() => openModal(c, f.nombre)}
+                        {...activable(() => openModal(c, f.nombre), `Ver el color ${c.nombre}`)}
                       >
                         <div
                           className={'mu-swatch ' + finishClass}

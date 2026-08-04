@@ -5,9 +5,9 @@
 // queries, fine for a hobby-scale volume.
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Quote, QuoteEstado, QuoteEvento } from '@/lib/types';
+import { AccesoDenegado, useAdminAuth } from '../_components/useAdminAuth';
 
 const ESTADO_LABEL: Record<QuoteEstado, string> = {
   nuevo: 'Nuevo',
@@ -111,15 +111,14 @@ function Bar({
 const num = (v: unknown): number => (typeof v === 'number' && isFinite(v) ? v : 0);
 
 export default function AdminEstadisticas() {
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [eventos, setEventos] = useState<QuoteEvento[]>([]);
   const [loading, setLoading] = useState(true);
   const [dias, setDias] = useState(30);
+  const { authed } = useAdminAuth();
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
     Promise.all([
       supabase.from('quotes').select('*').order('created_at', { ascending: false }),
       supabase
@@ -216,18 +215,7 @@ export default function AdminEstadisticas() {
     };
   }, [quotes, eventos, desde]);
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
   if (loading) return <p style={{ color: 'var(--muted)' }}>Cargando…</p>;
 
   const maxEstado = Math.max(1, ...[...stats.porEstado.values()]);

@@ -8,6 +8,7 @@ import { AdSlot } from '@/components/AdSlot';
 import { ContactForm } from '@/app/(site)/contacto/ContactForm';
 import '@/app/(site)/contacto/contacto.css';
 import './page.css';
+import { CONTACTO, mailtoUrl } from '@/lib/contacto';
 
 export default function HomePage() {
   useFadeUp();
@@ -60,10 +61,15 @@ export default function HomePage() {
         </div>
         <div className="hero-right">
           <div className="hero-grid" />
+          {/* Above the fold and the LCP element — never lazy-load this one. */}
           <img
             src="/images/main_banner.png"
             alt="Impresión 3D profesional Salamanca"
             className="hero-img"
+            width={1536}
+            height={1024}
+            fetchPriority="high"
+            decoding="async"
           />
           <div className="hero-img-mask" />
         </div>
@@ -329,8 +335,8 @@ export default function HomePage() {
                 </div>
                 <div>
                   <div className="contact-label">WhatsApp / Llamadas</div>
-                  <a href="tel:+34923793123" className="contact-value">
-                    +34 923 793 123
+                  <a href={`tel:${CONTACTO.telefonoTel}`} className="contact-value">
+                    {CONTACTO.telefono}
                   </a>
                 </div>
               </div>
@@ -354,10 +360,10 @@ export default function HomePage() {
                 <div>
                   <div className="contact-label">Email</div>
                   <a
-                    href="mailto:info@impresion3dcc.com"
+                    href={mailtoUrl()}
                     className="contact-value"
                   >
-                    info@impresion3dcc.com
+                    {CONTACTO.email}
                   </a>
                 </div>
               </div>
@@ -391,7 +397,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: '2rem' }}>
-                <a href="tel:+34923793123" className="cbtn cbtn-border">
+                <a href={`tel:${CONTACTO.telefonoTel}`} className="cbtn cbtn-border">
                   <svg
                     width="18"
                     height="18"
