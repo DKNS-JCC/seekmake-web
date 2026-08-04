@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
-import { ColorPickerField } from '../_components/ColorPickerField';
+import { ColorEditor } from '../_components/ColorEditor';
+import { colorPreviewStyle, esMulticolor, paleta } from '@/lib/color-preview';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
 import './filamentos.css';
@@ -28,10 +29,13 @@ const emptyColorDraft = (filamento_id: string, orden: number): ColorDraft => ({
   filamento_id,
   nombre: 'Nuevo color',
   hex: '#cccccc',
+  muestra_colores: [],
+  muestra_tipo: 'solido',
   texto: 'black',
   acabado: null,
   combina_con: [],
   oferta: false,
+  agotado: false,
   orden
 });
 
@@ -155,10 +159,13 @@ export default function AdminFilamentos() {
       filamento_id: c.filamento_id,
       nombre: c.nombre,
       hex: c.hex,
+      muestra_colores: c.muestra_colores ?? [],
+      muestra_tipo: c.muestra_tipo ?? 'solido',
       texto: c.texto,
       acabado: c.acabado,
       combina_con: c.combina_con,
       oferta: c.oferta,
+      agotado: c.agotado ?? false,
       orden: c.orden
     });
     setEditingColorId(c.id);
@@ -176,9 +183,19 @@ export default function AdminFilamentos() {
     if (!colorDraft) return;
     setColorSave('saving');
     setError(null);
+    // A solid colour never carries a palette; a multicolour one always starts
+    // on its base hex, so the swatch and the 3D material agree.
+    const tones = colorDraft.muestra_colores.filter(Boolean);
+    const multi = colorDraft.muestra_tipo !== 'solido' && tones.length > 1;
+    const payload: ColorDraft = {
+      ...colorDraft,
+      muestra_tipo: multi ? colorDraft.muestra_tipo : 'solido',
+      muestra_colores: multi ? tones : [],
+      hex: multi ? tones[0] : colorDraft.hex
+    };
     const res = editingColorId
-      ? await supabase().from('colores').update(colorDraft).eq('id', editingColorId)
-      : await supabase().from('colores').insert(colorDraft);
+      ? await supabase().from('colores').update(payload).eq('id', editingColorId)
+      : await supabase().from('colores').insert(payload);
     if (res.error) {
       setError(res.error.message);
       setColorSave('error');
@@ -383,16 +400,25 @@ export default function AdminFilamentos() {
                     >
                       <div
                         className="color-swatch"
-                        style={{ background: c.hex }}
+                        style={colorPreviewStyle(c)}
                       >
-                        {c.oferta && <span className="color-badge">OFERTA</span>}
+                        <div className="color-tags">
+                          {c.oferta && <span className="color-badge">OFERTA</span>}
+                          {c.agotado && (
+                            <span className="color-badge agotado">AGOTADO</span>
+                          )}
+                        </div>
                         {c.acabado && (
                           <span className="color-acabado">{c.acabado}</span>
                         )}
                       </div>
                       <div className="color-info">
                         <div className="color-name">{c.nombre}</div>
-                        <div className="color-hex">{c.hex}</div>
+                        <div className="color-hex">
+                          {esMulticolor(c)
+                            ? `${paleta(c).length} tonos · ${c.muestra_tipo}`
+                            : c.hex}
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -446,17 +472,6 @@ export default function AdminFilamentos() {
       >
         {matDraft && (
           <>
-            <Field label="Clave (PLA, PETG, ASA, TPU…)" hint="Identificador corto, mayúsculas">
-              <input
-                value={matDraft.material}
-                onChange={(e) => {
-                  setMatDraft({ ...matDraft, material: e.target.value });
-                  setMatDirty(true);
-                }}
-                style={inputStyle}
-                placeholder="PLA"
-              />
-            </Field>
             <Field label="Nombre completo">
               <input
                 value={matDraft.nombre}
@@ -515,10 +530,17 @@ export default function AdminFilamentos() {
         {colorDraft && (
           <>
             <Field label="Color">
-              <ColorPickerField
-                value={colorDraft.hex}
-                onChange={(v) => patchColor('hex', v)}
+              <ColorEditor
+                value={{
+                  hex: colorDraft.hex,
+                  muestra_colores: colorDraft.muestra_colores,
+                  muestra_tipo: colorDraft.muestra_tipo
+                }}
                 acabado={colorDraft.acabado}
+                onChange={(next) => {
+                  setColorDraft({ ...colorDraft, ...next });
+                  setColorDirty(true);
+                }}
               />
             </Field>
 
@@ -564,26 +586,30 @@ export default function AdminFilamentos() {
               </Field>
             </div>
 
-            <Field label="Oferta">
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 12px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--r)',
-                  background: 'var(--surface)',
-                  cursor: 'pointer'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={colorDraft.oferta}
-                  onChange={(e) => patchColor('oferta', e.target.checked)}
-                />
-                <span style={{ fontSize: 13 }}>Mostrar etiqueta "OFERTA"</span>
-              </label>
+            <Field label="Etiquetas">
+              <div style={{ display: 'grid', gap: 8 }}>
+                <label style={checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={colorDraft.oferta}
+                    onChange={(e) => patchColor('oferta', e.target.checked)}
+                  />
+                  <span style={{ fontSize: 13 }}>Mostrar etiqueta "OFERTA"</span>
+                </label>
+                <label style={checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={colorDraft.agotado}
+                    onChange={(e) => patchColor('agotado', e.target.checked)}
+                  />
+                  <span style={{ fontSize: 13 }}>
+                    Mostrar etiqueta "AGOTADO"
+                    <span style={{ display: 'block', color: 'var(--muted)', fontSize: 11 }}>
+                      Sigue visible en el muestrario, pero no se puede elegir en el tasador.
+                    </span>
+                  </span>
+                </label>
+              </div>
             </Field>
 
             <Field
@@ -665,7 +691,7 @@ function CombinaConPicker({
                 width: 20,
                 height: 20,
                 borderRadius: 4,
-                background: c.hex,
+                ...colorPreviewStyle(c),
                 border: '1px solid var(--border)',
                 flexShrink: 0
               }}
@@ -687,6 +713,17 @@ function CombinaConPicker({
     </div>
   );
 }
+
+const checkboxRow: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 8,
+  padding: '10px 12px',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--r)',
+  background: 'var(--surface)',
+  cursor: 'pointer'
+};
 
 const btnLink: React.CSSProperties = {
   background: 'none',

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
+import { colorPreviewStyle } from '@/lib/color-preview';
 import './muestrario.css';
 
 // Lazy-load the 3D visualizer so three.js (~150 KB gzipped) doesn't ship
@@ -447,7 +448,7 @@ export function MuestrarioClient({
                       <div
                         key={c.id}
                         className="mu-test-result-swatch"
-                        style={{ backgroundColor: c.hex }}
+                        style={colorPreviewStyle(c)}
                         title={c.nombre}
                         onClick={() => openModal(c, recommendedMaterial)}
                       />
@@ -593,9 +594,12 @@ export function MuestrarioClient({
                       >
                         <div
                           className={'mu-swatch ' + finishClass}
-                          style={{ backgroundColor: c.hex, ...glowStyle }}
+                          style={{ ...colorPreviewStyle(c), ...glowStyle }}
                         >
                           {c.oferta && <div className="mu-swatch-oferta">OFERTA</div>}
+                          {c.agotado && (
+                            <div className="mu-swatch-agotado">AGOTADO</div>
+                          )}
                           {c.acabado && (
                             <span className="mu-swatch-acabado">{c.acabado}</span>
                           )}
@@ -762,7 +766,7 @@ function ColorModal({
       <div className="mu-modal">
         <div
           className="mu-modal-swatch"
-          style={{ backgroundColor: color.hex, ...glowStyle }}
+            style={{ ...colorPreviewStyle(color), ...glowStyle }}
         >
           <div className={'mu-modal-finish ' + finishClass} />
           <button
@@ -785,6 +789,7 @@ function ColorModal({
           {color.acabado && (
             <span className="mu-modal-acabado-badge">{color.acabado}</span>
           )}
+          {color.agotado && <div className="mu-swatch-agotado">AGOTADO</div>}
         </div>
         <div className="mu-modal-body">
           <h3 className="mu-modal-name">{color.nombre}</h3>
@@ -854,7 +859,7 @@ function ColorModal({
                   >
                     <span
                       className="mu-modal-combina-swatch"
-                      style={{ backgroundColor: m.hex }}
+                      style={colorPreviewStyle(m)}
                     />
                     <span className="mu-modal-combina-name">{m.nombre}</span>
                   </button>

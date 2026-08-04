@@ -39,6 +39,9 @@ create table if not exists public.colores (
   filamento_id  uuid not null references public.filamentos(id) on delete cascade,
   nombre        text not null,
   hex           text not null check (hex ~* '^#[0-9a-f]{6}$'),
+  muestra_colores text[] not null default '{}',
+  muestra_tipo  text not null default 'solido'
+                check (muestra_tipo in ('solido', 'bandas', 'degradado')),
   texto         text not null default 'black' check (texto in ('black', 'white')),
   acabado       text check (acabado in (
     'Metálico', 'Fluorescente', 'Translucido', 'Textura',

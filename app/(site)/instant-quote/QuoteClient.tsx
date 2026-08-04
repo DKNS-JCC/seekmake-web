@@ -24,10 +24,12 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createClient } from '@/lib/supabase/client';
 import type { Color, Filamento, QuoteEntrega } from '@/lib/types';
+import { colorPreviewStyle } from '@/lib/color-preview';
 import {
   acabadoMaterialProps,
   applyMaterialUpdate,
-  buildMaterialUpdate
+  buildMaterialUpdate,
+  ensureUVs
 } from '@/lib/three/materials';
 import {
   analyzeObject,
@@ -316,6 +318,7 @@ export function QuoteClient({
       const old = mesh.material;
       if (Array.isArray(old)) old.forEach((m) => m.dispose());
       else if (old) (old as THREE.Material).dispose();
+      ensureUVs(mesh.geometry);
       mesh.material = new THREE.MeshPhysicalMaterial(
         acabadoMaterialProps('#cccccc', null)
       );
@@ -620,7 +623,7 @@ export function QuoteClient({
   }
 
   function pickColor(c: Color) {
-    if (!activePieza) return;
+    if (!activePieza || c.agotado) return;
     if (partsMode) {
       const next = [...activePieza.config.partColors];
       next[activePart] = c;
@@ -637,7 +640,7 @@ export function QuoteClient({
   }
 
   function toggleExtraColor(c: Color) {
-    if (!activePieza) return;
+    if (!activePieza || c.agotado) return;
     const prev = activePieza.config.extraColors;
     if (prev.some((x) => x.id === c.id)) {
       patchActiveConfig({ extraColors: prev.filter((x) => x.id !== c.id) });
@@ -714,13 +717,22 @@ export function QuoteClient({
             ? p.config.partColors
                 .map((c, j) =>
                   c
-                    ? { nombre: c.nombre, hex: c.hex, acabado: c.acabado, parte: p.partNames[j] }
+                      ? {
+                          nombre: c.nombre,
+                          hex: c.hex,
+                          muestra_colores: c.muestra_colores,
+                          muestra_tipo: c.muestra_tipo,
+                          acabado: c.acabado,
+                          parte: p.partNames[j]
+                        }
                     : null
                 )
                 .filter(Boolean)
             : piezaColors(p).map((c) => ({
                 nombre: c.nombre,
                 hex: c.hex,
+                muestra_colores: c.muestra_colores,
+                muestra_tipo: c.muestra_tipo,
                 acabado: c.acabado,
                 parte: ''
               }));
@@ -1022,7 +1034,7 @@ export function QuoteClient({
                       {p.name}
                       <span className="qt-pieza-dots">
                         {piezaColors(p).slice(0, 4).map((c) => (
-                          <span key={c.id} style={{ backgroundColor: c.hex }} />
+                          <span key={c.id} style={colorPreviewStyle(c)} />
                         ))}
                       </span>
                     </button>
@@ -1146,9 +1158,18 @@ export function QuoteClient({
                       <button
                         key={c.id}
                         type="button"
-                        className={'qt-swatch' + (isMain || isExtra ? ' active' : '')}
-                        style={{ backgroundColor: c.hex }}
-                        title={c.nombre + (c.acabado ? ` · ${c.acabado}` : '')}
+                        className={
+                          'qt-swatch' +
+                          (isMain || isExtra ? ' active' : '') +
+                          (c.agotado ? ' agotado' : '')
+                        }
+                        style={colorPreviewStyle(c)}
+                        disabled={c.agotado}
+                        title={
+                          c.nombre +
+                          (c.acabado ? ` · ${c.acabado}` : '') +
+                          (c.agotado ? ' · Agotado' : '')
+                        }
                         onClick={() => pickColor(c)}
                       />
                     );
@@ -1190,10 +1211,12 @@ export function QuoteClient({
                                   'qt-swatch' +
                                   (activePieza.config.extraColors.some((x) => x.id === c.id)
                                     ? ' active'
-                                    : '')
+                                    : '') +
+                                  (c.agotado ? ' agotado' : '')
                                 }
-                                style={{ backgroundColor: c.hex }}
-                                title={c.nombre}
+                                style={colorPreviewStyle(c)}
+                                disabled={c.agotado}
+                                title={c.nombre + (c.agotado ? ' · Agotado' : '')}
                                 onClick={() => toggleExtraColor(c)}
                               />
                             ))}
@@ -1207,7 +1230,7 @@ export function QuoteClient({
                   <div className="qt-chosen">
                     {activeColors.map((c) => (
                       <span key={c.id} className="qt-chosen-chip">
-                        <span style={{ backgroundColor: c.hex }} />
+                        <span style={colorPreviewStyle(c)} />
                         {c.nombre}
                       </span>
                     ))}

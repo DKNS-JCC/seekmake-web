@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Quote, QuoteEstado, QuotePago } from '@/lib/types';
+import { colorPreviewStyle } from '@/lib/color-preview';
 import { downloadQuoteFile } from '@/lib/quote/compress';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
@@ -683,7 +684,7 @@ export default function AdminPresupuestos() {
                                   width: 10,
                                   height: 10,
                                   borderRadius: 2,
-                                  background: c.hex,
+                                  ...colorPreviewStyle(c),
                                   border: '1px solid var(--border-h)'
                                 }}
                               />
@@ -737,7 +738,7 @@ export default function AdminPresupuestos() {
                           width: 12,
                           height: 12,
                           borderRadius: 2,
-                          background: c.hex,
+                          ...colorPreviewStyle(c),
                           border: '1px solid var(--border-h)'
                         }}
                       />

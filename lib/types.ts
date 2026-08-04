@@ -12,6 +12,9 @@ export type Acabado =
 
 export type Categoria = string;
 
+export type { MuestraTipo } from './color-preview';
+import type { MuestraTipo } from './color-preview';
+
 // `type` (not `interface`) — supabase-js v2 generics require entities to be
 // assignable to Record<string, unknown>, which interfaces are not.
 export type Filamento = {
@@ -27,10 +30,15 @@ export type Color = {
   filamento_id: string;
   nombre: string;
   hex: string;
+  /** Extra tones for bicolor / rainbow filaments; empty when `muestra_tipo` is 'solido'. */
+  muestra_colores: string[];
+  muestra_tipo: MuestraTipo;
   texto: 'black' | 'white';
   acabado: Acabado | null;
   combina_con: string[];
   oferta: boolean;
+  /** Temporarily out of stock: shown in the muestrario, not pickable in the tasador. */
+  agotado: boolean;
   orden: number;
 };
 
@@ -125,6 +133,8 @@ export type QuoteDireccion = {
 export type QuoteColorSnapshot = {
   nombre: string;
   hex: string;
+  muestra_colores?: string[];
+  muestra_tipo?: MuestraTipo;
   acabado: string | null;
   /** Part name the color applies to (multicolor 3MF), '' for the whole piece. */
   parte: string;
