@@ -61,16 +61,39 @@ export default function HomePage() {
         </div>
         <div className="hero-right">
           <div className="hero-grid" />
-          {/* Above the fold and the LCP element — never lazy-load this one. */}
-          <img
-            src="/images/main_banner.png"
-            alt="Impresión 3D profesional Salamanca"
-            className="hero-img"
-            width={1536}
-            height={1024}
-            fetchPriority="high"
-            decoding="async"
-          />
+          {/*
+            Above the fold and the LCP element — never lazy-load this one.
+
+            The source PNG is 952 KiB, which was the whole reason LCP sat at
+            7.3s on a throttled 4G phone. AVIF gets the same frame down to
+            21 KiB. Order matters: the browser takes the first <source> whose
+            type it understands, so AVIF must precede WebP, and the PNG stays
+            as the fallback for anything that supports neither.
+
+            `sizes` mirrors page.css: one column below 900px, two equal columns
+            above it. Without it the browser assumes 100vw and over-fetches.
+          */}
+          <picture>
+            <source
+              type="image/avif"
+              sizes="(max-width: 900px) 100vw, 50vw"
+              srcSet="/images/main_banner-768.avif 768w, /images/main_banner-1536.avif 1536w"
+            />
+            <source
+              type="image/webp"
+              sizes="(max-width: 900px) 100vw, 50vw"
+              srcSet="/images/main_banner-768.webp 768w, /images/main_banner-1536.webp 1536w"
+            />
+            <img
+              src="/images/main_banner.png"
+              alt="Impresión 3D profesional Salamanca"
+              className="hero-img"
+              width={1536}
+              height={1024}
+              fetchPriority="high"
+              decoding="async"
+            />
+          </picture>
           <div className="hero-img-mask" />
         </div>
         <div className="scroll-hint">

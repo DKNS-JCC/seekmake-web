@@ -52,13 +52,13 @@
   border-color: var(--accent);
 }
 .filamento-pill-name {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-display), sans-serif;
   font-size: 22px;
   letter-spacing: 0.04em;
   line-height: 1;
 }
 .filamento-pill-meta {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -109,7 +109,7 @@
   color: white;
   padding: 2px 8px;
   border-radius: 4px;
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-display), sans-serif;
   font-size: 12px;
   letter-spacing: 0.05em;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
@@ -128,7 +128,7 @@
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   border-radius: 2px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 8px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -147,7 +147,7 @@
   text-overflow: ellipsis;
 }
 .color-hex {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 10px;
   color: var(--muted);
   margin-top: 2px;

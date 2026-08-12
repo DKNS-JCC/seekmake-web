@@ -1,9 +1,44 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
+import { Bebas_Neue, Barlow, IBM_Plex_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import { CookieConsent } from '../components/CookieConsent';
 import './globals.css';
 import { CONTACTO, siteUrl } from '@/lib/contacto';
+
+// Fonts are downloaded at build time and served from our own origin.
+//
+// These used to be pulled in with `@import url(fonts.googleapis.com...)` at the
+// top of globals.css, which serialised four round trips before the first paint:
+// HTML -> our CSS -> Google's CSS -> the font files on gstatic. Lighthouse put
+// that chain at ~2.3s of render blocking. next/font inlines the @font-face
+// rules and emits a <link rel=preload>, so there are no external requests left.
+//
+// Each font exposes a CSS variable; the stylesheets reference those instead of
+// family names. Weights must match what the CSS actually uses — adding unused
+// ones costs bytes for nothing.
+const barlow = Barlow({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-sans'
+});
+
+const bebasNeue = Bebas_Neue({
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+  variable: '--font-display'
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['300', '400', '600'],
+  display: 'swap',
+  variable: '--font-mono'
+});
+
+const fontVariables = `${barlow.variable} ${bebasNeue.variable} ${ibmPlexMono.variable}`;
 
 // Default metadata — pages override what they need.
 export const metadata: Metadata = {
@@ -42,7 +77,12 @@ const noFlashScript = `(function(){
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang="es"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      className={fontVariables}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashScript }} suppressHydrationWarning />
       </head>

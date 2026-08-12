@@ -33,7 +33,7 @@
             width: 100%;
         }
         .cat-hero-tag {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 10px; letter-spacing: 0.32em;
             text-transform: uppercase; color: var(--accent);
             display: flex; align-items: center; gap: 10px;
@@ -44,7 +44,7 @@
             background: var(--accent);
         }
         .cat-hero h1 {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: clamp(48px, 7vw, 88px);
             line-height: 0.92; letter-spacing: 0.02em;
             color: #fff; margin-bottom: 16px;
@@ -62,7 +62,7 @@
             background: rgba(14,165,233,0.15);
             border: 1px solid rgba(14,165,233,0.25);
             border-radius: var(--r);
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 10px; letter-spacing: 0.14em;
             text-transform: uppercase; color: var(--accent);
         }
@@ -70,11 +70,11 @@
             display: flex; gap: 32px; margin-top: 28px;
         }
         .cat-hero-stat-num {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: 32px; color: #fff; line-height: 1;
         }
         .cat-hero-stat-label {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 9px; letter-spacing: 0.2em;
             text-transform: uppercase; color: rgba(255,255,255,0.5);
         }
@@ -103,7 +103,7 @@
             border: 1px solid var(--border);
             border-radius: var(--r);
             color: var(--text);
-            font-family: 'Barlow', sans-serif;
+            font-family: var(--font-sans), sans-serif;
             font-size: 14px;
             transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
@@ -129,7 +129,7 @@
             border: 1px solid var(--border);
             border-radius: var(--r);
             color: var(--text);
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 11px; letter-spacing: 0.06em;
             text-transform: uppercase;
             cursor: pointer; outline: none;
@@ -192,12 +192,12 @@
         }
         .cat-filter-toggle-left {
             display: flex; align-items: center; gap: 10px;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 11px; letter-spacing: 0.12em;
             text-transform: uppercase; color: var(--muted);
         }
         .cat-filter-toggle-count {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 11px; color: var(--accent);
         }
         .cat-filter-toggle svg {
@@ -221,7 +221,7 @@
             background: transparent;
             border: 1px solid var(--border);
             border-radius: var(--r);
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 10px; letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--muted); cursor: pointer;
@@ -234,7 +234,7 @@
         }
 
         .cat-results-count {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 10px; letter-spacing: 0.18em;
             text-transform: uppercase; color: var(--muted);
             padding-bottom: 14px;
@@ -320,7 +320,7 @@
             padding: 4px 10px;
             background: var(--accent);
             border-radius: 2px;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 8px; letter-spacing: 0.18em;
             text-transform: uppercase;
             color: #fff; font-weight: 600;
@@ -335,7 +335,7 @@
             flex: 1;
         }
         .p-card-category {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 8px; letter-spacing: 0.24em;
             text-transform: uppercase;
             color: var(--accent);
@@ -343,7 +343,7 @@
             opacity: 0.8;
         }
         .p-card-name {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: 24px; line-height: 1.05;
             letter-spacing: 0.01em;
             color: var(--text);
@@ -370,14 +370,14 @@
             margin-top: auto;
         }
         .p-card-price {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: 32px; line-height: 1;
             color: var(--text);
         }
         .p-card-price .eur {
             font-size: 14px; color: var(--muted);
             margin-left: 1px;
-            font-family: 'Barlow', sans-serif;
+            font-family: var(--font-sans), sans-serif;
             font-weight: 500;
         }
         .p-card-action {
@@ -392,7 +392,7 @@
         }
         .p-card-action::after {
             content: '+';
-            font-family: 'Barlow', sans-serif;
+            font-family: var(--font-sans), sans-serif;
             font-size: 20px; font-weight: 300;
         }
         .p-card:hover .p-card-action {
@@ -421,7 +421,7 @@
         }
         .cat-loading-text {
             margin-top: 16px;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 11px; letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--muted);
@@ -442,7 +442,7 @@
             color: var(--muted);
         }
         .cat-empty h3 {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: 28px; color: var(--text);
             margin-bottom: 8px;
         }
@@ -471,7 +471,7 @@
             gap: 32px;
         }
         .cat-cta-tag {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 10px; letter-spacing: 0.32em;
             text-transform: uppercase; color: var(--accent);
             display: flex; align-items: center; gap: 10px;
@@ -482,7 +482,7 @@
             background: var(--accent);
         }
         .cat-cta h2 {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: clamp(32px, 4vw, 48px);
             line-height: 1; letter-spacing: 0.02em;
             color: var(--text);
@@ -549,13 +549,13 @@
             padding: 32px;
         }
         .cat-modal-tag {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 10px; letter-spacing: 0.28em;
             text-transform: uppercase; color: var(--accent);
             margin-bottom: 8px;
         }
         .cat-modal-title {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: 36px; line-height: 1;
             letter-spacing: 0.02em; color: var(--text);
             margin-bottom: 12px;
@@ -576,18 +576,18 @@
             border-radius: var(--r);
         }
         .cat-modal-spec-label {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono), monospace;
             font-size: 9px; letter-spacing: 0.22em;
             text-transform: uppercase; color: var(--muted);
             margin-bottom: 4px;
         }
         .cat-modal-spec-value {
-            font-family: 'Barlow', sans-serif;
+            font-family: var(--font-sans), sans-serif;
             font-size: 15px; font-weight: 600;
             color: var(--text);
         }
         .cat-modal-spec-value.price-val {
-            font-family: 'Bebas Neue', sans-serif;
+            font-family: var(--font-display), sans-serif;
             font-size: 32px; color: var(--accent);
             line-height: 1;
         }

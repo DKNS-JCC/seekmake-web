@@ -31,7 +31,7 @@
     border: 1px solid var(--border);
     background: transparent;
     color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
     cursor: pointer;
 }
@@ -41,7 +41,7 @@
 .pq-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .pq-table thead tr {
     text-align: left;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--muted);
 }
@@ -54,8 +54,8 @@
 .pq-table tbody tr:hover { background: var(--surface); }
 .pq-table tr.archived { opacity: 0.5; }
 
-.pq-codigo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; white-space: nowrap; }
-.pq-total { font-family: 'IBM Plex Mono', monospace; text-align: right; white-space: nowrap; }
+.pq-codigo { font-family: var(--font-mono), monospace; font-weight: 600; white-space: nowrap; }
+.pq-total { font-family: var(--font-mono), monospace; text-align: right; white-space: nowrap; }
 .pq-pieza-cell {
     max-width: 200px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -67,7 +67,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
     cursor: pointer;
 }
@@ -76,7 +76,7 @@
     display: inline-block;
     padding: 3px 9px;
     border-radius: var(--r);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
     border: 1px solid;
 }
