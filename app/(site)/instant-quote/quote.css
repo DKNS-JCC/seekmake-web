@@ -235,6 +235,22 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-dim);
 }
+/* Out of stock: still listed so the range is visible, but not orderable. */
+.qt-swatch.agotado {
+    position: relative;
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+.qt-swatch.agotado:hover { transform: none; border-color: var(--border); }
+.qt-swatch.agotado::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: calc(var(--r) - 2px);
+    pointer-events: none;
+    background:
+        linear-gradient(to top left, transparent calc(50% - 1px), #fff calc(50% - 1px), #fff calc(50% + 1px), transparent calc(50% + 1px)),
+        linear-gradient(to top left, transparent calc(50% - 2.5px), rgba(0,0,0,0.6) calc(50% - 2.5px), rgba(0,0,0,0.6) calc(50% + 2.5px), transparent calc(50% + 2.5px));
+}
 
 .qt-toggle {
     display: flex; align-items: center; gap: 8px;

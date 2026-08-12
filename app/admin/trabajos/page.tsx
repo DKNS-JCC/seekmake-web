@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { Trabajo } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
@@ -10,6 +8,11 @@ import { ChipInput } from '../_components/ChipInput';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
+import { useConfirm } from '../_components/useConfirm';
+import { mensajeDeError } from '@/lib/errors';
+import { activable } from '@/lib/a11y';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { ErrorBanner } from '../_components/ErrorBanner';
 
 type Draft = Omit<
   Trabajo,
@@ -30,7 +33,6 @@ const emptyDraft = (): Draft => ({
 export default function AdminTrabajos() {
   const [trabajos, setTrabajos] = useState<Trabajo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -40,10 +42,10 @@ export default function AdminTrabajos() {
 
   const [query, setQuery] = useState('');
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -55,7 +57,7 @@ export default function AdminTrabajos() {
       .select('*')
       .order('destacado', { ascending: false })
       .order('orden');
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudieron cargar los trabajos'));
     setTrabajos(data ?? []);
     setLoading(false);
   }
@@ -102,7 +104,7 @@ export default function AdminTrabajos() {
       ? await supabase().from('trabajos').update(draft).eq('id', editingId)
       : await supabase().from('trabajos').insert({ ...draft, likes: 0, dislikes: 0 });
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el trabajo'));
       setSaveState('error');
       return;
     }
@@ -116,9 +118,9 @@ export default function AdminTrabajos() {
   }
 
   async function remove(id: string) {
-    if (!confirm('¿Eliminar este trabajo?')) return;
+    if (!(await confirmar({ mensaje: '¿Eliminar este trabajo?' }))) return;
     const { error } = await supabase().from('trabajos').delete().eq('id', id);
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudo borrar el trabajo'));
     await refresh();
   }
 
@@ -134,21 +136,11 @@ export default function AdminTrabajos() {
     );
   }, [trabajos, query]);
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
 
   return (
     <div>
+      {dialogo}
       <div
         style={{
           display: 'flex',
@@ -198,20 +190,7 @@ export default function AdminTrabajos() {
         </span>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: 12,
-            borderRadius: 'var(--r)',
-            marginBottom: 16,
-            fontSize: 13
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
@@ -226,7 +205,7 @@ export default function AdminTrabajos() {
           {visible.map((t) => (
             <article
               key={t.id}
-              onClick={() => startEdit(t)}
+              {...activable(() => startEdit(t), `Editar ${t.titulo}`)}
               style={{
                 position: 'relative',
                 background: 'var(--surface)',
@@ -268,6 +247,8 @@ export default function AdminTrabajos() {
                   <img
                     src={t.imagen}
                     alt={t.titulo}
+                    loading="lazy"
+                    decoding="async"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 )}

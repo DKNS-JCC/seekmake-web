@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { BlogList } from './BlogList';
 import './blog.css';
+import { siteUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
   title: 'Blog | 3DCC Salamanca',
   description:
     'Artículos sobre impresión 3D: materiales, técnicas, casos de uso y novedades de 3DCC Salamanca.',
-  alternates: { canonical: 'https://impresion3dcc.com/blog' }
+  alternates: { canonical: siteUrl('/blog') }
 };
 
 export default function BlogPage() {

@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { Categoria, Producto } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
@@ -10,6 +8,11 @@ import { ChipInput } from '../_components/ChipInput';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
+import { useConfirm } from '../_components/useConfirm';
+import { mensajeDeError } from '@/lib/errors';
+import { activableRow } from '@/lib/a11y';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { ErrorBanner } from '../_components/ErrorBanner';
 
 type Draft = Omit<Producto, 'id' | 'created_at' | 'updated_at'>;
 
@@ -31,7 +34,6 @@ const emptyDraft = (): Draft => ({
 export default function AdminProductos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Drawer state
@@ -44,10 +46,10 @@ export default function AdminProductos() {
   const [query, setQuery] = useState('');
   const [catFilter, setCatFilter] = useState<'todas' | Categoria>('todas');
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -59,7 +61,7 @@ export default function AdminProductos() {
       .select('*')
       .order('destacado', { ascending: false })
       .order('legacy_id');
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudieron cargar los productos'));
     setProductos(data ?? []);
     setLoading(false);
   }
@@ -105,7 +107,7 @@ export default function AdminProductos() {
       ? await supabase().from('productos').update(draft).eq('id', editingId)
       : await supabase().from('productos').insert(draft);
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el producto'));
       setSaveState('error');
       return;
     }
@@ -120,10 +122,10 @@ export default function AdminProductos() {
   }
 
   async function remove(id: string) {
-    if (!confirm('¿Eliminar este producto?')) return;
+    if (!(await confirmar({ mensaje: '¿Eliminar este producto?' }))) return;
     const { error } = await supabase().from('productos').delete().eq('id', id);
     if (error) {
-      setError(error.message);
+      setError(mensajeDeError(error, 'No se pudo borrar el producto'));
       return;
     }
     await refresh();
@@ -143,21 +145,11 @@ export default function AdminProductos() {
     });
   }, [productos, query, catFilter]);
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
 
   return (
     <div>
+      {dialogo}
       <div
         style={{
           display: 'flex',
@@ -220,20 +212,7 @@ export default function AdminProductos() {
         </span>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: 12,
-            borderRadius: 'var(--r)',
-            marginBottom: 16,
-            fontSize: 13
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
@@ -264,7 +243,7 @@ export default function AdminProductos() {
               <tr
                 key={p.id}
                 style={{ borderTop: '1px solid var(--border)', cursor: 'pointer' }}
-                onClick={() => startEdit(p)}
+                {...activableRow(() => startEdit(p), `Editar ${p.nombre}`)}
               >
                 <td style={{ ...td, width: 64 }}>
                   {p.imagen ? (
@@ -272,6 +251,8 @@ export default function AdminProductos() {
                     <img
                       src={p.imagen}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       style={{
                         width: 48,
                         height: 48,

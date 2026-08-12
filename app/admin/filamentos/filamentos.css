@@ -94,10 +94,17 @@
   overflow: hidden;
 }
 
-.color-badge {
+.color-tags {
   position: absolute;
   top: 6px;
   left: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.color-badge {
   background: #ef4444;
   color: white;
   padding: 2px 8px;
@@ -106,6 +113,11 @@
   font-size: 12px;
   letter-spacing: 0.05em;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.color-badge.agotado {
+  background: #1f2937;
+  box-shadow: 0 2px 8px rgba(31, 41, 55, 0.45);
 }
 
 .color-acabado {

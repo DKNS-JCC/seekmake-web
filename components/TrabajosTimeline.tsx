@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getOrCreateVoterId } from '@/lib/voter-id';
 import type { Trabajo } from '@/lib/types';
 import './TrabajosTimeline.css';
+import { activable } from '@/lib/a11y';
 
 type Vote = 'like' | 'dislike' | null;
 
@@ -276,7 +277,7 @@ export function TrabajosTimeline({
                 <article
                   key={`${t.id}-${i}`}
                   className="tr-card tr-marquee-card"
-                  onClick={() => setSelected(t)}
+                  {...activable(() => setSelected(t), `Ver ${t.titulo}`)}
                 >
                   <div className="tr-card-inner">
                     <div className="tr-card-img">
@@ -308,7 +309,7 @@ export function TrabajosTimeline({
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           {selected && (
-            <div className="tr-modal">
+            <div className="tr-modal" role="dialog" aria-modal="true">
               <div className="tr-modal-img">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={selected.imagen} alt={selected.titulo} />
@@ -378,7 +379,7 @@ export function TrabajosTimeline({
               <article
                 key={t.id}
                 className="tr-card"
-                onClick={() => setSelected(t)}
+                {...activable(() => setSelected(t), `Ver ${t.titulo}`)}
               >
                 <div className="tr-card-marker">
                   <span className="tr-card-date">{formatDate(t.fecha_efectiva)}</span>
@@ -459,7 +460,7 @@ export function TrabajosTimeline({
         }}
       >
         {selected && (
-          <div className="tr-modal">
+          <div className="tr-modal" role="dialog" aria-modal="true">
             <div className="tr-modal-img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={selected.imagen} alt={selected.titulo} />

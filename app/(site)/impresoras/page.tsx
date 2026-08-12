@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import './impresoras.css';
+import { siteUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
   title: 'Sobre nuestras impresoras - 3DCC Salamanca | Impresión 3D',
   description:
     'Conoce al equipo detrás de 3DCC Salamanca. Nuestras impresoras 3D trabajan sin descanso para convertir tus ideas en piezas reales con precisión profesional.',
-  alternates: { canonical: 'https://impresion3dcc.com/impresoras' },
+  alternates: { canonical: siteUrl('/impresoras') },
   openGraph: {
     title: 'Sobre nuestras impresoras - 3DCC Salamanca',
     description:

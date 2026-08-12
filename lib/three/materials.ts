@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import type { Acabado, Color, Filamento } from '@/lib/types';
+import { esMulticolor, paleta, tipoDe, type MuestraTipo } from '@/lib/color-preview';
 
 // ─── Color helpers ───────────────────────────────────────────────────────
 
@@ -34,6 +35,78 @@ export function isCarbonFiber(c: Color, f: Filamento | null): boolean {
 
 export function isMarble(c: Color): boolean {
   return /marmol|mármol|marble/i.test(c.nombre ?? '');
+}
+
+// ─── UV generation ──────────────────────────────────────────────────────
+
+/**
+ * STL files carry no texture coordinates, and without them three.js samples
+ * every fragment at texel (0,0) — a textured mesh renders as one flat colour.
+ * We build two sets from the bounding box:
+ *
+ *   uv  (channel 0) — box projection, so surface detail (carbon weave, marble
+ *                     speckle) stays undistorted on every face.
+ *   uv1 (channel 1) — planar sweep across the two longest axes, so a
+ *                     multicolour palette spans the whole piece exactly once.
+ *
+ * Safe to call repeatedly; an existing `uv` from a 3MF/OBJ is left alone.
+ */
+export function ensureUVs(geometry: THREE.BufferGeometry): void {
+  const pos = geometry.getAttribute('position');
+  if (!pos) return;
+  if (!geometry.getAttribute('normal')) geometry.computeVertexNormals();
+  const nor = geometry.getAttribute('normal');
+
+  geometry.computeBoundingBox();
+  const bb = geometry.boundingBox;
+  if (!bb) return;
+
+  const size = new THREE.Vector3();
+  bb.getSize(size);
+  const s = [size.x || 1, size.y || 1, size.z || 1];
+  const min = [bb.min.x, bb.min.y, bb.min.z];
+  const p = [0, 0, 0];
+
+  const count = pos.count;
+  const needBox = !geometry.getAttribute('uv');
+  const box = needBox ? new Float32Array(count * 2) : null;
+  const sweep = new Float32Array(count * 2);
+
+  // Longest axis carries the palette, second longest the layer lines.
+  const [uAxis, vAxis] = [0, 1, 2].sort((a, b) => s[b] - s[a]);
+
+  for (let i = 0; i < count; i++) {
+    p[0] = pos.getX(i);
+    p[1] = pos.getY(i);
+    p[2] = pos.getZ(i);
+
+    sweep[i * 2] = (p[uAxis] - min[uAxis]) / s[uAxis];
+    sweep[i * 2 + 1] = (p[vAxis] - min[vAxis]) / s[vAxis];
+
+    if (box) {
+      const nx = Math.abs(nor.getX(i));
+      const ny = Math.abs(nor.getY(i));
+      const nz = Math.abs(nor.getZ(i));
+      // Project along the axis the face points down, using the other two.
+      let a: number;
+      let b: number;
+      if (nx >= ny && nx >= nz) {
+        a = 2;
+        b = 1;
+      } else if (ny >= nx && ny >= nz) {
+        a = 0;
+        b = 2;
+      } else {
+        a = 0;
+        b = 1;
+      }
+      box[i * 2] = (p[a] - min[a]) / s[a];
+      box[i * 2 + 1] = (p[b] - min[b]) / s[b];
+    }
+  }
+
+  if (box) geometry.setAttribute('uv', new THREE.BufferAttribute(box, 2));
+  geometry.setAttribute('uv1', new THREE.BufferAttribute(sweep, 2));
 }
 
 // ─── Procedural textures ────────────────────────────────────────────────
@@ -139,6 +212,49 @@ export function makeMarbleTexture(hexBase: string): THREE.CanvasTexture {
   return tex;
 }
 
+export function makeMultiColorTexture(
+  colors: string[],
+  tipo: MuestraTipo = 'bandas'
+): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  const swatches = colors.length > 0 ? colors : ['#cccccc'];
+
+  if (tipo === 'degradado') {
+    // Loop back to the first tone so the texture tiles without a seam.
+    const loop = [...swatches, swatches[0]];
+    const grad = ctx.createLinearGradient(0, 0, size, 0);
+    loop.forEach((hex, i) => grad.addColorStop(i / (loop.length - 1), hex));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+  } else {
+    const step = size / swatches.length;
+    for (let i = 0; i < swatches.length; i++) {
+      ctx.fillStyle = swatches[i];
+      ctx.fillRect(Math.floor(i * step), 0, Math.ceil(step) + 1, size);
+    }
+  }
+
+  // Faint print layers so the palette reads as an object instead of a decal.
+  ctx.globalAlpha = 0.1;
+  for (let i = 0; i < size; i += 6) {
+    ctx.fillStyle = i % 12 === 0 ? '#ffffff' : '#000000';
+    ctx.fillRect(0, i, size, 2);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  // Rides the planar sweep (uv1) so the palette spans the piece exactly once.
+  tex.channel = 1;
+  tex.repeat.set(1, 1);
+  tex.anisotropy = 4;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // ─── Acabado → material props ────────────────────────────────────────────
 
 export function acabadoMaterialProps(hex: string, acabado: Acabado | null) {
@@ -207,6 +323,8 @@ export function buildMaterialUpdate(
 
   const cf = isCarbonFiber(c, f);
   const mb = isMarble(c);
+  const multi = esMulticolor(c) ? paleta(c) : [];
+  const multiTipo = tipoDe(c);
 
   let map: THREE.Texture | null = null;
   if (cf) {
@@ -234,6 +352,17 @@ export function buildMaterialUpdate(
     props.roughness = 0.78;
     props.clearcoat = 0.18;
     props.clearcoatRoughness = 0.45;
+  } else if (multi.length > 1) {
+    const key = `mc-${multiTipo}-${multi.join('|')}`;
+    let t = cache.get(key);
+    if (!t) {
+      t = makeMultiColorTexture(multi, multiTipo);
+      cache.set(key, t);
+    }
+    map = t;
+    props.color = new THREE.Color(0xffffff);
+    props.roughness = Math.max(props.roughness ?? 0.5, 0.5);
+    props.metalness = Math.min(props.metalness ?? 0, 0.08);
   }
 
   return { props, map };

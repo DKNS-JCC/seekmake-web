@@ -5,10 +5,12 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { Color, Filamento } from '@/lib/types';
+import { colorPreviewStyle } from '@/lib/color-preview';
 import {
   acabadoMaterialProps,
   applyMaterialUpdate,
-  buildMaterialUpdate
+  buildMaterialUpdate,
+  ensureUVs
 } from '@/lib/three/materials';
 
 const MAX_FILE_MB = 50;
@@ -171,6 +173,7 @@ export function Visualizer3D({
       const geometry = loader.parse(buf);
       geometry.computeVertexNormals();
       geometry.center();
+      ensureUVs(geometry);
       geometry.computeBoundingSphere();
 
       const state = stateRef.current;
@@ -377,9 +380,16 @@ export function Visualizer3D({
                       <button
                         type="button"
                         key={c.id}
-                        className={'viz-swatch' + (isActive ? ' active' : '')}
-                        style={{ backgroundColor: c.hex }}
-                        title={`${c.nombre} · ${filamento.material}`}
+                        className={
+                          'viz-swatch' +
+                          (isActive ? ' active' : '') +
+                          (c.agotado ? ' agotado' : '')
+                        }
+                        style={colorPreviewStyle(c)}
+                        title={
+                          `${c.nombre} · ${filamento.material}` +
+                          (c.agotado ? ' · Agotado' : '')
+                        }
                         onClick={() => setSelected({ color: c, filamento })}
                       />
                     );
@@ -393,13 +403,14 @@ export function Visualizer3D({
             <div className="viz-selected">
               <div
                 className="viz-selected-swatch"
-                style={{ backgroundColor: selected.color.hex }}
+                style={colorPreviewStyle(selected.color)}
               />
               <div className="viz-selected-info">
                 <div className="viz-selected-name">{selected.color.nombre}</div>
                 <div className="viz-selected-mat">
                   {selected.filamento.material}
                   {selected.color.acabado && ' · ' + selected.color.acabado}
+                  {selected.color.agotado && ' · Agotado'}
                 </div>
               </div>
             </div>

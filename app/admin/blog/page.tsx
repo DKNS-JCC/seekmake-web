@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { BlogPost } from '@/lib/types';
 import { renderMarkdown, slugify } from '@/lib/markdown';
 import { Drawer } from '../_components/Drawer';
@@ -10,7 +8,12 @@ import { Field, inputStyle } from '../_components/Field';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
+import { useConfirm } from '../_components/useConfirm';
 import './blog-admin.css';
+import { mensajeDeError } from '@/lib/errors';
+import { activableRow } from '@/lib/a11y';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { ErrorBanner } from '../_components/ErrorBanner';
 
 type Draft = Omit<BlogPost, 'id' | 'created_at' | 'updated_at'>;
 
@@ -27,7 +30,6 @@ const emptyDraft = (): Draft => ({
 export default function AdminBlog() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -38,10 +40,10 @@ export default function AdminBlog() {
 
   const [query, setQuery] = useState('');
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -52,7 +54,7 @@ export default function AdminBlog() {
       .from('blog_posts')
       .select('*')
       .order('updated_at', { ascending: false });
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudieron cargar los posts'));
     setPosts(data ?? []);
     setLoading(false);
   }
@@ -125,7 +127,7 @@ export default function AdminBlog() {
       ? await supabase().from('blog_posts').update(payload).eq('id', editingId)
       : await supabase().from('blog_posts').insert(payload);
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el post'));
       setSaveState('error');
       return;
     }
@@ -139,9 +141,9 @@ export default function AdminBlog() {
   }
 
   async function remove(id: string) {
-    if (!confirm('¿Borrar este post?')) return;
+    if (!(await confirmar({ mensaje: '¿Borrar este post?' }))) return;
     const { error } = await supabase().from('blog_posts').delete().eq('id', id);
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudieron cargar los posts'));
     await refresh();
   }
 
@@ -156,21 +158,11 @@ export default function AdminBlog() {
     );
   }, [posts, query]);
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
 
   return (
     <div>
+      {dialogo}
       <div
         style={{
           display: 'flex',
@@ -238,20 +230,7 @@ export default function AdminBlog() {
         </span>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: 12,
-            borderRadius: 'var(--r)',
-            marginBottom: 16,
-            fontSize: 13
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
@@ -281,7 +260,7 @@ export default function AdminBlog() {
               <tr
                 key={p.id}
                 style={{ borderTop: '1px solid var(--border)', cursor: 'pointer' }}
-                onClick={() => startEdit(p)}
+                {...activableRow(() => startEdit(p), `Editar ${p.title}`)}
               >
                 <td style={td}>
                   <strong>{p.title}</strong>

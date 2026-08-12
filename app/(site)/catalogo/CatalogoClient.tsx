@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Producto } from '@/lib/types';
 import './catalogo.css';
+import { activable } from '@/lib/a11y';
 
 type SortKey = 'destacado' | 'precio-asc' | 'precio-desc' | 'nombre';
 type ViewMode = 'grid' | 'list';
@@ -338,7 +339,7 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
               <article
                 key={p.id}
                 className="p-card"
-                onClick={() => setActive(p)}
+                {...activable(() => setActive(p), `Ver ${p.nombre}`)}
               >
                 {p.destacado && (
                   <span className="p-card-badge">★ Destacado</span>
@@ -478,7 +479,7 @@ function ProductModal({
         </button>
         <div className="cat-modal-image">
           {active.imagen ? (
-            <img src={active.imagen} alt={active.nombre} />
+            <img src={active.imagen} alt={active.nombre} loading="lazy" decoding="async" />
           ) : (
             <svg
               width="48"

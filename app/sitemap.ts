@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types';
+import { CONTACTO } from '@/lib/contacto';
 
 export const dynamic = 'force-static';
 
-const BASE = 'https://impresion3dcc.com';
+const BASE = CONTACTO.sitio;
 
 const STATIC: MetadataRoute.Sitemap = [
   { url: BASE,                      priority: 1.0,  changeFrequency: 'weekly'  },

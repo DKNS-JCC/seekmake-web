@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { mensajeDeError } from '@/lib/errors';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function AdminLogin() {
     const { error: err } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (err) {
-      setError(err.message);
+      setError(mensajeDeError(err));
       return;
     }
     router.push('/admin');

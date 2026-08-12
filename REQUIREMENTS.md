@@ -229,11 +229,11 @@ Presente en todas las páginas excepto `qr.html` y `terminos.html` (versión red
 #### Contacto `#contacto`
 - `py-20 bg-gray-50 dark:bg-gray-900`
 - **Grid 2 columnas** (izq: info, der: acciones):
-  - Info: WhatsApp/Llamadas (+34 665 14 89 56), Email (impresion3dslmc@gmail.com), Web (impresion3dcc.com), Ubicación (Plza. Barrio Vidal, Salamanca 37006)
+  - Info: WhatsApp/Llamadas (+34 923 793 123), Email (impresion3dslmc@gmail.com), Web (impresion3dcc.com), Ubicación (Plza. Barrio Vidal, Salamanca 37006)
   - Acciones (3 botones a ancho completo):
     - "Enviar email" → `mailto:impresion3dslmc@gmail.com`
-    - "Llamar" → `tel:+34665148956`
-    - "WhatsApp" → `https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D`
+    - "Llamar" → `tel:+34923793123`
+    - "WhatsApp" → `https://wa.me/34923793123?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D`
 
 ---
 
@@ -467,11 +467,11 @@ Todas las imágenes son URLs externas de **Printables** o **MakerWorld (Bambu La
 | Campo | Valor |
 |-------|-------|
 | Nombre | 3DCC Salamanca |
-| Teléfono | +34 665 14 89 56 |
+| Teléfono | +34 923 793 123 |
 | Email | impresion3dslmc@gmail.com |
 | Dirección | Plza. Barrio Vidal, Salamanca 37006, España |
 | WebApp | https://impresion3dcc.com |
-| WA deep-link | `https://wa.me/34665148956?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D` |
+| WA deep-link | `https://wa.me/34923793123?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20impresi%C3%B3n%203D` |
 | Google Maps geo | lat: 40.9701, lng: -5.6635 |
 | Horario Schema | Mo-Su 09:00-21:00 |
 | Precio Schema | €€ |

@@ -94,6 +94,18 @@ filamentos:
       acabado: "Textura"
       combina_con: ["Negro Azabache", "Dorado", "Blanco Hielo"]
 
+    # Especiales - Multicolor
+    - nombre: "PLA Negro y Azul"
+      hex: "#111827"
+      muestra_colores: ["#111827", "#2563EB"]
+      muestra_tipo: "bandas"
+      combina_con: ["Blanco Hielo", "Gris", "Azul Marino"]
+    - nombre: "PLA Rainbow"
+      hex: "#EF4444"
+      muestra_colores: ["#EF4444", "#F97316", "#EAB308", "#22C55E", "#3B82F6", "#A855F7"]
+      muestra_tipo: "degradado"
+      combina_con: ["Blanco Hielo", "Negro Azabache"]
+
   PETG:
     nombre: "PETG"
     descripcion: "Material con mayor resistencia al impacto, temperatura y resistencia a químicos."

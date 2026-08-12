@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import './terminos.css';
+import { CONTACTO, mailtoUrl, siteUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones - 3DCC Salamanca',
   description:
     'Términos y condiciones del servicio de impresión 3D de 3DCC Salamanca.',
   robots: { index: false, follow: true },
-  alternates: { canonical: 'https://impresion3dcc.com/terminos' }
+  alternates: { canonical: siteUrl('/terminos') }
 };
 
 export default function TerminosPage() {
@@ -16,7 +17,7 @@ export default function TerminosPage() {
       <nav id="navbar">
         <div className="nav-inner">
           <Link href="/" className="nav-logo">
-            <img src="/icons/android-chrome-192x192.png" alt="3DCC Logo" />
+            <img src="/icons/android-chrome-192x192.png" alt="3DCC Logo" width={192} height={192} />
             <div>
               <span className="nav-logo-name">3DCC</span>
               <span className="nav-logo-sub">Impresión 3D</span>
@@ -70,13 +71,13 @@ export default function TerminosPage() {
               </li>
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:info@impresion3dcc.com">
-                  info@impresion3dcc.com
+                <a href={mailtoUrl()}>
+                  {CONTACTO.email}
                 </a>
               </li>
               <li>
                 <strong>Teléfono / WhatsApp:</strong>{' '}
-                <a href="tel:+34665148956">+34 665 14 89 56</a>
+                <a href={`tel:${CONTACTO.telefonoTel}`}>{CONTACTO.telefono}</a>
               </li>
             </ul>
 
@@ -440,13 +441,13 @@ export default function TerminosPage() {
             <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:info@impresion3dcc.com">
-                  info@impresion3dcc.com
+                <a href={mailtoUrl()}>
+                  {CONTACTO.email}
                 </a>
               </li>
               <li>
                 <strong>Teléfono/WhatsApp:</strong>{' '}
-                <a href="tel:+34665148956">+34 665 14 89 56</a>
+                <a href={`tel:${CONTACTO.telefonoTel}`}>{CONTACTO.telefono}</a>
               </li>
               <li>
                 <strong>Ubicación:</strong> Salamanca, España

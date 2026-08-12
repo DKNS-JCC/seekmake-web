@@ -25,7 +25,19 @@ const DEV_ALLOWED = [
   'http://127.0.0.1:3001'
 ];
 
-const ALLOWED_ORIGINS = [...PROD_ALLOWED, ...DEV_ALLOWED];
+// La Calculadora (Electron / Capacitor / Vite dev) también llama a esta
+// función para avisar al cliente de pedidos enlazados a una quote. Sus
+// orígenes: file:// en Electron empaquetado manda "null"; el WebView de
+// Capacitor usa https://localhost; Vite dev usa el 5173.
+const CALC_ALLOWED = [
+  'null',
+  'https://localhost',
+  'capacitor://localhost',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+
+const ALLOWED_ORIGINS = [...PROD_ALLOWED, ...DEV_ALLOWED, ...CALC_ALLOWED];
 
 function pickOrigin(reqOrigin: string | null): string {
   if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
@@ -57,6 +69,25 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// denomailer 1.6.0 mis-encodes non-ASCII header values (it soft-wraps the
+// RFC 2047 encoded-word with `=\r\n` and keeps literal spaces), which breaks
+// header folding and makes clients render the whole message as raw MIME. Keep
+// header values pure ASCII so denomailer passes them through untouched; the
+// body still carries full UTF-8 via quoted-printable.
+function asciiHeader(s: string): string {
+  return (s ?? '')
+    .replace(/€/g, 'EUR')
+    .replace(/[·•∙]/g, '-')
+    .replace(/[—–]/g, '-')
+    .replace(/[“”«»]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '') // drop combining accent marks
+    .replace(/[^\x20-\x7E]/g, '')    // strip anything still non-ASCII
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Subject + message per estado. `precio` is precio_final ?? precio_total.
@@ -123,16 +154,28 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Server not configured (Supabase).' }, 500, allowedOrigin);
   }
 
-  // ── Caller must be an admin ──
+  // ── Caller must be an admin OR a 3DCC Calculadora user (empresa_users) ──
   const authHeader = req.headers.get('Authorization') ?? '';
   const token = authHeader.replace(/^Bearer\s+/i, '');
   if (!token) return json({ error: 'No autenticado.' }, 401, allowedOrigin);
 
   const authClient = createClient(supabaseUrl, anonKey);
   const { data: userData, error: userErr } = await authClient.auth.getUser(token);
-  const isAdmin = userData?.user?.app_metadata?.is_admin === true;
-  if (userErr || !isAdmin) {
-    return json({ error: 'Solo administradores.' }, 403, allowedOrigin);
+  if (userErr || !userData?.user) {
+    return json({ error: 'No autenticado.' }, 401, allowedOrigin);
+  }
+  let authorized = userData.user.app_metadata?.is_admin === true;
+  if (!authorized) {
+    const svc = createClient(supabaseUrl, serviceKey);
+    const { data: eu } = await svc
+      .from('empresa_users')
+      .select('empresa')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+    authorized = eu?.empresa === '3dcc';
+  }
+  if (!authorized) {
+    return json({ error: 'Solo administradores o usuarios de 3DCC.' }, 403, allowedOrigin);
   }
 
   let body: any;
@@ -200,7 +243,7 @@ Código:  ${q.codigo}
 Estado:  ${q.estado}
 ${linkLabel}: ${linkUrl}
 
-¿Dudas? Responde a este email o WhatsApp: +34 665 14 89 56.
+¿Dudas? Responde a este email o WhatsApp: +34 923 793 123.
 
 — 3DCC Salamanca · impresion3dcc.com
 `.trim();
@@ -218,7 +261,7 @@ ${linkLabel}: ${linkUrl}
     <a href="${linkUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">${escapeHtml(linkLabel)}</a>
   </div>
   <p style="margin:0;color:#444;font-size:13px;">
-    ¿Dudas? Responde a este email o <a href="https://wa.me/34665148956" style="color:#0EA5E9;">WhatsApp</a>.
+    ¿Dudas? Responde a este email o <a href="https://wa.me/34923793123" style="color:#0EA5E9;">WhatsApp</a>.
   </p>
   <p style="margin:24px 0 0 0;font-size:11px;color:#999;">— 3DCC Salamanca · <a href="https://www.impresion3dcc.com" style="color:#999;">impresion3dcc.com</a></p>
 </div>
@@ -238,7 +281,7 @@ ${linkLabel}: ${linkUrl}
       from: `3DCC Salamanca <${gmailUser}>`,
       to: q.email,
       replyTo: recipient,
-      subject: `${plantilla.asunto} · ${q.codigo} — 3DCC Salamanca`,
+      subject: asciiHeader(`${plantilla.asunto} · ${q.codigo} — 3DCC Salamanca`),
       content: text,
       html
     });

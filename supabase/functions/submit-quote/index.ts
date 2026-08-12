@@ -79,6 +79,26 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+// denomailer 1.6.0 mis-encodes non-ASCII header values: quotedPrintableEncode
+// injects a soft line break (`=\r\n`) *inside* the RFC 2047 encoded-word and
+// leaves spaces literal, which breaks header folding and makes clients render
+// the whole message as raw MIME. Keeping header values pure ASCII (and not
+// starting with "=?") makes denomailer pass them through untouched — the body
+// still carries full UTF-8 via quoted-printable.
+function asciiHeader(s: string): string {
+  return (s ?? '')
+    .replace(/€/g, 'EUR')
+    .replace(/[·•∙]/g, '-')
+    .replace(/[—–]/g, '-')
+    .replace(/[“”«»]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '') // drop combining accent marks
+    .replace(/[^\x20-\x7E]/g, '')    // strip anything still non-ASCII
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -654,7 +674,7 @@ Cuando lo hayamos revisado, podrás aceptarlo directamente desde este enlace
 (personal, no lo compartas):
 ${acceptUrl}
 
-¿Dudas? Responde a este email o escríbenos por WhatsApp: +34 665 14 89 56.
+¿Dudas? Responde a este email o escríbenos por WhatsApp: +34 923 793 123.
 
 — 3DCC Salamanca · impresion3dcc.com
 `.trim();
@@ -684,7 +704,7 @@ ${acceptUrl}
   </p>
   <p style="margin:0;color:#444;font-size:13px;">
     ¿Dudas? Responde a este email o escríbenos por
-    <a href="https://wa.me/34665148956" style="color:#0EA5E9;">WhatsApp</a>.
+    <a href="https://wa.me/34923793123" style="color:#0EA5E9;">WhatsApp</a>.
   </p>
   <p style="margin:24px 0 0 0;font-size:11px;color:#999;">— 3DCC Salamanca · <a href="https://www.impresion3dcc.com" style="color:#999;">impresion3dcc.com</a></p>
 </div>
@@ -694,8 +714,8 @@ ${acceptUrl}
       await client.send({
         from: `3DCC Tasador <${gmailUser}>`,
         to: recipient,
-        replyTo: `${nombre} <${email}>`,
-        subject: `[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} € — ${nombre}`,
+        replyTo: `${asciiHeader(nombre)} <${email}>`,
+        subject: asciiHeader(`[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} € — ${nombre}`),
         content: text,
         html
       });
@@ -710,7 +730,7 @@ ${acceptUrl}
         from: `3DCC Salamanca <${gmailUser}>`,
         to: email,
         replyTo: recipient,
-        subject: `Tu presupuesto ${codigo} — 3DCC Salamanca`,
+        subject: asciiHeader(`Tu presupuesto ${codigo} — 3DCC Salamanca`),
         content: clienteText,
         html: clienteHtml
       });

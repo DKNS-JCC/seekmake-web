@@ -21,20 +21,26 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createClient } from '@/lib/supabase/client';
 import type { Color, Filamento, QuoteEntrega } from '@/lib/types';
+import { colorPreviewStyle } from '@/lib/color-preview';
+import { useCatalogoColores } from '@/lib/useCatalogoColores';
+import {
+  piezaColors,
+  type ParsedModel,
+  type Pieza,
+  type PiezaConfig,
+  type QuoteStatus
+} from '@/lib/quote/types';
+import { openQuotePdf } from '@/lib/quote/pdf';
+import { createStudio, type Studio } from '@/lib/three/studio';
 import {
   acabadoMaterialProps,
   applyMaterialUpdate,
-  buildMaterialUpdate
+  buildMaterialUpdate,
+  ensureUVs
 } from '@/lib/three/materials';
-import {
-  analyzeObject,
-  looksDegenerate,
-  suggestScales,
-  type MeshMetrics
-} from '@/lib/quote/geometry';
+import { analyzeObject, looksDegenerate, suggestScales } from '@/lib/quote/geometry';
 import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import {
   computeQuote,
@@ -43,48 +49,14 @@ import {
   type QuoteSettings
 } from '@/lib/quote/pricing';
 import './quote.css';
+import { CONTACTO, ESCRIBENOS, whatsappUrl } from '@/lib/contacto';
 
 const MAX_FILE_MB = 50;
 const MAX_FILES = 5;
 const ACCEPT = '.stl,.3mf,.obj';
-const WHATSAPP = '34665148956';
 
 // Anonymous funnel id for quote_events (per page load, never identifies).
 const SESSION_ID = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
-
-interface PiezaConfig {
-  filamentoId: string;
-  mainColor: Color | null;
-  multicolor: boolean;
-  extraColors: Color[];
-  /** Per-part colors — only meaningful for multi-part 3MF pieces. */
-  partColors: (Color | null)[];
-  resistenciaId: string;
-  detalleId: string;
-}
-
-interface Pieza {
-  id: string;
-  file: File;
-  name: string;
-  size: number;
-  ext: string;
-  metrics: MeshMetrics;
-  cantidad: number;
-  partNames: string[];
-  config: PiezaConfig;
-}
-
-interface ParsedModel {
-  root: THREE.Group;
-  meshes: THREE.Mesh[];
-}
-
-type Status =
-  | { kind: 'idle' }
-  | { kind: 'sending'; progress: string }
-  | { kind: 'ok'; codigo: string }
-  | { kind: 'err'; message: string };
 
 function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);
@@ -103,36 +75,24 @@ function disposeModel(model: ParsedModel): void {
   });
 }
 
-/** Distinct colors a piece will print with, per its config. */
-function piezaColors(p: Pieza): Color[] {
-  const seen = new Map<string, Color>();
-  if (p.partNames.length > 1) {
-    for (const c of p.config.partColors) if (c) seen.set(c.id, c);
-  } else {
-    if (p.config.mainColor) seen.set(p.config.mainColor.id, p.config.mainColor);
-    if (p.config.multicolor) {
-      for (const c of p.config.extraColors) seen.set(c.id, c);
-    }
-  }
-  return [...seen.values()];
-}
-
 export function QuoteClient({
-  filamentos,
-  colores
+  filamentos: filamentosIniciales,
+  colores: coloresIniciales
 }: {
   filamentos: Filamento[];
   colores: Color[];
 }) {
+  // Build-time snapshot first, live data as soon as it arrives — otherwise a
+  // colour marked agotado stays orderable until the next rebuild.
+  const { filamentos, colores } = useCatalogoColores({
+    filamentos: filamentosIniciales,
+    colores: coloresIniciales
+  });
+
   // ─── three.js plumbing ──────────────────────────────────────────────────
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const stateRef = useRef<{
-    renderer: THREE.WebGLRenderer;
-    scene: THREE.Scene;
-    camera: THREE.PerspectiveCamera;
-    controls: OrbitControls;
-  } | null>(null);
+  const stateRef = useRef<Studio | null>(null);
   // Parsed models cached per pieza id so switching pieces is instant.
   const modelsRef = useRef<Map<string, ParsedModel>>(new Map());
   const shownRef = useRef<string | null>(null);
@@ -165,7 +125,7 @@ export function QuoteClient({
   const [provincia, setProvincia] = useState('');
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
-  const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [status, setStatus] = useState<QuoteStatus>({ kind: 'idle' });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -214,79 +174,13 @@ export function QuoteClient({
 
   // ─── scene setup (same studio as the muestrario visualizer) ─────────────
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
-
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(wrap.clientWidth, wrap.clientHeight, false);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
-
-    const scene = new THREE.Scene();
-    scene.background = null;
-
-    const camera = new THREE.PerspectiveCamera(
-      40,
-      wrap.clientWidth / wrap.clientHeight,
-      0.1,
-      5000
-    );
-    camera.position.set(80, 60, 80);
-
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x555566, 0.85);
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
-    key.position.set(60, 90, 50);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.75);
-    fill.position.set(-60, 30, -40);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.6);
-    rim.position.set(0, -20, -80);
-    const ambient = new THREE.AmbientLight(0xffffff, 0.18);
-    scene.add(hemi, key, fill, rim, ambient);
-
-    const groundMat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.08
-    });
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(120, 64), groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.01;
-    ground.name = 'ground';
-    scene.add(ground);
-
-    const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.minDistance = 5;
-    controls.maxDistance = 800;
-
-    stateRef.current = { renderer, scene, camera, controls };
-
-    let raf = 0;
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    tick();
-
-    const ro = new ResizeObserver(() => {
-      const w = wrap.clientWidth;
-      const h = wrap.clientHeight;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    });
-    ro.observe(wrap);
+    const studio = createStudio(canvasRef.current, wrapRef.current);
+    if (!studio) return;
+    stateRef.current = studio;
 
     const models = modelsRef.current;
     return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      controls.dispose();
-      renderer.dispose();
+      studio.dispose();
       models.forEach(disposeModel);
       models.clear();
     };
@@ -316,6 +210,7 @@ export function QuoteClient({
       const old = mesh.material;
       if (Array.isArray(old)) old.forEach((m) => m.dispose());
       else if (old) (old as THREE.Material).dispose();
+      ensureUVs(mesh.geometry);
       mesh.material = new THREE.MeshPhysicalMaterial(
         acabadoMaterialProps('#cccccc', null)
       );
@@ -620,7 +515,7 @@ export function QuoteClient({
   }
 
   function pickColor(c: Color) {
-    if (!activePieza) return;
+    if (!activePieza || c.agotado) return;
     if (partsMode) {
       const next = [...activePieza.config.partColors];
       next[activePart] = c;
@@ -637,7 +532,7 @@ export function QuoteClient({
   }
 
   function toggleExtraColor(c: Color) {
-    if (!activePieza) return;
+    if (!activePieza || c.agotado) return;
     const prev = activePieza.config.extraColors;
     if (prev.some((x) => x.id === c.id)) {
       patchActiveConfig({ extraColors: prev.filter((x) => x.id !== c.id) });
@@ -714,13 +609,22 @@ export function QuoteClient({
             ? p.config.partColors
                 .map((c, j) =>
                   c
-                    ? { nombre: c.nombre, hex: c.hex, acabado: c.acabado, parte: p.partNames[j] }
+                      ? {
+                          nombre: c.nombre,
+                          hex: c.hex,
+                          muestra_colores: c.muestra_colores,
+                          muestra_tipo: c.muestra_tipo,
+                          acabado: c.acabado,
+                          parte: p.partNames[j]
+                        }
                     : null
                 )
                 .filter(Boolean)
             : piezaColors(p).map((c) => ({
                 nombre: c.nombre,
                 hex: c.hex,
+                muestra_colores: c.muestra_colores,
+                muestra_tipo: c.muestra_tipo,
                 acabado: c.acabado,
                 parte: ''
               }));
@@ -817,7 +721,7 @@ export function QuoteClient({
     } catch {
       setStatus({
         kind: 'err',
-        message: 'Error de red. Inténtalo de nuevo o escríbenos a info@impresion3dcc.com.'
+        message: `Error de red. Inténtalo de nuevo o ${ESCRIBENOS}.`
       });
     }
   }
@@ -826,52 +730,13 @@ export function QuoteClient({
   // no PDF library needed for a static-export site.
   function downloadPdf() {
     if (!quote) return;
-    const esc = (s: string) =>
-      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const fecha = new Date().toLocaleDateString('es-ES', {
-      day: '2-digit', month: 'long', year: 'numeric'
-    });
-    const validez = new Date(
-      Date.now() + settings.validez_dias * 24 * 60 * 60 * 1000
-    ).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
-    const filas = quote.lineas
-      .map(
-        (l) =>
-          `<tr><td>${esc(l.concepto)}</td><td style="text-align:right;white-space:nowrap;">${l.importe.toFixed(2)} €</td></tr>`
-      )
-      .join('');
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Presupuesto 3DCC</title>
-<style>
-  body{font-family:system-ui,Segoe UI,Roboto,sans-serif;color:#111;max-width:640px;margin:32px auto;padding:0 16px;}
-  h1{color:#0EA5E9;margin:0;font-size:24px;} .sub{color:#666;font-size:13px;margin:2px 0 24px;}
-  table{width:100%;border-collapse:collapse;font-size:14px;}
-  td{padding:8px 10px;border-bottom:1px solid #eee;}
-  .total td{font-weight:700;font-size:16px;border-top:2px solid #111;border-bottom:none;}
-  .nota{color:#666;font-size:12px;margin-top:24px;line-height:1.6;}
-</style></head><body>
-<h1>3DCC Salamanca — Estimación de impresión 3D</h1>
-<p class="sub">${fecha} · impresion3dcc.com · Estimación orientativa, válida hasta el ${validez}</p>
-<table>${filas}<tr class="total"><td>TOTAL ESTIMADO</td><td style="text-align:right;">${quote.total.toFixed(2)} €</td></tr></table>
-<p class="nota">
-  ~${Math.round(quote.pesoG)} g de material · ~${quote.tiempoH.toFixed(1)} h de impresión ·
-  listo en ~${quote.diasEstimados} día${quote.diasEstimados !== 1 ? 's' : ''} laborables.<br>
-  El precio final se confirma tras revisar las piezas. Contacto: info@impresion3dcc.com · WhatsApp +34 665 14 89 56.
-</p>
-<script>window.onload=function(){window.print();}</script>
-</body></html>`;
-    const w = window.open('', '_blank', 'width=760,height=900');
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
+    if (!openQuotePdf(quote, settings)) return;
     trackEvent('pdf_descargado', { total: quote.total, piezas: piezas.length });
   }
 
-  const waText = encodeURIComponent(
-    `Hola, soy ${nombre}. Acabo de solicitar el presupuesto ${
-      status.kind === 'ok' ? status.codigo : ''
-    } desde la web.`
-  );
+  const waMensaje = `Hola, soy ${nombre}. Acabo de solicitar el presupuesto ${
+    status.kind === 'ok' ? status.codigo : ''
+  } desde la web.`;
 
   // ─── render ─────────────────────────────────────────────────────────────
   return (
@@ -1022,7 +887,7 @@ export function QuoteClient({
                       {p.name}
                       <span className="qt-pieza-dots">
                         {piezaColors(p).slice(0, 4).map((c) => (
-                          <span key={c.id} style={{ backgroundColor: c.hex }} />
+                          <span key={c.id} style={colorPreviewStyle(c)} />
                         ))}
                       </span>
                     </button>
@@ -1146,9 +1011,18 @@ export function QuoteClient({
                       <button
                         key={c.id}
                         type="button"
-                        className={'qt-swatch' + (isMain || isExtra ? ' active' : '')}
-                        style={{ backgroundColor: c.hex }}
-                        title={c.nombre + (c.acabado ? ` · ${c.acabado}` : '')}
+                        className={
+                          'qt-swatch' +
+                          (isMain || isExtra ? ' active' : '') +
+                          (c.agotado ? ' agotado' : '')
+                        }
+                        style={colorPreviewStyle(c)}
+                        disabled={c.agotado}
+                        title={
+                          c.nombre +
+                          (c.acabado ? ` · ${c.acabado}` : '') +
+                          (c.agotado ? ' · Agotado' : '')
+                        }
                         onClick={() => pickColor(c)}
                       />
                     );
@@ -1190,10 +1064,12 @@ export function QuoteClient({
                                   'qt-swatch' +
                                   (activePieza.config.extraColors.some((x) => x.id === c.id)
                                     ? ' active'
-                                    : '')
+                                    : '') +
+                                  (c.agotado ? ' agotado' : '')
                                 }
-                                style={{ backgroundColor: c.hex }}
-                                title={c.nombre}
+                                style={colorPreviewStyle(c)}
+                                disabled={c.agotado}
+                                title={c.nombre + (c.agotado ? ' · Agotado' : '')}
                                 onClick={() => toggleExtraColor(c)}
                               />
                             ))}
@@ -1207,7 +1083,7 @@ export function QuoteClient({
                   <div className="qt-chosen">
                     {activeColors.map((c) => (
                       <span key={c.id} className="qt-chosen-chip">
-                        <span style={{ backgroundColor: c.hex }} />
+                        <span style={colorPreviewStyle(c)} />
                         {c.nombre}
                       </span>
                     ))}
@@ -1469,7 +1345,7 @@ export function QuoteClient({
               <p className="qt-form-legal">
                 Tus datos y tus archivos se usan únicamente para preparar y gestionar
                 este presupuesto, y se eliminan periódicamente. Puedes ejercer tus
-                derechos escribiendo a info@impresion3dcc.com. Más información en
+                derechos escribiendo a {CONTACTO.email}. Más información en
                 nuestra <a href="/privacidad">Política de Privacidad</a>.
               </p>
             </form>
@@ -1486,13 +1362,13 @@ export function QuoteClient({
                   href={`/presupuesto?codigo=${encodeURIComponent(status.codigo)}`}
                   style={{ color: 'var(--accent)' }}
                 >
-                  impresion3dcc.com/presupuesto
+                  {CONTACTO.dominio}/presupuesto
                 </a>
                 .
               </p>
               <a
                 className="btn-outline"
-                href={`https://wa.me/${WHATSAPP}?text=${waText}`}
+                href={whatsappUrl(waMensaje)}
                 target="_blank"
                 rel="noopener noreferrer"
               >

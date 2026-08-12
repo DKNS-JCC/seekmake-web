@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import '../terminos/terminos.css';
+import { CONTACTO, mailtoUrl, siteUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad - 3DCC Salamanca',
   description:
     'Política de privacidad y uso de cookies de 3DCC Salamanca, incluida la información sobre publicidad de Google AdSense.',
   robots: { index: true, follow: true },
-  alternates: { canonical: 'https://impresion3dcc.com/privacidad' }
+  alternates: { canonical: siteUrl('/privacidad') }
 };
 
 export default function PrivacidadPage() {
@@ -16,7 +17,7 @@ export default function PrivacidadPage() {
       <nav id="navbar">
         <div className="nav-inner">
           <Link href="/" className="nav-logo">
-            <img src="/icons/android-chrome-192x192.png" alt="3DCC Logo" />
+            <img src="/icons/android-chrome-192x192.png" alt="3DCC Logo" width={192} height={192} />
             <div>
               <span className="nav-logo-name">3DCC</span>
               <span className="nav-logo-sub">Impresión 3D</span>
@@ -50,7 +51,7 @@ export default function PrivacidadPage() {
               <li><strong>Titular:</strong> Jorge Cuadrado Criado</li>
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:info@impresion3dcc.com">info@impresion3dcc.com</a>
+                <a href={mailtoUrl()}>{CONTACTO.email}</a>
               </li>
               <li><strong>Ubicación:</strong> Salamanca, España</li>
             </ul>
@@ -196,7 +197,7 @@ export default function PrivacidadPage() {
               En cualquier momento puedes ejercer los derechos de acceso,
               rectificación, supresión, oposición, limitación y portabilidad
               escribiéndonos a{' '}
-              <a href="mailto:info@impresion3dcc.com">info@impresion3dcc.com</a>
+              <a href={mailtoUrl()}>{CONTACTO.email}</a>
               , acreditando tu identidad. También puedes reclamar ante la{' '}
               <a
                 href="https://www.aepd.es"

@@ -5,8 +5,6 @@
 // instantly (no rebuild needed).
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { Filamento } from '@/lib/types';
 import {
   normalizeSettings,
@@ -14,6 +12,8 @@ import {
 } from '@/lib/quote/pricing';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
+import { mensajeDeError } from '@/lib/errors';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 
 const ACABADOS = [
   'Metálico',
@@ -73,15 +73,13 @@ const h2Style: React.CSSProperties = {
 export default function AdminTarifas() {
   const [settings, setSettings] = useState<QuoteSettings | null>(null);
   const [filamentos, setFilamentos] = useState<Filamento[]>([]);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [save, setSave] = useState<SaveState>('idle');
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     Promise.all([
       supabase().from('quote_settings').select('config').eq('id', 1).maybeSingle(),
       supabase().from('filamentos').select('*').order('orden')
@@ -113,7 +111,7 @@ export default function AdminTarifas() {
       .from('quote_settings')
       .upsert({ id: 1, config: settings as unknown as Record<string, unknown> });
     if (err) {
-      setError(err.message);
+      setError(mensajeDeError(err, 'No se pudieron guardar las tarifas'));
       setSave('error');
       return;
     }
@@ -121,18 +119,7 @@ export default function AdminTarifas() {
     setDirty(false);
   }
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
   if (!settings) return <p style={{ color: 'var(--muted)' }}>Cargando…</p>;
 
   return (

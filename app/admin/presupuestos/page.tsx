@@ -6,14 +6,19 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { Quote, QuoteEstado, QuotePago } from '@/lib/types';
+import { colorPreviewStyle } from '@/lib/color-preview';
 import { downloadQuoteFile } from '@/lib/quote/compress';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { EnvioPanel } from '../_components/EnvioPanel';
+import { useConfirm } from '../_components/useConfirm';
 import './presupuestos.css';
+import { whatsappTo } from '@/lib/contacto';
+import { mensajeDeError } from '@/lib/errors';
+import { activable, activableRow } from '@/lib/a11y';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 
 const ESTADOS: { id: QuoteEstado; label: string }[] = [
   { id: 'nuevo', label: 'Nuevo' },
@@ -57,7 +62,6 @@ function PagoBadge({ pago }: { pago: QuotePago }) {
 
 export default function AdminPresupuestos() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<QuoteEstado | 'todos'>('todos');
   const [showArchived, setShowArchived] = useState(false);
@@ -77,10 +81,10 @@ export default function AdminPresupuestos() {
   const [dirty, setDirty] = useState(false);
   const [notifying, setNotifying] = useState(false);
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -91,7 +95,7 @@ export default function AdminPresupuestos() {
       .from('quotes')
       .select('*')
       .order('created_at', { ascending: false });
-    if (err) setError(err.message);
+    if (err) setError(mensajeDeError(err, 'No se pudieron cargar los presupuestos'));
     setQuotes(data ?? []);
     setLoading(false);
   }
@@ -156,7 +160,7 @@ export default function AdminPresupuestos() {
     const upd = buildUpdate();
     const { error: err } = await supabase().from('quotes').update(upd).eq('id', open.id);
     if (err) {
-      setError(err.message);
+      setError(mensajeDeError(err, 'No se pudieron guardar los cambios'));
       setSave('error');
       return false;
     }
@@ -176,7 +180,7 @@ export default function AdminPresupuestos() {
       const { data, error: err } = await supabase().functions.invoke('notify-quote', {
         body: { quote_id: open.id }
       });
-      if (err) setError(err.message ?? 'No se pudo avisar al cliente.');
+      if (err) setError(mensajeDeError(err, 'No se pudo avisar al cliente'));
       else if (data?.error) setError(data.error);
       else setInfo(data?.message ?? 'Cliente avisado por email.');
     } catch {
@@ -193,7 +197,7 @@ export default function AdminPresupuestos() {
       .update({ estado: value })
       .eq('id', q.id);
     if (err) {
-      setError(err.message);
+      setError(mensajeDeError(err, 'No se pudo cambiar el estado'));
       return;
     }
     setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, estado: value } : x)));
@@ -205,7 +209,7 @@ export default function AdminPresupuestos() {
       .update({ archivado: !q.archivado })
       .eq('id', q.id);
     if (err) {
-      setError(err.message);
+      setError(mensajeDeError(err, 'No se pudo archivar el presupuesto'));
       return;
     }
     setQuotes((prev) =>
@@ -216,9 +220,12 @@ export default function AdminPresupuestos() {
 
   async function removeQuote(q: Quote) {
     if (
-      !window.confirm(
-        `¿Borrar definitivamente ${q.codigo}? Se eliminan también sus archivos del almacenamiento.`
-      )
+      !(await confirmar({
+        mensaje: `¿Borrar definitivamente el presupuesto ${q.codigo}?`,
+        detalle:
+          'Se eliminan también sus archivos del almacenamiento. No se puede deshacer.',
+        confirmar: 'Borrar'
+      }))
     ) {
       return;
     }
@@ -228,31 +235,20 @@ export default function AdminPresupuestos() {
     if (paths.length) {
       const { error: stErr } = await supabase().storage.from('quote-uploads').remove(paths);
       if (stErr) {
-        setError('No se pudieron borrar los archivos: ' + stErr.message);
+        setError(mensajeDeError(stErr, 'No se pudieron borrar los archivos'));
         return;
       }
     }
     const { error: err } = await supabase().from('quotes').delete().eq('id', q.id);
     if (err) {
-      setError(err.message);
+      setError(mensajeDeError(err, 'No se pudo borrar el presupuesto'));
       return;
     }
     setQuotes((prev) => prev.filter((x) => x.id !== q.id));
     setOpen(null);
   }
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
 
   const m: any = open?.metricas ?? {};
   const lineas: Array<{ concepto: string; importe: number }> = Array.isArray(
@@ -279,6 +275,7 @@ export default function AdminPresupuestos() {
 
   return (
     <div>
+      {dialogo}
       <div
         style={{
           display: 'flex',
@@ -405,7 +402,7 @@ export default function AdminPresupuestos() {
                 <tr
                   key={q.id}
                   className={q.archivado ? 'archived' : ''}
-                  onClick={() => openQuote(q)}
+                  {...activableRow(() => openQuote(q), `Abrir el presupuesto ${q.codigo}`)}
                 >
                   <td className="pq-codigo">{q.codigo}</td>
                   <td style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>
@@ -435,7 +432,7 @@ export default function AdminPresupuestos() {
               <div
                 key={q.id}
                 className={'pq-card' + (q.archivado ? ' archived' : '')}
-                onClick={() => openQuote(q)}
+                {...activable(() => openQuote(q), `Abrir el presupuesto ${q.codigo}`)}
               >
                 <div className="pq-card-top">
                   <span className="pq-codigo">{q.codigo}</span>
@@ -589,7 +586,7 @@ export default function AdminPresupuestos() {
                   <>
                     {' · '}
                     <a
-                      href={`https://wa.me/${open.telefono.replace(/[^\d]/g, '')}`}
+                      href={whatsappTo(open.telefono)}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: 'var(--accent)' }}
@@ -646,7 +643,7 @@ export default function AdminPresupuestos() {
                           style={{ padding: '5px 12px', fontSize: 10, flexShrink: 0 }}
                           onClick={() =>
                             downloadQuoteFile(a.url, a.url.endsWith('.gz') ? a.nombre + '.gz' : a.nombre).catch(
-                              (err) => setError(String(err?.message ?? err))
+                              (err) => setError(mensajeDeError(err))
                             )
                           }
                         >
@@ -683,7 +680,7 @@ export default function AdminPresupuestos() {
                                   width: 10,
                                   height: 10,
                                   borderRadius: 2,
-                                  background: c.hex,
+                                  ...colorPreviewStyle(c),
                                   border: '1px solid var(--border-h)'
                                 }}
                               />
@@ -737,7 +734,7 @@ export default function AdminPresupuestos() {
                           width: 12,
                           height: 12,
                           borderRadius: 2,
-                          background: c.hex,
+                          ...colorPreviewStyle(c),
                           border: '1px solid var(--border-h)'
                         }}
                       />

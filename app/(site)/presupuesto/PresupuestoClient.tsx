@@ -9,6 +9,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { QuoteEntrega, QuoteEstado, QuotePago } from '@/lib/types';
 import './presupuesto.css';
+import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
 
 interface StatusRow {
   codigo: string;
@@ -174,7 +175,7 @@ export function PresupuestoClient() {
           <p className="pr-msg">
             No encontramos ningún presupuesto con ese código. Revisa que esté
             bien escrito (formato Q-AAAA-NNNN) o escríbenos a{' '}
-            <a href="mailto:info@impresion3dcc.com">info@impresion3dcc.com</a>.
+            <a href={mailtoUrl()}>{CONTACTO.email}</a>.
           </p>
         )}
       </section>
@@ -269,9 +270,9 @@ export function PresupuestoClient() {
             <p className="pr-contact">
               ¿Alguna duda sobre tu pedido? Escríbenos por{' '}
               <a
-                href={`https://wa.me/34665148956?text=${encodeURIComponent(
+                href={whatsappUrl(
                   `Hola, tengo una consulta sobre mi presupuesto ${result.codigo}`
-                )}`}
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
               >

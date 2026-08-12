@@ -14,22 +14,25 @@ import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import yaml from 'js-yaml';
 import { createAdminClient } from '../lib/supabase/admin';
-import type { Acabado, Categoria } from '../lib/types';
+import type { Acabado, Categoria, MuestraTipo } from '../lib/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: resolve(__dirname, '..', '.env.local') });
 
-const LEGACY = resolve(__dirname, '..', 'legacy');
+const SEED_DATA = resolve(__dirname, 'seed-data');
 
 // ---------- YAML shapes (input) ----------
 
 interface YamlFilamentoColor {
   nombre: string;
   hex: string;
+  muestra_colores?: string[];
+  muestra_tipo?: MuestraTipo;
   texto?: 'black' | 'white';
   acabado?: Acabado;
   combina_con?: string[];
   oferta?: boolean;
+  agotado?: boolean;
 }
 
 interface YamlFilamento {
@@ -68,7 +71,7 @@ async function main() {
 
   // --- Filamentos + Colores ---
   const filamentosYaml = yaml.load(
-    readFileSync(resolve(LEGACY, 'filamentos.yaml'), 'utf-8')
+    readFileSync(resolve(SEED_DATA, 'filamentos.yaml'), 'utf-8')
   ) as YamlFilamentos;
 
   console.log('→ Wiping existing filamentos/colores...');
@@ -97,10 +100,14 @@ async function main() {
       filamento_id: fila.id,
       nombre: c.nombre,
       hex: c.hex,
+      muestra_colores: c.muestra_colores ?? [],
+      muestra_tipo:
+        c.muestra_tipo ?? ((c.muestra_colores?.length ?? 0) > 1 ? 'bandas' : 'solido'),
       texto: c.texto ?? 'black',
       acabado: c.acabado ?? null,
       combina_con: c.combina_con ?? [],
       oferta: c.oferta ?? false,
+      agotado: c.agotado ?? false,
       orden: i
     }));
 
@@ -111,7 +118,7 @@ async function main() {
 
   // --- Productos ---
   const productosYaml = yaml.load(
-    readFileSync(resolve(LEGACY, 'productos.yaml'), 'utf-8')
+    readFileSync(resolve(SEED_DATA, 'productos.yaml'), 'utf-8')
   ) as YamlProductos;
 
   console.log('→ Wiping existing productos...');

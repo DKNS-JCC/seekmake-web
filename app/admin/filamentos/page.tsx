@@ -1,15 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { Acabado, Color, Filamento } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
-import { ColorPickerField } from '../_components/ColorPickerField';
+import { ColorEditor } from '../_components/ColorEditor';
+import { colorPreviewStyle, esMulticolor, paleta } from '@/lib/color-preview';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { RebuildButton } from '../_components/RebuildButton';
+import { useConfirm } from '../_components/useConfirm';
 import './filamentos.css';
+import { mensajeDeError } from '@/lib/errors';
+import { activable } from '@/lib/a11y';
+import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { ErrorBanner } from '../_components/ErrorBanner';
 
 const ACABADOS: Acabado[] = [
   'Metálico',
@@ -28,10 +32,13 @@ const emptyColorDraft = (filamento_id: string, orden: number): ColorDraft => ({
   filamento_id,
   nombre: 'Nuevo color',
   hex: '#cccccc',
+  muestra_colores: [],
+  muestra_tipo: 'solido',
   texto: 'black',
   acabado: null,
   combina_con: [],
   oferta: false,
+  agotado: false,
   orden
 });
 
@@ -39,7 +46,6 @@ export default function AdminFilamentos() {
   const [filamentos, setFilamentos] = useState<Filamento[]>([]);
   const [colores, setColores] = useState<Color[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,10 +61,10 @@ export default function AdminFilamentos() {
   const [matSave, setMatSave] = useState<SaveState>('idle');
   const [matDirty, setMatDirty] = useState(false);
 
-  const supabase = () => createClient();
+  const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
-    supabase().auth.getUser().then(({ data }) => setAuthed(!!data.user));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -70,8 +76,8 @@ export default function AdminFilamentos() {
       s.from('filamentos').select('*').order('orden'),
       s.from('colores').select('*').order('orden')
     ]);
-    if (fres.error) setError(fres.error.message);
-    if (cres.error) setError(cres.error.message);
+    if (fres.error) setError(mensajeDeError(fres.error, 'No se pudieron cargar los materiales'));
+    if (cres.error) setError(mensajeDeError(cres.error, 'No se pudieron cargar los colores'));
     setFilamentos(fres.data ?? []);
     setColores(cres.data ?? []);
     if (!active && fres.data?.[0]) setActive(fres.data[0].id);
@@ -112,7 +118,7 @@ export default function AdminFilamentos() {
       ? await supabase().from('filamentos').update(matDraft).eq('id', editingMatId)
       : await supabase().from('filamentos').insert(matDraft).select().single();
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el material'));
       setMatSave('error');
       return;
     }
@@ -129,9 +135,16 @@ export default function AdminFilamentos() {
   }
 
   async function deleteFilamento(f: Filamento) {
-    if (!confirm(`¿Eliminar ${f.material} y todos sus colores?`)) return;
+    if (
+      !(await confirmar({
+        mensaje: `¿Eliminar el material ${f.material}?`,
+        detalle: 'Se borrarán también todos sus colores. No se puede deshacer.'
+      }))
+    ) {
+      return;
+    }
     const { error } = await supabase().from('filamentos').delete().eq('id', f.id);
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudo borrar el material'));
     await refresh();
   }
 
@@ -155,10 +168,13 @@ export default function AdminFilamentos() {
       filamento_id: c.filamento_id,
       nombre: c.nombre,
       hex: c.hex,
+      muestra_colores: c.muestra_colores ?? [],
+      muestra_tipo: c.muestra_tipo ?? 'solido',
       texto: c.texto,
       acabado: c.acabado,
       combina_con: c.combina_con,
       oferta: c.oferta,
+      agotado: c.agotado ?? false,
       orden: c.orden
     });
     setEditingColorId(c.id);
@@ -176,11 +192,21 @@ export default function AdminFilamentos() {
     if (!colorDraft) return;
     setColorSave('saving');
     setError(null);
+    // A solid colour never carries a palette; a multicolour one always starts
+    // on its base hex, so the swatch and the 3D material agree.
+    const tones = colorDraft.muestra_colores.filter(Boolean);
+    const multi = colorDraft.muestra_tipo !== 'solido' && tones.length > 1;
+    const payload: ColorDraft = {
+      ...colorDraft,
+      muestra_tipo: multi ? colorDraft.muestra_tipo : 'solido',
+      muestra_colores: multi ? tones : [],
+      hex: multi ? tones[0] : colorDraft.hex
+    };
     const res = editingColorId
-      ? await supabase().from('colores').update(colorDraft).eq('id', editingColorId)
-      : await supabase().from('colores').insert(colorDraft);
+      ? await supabase().from('colores').update(payload).eq('id', editingColorId)
+      : await supabase().from('colores').insert(payload);
     if (res.error) {
-      setError(res.error.message);
+      setError(mensajeDeError(res.error, 'No se pudo guardar el color'));
       setColorSave('error');
       return;
     }
@@ -194,26 +220,15 @@ export default function AdminFilamentos() {
   }
 
   async function deleteColor(c: Color) {
-    if (!confirm(`¿Eliminar el color "${c.nombre}"?`)) return;
+    if (!(await confirmar({ mensaje: `¿Eliminar el color "${c.nombre}"?` }))) return;
     const { error } = await supabase().from('colores').delete().eq('id', c.id);
-    if (error) setError(error.message);
+    if (error) setError(mensajeDeError(error, 'No se pudo borrar el color'));
     await refresh();
   }
 
   // ───────── Render ─────────
 
-  if (authed === false) {
-    return (
-      <div>
-        <h1 className="section-title" style={{ fontSize: 32, marginBottom: 24 }}>
-          Acceso denegado
-        </h1>
-        <Link href="/admin/login" className="btn-primary">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
-  }
+  if (authed === false) return <AccesoDenegado />;
 
   const activeFilamento = filamentos.find((f) => f.id === active);
   const visibleColors = colores.filter((c) => c.filamento_id === active);
@@ -221,6 +236,7 @@ export default function AdminFilamentos() {
 
   return (
     <div>
+      {dialogo}
       <div
         style={{
           display: 'flex',
@@ -242,20 +258,7 @@ export default function AdminFilamentos() {
         </div>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: 12,
-            borderRadius: 'var(--r)',
-            marginBottom: 16,
-            fontSize: 13
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
@@ -379,20 +382,29 @@ export default function AdminFilamentos() {
                     <article
                       key={c.id}
                       className="color-card"
-                      onClick={() => startColorEdit(c)}
+                      {...activable(() => startColorEdit(c), `Editar el color ${c.nombre}`)}
                     >
                       <div
                         className="color-swatch"
-                        style={{ background: c.hex }}
+                        style={colorPreviewStyle(c)}
                       >
-                        {c.oferta && <span className="color-badge">OFERTA</span>}
+                        <div className="color-tags">
+                          {c.oferta && <span className="color-badge">OFERTA</span>}
+                          {c.agotado && (
+                            <span className="color-badge agotado">AGOTADO</span>
+                          )}
+                        </div>
                         {c.acabado && (
                           <span className="color-acabado">{c.acabado}</span>
                         )}
                       </div>
                       <div className="color-info">
                         <div className="color-name">{c.nombre}</div>
-                        <div className="color-hex">{c.hex}</div>
+                        <div className="color-hex">
+                          {esMulticolor(c)
+                            ? `${paleta(c).length} tonos · ${c.muestra_tipo}`
+                            : c.hex}
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -446,17 +458,6 @@ export default function AdminFilamentos() {
       >
         {matDraft && (
           <>
-            <Field label="Clave (PLA, PETG, ASA, TPU…)" hint="Identificador corto, mayúsculas">
-              <input
-                value={matDraft.material}
-                onChange={(e) => {
-                  setMatDraft({ ...matDraft, material: e.target.value });
-                  setMatDirty(true);
-                }}
-                style={inputStyle}
-                placeholder="PLA"
-              />
-            </Field>
             <Field label="Nombre completo">
               <input
                 value={matDraft.nombre}
@@ -515,10 +516,17 @@ export default function AdminFilamentos() {
         {colorDraft && (
           <>
             <Field label="Color">
-              <ColorPickerField
-                value={colorDraft.hex}
-                onChange={(v) => patchColor('hex', v)}
+              <ColorEditor
+                value={{
+                  hex: colorDraft.hex,
+                  muestra_colores: colorDraft.muestra_colores,
+                  muestra_tipo: colorDraft.muestra_tipo
+                }}
                 acabado={colorDraft.acabado}
+                onChange={(next) => {
+                  setColorDraft({ ...colorDraft, ...next });
+                  setColorDirty(true);
+                }}
               />
             </Field>
 
@@ -564,26 +572,30 @@ export default function AdminFilamentos() {
               </Field>
             </div>
 
-            <Field label="Oferta">
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 12px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--r)',
-                  background: 'var(--surface)',
-                  cursor: 'pointer'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={colorDraft.oferta}
-                  onChange={(e) => patchColor('oferta', e.target.checked)}
-                />
-                <span style={{ fontSize: 13 }}>Mostrar etiqueta "OFERTA"</span>
-              </label>
+            <Field label="Etiquetas">
+              <div style={{ display: 'grid', gap: 8 }}>
+                <label style={checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={colorDraft.oferta}
+                    onChange={(e) => patchColor('oferta', e.target.checked)}
+                  />
+                  <span style={{ fontSize: 13 }}>Mostrar etiqueta "OFERTA"</span>
+                </label>
+                <label style={checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={colorDraft.agotado}
+                    onChange={(e) => patchColor('agotado', e.target.checked)}
+                  />
+                  <span style={{ fontSize: 13 }}>
+                    Mostrar etiqueta "AGOTADO"
+                    <span style={{ display: 'block', color: 'var(--muted)', fontSize: 11 }}>
+                      Sigue visible en el muestrario, pero no se puede elegir en el tasador.
+                    </span>
+                  </span>
+                </label>
+              </div>
             </Field>
 
             <Field
@@ -665,7 +677,7 @@ function CombinaConPicker({
                 width: 20,
                 height: 20,
                 borderRadius: 4,
-                background: c.hex,
+                ...colorPreviewStyle(c),
                 border: '1px solid var(--border)',
                 flexShrink: 0
               }}
@@ -687,6 +699,17 @@ function CombinaConPicker({
     </div>
   );
 }
+
+const checkboxRow: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 8,
+  padding: '10px 12px',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--r)',
+  background: 'var(--surface)',
+  cursor: 'pointer'
+};
 
 const btnLink: React.CSSProperties = {
   background: 'none',
