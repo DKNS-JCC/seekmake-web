@@ -9,9 +9,14 @@ name: Deploy to GitHub Pages
 #   NEXT_PUBLIC_ADSENSE_CLIENT     — Google AdSense publisher ID (ca-pub-...)
 
 on:
-  # Rebuild on every push (immediate when code changes).
+  # Rebuild on every push to main (immediate when code changes).
+  #
+  # Only main deploys. Any other branch pushing here would race the scheduled
+  # rebuild below: `schedule` always runs from the default branch, so a deploy
+  # from a feature branch gets reverted within 15 minutes. Merge to main
+  # instead.
   push:
-    branches: [next-supabase, main]
+    branches: [main]
 
   # Manual trigger from the Actions tab.
   workflow_dispatch:
