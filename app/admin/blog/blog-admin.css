@@ -12,14 +12,14 @@
   overflow-y: auto;
 }
 .blog-preview h2 {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-display), sans-serif;
   font-size: 22px;
   margin: 24px 0 10px;
   letter-spacing: 0.02em;
   color: var(--text);
 }
 .blog-preview h3 {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-display), sans-serif;
   font-size: 18px;
   margin: 20px 0 8px;
   letter-spacing: 0.02em;
@@ -37,7 +37,7 @@
   font-style: italic;
 }
 .blog-preview code {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 0.9em;
   background: var(--bg);
   padding: 1px 5px;

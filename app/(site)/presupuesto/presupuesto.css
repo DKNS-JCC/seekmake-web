@@ -5,7 +5,7 @@
     text-align: center;
 }
 .pr-hero h1 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: clamp(36px, 5vw, 56px);
     line-height: 1; letter-spacing: 0.02em;
     color: var(--text); margin-bottom: 12px;
@@ -28,7 +28,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 15px; letter-spacing: 0.06em;
     text-transform: uppercase;
     outline: none;
@@ -67,11 +67,11 @@
     margin-bottom: 22px;
 }
 .pr-codigo {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 30px; letter-spacing: 0.06em; color: var(--accent);
 }
 .pr-fecha {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 11px; color: var(--muted);
 }
 
@@ -88,7 +88,7 @@
     display: flex; align-items: center; justify-content: center;
     border: 1px solid var(--border-h);
     border-radius: 50%;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 12px; color: var(--muted);
     background: var(--bg);
 }
@@ -122,7 +122,7 @@
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--r);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; color: var(--muted);
 }
 
@@ -135,3 +135,152 @@
     font-size: 12px; color: var(--muted); line-height: 1.6;
 }
 .pr-contact a { color: var(--accent); }
+
+/* ── Envío ──────────────────────────────────────────────────────────────
+   Bloque aparte del stepper del pedido: son dos recorridos distintos
+   (producción y transporte) y mezclarlos confunde más de lo que ahorra. */
+
+.pr-envio {
+    margin-top: 22px; padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+.pr-envio-head {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.pr-envio-titulo { font-size: 14px; font-weight: 700; color: var(--text); }
+.pr-envio-carrier {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 11px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    font-size: 12px; color: var(--text);
+}
+.pr-envio-carrier i {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    /* Borde tenue para que un amarillo InPost no desaparezca en modo claro. */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+.pr-envio-carrier em {
+    font-style: normal; color: var(--muted);
+    font-family: var(--font-mono), monospace; font-size: 10px;
+}
+
+.pr-envio-pasos { list-style: none; display: flex; flex-direction: column; }
+.pr-envio-pasos li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 7px 0;
+    opacity: 0.4;
+}
+.pr-envio-pasos li.hecho, .pr-envio-pasos li.actual { opacity: 1; }
+.pr-envio-punto {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid var(--border-h); background: var(--bg);
+}
+.pr-envio-pasos li.hecho .pr-envio-punto,
+.pr-envio-pasos li.actual .pr-envio-punto {
+    background: var(--accent); border-color: var(--accent);
+}
+.pr-envio-pasos li.actual .pr-envio-punto { box-shadow: 0 0 0 3px var(--accent-dim); }
+.pr-envio-paso { font-size: 13px; color: var(--text); }
+.pr-envio-cuando {
+    margin-left: auto;
+    font-family: var(--font-mono), monospace;
+    font-size: 11px; color: var(--muted);
+}
+
+.pr-envio-incidencia {
+    padding: 14px;
+    background: rgba(224, 82, 77, 0.07);
+    border: 1px solid rgba(224, 82, 77, 0.4);
+    border-radius: var(--r);
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+}
+.pr-envio-incidencia strong { color: var(--text); }
+
+.pr-envio-label {
+    display: block;
+    font-family: var(--font-mono), monospace;
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px;
+}
+
+.pr-envio-track {
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.pr-envio-num { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; }
+.pr-envio-num code {
+    flex: 1 1 180px; min-width: 0;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    font-family: var(--font-mono), monospace;
+    font-size: 15px; letter-spacing: 0.08em; color: var(--text);
+    /* Un tracking largo no debe romper la caja ni empujar el botón fuera. */
+    overflow-wrap: anywhere;
+}
+.pr-envio-num button {
+    flex-shrink: 0;
+    padding: 0 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--muted);
+    font-family: var(--font-mono), monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+.pr-envio-num button:hover { color: var(--accent); border-color: var(--accent); }
+
+.pr-envio-btn { display: inline-block; margin-top: 12px; }
+.pr-envio-aviso {
+    display: block; margin-top: 8px;
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+}
+
+.pr-envio-punto-box {
+    display: flex; flex-direction: column; gap: 3px;
+    margin-top: 16px; padding: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+}
+.pr-envio-punto-box strong { font-size: 13px; color: var(--text); }
+.pr-envio-punto-box span { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.pr-envio-punto-box .pr-envio-sub { font-size: 11px; }
+.pr-envio-punto-box code {
+    font-family: var(--font-mono), monospace;
+    color: var(--accent); letter-spacing: 0.08em;
+}
+
+.pr-envio-nota {
+    margin-top: 12px;
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+}
+.pr-envio-nota strong { color: var(--text); }
+
+/* ── Justificantes de pago ─────────────────────────────────────────────── */
+
+.pr-recibos {
+    margin-top: 22px; padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+.pr-recibos ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.pr-recibos li {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 11px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+}
+.pr-recibos li div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pr-recibos li strong { font-size: 15px; color: var(--text); }
+.pr-recibos li span { font-size: 11px; color: var(--muted); }
+.pr-recibos li button {
+    margin-left: auto; flex-shrink: 0;
+    padding: 7px 14px; font-size: 11px;
+}

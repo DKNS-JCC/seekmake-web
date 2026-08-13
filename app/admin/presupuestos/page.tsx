@@ -13,6 +13,7 @@ import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { EnvioPanel } from '../_components/EnvioPanel';
+import { ReciboPanel } from '../_components/ReciboPanel';
 import { useConfirm } from '../_components/useConfirm';
 import './presupuestos.css';
 import { whatsappTo } from '@/lib/contacto';
@@ -614,6 +615,8 @@ export default function AdminPresupuestos() {
             </Field>
 
             {open.entrega === 'envio' && <EnvioPanel quote={open} />}
+
+            <ReciboPanel quote={open} />
 
             <Field label={`Piezas (${(open.archivos ?? []).length})`}>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>

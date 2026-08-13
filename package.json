@@ -12,7 +12,12 @@
     "seed": "tsx supabase/seed.ts",
     "seed:productos": "tsx supabase/seed-productos.ts",
     "envio": "tsx scripts/sendcloud.ts",
-    "test": "tsx scripts/test-pricing.ts && tsx scripts/test-uv-mapping.ts"
+    "test": "tsx scripts/test-pricing.ts && tsx scripts/test-uv-mapping.ts",
+    "test:db": "node scripts/test-migraciones.mjs",
+    "test:ui": "node scripts/test-ui.mjs",
+    "test:recibo": "deno run -A scripts/test-recibo.ts",
+    "test:funcion": "deno run -A --import-map=scripts/deno-test.json scripts/test-recibo-emitir.ts",
+    "test:todo": "npm run test && npm run test:db && npm run test:ui && npm run test:recibo && npm run test:funcion"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.0",
@@ -30,6 +35,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/marked": "^5.0.2",
     "@types/node": "^22.7.5",
+    "@types/pg": "^8.21.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.184.1",
@@ -38,7 +44,10 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.2.6",
     "js-yaml": "^4.1.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.23.0",
     "postcss": "^8.4.47",
+    "qrcode-generator": "^2.0.4",
     "tailwindcss": "^3.4.13",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"

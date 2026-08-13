@@ -5,7 +5,7 @@
     text-align: center;
 }
 .mu-hero h1 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: clamp(36px, 5vw, 56px);
     line-height: 1; letter-spacing: 0.02em;
     color: var(--text); margin-bottom: 12px;
@@ -21,7 +21,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--r);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 11px; color: var(--muted);
 }
 .mu-hero-tip strong { color: var(--accent); }
@@ -50,7 +50,7 @@
     background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--r);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted); cursor: pointer;
@@ -74,7 +74,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     color: var(--text);
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-sans), sans-serif;
     font-size: 13px; outline: none;
     transition: border-color 0.2s, width 0.3s;
 }
@@ -101,7 +101,7 @@
     border-bottom: 1px solid var(--border);
 }
 .mu-section-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 28px; line-height: 1;
     letter-spacing: 0.02em; color: var(--text);
 }
@@ -110,7 +110,7 @@
     flex: 1;
 }
 .mu-section-count {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--muted); flex-shrink: 0;
@@ -130,13 +130,13 @@
     border-radius: var(--r);
 }
 .mu-spec-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 8px; letter-spacing: 0.2em;
     text-transform: uppercase; color: var(--muted);
     margin-bottom: 2px;
 }
 .mu-spec-value {
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-sans), sans-serif;
     font-size: 13px; font-weight: 600;
     color: var(--text);
 }
@@ -181,7 +181,7 @@
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(4px);
     border-radius: 2px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 8px; letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #fff;
@@ -193,7 +193,7 @@
     color: white;
     padding: 3px 8px;
     border-radius: 4px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 14px;
     line-height: 1;
     letter-spacing: 0.05em;
@@ -208,7 +208,7 @@
     color: white;
     padding: 3px 8px;
     border-radius: 4px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 14px;
     line-height: 1;
     letter-spacing: 0.05em;
@@ -219,7 +219,7 @@
 
 .mu-color-info { padding: 8px 10px; }
 .mu-color-name {
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-sans), sans-serif;
     font-size: 12px; font-weight: 600;
     color: var(--text);
     white-space: nowrap; overflow: hidden;
@@ -227,7 +227,7 @@
     line-height: 1.3;
 }
 .mu-color-hex {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; color: var(--muted);
     margin-top: 1px;
 }
@@ -296,12 +296,12 @@
 }
 .mu-test-toggle-left { display: flex; align-items: center; gap: 10px; }
 .mu-test-toggle-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 11px; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--muted);
 }
 .mu-test-toggle-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 20px; color: var(--text);
     line-height: 1;
 }
@@ -328,7 +328,7 @@
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--r);
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-sans), sans-serif;
     font-size: 14px; font-weight: 500;
     color: var(--text);
     cursor: pointer; text-align: center;
@@ -348,7 +348,7 @@
     transition: width 0.3s;
 }
 .mu-test-progress-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--muted);
     margin-bottom: 6px;
@@ -356,7 +356,7 @@
 
 .mu-test-result { text-align: center; }
 .mu-test-result-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 36px; color: var(--accent);
     line-height: 1; margin-bottom: 6px;
 }
@@ -425,18 +425,18 @@
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(4px);
     border-radius: 2px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px; letter-spacing: 0.1em;
     text-transform: uppercase; color: #fff;
 }
 .mu-modal-body { padding: 20px; }
 .mu-modal-name {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 24px; line-height: 1;
     color: var(--text); margin-bottom: 4px;
 }
 .mu-modal-material {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.2em;
     text-transform: uppercase; color: var(--accent);
     margin-bottom: 16px;
@@ -451,14 +451,14 @@
     margin-bottom: 14px;
 }
 .mu-modal-hex {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 13px; font-weight: 600;
     color: var(--text);
 }
 .mu-modal-copy {
     background: none; border: none;
     color: var(--muted); cursor: pointer;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px; letter-spacing: 0.1em;
     text-transform: uppercase;
     display: flex; align-items: center; gap: 4px;
@@ -478,7 +478,7 @@
     border-radius: var(--r);
 }
 .mu-modal-spec-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 8px; letter-spacing: 0.2em;
     text-transform: uppercase; color: var(--muted);
     margin-bottom: 2px;
@@ -491,14 +491,14 @@
     margin-bottom: 16px; line-height: 1.6;
 }
 .mu-modal-usos strong {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px; letter-spacing: 0.18em;
     text-transform: uppercase;
     display: block; margin-bottom: 4px;
 }
 .mu-modal-combina { margin-bottom: 16px; }
 .mu-modal-combina-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px; letter-spacing: 0.18em;
     text-transform: uppercase; color: var(--muted);
     margin-bottom: 8px; display: block;
@@ -524,7 +524,7 @@
     flex-shrink: 0;
 }
 .mu-modal-combina-name {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px; letter-spacing: 0.06em;
     color: var(--text);
     white-space: nowrap;
@@ -555,7 +555,7 @@
     justify-content: space-between; gap: 24px;
 }
 .mu-cta h2 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: clamp(28px, 3.5vw, 40px);
     line-height: 1; color: var(--text);
     margin-bottom: 8px;
@@ -578,7 +578,7 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .mu-loading-text {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 11px; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--muted);
 }
@@ -661,7 +661,7 @@
     color: #fff;
     border: none;
     border-radius: 999px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 11px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -745,7 +745,7 @@
     border-radius: var(--r);
     background: rgba(14,165,233,0.12);
     color: var(--accent);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 13px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -783,14 +783,14 @@
     margin-bottom: 18px;
 }
 .viz-drop-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 24px;
     letter-spacing: 0.04em;
     color: var(--text);
     margin-bottom: 6px;
 }
 .viz-drop-sub {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -806,7 +806,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     padding: 8px 12px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -833,7 +833,7 @@
     border-bottom: 1px solid var(--border);
 }
 .viz-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-display), sans-serif;
     font-size: 26px;
     line-height: 1.05;
     letter-spacing: 0.02em;
@@ -856,7 +856,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -889,7 +889,7 @@
     border-radius: var(--r);
     padding: 0 12px 0 34px;
     color: var(--text);
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-sans), sans-serif;
     font-size: 13px;
     outline: none;
 }
@@ -908,14 +908,14 @@
     margin-bottom: 8px;
 }
 .viz-fila-name {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 10px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--text);
 }
 .viz-fila-count {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px;
     color: var(--muted);
 }
@@ -973,7 +973,7 @@
 }
 .viz-selected-info { min-width: 0; }
 .viz-selected-name {
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--font-sans), sans-serif;
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
@@ -983,7 +983,7 @@
     white-space: nowrap;
 }
 .viz-selected-mat {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
     font-size: 9px;
     letter-spacing: 0.14em;
     text-transform: uppercase;

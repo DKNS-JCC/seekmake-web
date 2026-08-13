@@ -195,7 +195,27 @@ export type QuoteSettingsRow = {
 };
 
 export type EnvioEstado =
-  | 'pendiente' | 'etiqueta' | 'en_transito' | 'entregado' | 'incidencia' | 'cancelado';
+  | 'pendiente'
+  | 'etiqueta'
+  | 'en_transito'
+  /** Ya está en el punto de recogida (locker InPost, tienda), esperando al cliente. */
+  | 'disponible'
+  | 'entregado'
+  | 'incidencia'
+  | 'cancelado';
+
+/** Punto de recogida. jsonb libre: un locker, una oficina y un domicilio no
+ *  tienen la misma forma y esto solo se muestra, nunca se consulta por campos. */
+export type PuntoRecogida = {
+  nombre?: string;
+  direccion?: string;
+  ciudad?: string;
+  cp?: string;
+  horario?: string;
+  codigo_apertura?: string;
+  /** Fecha límite para recogerlo, texto libre ("hasta el viernes 22"). */
+  hasta?: string;
+};
 
 export type Envio = {
   id: string;
@@ -204,6 +224,8 @@ export type Envio = {
   sendcloud_id: number | null;
   metodo: string | null;
   carrier: string | null;
+  /** Nombre presentable ("InPost"); `carrier` guarda el código de Sendcloud. */
+  carrier_nombre: string | null;
   cp_destino: string | null;
   pais: string;
   peso_g: number | null;
@@ -213,9 +235,41 @@ export type Envio = {
   tracking_url: string | null;
   estado: EnvioEstado;
   estado_carrier: string | null;
+  punto_recogida: PuntoRecogida;
+  /** Marcas de tiempo por estado alcanzado: la línea de tiempo del cliente. */
+  etiqueta_at: string | null;
+  transito_at: string | null;
+  disponible_at: string | null;
+  entregado_at: string | null;
+  /** YYYY-MM-DD */
+  fecha_estimada: string | null;
+  nota_cliente: string;
+  origen: 'sendcloud' | 'manual';
   created_at: string;
   updated_at: string;
 };
+
+/** Lo que devuelve get_envio_status: solo campos logísticos, cero datos
+ *  personales (ni dirección, ni CP, ni coste, ni margen). */
+export type EnvioPublico = {
+  carrier: string | null;
+  carrier_nombre: string | null;
+  metodo: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  estado: EnvioEstado;
+  punto_recogida: PuntoRecogida;
+  fecha_estimada: string | null;
+  nota_cliente: string;
+  etiqueta_at: string | null;
+  transito_at: string | null;
+  disponible_at: string | null;
+  entregado_at: string | null;
+  updated_at: string;
+};
+
+export type { Recibo, ReciboCliente, ReciboMetodo, ReciboVerificado } from './recibo/types';
+import type { Recibo, ReciboCliente, ReciboVerificado } from './recibo/types';
 
 export type Database = {
   public: {
@@ -297,15 +351,34 @@ export type Database = {
       };
       envios: {
         Row: Envio;
-        Insert: Omit<Envio, 'id' | 'created_at' | 'updated_at'> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+        // Casi todo tiene default o es nullable en la tabla: solo quote_id es
+        // obligatorio de verdad. Exigir el resto obligaría a escribir a mano
+        // una docena de nulls en cada alta manual.
+        Insert: Partial<Omit<Envio, 'quote_id'>> & { quote_id: string | null };
         Update: Partial<Envio>;
         Relationships: [
           {
             foreignKeyName: 'envios_quote_id_fkey';
+            columns: ['quote_id'];
+            referencedRelation: 'quotes';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      recibos: {
+        Row: Recibo;
+        // codigo y verif_token los pone la base de datos; datos/pdf_path los
+        // rellena la Edge Function tras generar el PDF.
+        Insert: Omit<Recibo, 'id' | 'codigo' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          codigo?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Recibo>;
+        Relationships: [
+          {
+            foreignKeyName: 'recibos_quote_id_fkey';
             columns: ['quote_id'];
             referencedRelation: 'quotes';
             referencedColumns: ['id'];
@@ -346,6 +419,18 @@ export type Database = {
       accept_quote: {
         Args: { p_codigo: string; p_token: string };
         Returns: { ok: boolean; estado: string | null }[];
+      };
+      get_envio_status: {
+        Args: { p_codigo: string };
+        Returns: EnvioPublico[];
+      };
+      get_recibos_cliente: {
+        Args: { p_codigo: string; p_token: string };
+        Returns: ReciboCliente[];
+      };
+      verificar_recibo: {
+        Args: { p_codigo: string; p_token: string };
+        Returns: ReciboVerificado[];
       };
       vote_trabajo: {
         Args: { p_id: string; p_voter_id: string; p_target: string };
