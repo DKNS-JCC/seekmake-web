@@ -1,0 +1,7 @@
+{
+  "_comment": "Import map solo para pruebas: sustituye Supabase y el cliente SMTP por dobles en memoria, de forma que la Edge Function se pueda ejecutar entera sin red. Uso: deno run -A --import-map=scripts/deno-test.json --no-config scripts/test-recibo-emitir.ts",
+  "imports": {
+    "jsr:@supabase/supabase-js@2": "./stub-supabase.ts",
+    "https://deno.land/x/denomailer@1.6.0/mod.ts": "./stub-denomailer.ts"
+  }
+}

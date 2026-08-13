@@ -7,9 +7,11 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { QuoteEntrega, QuoteEstado, QuotePago } from '@/lib/types';
+import type { EnvioPublico, QuoteEntrega, QuoteEstado, QuotePago } from '@/lib/types';
 import './presupuesto.css';
 import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
+import { EnvioCard } from './EnvioCard';
+import { RecibosCard } from './RecibosCard';
 
 interface StatusRow {
   codigo: string;
@@ -53,6 +55,7 @@ export function PresupuestoClient() {
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<StatusRow | null>(null);
+  const [envio, setEnvio] = useState<EnvioPublico | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Accept-link token from the confirmation email (?codigo=..&token=..).
@@ -66,6 +69,7 @@ export function PresupuestoClient() {
     setError(null);
     setNotFound(false);
     setResult(null);
+    setEnvio(null);
     setAcceptError(null);
     try {
       const { data, error: err } = await createClient().rpc('get_quote_status', {
@@ -76,7 +80,16 @@ export function PresupuestoClient() {
       } else if (!data || data.length === 0) {
         setNotFound(true);
       } else {
-        setResult(data[0] as StatusRow);
+        const row = data[0] as StatusRow;
+        setResult(row);
+        // El envío va en su propia RPC: se pide solo cuando toca y su fallo
+        // no puede tumbar la consulta de estado, que es lo importante.
+        if (row.entrega === 'envio') {
+          const { data: env } = await createClient().rpc('get_envio_status', {
+            p_codigo: row.codigo
+          });
+          if (env && env.length > 0) setEnvio(env[0] as EnvioPublico);
+        }
       }
     } catch {
       setError('Error de red. Comprueba tu conexión.');
@@ -266,6 +279,20 @@ export function PresupuestoClient() {
               )}
               <span>Actualizado el {fecha(result.updated_at)}</span>
             </div>
+
+            {envio && <EnvioCard envio={envio} />}
+
+            {token ? (
+              <RecibosCard codigo={result.codigo} token={token} />
+            ) : (
+              result.pago !== 'pendiente' && (
+                <p className="pr-envio-nota" style={{ marginTop: 18 }}>
+                  Tus justificantes de pago están en el enlace personal que te
+                  enviamos por email. Si no lo encuentras, escríbenos y te lo
+                  reenviamos.
+                </p>
+              )
+            )}
 
             <p className="pr-contact">
               ¿Alguna duda sobre tu pedido? Escríbenos por{' '}

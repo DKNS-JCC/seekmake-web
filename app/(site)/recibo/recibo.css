@@ -1,0 +1,43 @@
+/* Verificación de justificantes — reutiliza la tarjeta de /presupuesto. */
+
+.rv-card { text-align: center; }
+
+.rv-sello {
+    width: 64px; height: 64px; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-size: 30px; line-height: 1; color: #fff;
+}
+.rv-sello--si  { background: #10b981; }
+.rv-sello--anu { background: #b8860b; }
+.rv-sello--no  { background: #e0524d; }
+
+.rv-titulo {
+    font-family: var(--font-display), sans-serif;
+    font-size: 28px; letter-spacing: 0.02em; line-height: 1.1;
+    color: var(--text); margin-bottom: 12px;
+}
+
+.rv-datos {
+    display: flex; flex-direction: column;
+    margin: 22px 0 0; text-align: left;
+    border-top: 1px solid var(--border);
+}
+.rv-datos > div {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+.rv-datos dt {
+    font-family: var(--font-mono), monospace;
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); flex-shrink: 0;
+}
+.rv-datos dd { font-size: 14px; color: var(--text); text-align: right; overflow-wrap: anywhere; }
+.rv-mono { font-family: var(--font-mono), monospace; letter-spacing: 0.06em; }
+.rv-importe { font-size: 20px !important; font-weight: 700; color: var(--accent) !important; }
+
+.rv-concepto {
+    margin-top: 14px; text-align: left;
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+}
