@@ -3,6 +3,8 @@
 import type * as THREE from 'three';
 import type { Color } from '@/lib/types';
 import type { MeshMetrics } from './geometry';
+import type { Analisis } from './estimador/analizar';
+import type { Matriz3 } from './estimador/orientar';
 
 export interface PiezaConfig {
   filamentoId: string;
@@ -15,6 +17,20 @@ export interface PiezaConfig {
   detalleId: string;
 }
 
+/** Layer analysis of a piece (runs in a Web Worker after upload). */
+export interface EstimacionEstado {
+  estado: 'pendiente' | 'ok' | 'error';
+  /** 0-1 while pendiente. */
+  progreso: number;
+  analisis?: Analisis;
+  /** Rotation shown in the viewer, relative to the uploaded file (print frame). */
+  R: Matriz3;
+  /** The quoted orientation is the uploaded one. */
+  original: boolean;
+  /** The customer asked to keep their own orientation. */
+  mantenerOriginal: boolean;
+}
+
 export interface Pieza {
   id: string;
   file: File;
@@ -25,6 +41,7 @@ export interface Pieza {
   cantidad: number;
   partNames: string[];
   config: PiezaConfig;
+  estimacion: EstimacionEstado;
 }
 
 export interface ParsedModel {

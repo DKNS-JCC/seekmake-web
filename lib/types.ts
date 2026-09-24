@@ -194,6 +194,29 @@ export type QuoteSettingsRow = {
   updated_at: string;
 };
 
+/** Web estimate vs the linked Calculadora order (RPC tasador_calibracion). */
+export type CalibracionTasadorRow = {
+  codigo: string;
+  fecha: string;
+  estimador: string | null;
+  web_peso_g: number | null;
+  web_tiempo_h: number | null;
+  web_precio: number | null;
+  real_peso_g: number | null;
+  real_horas: number | null;
+  real_precio: number | null;
+  impresora: string | null;
+  material: string | null;
+};
+
+/** Calculadora documents (migration 0016); the web only reads `config`. */
+export type EmpresaDocRow = {
+  empresa: string;
+  doc: 'config' | 'inventory' | 'clients' | 'calc_state';
+  data: Record<string, unknown>;
+  updated_at: string;
+};
+
 export type EnvioEstado =
   | 'pendiente'
   | 'etiqueta'
@@ -349,6 +372,12 @@ export type Database = {
         Update: Partial<QuoteSettingsRow>;
         Relationships: [];
       };
+      empresa_docs: {
+        Row: EmpresaDocRow;
+        Insert: Omit<EmpresaDocRow, 'updated_at'> & { updated_at?: string };
+        Update: Partial<EmpresaDocRow>;
+        Relationships: [];
+      };
       envios: {
         Row: Envio;
         // Casi todo tiene default o es nullable en la tabla: solo quote_id es
@@ -399,6 +428,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      tasador_calibracion: {
+        Args: Record<string, never>;
+        Returns: CalibracionTasadorRow[];
+      };
       get_quote_status: {
         Args: { p_codigo: string };
         Returns: {

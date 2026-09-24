@@ -56,6 +56,26 @@ jobs:
       - name: Install
         run: npm ci
 
+      # The quote page prices in the browser and submit-quote re-prices on the
+      # server; a web newer than the deployed function would show one price
+      # and email another. Publish only once the function speaks this version
+      # (deploy-supabase.yml deploys it and then re-runs this workflow).
+      - name: Comprobar la función del tasador (submit-quote)
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          esperada=$(grep -oP "TASADOR_VERSION = '\K[^']+" supabase/functions/submit-quote/index.ts)
+          desplegada=$(curl -s -m 20 -D - -o /dev/null \
+            -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
+            "$SUPABASE_URL/functions/v1/submit-quote" \
+            | tr -d '\r' | awk -F': ' 'tolower($1)=="x-tasador-version"{print $2}')
+          echo "submit-quote desplegada: '${desplegada:-antigua}' · esperada: '$esperada'"
+          if [ "$desplegada" != "$esperada" ]; then
+            echo "::error::submit-quote en Supabase no es la versión $esperada. Ejecuta el workflow 'Deploy Supabase' (o 'supabase functions deploy submit-quote') y esta web se publicará sola."
+            exit 1
+          fi
+
       - name: Build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}

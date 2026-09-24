@@ -470,6 +470,99 @@ await check('get_quote_status sigue funcionando igual que antes', async () => {
   assert(!cols.includes('nombre') && !cols.includes('email'), 'ahora filtra datos personales');
 });
 
+// ═══ tasador v4 (0024) ═════════════════════════════════════════════════════
+console.log('\n▸ Tasador: precio como la Calculadora y calibración');
+
+await check('quote_settings pasa a modo calculadora con mínimo 7 €', async () => {
+  const { rows } = await client.query('select config from public.quote_settings where id = 1');
+  const c = rows[0].config;
+  assert(c.modo_precio === 'calculadora', `modo ${c.modo_precio}`);
+  assert(Number(c.precio_minimo) === 7, `mínimo ${c.precio_minimo}`);
+  assert(Number(c.tarifa_preparacion) === 0, 'sigue cobrando preparación');
+  assert(Array.isArray(c.descuentos_cantidad) && c.descuentos_cantidad.length === 0, 'descuentos no vacíos');
+  assert(Number(c.calculadora.markup) === 2.3 && Number(c.calculadora.precio_kg.PLA) === 20, 'costes raros');
+  assert(Array.isArray(c.resistencia) && c.resistencia.length === 4, 'perdió las resistencias');
+});
+
+await check('re-aplicar 0024 no pisa unos costes ya ajustados', async () => {
+  await comoAdmin();
+  await client.query(
+    `update public.quote_settings set config = jsonb_set(config, '{calculadora,markup}', '3') where id = 1`
+  );
+  await client.query(readFileSync(join(dir, '0024_tasador_calculadora.sql'), 'utf8'));
+  const { rows } = await client.query('select config from public.quote_settings where id = 1');
+  assert(Number(rows[0].config.calculadora.markup) === 3, 'reseteó el markup');
+});
+
+await check('guardar la config en la Calculadora actualiza los costes de la web', async () => {
+  await comoAdmin();
+  await client.query(
+    `insert into public.empresa_docs (empresa, doc, data) values ('3dcc', 'config', $1)
+     on conflict (empresa, doc) do update set data = excluded.data`,
+    [JSON.stringify({
+      printers: [
+        { name: 'Kobra X', price_eur: 400, depreciation_time_h: 2000, service_costs_life_eur: 50, energy_consumption_kwh: 0.2 },
+        { name: 'Creality K1SE Combo', price_eur: 699, depreciation_time_h: '3500', service_costs_life_eur: 120, energy_consumption_kwh: '0,16' }
+      ],
+      filament_types: [
+        { name: 'PLA', price_per_kg: 17.5 },
+        { name: 'PETG CF', price_per_kg: '32' },
+        { name: 'Raro', price_per_kg: 'n/a' }
+      ],
+      global_config: { energy_cost_kwh: 0.21 }
+    })]
+  );
+  const { rows } = await client.query('select config from public.quote_settings where id = 1');
+  const c = rows[0].config.calculadora;
+  assert(Number(c.impresora_eur) === 699 && Number(c.vida_h) === 3500, `impresora ${c.impresora_eur}/${c.vida_h}`);
+  assert(Number(c.consumo_kw) === 0.16, `consumo ${c.consumo_kw} (coma decimal)`);
+  assert(Number(c.precio_kwh) === 0.21, `kWh ${c.precio_kwh}`);
+  assert(Number(c.precio_kg.PLA) === 17.5 && Number(c.precio_kg['PETG CF']) === 32, 'no copia los €/kg');
+  assert(Number(c.precio_kg.ASA) === 24, 'borró materiales que la Calculadora no trae');
+  assert(!('Raro' in c.precio_kg), 'copió un precio no numérico');
+  assert(Number(c.markup) === 3, 'tocó el markup de la web');
+  assert(c.impresora === 'Creality K1SE Combo' && c.sincronizado, 'sin marca de sincronización');
+});
+
+await check('la config de SILAB3D no toca la web', async () => {
+  await client.query(
+    `insert into public.empresa_docs (empresa, doc, data) values ('silab3d', 'config', $1)
+     on conflict (empresa, doc) do update set data = excluded.data`,
+    [JSON.stringify({ printers: [{ name: 'K1 Max', price_eur: 1 }], filament_types: [{ name: 'PLA', price_per_kg: 1 }] })]
+  );
+  const { rows } = await client.query('select config from public.quote_settings where id = 1');
+  assert(Number(rows[0].config.calculadora.precio_kg.PLA) === 17.5, 'SILAB3D pisó los precios');
+});
+
+await check('tasador_calibracion cruza la estimación web con el pedido real', async () => {
+  await comoAdmin();
+  const { rows: q } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, archivos)
+    values ('Cal', 'cal@example.com', '600000000', 'PLA', 3, 'recogida', 12.5,
+      '[{"nombre":"a.stl","cantidad":2,"metricas":{"peso_g":10.5,"tiempo_h":0.5,"estimador":"capas-v1"}},
+        {"nombre":"b.stl","cantidad":1,"metricas":{"peso_g":"","tiempo_h":1}}]')
+    returning id, codigo`);
+  await client.query(
+    `insert into public.orders (id, empresa, quote_id, data)
+     values ('CAL00001', '3dcc', $1, '{"peso_g":"23","horas":"2.1","precio_final":14.4,"impresora":"Creality K1SE Combo","filamento":"PLA"}')`,
+    [q[0].id]
+  );
+  const { rows } = await client.query('select * from public.tasador_calibracion() where codigo = $1', [q[0].codigo]);
+  assert(rows.length === 1, `filas ${rows.length}`);
+  const r = rows[0];
+  assert(Number(r.web_peso_g) === 21, `peso web ${r.web_peso_g} (2 × 10.5, vacío ignorado)`);
+  assert(Number(r.web_tiempo_h) === 2, `tiempo web ${r.web_tiempo_h}`);
+  assert(Number(r.real_peso_g) === 23 && Number(r.real_horas) === 2.1, 'no lee el pedido');
+  assert(r.estimador.includes('capas-v1'), `estimador ${r.estimador}`);
+});
+
+await check('tasador_calibracion no enseña nada sin ser admin', async () => {
+  await comoAnon();
+  const { rows } = await client.query('select * from public.tasador_calibracion()');
+  assert(rows.length === 0, `anon ve ${rows.length} filas`);
+  await comoAdmin();
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();
