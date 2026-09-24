@@ -437,6 +437,22 @@ $$;
 
 grant execute on function public.get_quote_detalle(text) to anon, authenticated;
 
+-- Quotes con pedido en la Calculadora (el admin no lee orders por RLS). En
+-- esas el precio lo fija el taller: /admin/presupuestos lo muestra sin editar.
+create or replace function public.quotes_con_pedido()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select o.quote_id from public.orders o
+   where o.quote_id is not null and public.is_admin();
+$$;
+
+revoke all on function public.quotes_con_pedido() from public;
+grant execute on function public.quotes_con_pedido() to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Relleno inicial
 -- ---------------------------------------------------------------------------
