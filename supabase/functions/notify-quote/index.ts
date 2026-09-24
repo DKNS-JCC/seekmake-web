@@ -5,6 +5,16 @@
 // loads the quote with the service role and emails the customer a status
 // update. Uses the same Gmail secrets as the other functions.
 //
+// Es también el ÚNICO canal de correo de la Calculadora para 3DCC (fase E de
+// docs/plan-sincronizacion-web-calculadora.md): el escritorio y el móvil
+// llaman aquí con { empresa, order_id } —cada pedido de 3DCC tiene su quote
+// (0027)— y, opcionalmente, el PDF del presupuesto en `adjunto`. Así las dos
+// apps mandan las mismas plantillas, desde el mismo remitente, y la
+// contraseña de Gmail no sale del servidor.
+//
+//   body: { quote_id } | { empresa, order_id }
+//         [adjunto: { filename, base64 }]   PDF, máx. 5 MB
+//
 // ── Deploy ──
 //   supabase functions deploy notify-quote
 
@@ -99,8 +109,10 @@ const PLANTILLAS: Record<
     asunto: 'Presupuesto revisado',
     titulo: 'Hemos revisado tu presupuesto',
     cuerpo: (q, precio) =>
-      `Hemos comprobado tus piezas y el precio queda confirmado en ${precio.toFixed(2)} €` +
-      (q.entrega === 'envio' ? ' (más envío, que te detallamos aparte).' : '.') +
+      (q.origen === 'calculadora'
+        ? `Te enviamos el presupuesto${q.descripcion ? ` de «${q.descripcion}»` : ''}: ${precio.toFixed(2)} €.`
+        : `Hemos comprobado tus piezas y el precio queda confirmado en ${precio.toFixed(2)} €` +
+          (q.entrega === 'envio' ? ' (más envío, que te detallamos aparte).' : '.')) +
       ' Si quieres seguir adelante, pulsa el botón de abajo y acéptalo en un clic — sin escribir nada.'
   },
   aceptado: {
@@ -135,6 +147,17 @@ const PLANTILLAS: Record<
     cuerpo: () =>
       'Lo sentimos — esta pieza no es viable tal cual (tamaño, geometría o material). Respóndenos y buscamos una alternativa juntos.'
   }
+};
+
+// Nombre para el cliente (pedido_estados, 0026).
+const ESTADO_LABEL: Record<string, string> = {
+  nuevo: 'Recibido',
+  revisado: 'Presupuestado',
+  aceptado: 'Aceptado',
+  imprimiendo: 'En producción',
+  listo: 'Listo',
+  entregado: 'Entregado',
+  rechazado: 'Cerrado'
 };
 
 Deno.serve(async (req: Request) => {
@@ -184,11 +207,38 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: 'Invalid JSON' }, 400, allowedOrigin);
   }
-  const quoteId = String(body?.quote_id ?? '');
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  // Pedido de la Calculadora → su quote.
+  let quoteId = String(body?.quote_id ?? '');
+  if (!quoteId && body?.order_id) {
+    const { data: o } = await supabase
+      .from('orders')
+      .select('quote_id')
+      .eq('empresa', String(body?.empresa ?? '3dcc'))
+      .eq('id', String(body.order_id))
+      .maybeSingle();
+    quoteId = o?.quote_id ?? '';
+    if (!quoteId) {
+      return json({ error: 'Este pedido no tiene presupuesto web enlazado.' }, 404, allowedOrigin);
+    }
+  }
   if (!quoteId) return json({ error: 'quote_id requerido.' }, 400, allowedOrigin);
 
+  // PDF opcional (la Calculadora de escritorio adjunta el presupuesto).
+  let adjunto: { filename: string; content: string } | null = null;
+  if (body?.adjunto?.base64) {
+    const b64 = String(body.adjunto.base64).replace(/\s+/g, '');
+    if (b64.length > 7_000_000) {
+      return json({ error: 'El adjunto supera los 5 MB.' }, 413, allowedOrigin);
+    }
+    const nombre = String(body.adjunto.filename ?? 'presupuesto.pdf')
+      .replace(/[^\w.\- ]+/g, '_')
+      .slice(0, 120);
+    adjunto = { filename: nombre.toLowerCase().endsWith('.pdf') ? nombre : `${nombre}.pdf`, content: b64 };
+  }
+
   // ── Load quote ──
-  const supabase = createClient(supabaseUrl, serviceKey);
   const { data: q, error: qErr } = await supabase
     .from('quotes')
     .select('*')
@@ -240,7 +290,7 @@ ${plantilla.titulo}
 ${cuerpo}
 ${pagoTxt ? '\n' + pagoTxt + '\n' : ''}
 Código:  ${q.codigo}
-Estado:  ${q.estado}
+Estado:  ${ESTADO_LABEL[q.estado] ?? q.estado}
 ${linkLabel}: ${linkUrl}
 
 ¿Dudas? Responde a este email o WhatsApp: +34 923 793 123.
@@ -283,7 +333,14 @@ ${linkLabel}: ${linkUrl}
       replyTo: recipient,
       subject: asciiHeader(`${plantilla.asunto} · ${q.codigo} — 3DCC Salamanca`),
       content: text,
-      html
+      html,
+      ...(adjunto
+        ? {
+            attachments: [
+              { filename: adjunto.filename, contentType: 'application/pdf', encoding: 'base64', content: adjunto.content }
+            ]
+          }
+        : {})
     });
   } catch (err) {
     console.error('notify-quote SMTP failed for', q.codigo, err);
@@ -292,5 +349,9 @@ ${linkLabel}: ${linkUrl}
     try { await client.close(); } catch { /* ignore */ }
   }
 
-  return json({ ok: true, message: `Cliente avisado (${q.estado}).` }, 200, allowedOrigin);
+  return json(
+    { ok: true, estado: q.estado, codigo: q.codigo, adjunto: !!adjunto, message: `Cliente avisado (${ESTADO_LABEL[q.estado] ?? q.estado}).` },
+    200,
+    allowedOrigin
+  );
 });
