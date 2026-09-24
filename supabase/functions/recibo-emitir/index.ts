@@ -2,12 +2,15 @@
 //
 // Justificantes de pago (recibos no fiscales). Un recibo = un cobro.
 //
-//   emitir     → admin. Genera el PDF, lo archiva en el bucket privado
-//                `recibos`, inserta la fila y (opcional) se lo manda al
-//                cliente por email con el PDF adjunto.
+//   emitir     → admin o usuario de 3DCC en la Calculadora. Documenta un
+//                cobro del libro `cobros` (0028): el de `cobro_id`, o uno
+//                nuevo que registra aquí con importe/método/fecha. Genera el
+//                PDF, lo archiva en el bucket privado `recibos`, inserta la
+//                fila y (opcional) se lo manda al cliente con el PDF adjunto.
 //   descargar  → admin (JWT) o cliente (código de pedido + acepta_token).
 //                Devuelve una URL firmada de caducidad corta.
-//   anular     → admin. Marca el recibo como anulado; el PDF NO se borra.
+//   anular     → admin o 3DCC. Marca el recibo como anulado; el PDF NO se
+//                borra y el cobro sigue contando (se anula aparte).
 //
 // POR QUÉ EL PDF SE GENERA AQUÍ Y NO EN EL NAVEGADOR: hay cuatro vías de
 // entrega (descarga del cliente, descarga del admin, email automático y
@@ -50,7 +53,12 @@ const DEV_ALLOWED = [
   'http://localhost:3000', 'http://localhost:3001',
   'http://127.0.0.1:3000', 'http://127.0.0.1:3001'
 ];
-const ALLOWED_ORIGINS = [...PROD_ALLOWED, ...DEV_ALLOWED];
+// La Calculadora (Electron empaquetado manda "null"; Capacitor, localhost).
+const CALC_ALLOWED = [
+  'null', 'https://localhost', 'capacitor://localhost',
+  'http://localhost:5173', 'http://127.0.0.1:5173'
+];
+const ALLOWED_ORIGINS = [...PROD_ALLOWED, ...DEV_ALLOWED, ...CALC_ALLOWED];
 
 function pickOrigin(reqOrigin: string | null): string {
   if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
@@ -228,10 +236,18 @@ Deno.serve(async (req: Request) => {
 
   // ── ¿Quién llama? Admin por JWT, o cliente con código + token. ───────────
   const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  // esAdmin = puede gestionar justificantes: admin de la web o usuario de
+  // 3DCC en la Calculadora (misma regla que notify-quote).
   let esAdmin = false;
+  let userId: string | null = null;
   if (jwt) {
     const { data: userData } = await createClient(supabaseUrl, anonKey).auth.getUser(jwt);
+    userId = userData?.user?.id ?? null;
     esAdmin = userData?.user?.app_metadata?.is_admin === true;
+    if (!esAdmin && userId) {
+      const { data: eu } = await db.from('empresa_users').select('empresa').eq('user_id', userId).maybeSingle();
+      esAdmin = eu?.empresa === '3dcc';
+    }
   }
 
   try {
@@ -278,7 +294,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // ═══ A partir de aquí, solo admin ════════════════════════════════════
-    if (!esAdmin) return json({ error: 'Solo administradores.' }, 403, origin);
+    if (!esAdmin) return json({ error: 'Solo administradores o usuarios de 3DCC.' }, 403, origin);
 
     // ═══ anular ══════════════════════════════════════════════════════════
     // Un recibo nunca se edita ni se borra: se anula y se emite otro. El PDF
@@ -300,10 +316,31 @@ Deno.serve(async (req: Request) => {
 
     // ═══ emitir ══════════════════════════════════════════════════════════
     if (action === 'emitir') {
-      const quoteId = String(body?.quote_id ?? '');
-      if (!quoteId) return json({ error: 'Falta quote_id.' }, 400, origin);
+      // ── ¿Qué cobro documenta? Uno del libro, o uno nuevo que se registra aquí ──
+      let cobro: any = null;
+      let cobroNuevo = false;
+      if (body?.cobro_id) {
+        const { data: c } = await db.from('cobros').select('*').eq('id', String(body.cobro_id)).maybeSingle();
+        if (!c || c.anulado_at) return json({ error: 'Cobro no encontrado o anulado.' }, 404, origin);
+        if (Number(c.importe) <= 0) return json({ error: 'Un ajuste negativo no lleva justificante.' }, 400, origin);
+        const { data: yaTiene } = await db
+          .from('recibos').select('codigo').eq('cobro_id', c.id).is('anulado_at', null).maybeSingle();
+        if (yaTiene) {
+          return json({ error: `Ese cobro ya tiene el justificante ${yaTiene.codigo}.` }, 409, origin);
+        }
+        cobro = c;
+      }
 
-      const importe = round2(body?.importe);
+      let quoteId = String(body?.quote_id ?? cobro?.quote_id ?? '');
+      if (!quoteId && body?.order_id) {
+        const { data: o } = await db
+          .from('orders').select('quote_id')
+          .eq('empresa', String(body?.empresa ?? '3dcc')).eq('id', String(body.order_id)).maybeSingle();
+        quoteId = o?.quote_id ?? '';
+      }
+      if (!quoteId) return json({ error: 'Falta quote_id (o el pedido no tiene presupuesto).' }, 400, origin);
+
+      const importe = round2(cobro ? cobro.importe : body?.importe);
       if (!Number.isFinite(importe) || importe <= 0) {
         return json({ error: 'El importe debe ser mayor que cero.' }, 400, origin);
       }
@@ -311,10 +348,15 @@ Deno.serve(async (req: Request) => {
         return json({ error: 'Importe fuera de rango — revísalo.' }, 400, origin);
       }
 
-      const metodo = String(body?.metodo ?? 'transferencia') as ReciboMetodo;
-      if (!METODOS.includes(metodo)) return json({ error: 'Método de pago no válido.' }, 400, origin);
+      // El libro guarda el método como lo escribe la Calculadora ("Bizum");
+      // el justificante usa los códigos de METODOS.
+      const metodoLibre = String(cobro ? cobro.metodo : body?.metodo ?? 'transferencia').trim().toLowerCase();
+      if (!cobro && !METODOS.includes(metodoLibre as ReciboMetodo)) {
+        return json({ error: 'Método de pago no válido.' }, 400, origin);
+      }
+      const metodo = (METODOS.includes(metodoLibre as ReciboMetodo) ? metodoLibre : 'otro') as ReciboMetodo;
 
-      const fechaPago = String(body?.fecha_pago ?? '').trim();
+      const fechaPago = String(cobro ? cobro.fecha : body?.fecha_pago ?? '').trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaPago)) {
         return json({ error: 'Fecha de pago no válida (YYYY-MM-DD).' }, 400, origin);
       }
@@ -329,41 +371,72 @@ Deno.serve(async (req: Request) => {
         .single();
       if (qErr || !quote) return json({ error: 'Presupuesto no encontrado.' }, 404, origin);
 
-      // ── Guardia anti-duplicado ──
-      // El fallo más probable de todo esto es emitir dos veces el mismo
-      // recibo (doble clic, reintento tras un timeout). Un justificante
-      // duplicado ya enviado al cliente no se puede deshacer, solo anular.
-      const hace2min = new Date(Date.now() - 120_000).toISOString();
-      const { data: reciente } = await db
-        .from('recibos')
-        .select('codigo')
-        .eq('quote_id', quoteId)
-        .eq('importe', importe)
-        .eq('fecha_pago', fechaPago)
-        .is('anulado_at', null)
-        .gte('created_at', hace2min)
-        .maybeSingle();
-      if (reciente) {
-        return json({
-          error: `Ya se emitió el justificante ${reciente.codigo} con ese importe y fecha hace menos de dos minutos. ` +
-                 'Si de verdad son dos cobros distintos, espera un momento y repítelo.'
-        }, 409, origin);
+      if (!cobro) {
+        // ── Guardia anti-duplicado ──
+        // El fallo más probable de todo esto es emitir dos veces el mismo
+        // recibo (doble clic, reintento tras un timeout). Un justificante
+        // duplicado ya enviado al cliente no se puede deshacer, solo anular.
+        const hace2min = new Date(Date.now() - 120_000).toISOString();
+        const { data: reciente } = await db
+          .from('recibos')
+          .select('codigo')
+          .eq('quote_id', quoteId)
+          .eq('importe', importe)
+          .eq('fecha_pago', fechaPago)
+          .is('anulado_at', null)
+          .gte('created_at', hace2min)
+          .maybeSingle();
+        if (reciente) {
+          return json({
+            error: `Ya se emitió el justificante ${reciente.codigo} con ese importe y fecha hace menos de dos minutos. ` +
+                   'Si de verdad son dos cobros distintos, espera un momento y repítelo.'
+          }, 409, origin);
+        }
+
+        // ── 0. Cobro nuevo en el libro (el trigger enlaza el pedido y recalcula) ──
+        const { data: c, error: cErr } = await db
+          .from('cobros')
+          .insert({
+            empresa: '3dcc',
+            quote_id: quoteId,
+            importe,
+            metodo: METODO_LABEL[metodo] ?? 'Otro',
+            fecha: fechaPago,
+            cobrado_at: new Date(`${fechaPago}T12:00:00Z`).toISOString(),
+            nota: concepto,
+            origen: 'web',
+            created_by: userId
+          })
+          .select('*')
+          .single();
+        if (cErr || !c) {
+          return json({ error: 'No se pudo registrar el cobro: ' + (cErr?.message ?? '') }, 502, origin);
+        }
+        cobro = c;
+        cobroNuevo = true;
       }
+
+      // Si algo falla a partir de aquí, el cobro recién creado se anula para
+      // no dejar dinero apuntado de una operación que no terminó.
+      const deshacerCobro = async () => {
+        if (!cobroNuevo) return;
+        await db.from('cobros')
+          .update({ anulado_at: new Date().toISOString(), anulado_motivo: 'Emisión del justificante fallida' })
+          .eq('id', cobro.id);
+      };
 
       const total =
         quote.precio_final != null ? Number(quote.precio_final)
         : quote.precio_total != null ? Number(quote.precio_total)
         : null;
 
-      // Suma de recibos vivos anteriores + este.
-      const { data: previos } = await db
-        .from('recibos')
+      // Lo cobrado sale del libro (ya incluye este cobro).
+      const { data: vivos } = await db
+        .from('cobros')
         .select('importe')
         .eq('quote_id', quoteId)
         .is('anulado_at', null);
-      const pagado = round2(
-        (previos ?? []).reduce((s: number, r: any) => s + Number(r.importe || 0), 0) + importe
-      );
+      const pagado = round2((vivos ?? []).reduce((s: number, r: any) => s + Number(r.importe || 0), 0));
       const pendiente = total == null ? null : Math.max(0, round2(total - pagado));
 
       // ── 1. Fila primero: necesitamos `codigo` y `verif_token` DENTRO del PDF ──
@@ -371,6 +444,7 @@ Deno.serve(async (req: Request) => {
         .from('recibos')
         .insert({
           quote_id: quoteId,
+          cobro_id: cobro.id,
           importe,
           metodo,
           fecha_pago: fechaPago,
@@ -380,6 +454,7 @@ Deno.serve(async (req: Request) => {
         .select('id, codigo, verif_token, created_at')
         .single();
       if (iErr || !fila) {
+        await deshacerCobro();
         return json({ error: 'No se pudo registrar el justificante: ' + (iErr?.message ?? '') }, 502, origin);
       }
 
@@ -409,6 +484,7 @@ Deno.serve(async (req: Request) => {
         // Sin PDF no hay justificante: se retira la fila para no dejar un
         // código de recibo "quemado" apuntando a nada.
         await db.from('recibos').delete().eq('id', fila.id);
+        await deshacerCobro();
         return json({
           error: 'No se pudo generar el PDF: ' + (e instanceof Error ? e.message : String(e))
         }, 500, origin);
@@ -422,6 +498,7 @@ Deno.serve(async (req: Request) => {
       });
       if (upErr) {
         await db.from('recibos').delete().eq('id', fila.id);
+        await deshacerCobro();
         return json({ error: 'No se pudo archivar el PDF: ' + upErr.message }, 502, origin);
       }
 
@@ -444,6 +521,7 @@ Deno.serve(async (req: Request) => {
       return json({
         ok: true,
         recibo_id: fila.id,
+        cobro_id: cobro.id,
         codigo: fila.codigo,
         url: signed?.signedUrl ?? null,
         pagado,

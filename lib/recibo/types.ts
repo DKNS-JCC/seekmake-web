@@ -39,6 +39,8 @@ export type Recibo = {
   concepto: string;
   es_adelanto: boolean;
   pdf_path: string | null;
+  /** Cobro del libro que documenta (0028). null = justificante antiguo sin casar. */
+  cobro_id: string | null;
   anulado_at: string | null;
   anulado_motivo: string;
   created_at: string;

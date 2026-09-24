@@ -56,6 +56,8 @@ export function PresupuestoClient() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<StatusRow | null>(null);
   const [envio, setEnvio] = useState<EnvioPublico | null>(null);
+  // Pedidos hechos en el taller (Calculadora): qué se encarga, en palabras.
+  const [encargo, setEncargo] = useState('');
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Accept-link token from the confirmation email (?codigo=..&token=..).
@@ -70,6 +72,7 @@ export function PresupuestoClient() {
     setNotFound(false);
     setResult(null);
     setEnvio(null);
+    setEncargo('');
     setAcceptError(null);
     try {
       const { data, error: err } = await createClient().rpc('get_quote_status', {
@@ -82,6 +85,8 @@ export function PresupuestoClient() {
       } else {
         const row = data[0] as StatusRow;
         setResult(row);
+        const { data: det } = await createClient().rpc('get_quote_detalle', { p_codigo: row.codigo });
+        if (det?.[0]?.origen === 'calculadora') setEncargo(det[0].descripcion ?? '');
         // El envío va en su propia RPC: se pide solo cuando toca y su fallo
         // no puede tumbar la consulta de estado, que es lo importante.
         if (row.entrega === 'envio') {
@@ -261,6 +266,8 @@ export function PresupuestoClient() {
                 renovamos.
               </p>
             )}
+
+            {encargo && <p className="pr-msg" style={{ margin: '12px 0' }}>{encargo}</p>}
 
             <div className="pr-meta">
               <span>{result.material}</span>
