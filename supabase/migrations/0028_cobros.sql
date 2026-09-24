@@ -302,7 +302,9 @@ begin
       coalesce(nullif(trim(e ->> 'method'), ''), 'Sin registrar'),
       public.en_madrid(v_ts)::date, v_ts,
       coalesce(e ->> 'note', ''),
-      case when v_amt < 0 or e ->> 'source' = 'manual-adjustment' then 'ajuste' else 'cobro' end,
+      -- «Pago recibido» en la Calculadora es un manual-adjustment positivo: un
+      -- cobro de verdad. Solo lo negativo (correcciones a la baja) es ajuste.
+      case when v_amt < 0 then 'ajuste' else 'cobro' end,
       'calculadora', nullif(e ->> 'source', ''), v_eid
     );
   end loop;
@@ -471,7 +473,7 @@ select distinct on (o.empresa, o.id, coalesce(nullif(e ->> 'id', ''), md5(e::tex
   public.en_madrid(coalesce(public.ts_seguro(e ->> 'created_at'), o.created_at))::date,
   coalesce(public.ts_seguro(e ->> 'created_at'), o.created_at),
   coalesce(e ->> 'note', ''),
-  case when public.jsonb_num(e -> 'amount') < 0 or e ->> 'source' = 'manual-adjustment'
+  case when public.jsonb_num(e -> 'amount') < 0
     then 'ajuste' else 'cobro' end,
   'migracion', nullif(e ->> 'source', ''),
   coalesce(nullif(e ->> 'id', ''), md5(e::text))
