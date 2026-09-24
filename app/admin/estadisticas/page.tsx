@@ -128,7 +128,9 @@ export default function AdminEstadisticas() {
         .order('created_at', { ascending: false })
         .limit(5000)
     ]).then(([qres, eres]) => {
-      setQuotes((qres.data as Quote[]) ?? []);
+      // Estadísticas del tasador: los pedidos hechos a mano en la Calculadora
+      // (origen 'calculadora', 0027) no pasaron por el embudo web.
+      setQuotes(((qres.data as Quote[]) ?? []).filter((q) => q.origen !== 'calculadora'));
       setEventos((eres.data as QuoteEvento[]) ?? []);
       setLoading(false);
     });
