@@ -494,6 +494,46 @@ await check('re-aplicar 0024 no pisa unos costes ya ajustados', async () => {
   assert(Number(rows[0].config.calculadora.markup) === 3, 'reseteó el markup');
 });
 
+await check('guardar la config en la Calculadora actualiza los costes de la web', async () => {
+  await comoAdmin();
+  await client.query(
+    `insert into public.empresa_docs (empresa, doc, data) values ('3dcc', 'config', $1)
+     on conflict (empresa, doc) do update set data = excluded.data`,
+    [JSON.stringify({
+      printers: [
+        { name: 'Kobra X', price_eur: 400, depreciation_time_h: 2000, service_costs_life_eur: 50, energy_consumption_kwh: 0.2 },
+        { name: 'Creality K1SE Combo', price_eur: 699, depreciation_time_h: '3500', service_costs_life_eur: 120, energy_consumption_kwh: '0,16' }
+      ],
+      filament_types: [
+        { name: 'PLA', price_per_kg: 17.5 },
+        { name: 'PETG CF', price_per_kg: '32' },
+        { name: 'Raro', price_per_kg: 'n/a' }
+      ],
+      global_config: { energy_cost_kwh: 0.21 }
+    })]
+  );
+  const { rows } = await client.query('select config from public.quote_settings where id = 1');
+  const c = rows[0].config.calculadora;
+  assert(Number(c.impresora_eur) === 699 && Number(c.vida_h) === 3500, `impresora ${c.impresora_eur}/${c.vida_h}`);
+  assert(Number(c.consumo_kw) === 0.16, `consumo ${c.consumo_kw} (coma decimal)`);
+  assert(Number(c.precio_kwh) === 0.21, `kWh ${c.precio_kwh}`);
+  assert(Number(c.precio_kg.PLA) === 17.5 && Number(c.precio_kg['PETG CF']) === 32, 'no copia los €/kg');
+  assert(Number(c.precio_kg.ASA) === 24, 'borró materiales que la Calculadora no trae');
+  assert(!('Raro' in c.precio_kg), 'copió un precio no numérico');
+  assert(Number(c.markup) === 3, 'tocó el markup de la web');
+  assert(c.impresora === 'Creality K1SE Combo' && c.sincronizado, 'sin marca de sincronización');
+});
+
+await check('la config de SILAB3D no toca la web', async () => {
+  await client.query(
+    `insert into public.empresa_docs (empresa, doc, data) values ('silab3d', 'config', $1)
+     on conflict (empresa, doc) do update set data = excluded.data`,
+    [JSON.stringify({ printers: [{ name: 'K1 Max', price_eur: 1 }], filament_types: [{ name: 'PLA', price_per_kg: 1 }] })]
+  );
+  const { rows } = await client.query('select config from public.quote_settings where id = 1');
+  assert(Number(rows[0].config.calculadora.precio_kg.PLA) === 17.5, 'SILAB3D pisó los precios');
+});
+
 await check('tasador_calibracion cruza la estimación web con el pedido real', async () => {
   await comoAdmin();
   const { rows: q } = await client.query(`

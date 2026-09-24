@@ -103,9 +103,10 @@ barata que la de referencia.
 - Diseño/preparación no se cobra (0 €), mínimo 7 €, redondeo al alza a 0,05 €,
   sin descuentos por cantidad (el lote ya se calcula por camas).
 - Post-procesado opcional por pieza con soportes (0 € = «Limpio»).
-- En /admin/tarifas: botón **Importar de la Calculadora** (lee impresora,
-  electricidad y €/kg de `empresa_docs`), paredes por calidad, perfil de
-  impresora, tipo de soporte, orientación y correcciones de calibración.
+- Impresora, electricidad y €/kg se copian solos de la Calculadora al
+  guardar su configuración (trigger en `empresa_docs`); en /admin/tarifas se
+  ven de solo lectura. Allí se ajustan markup, error, mínimo, paredes por
+  calidad, perfil de impresora, tipo de soporte, orientación y correcciones.
 
 El servidor (`submit-quote`) recalcula el dinero con la misma fórmula; como no
 puede laminar (2 s de CPU), acepta los gramos/horas del navegador solo si son
@@ -128,12 +129,23 @@ puntos. Dos formas de eliminarlo:
 
 ## 6. Puesta en marcha
 
-1. `node scripts/apply-migration.mjs supabase/migrations/0024_tasador_calculadora.sql`
-   (modo Calculadora, mínimo 7 €, sin preparación ni descuentos, función de
-   calibración). Conserva resistencias, calidades, acabados y envíos.
-2. Desplegar la Edge Function: `supabase functions deploy submit-quote`.
-3. /admin/tarifas → «Importar de la Calculadora» → revisar → Guardar.
-4. Merge a `main` (despliegue de Pages).
+Automatizado al llegar a `main`:
+
+- **Deploy Supabase** (`.github/workflows/deploy-supabase.yml`): aplica las
+  migraciones *nuevas* (aquí la 0024: modo Calculadora, mínimo 7 €, sin
+  preparación ni descuentos, copia automática de costes y función de
+  calibración) y despliega las funciones cambiadas (`submit-quote`). Necesita
+  dos secretos del repositorio: `SUPABASE_ACCESS_TOKEN` y
+  `SUPABASE_DB_PASSWORD`. Después relanza la publicación de la web.
+- **Deploy to GitHub Pages**: antes de publicar comprueba que `submit-quote`
+  ya es la versión nueva (cabecera `x-tasador-version`); si no, no publica y
+  la web anterior sigue en marcha. Así nunca conviven web nueva y servidor
+  viejo (el cliente vería un precio y le llegaría otro).
+
+A mano (equivalente, desde tu equipo):
+`node scripts/apply-migration.mjs supabase/migrations/0024_tasador_calculadora.sql`
+y `supabase functions deploy submit-quote`; la web se publica en la
+siguiente pasada programada (≤ 15 min).
 
 ## 7. Límites conocidos y siguientes pasos
 

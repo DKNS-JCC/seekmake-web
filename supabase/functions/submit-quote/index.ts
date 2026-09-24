@@ -46,10 +46,19 @@ function corsHeaders(origin: string): Record<string, string> {
   };
 }
 
+// Pricing version of this function. The Pages build refuses to publish a
+// web whose tasador expects a newer server (see deploy-pages.yml): otherwise
+// the customer would see one price and get another one by email.
+const TASADOR_VERSION = '4';
+
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+    headers: {
+      ...corsHeaders(origin),
+      'Content-Type': 'application/json',
+      'x-tasador-version': TASADOR_VERSION
+    }
   });
 }
 

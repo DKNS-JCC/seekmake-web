@@ -64,13 +64,15 @@ function Num({
   onChange,
   step = 0.01,
   min = 0,
-  width = 110
+  width = 110,
+  disabled = false
 }: {
   value: number;
   onChange: (v: number) => void;
   step?: number;
   min?: number;
   width?: number;
+  disabled?: boolean;
 }) {
   return (
     <input
@@ -78,8 +80,9 @@ function Num({
       step={step}
       min={min}
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(Number(e.target.value) || 0)}
-      style={{ ...numStyle, width }}
+      style={{ ...numStyle, width, ...(disabled ? { opacity: 0.6 } : {}) }}
     />
   );
 }
@@ -227,6 +230,8 @@ export default function AdminTarifas() {
 
   if (authed === false) return <AccesoDenegado />;
   if (!settings) return <p style={{ color: 'var(--muted)' }}>Cargando…</p>;
+  // Costs copied from the Calculadora by the database are edited there.
+  const sincronizado = !!settings.calculadora.sincronizado;
 
   return (
     <div>
@@ -280,21 +285,30 @@ export default function AdminTarifas() {
         </div>
         {settings.modo_precio === 'calculadora' && (
           <>
+            {sincronizado && (
+              <p style={{ fontSize: 13, marginBottom: 12 }}>
+                Impresora, electricidad y €/kg se copian solos de la Calculadora al guardar su
+                configuración
+                {settings.calculadora.impresora ? ` (${settings.calculadora.impresora})` : ''}; última
+                copia: {new Date(settings.calculadora.sincronizado!).toLocaleString('es-ES')}. Para
+                cambiarlos, hazlo allí.
+              </p>
+            )}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
               <Field label="Precio impresora (€)">
-                <Num value={settings.calculadora.impresora_eur} step={10} onChange={(v) => patch((s) => { s.calculadora.impresora_eur = v; return s; })} />
+                <Num disabled={sincronizado} value={settings.calculadora.impresora_eur} step={10} onChange={(v) => patch((s) => { s.calculadora.impresora_eur = v; return s; })} />
               </Field>
               <Field label="Mantenimiento en su vida (€)">
-                <Num value={settings.calculadora.mantenimiento_eur} step={10} onChange={(v) => patch((s) => { s.calculadora.mantenimiento_eur = v; return s; })} />
+                <Num disabled={sincronizado} value={settings.calculadora.mantenimiento_eur} step={10} onChange={(v) => patch((s) => { s.calculadora.mantenimiento_eur = v; return s; })} />
               </Field>
               <Field label="Vida útil (h)">
-                <Num value={settings.calculadora.vida_h} step={100} onChange={(v) => patch((s) => { s.calculadora.vida_h = v; return s; })} />
+                <Num disabled={sincronizado} value={settings.calculadora.vida_h} step={100} onChange={(v) => patch((s) => { s.calculadora.vida_h = v; return s; })} />
               </Field>
               <Field label="Consumo (kW)">
-                <Num value={settings.calculadora.consumo_kw} step={0.01} onChange={(v) => patch((s) => { s.calculadora.consumo_kw = v; return s; })} />
+                <Num disabled={sincronizado} value={settings.calculadora.consumo_kw} step={0.01} onChange={(v) => patch((s) => { s.calculadora.consumo_kw = v; return s; })} />
               </Field>
               <Field label="Electricidad (€/kWh)">
-                <Num value={settings.calculadora.precio_kwh} step={0.01} onChange={(v) => patch((s) => { s.calculadora.precio_kwh = v; return s; })} />
+                <Num disabled={sincronizado} value={settings.calculadora.precio_kwh} step={0.01} onChange={(v) => patch((s) => { s.calculadora.precio_kwh = v; return s; })} />
               </Field>
               <Field label="Markup (×)" hint="Calculadora: Normal (230 %) = 2.3">
                 <Num value={settings.calculadora.markup} step={0.1} onChange={(v) => patch((s) => { s.calculadora.markup = v; return s; })} />
@@ -322,12 +336,14 @@ export default function AdminTarifas() {
               {factorCalculadora(settings.calculadora).toFixed(2)} ={' '}
               <strong>{settings.precio_hora.toFixed(3)} €/h</strong> cobrados.
             </p>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
-              <button type="button" className="btn-outline" style={{ padding: '8px 16px', fontSize: 11 }} onClick={importarCalculadora}>
-                Importar de la Calculadora
-              </button>
-              {importMsg && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{importMsg}</span>}
-            </div>
+            {!sincronizado && (
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
+                <button type="button" className="btn-outline" style={{ padding: '8px 16px', fontSize: 11 }} onClick={importarCalculadora}>
+                  Importar de la Calculadora
+                </button>
+                {importMsg && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{importMsg}</span>}
+              </div>
+            )}
           </>
         )}
       </section>
@@ -516,6 +532,7 @@ export default function AdminTarifas() {
                   {settings.modo_precio === 'calculadora' && (
                     <td style={{ padding: '6px 16px 6px 0' }}>
                       <Num
+                        disabled={sincronizado && kg !== undefined}
                         value={kg ?? 0}
                         step={0.5}
                         width={90}

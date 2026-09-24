@@ -81,6 +81,13 @@ export interface CostesCalculadora {
   error: number;
   /** Post-processing per unit when the part needs supports, €. */
   postpro_soportes_eur: number;
+  /**
+   * Set by the database when these costs were copied from the Calculadora's
+   * own config (trigger on empresa_docs, migration 0024): the printer name
+   * and when. The web then shows them read-only.
+   */
+  impresora?: string;
+  sincronizado?: string;
 }
 
 export interface QuoteSettings {
