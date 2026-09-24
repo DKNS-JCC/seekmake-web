@@ -256,6 +256,102 @@ await check('si falla el archivado no queda un recibo sin PDF', async () => {
   );
 });
 
+// ═══ Libro de cobros (0028) ════════════════════════════════════════════════
+const JWT_CALC = 'jwt-calculadora-3dcc';
+const JWT_SILAB = 'jwt-calculadora-silab';
+function sembrarCalc() {
+  estado.usuarios.set(JWT_CALC, { id: 'u-calc', app_metadata: {} });
+  estado.usuarios.set(JWT_SILAB, { id: 'u-silab', app_metadata: {} });
+  estado.tablas.empresa_users = [
+    { user_id: 'u-calc', empresa: '3dcc' },
+    { user_id: 'u-silab', empresa: 'silab3d' }
+  ];
+}
+
+await check('emitir sin cobro_id registra el cobro en el libro y lo enlaza', async () => {
+  sembrar();
+  const r = await llamar(emitir({ enviar_email: false }), JWT_ADMIN);
+  assert(r.status === 200, `status ${r.status} ${JSON.stringify(r.json)}`);
+  const cobros = estado.tablas.cobros ?? [];
+  assert(cobros.length === 1, `${cobros.length} cobros`);
+  assert(cobros[0].importe === 45 && cobros[0].metodo === 'Bizum' && cobros[0].fecha === '2026-08-12', 'datos del cobro');
+  assert(cobros[0].origen === 'web' && cobros[0].quote_id === 'q1', 'origen/enlace');
+  assert(estado.tablas.recibos[0].cobro_id === cobros[0].id && r.json.cobro_id === cobros[0].id, 'recibo sin cobro_id');
+});
+
+await check('emitir para un cobro existente usa sus datos y no crea otro', async () => {
+  sembrar();
+  estado.tablas.cobros = [
+    { id: 'c1', empresa: '3dcc', quote_id: 'q1', importe: 30, metodo: 'Efectivo', fecha: '2026-08-01', anulado_at: null }
+  ];
+  const r = await llamar({ action: 'emitir', cobro_id: 'c1', enviar_email: false }, JWT_ADMIN);
+  assert(r.status === 200, `status ${r.status} ${JSON.stringify(r.json)}`);
+  assert(estado.tablas.cobros.length === 1, 'creó un cobro de más');
+  const rec = estado.tablas.recibos[0];
+  assert(rec.importe === 30 && rec.metodo === 'efectivo' && rec.fecha_pago === '2026-08-01' && rec.cobro_id === 'c1', 'datos del recibo');
+  assert(r.json.pagado === 30 && r.json.pendiente === 60, `acumulado ${r.json.pagado}/${r.json.pendiente}`);
+});
+
+await check('un cobro con justificante vivo no admite otro', async () => {
+  sembrar();
+  estado.tablas.cobros = [
+    { id: 'c1', empresa: '3dcc', quote_id: 'q1', importe: 30, metodo: 'Bizum', fecha: '2026-08-01', anulado_at: null }
+  ];
+  await llamar({ action: 'emitir', cobro_id: 'c1' }, JWT_ADMIN);
+  const r = await llamar({ action: 'emitir', cobro_id: 'c1' }, JWT_ADMIN);
+  assert(r.status === 409, `status ${r.status}`);
+  assert(estado.tablas.recibos.length === 1, 'duplicó el justificante');
+});
+
+await check('un cobro anulado o un ajuste negativo no llevan justificante', async () => {
+  sembrar();
+  estado.tablas.cobros = [
+    { id: 'c1', empresa: '3dcc', quote_id: 'q1', importe: 30, metodo: 'Bizum', fecha: '2026-08-01', anulado_at: '2026-08-02' },
+    { id: 'c2', empresa: '3dcc', quote_id: 'q1', importe: -5, metodo: 'Ajuste', fecha: '2026-08-01', anulado_at: null }
+  ];
+  assert((await llamar({ action: 'emitir', cobro_id: 'c1' }, JWT_ADMIN)).status === 404, 'anulado');
+  assert((await llamar({ action: 'emitir', cobro_id: 'c2' }, JWT_ADMIN)).status === 400, 'negativo');
+});
+
+await check('la Calculadora (usuario de 3DCC) puede emitir; SILAB3D no', async () => {
+  sembrar();
+  sembrarCalc();
+  const r = await llamar(emitir({ enviar_email: false }), JWT_CALC);
+  assert(r.status === 200, `3DCC: status ${r.status}`);
+  const s = await llamar(emitir({ enviar_email: false, fecha_pago: '2026-08-13' }), JWT_SILAB);
+  assert(s.status === 403, `SILAB3D: status ${s.status}`);
+});
+
+await check('si falla el archivado, el cobro recién creado queda anulado', async () => {
+  sembrar();
+  estado.fallarUpload = true;
+  const r = await llamar(emitir({ enviar_email: false }), JWT_ADMIN);
+  assert(r.status === 502, `status ${r.status}`);
+  const c = (estado.tablas.cobros ?? [])[0];
+  assert(c && c.anulado_at, 'dejó dinero apuntado de una emisión fallida');
+});
+
+await check('lo cobrado sale del libro, no de los recibos', async () => {
+  sembrar();
+  // Un cobro de la Calculadora sin justificante ya cuenta.
+  estado.tablas.cobros = [
+    { id: 'c0', empresa: '3dcc', quote_id: 'q1', importe: 50, metodo: 'Bizum', fecha: '2026-08-01', anulado_at: null }
+  ];
+  const r = await llamar(emitir({ importe: 40, enviar_email: false }), JWT_ADMIN);
+  assert(r.json.pagado === 90 && r.json.pendiente === 0, `acumulado ${r.json.pagado}/${r.json.pendiente}`);
+});
+
+await check('la Calculadora puede pedir el justificante por pedido (empresa + order_id)', async () => {
+  sembrar();
+  sembrarCalc();
+  estado.tablas.orders = [{ empresa: '3dcc', id: 'ABCD1234', quote_id: 'q2' }];
+  const r = await llamar(
+    { action: 'emitir', empresa: '3dcc', order_id: 'ABCD1234', importe: 10, metodo: 'efectivo', fecha_pago: '2026-08-12' },
+    JWT_CALC
+  );
+  assert(r.status === 200 && estado.tablas.recibos[0].quote_id === 'q2', `status ${r.status}`);
+});
+
 // ═══ Email ═════════════════════════════════════════════════════════════════
 await check('el email lleva el PDF adjunto', async () => {
   sembrar();

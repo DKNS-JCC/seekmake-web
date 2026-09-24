@@ -60,6 +60,17 @@
     max-width: 200px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* Pedido hecho a mano en la Calculadora (no viene del tasador). */
+.pq-origen {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    font-size: 10px;
+    color: var(--muted);
+    vertical-align: 1px;
+}
 
 .pq-estado-select {
     padding: 5px 8px;

@@ -3,6 +3,11 @@
 // Quote management v2: clear estado pipeline, decoupled payment tracking,
 // search/sort, inline estado change, archive/delete (with storage cleanup)
 // and customer notifications via the notify-quote Edge Function.
+//
+// Sincronizado con la Calculadora (docs/plan-sincronizacion-web-calculadora.md):
+// el estado viaja en los dos sentidos, lo cobrado sale del libro de cobros
+// (no se edita a mano) y en los presupuestos con pedido el precio lo fija el
+// taller en la Calculadora.
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -23,9 +28,9 @@ import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 
 const ESTADOS: { id: QuoteEstado; label: string }[] = [
   { id: 'nuevo', label: 'Nuevo' },
-  { id: 'revisado', label: 'Revisado' },
+  { id: 'revisado', label: 'Presupuestado' },
   { id: 'aceptado', label: 'Aceptado' },
-  { id: 'imprimiendo', label: 'Imprimiendo' },
+  { id: 'imprimiendo', label: 'Imprimiendo / post-procesado' },
   { id: 'listo', label: 'Listo' },
   { id: 'entregado', label: 'Entregado' },
   { id: 'rechazado', label: 'Rechazado' }
@@ -41,11 +46,22 @@ const ESTADO_COLOR: Record<QuoteEstado, string> = {
   rechazado: '#ef4444'
 };
 
-const PAGOS: { id: QuotePago; label: string }[] = [
-  { id: 'pendiente', label: 'Pendiente' },
-  { id: 'adelanto', label: 'Adelanto' },
-  { id: 'pagado', label: 'Pagado' }
-];
+const PAGO_LABEL: Record<QuotePago, string> = {
+  pendiente: 'Pendiente',
+  adelanto: 'Adelanto',
+  pagado: 'Pagado'
+};
+
+/** Estados con plantilla de aviso en notify-quote. */
+const AVISABLES: QuoteEstado[] = ['revisado', 'aceptado', 'imprimiendo', 'listo', 'entregado', 'rechazado'];
+
+/** Qué se encarga: archivos del tasador o descripción del pedido de la Calculadora. */
+function piezas(q: Quote): string {
+  const archivos = (q.archivos ?? [])
+    .map((a) => `${a.nombre}${a.cantidad > 1 ? ` ×${a.cantidad}` : ''}`)
+    .join(', ');
+  return archivos || q.descripcion?.trim() || '—';
+}
 
 type SortKey = 'fecha' | 'total' | 'estado';
 
@@ -74,8 +90,8 @@ export default function AdminPresupuestos() {
   // drawer
   const [open, setOpen] = useState<Quote | null>(null);
   const [estado, setEstado] = useState<QuoteEstado>('nuevo');
-  const [pago, setPago] = useState<QuotePago>('pendiente');
-  const [importePagado, setImportePagado] = useState(0);
+  // Presupuestos con pedido en la Calculadora: su precio se fija allí.
+  const [conPedido, setConPedido] = useState<Set<string>>(new Set());
   const [precioFinal, setPrecioFinal] = useState<string>('');
   const [notas, setNotas] = useState('');
   const [save, setSave] = useState<SaveState>('idle');
@@ -92,13 +108,23 @@ export default function AdminPresupuestos() {
 
   async function refresh() {
     setLoading(true);
-    const { data, error: err } = await supabase()
-      .from('quotes')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const [{ data, error: err }, pedidos] = await Promise.all([
+      supabase().from('quotes').select('*').order('created_at', { ascending: false }),
+      supabase().rpc('quotes_con_pedido')
+    ]);
     if (err) setError(mensajeDeError(err, 'No se pudieron cargar los presupuestos'));
     setQuotes(data ?? []);
+    if (!pedidos.error) setConPedido(new Set((pedidos.data ?? []).map(String)));
     setLoading(false);
+  }
+
+  // Relee una quote tras un cambio: los triggers pueden haber tocado el pago
+  // (libro de cobros) o el estado (Calculadora).
+  async function releer(id: string) {
+    const { data } = await supabase().from('quotes').select('*').eq('id', id).single();
+    if (!data) return;
+    setQuotes((prev) => prev.map((q) => (q.id === id ? data : q)));
+    setOpen((cur) => (cur && cur.id === id ? data : cur));
   }
 
   const visible = useMemo(() => {
@@ -135,8 +161,6 @@ export default function AdminPresupuestos() {
   function openQuote(q: Quote) {
     setOpen(q);
     setEstado(q.estado);
-    setPago(q.pago ?? 'pendiente');
-    setImportePagado(Number(q.importe_pagado) || 0);
     setPrecioFinal(q.precio_final != null ? String(q.precio_final) : '');
     setNotas(q.notas_admin);
     setSave('idle');
@@ -145,13 +169,11 @@ export default function AdminPresupuestos() {
   }
 
   function buildUpdate() {
-    return {
-      estado,
-      pago,
-      importe_pagado: importePagado,
-      precio_final: precioFinal === '' ? null : Number(precioFinal),
-      notas_admin: notas
-    };
+    const upd: Partial<Quote> = { estado, notas_admin: notas };
+    if (open && !conPedido.has(open.id)) {
+      upd.precio_final = precioFinal === '' ? null : Number(precioFinal);
+    }
+    return upd;
   }
 
   async function persist(): Promise<boolean> {
@@ -168,18 +190,16 @@ export default function AdminPresupuestos() {
     setSave('saved');
     setDirty(false);
     setQuotes((prev) => prev.map((q) => (q.id === open.id ? { ...q, ...upd } : q)));
+    await releer(open.id);
     return true;
   }
 
-  async function persistAndNotify() {
-    if (!open) return;
-    const ok = await persist();
-    if (!ok) return;
+  async function avisar(quoteId: string) {
     setNotifying(true);
     setInfo(null);
     try {
       const { data, error: err } = await supabase().functions.invoke('notify-quote', {
-        body: { quote_id: open.id }
+        body: { quote_id: quoteId }
       });
       if (err) setError(mensajeDeError(err, 'No se pudo avisar al cliente'));
       else if (data?.error) setError(data.error);
@@ -189,6 +209,13 @@ export default function AdminPresupuestos() {
     } finally {
       setNotifying(false);
     }
+  }
+
+  async function persistAndNotify() {
+    if (!open) return;
+    const ok = await persist();
+    if (!ok) return;
+    await avisar(open.id);
   }
 
   // Inline estado change from the list (no drawer).
@@ -202,6 +229,18 @@ export default function AdminPresupuestos() {
       return;
     }
     setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, estado: value } : x)));
+    // Mismo criterio que la Calculadora: al cambiar de estado se pregunta si
+    // avisar al cliente; nunca se avisa solo.
+    if (AVISABLES.includes(value) && q.email) {
+      const si = await confirmar({
+        titulo: `¿Avisar a ${q.nombre}?`,
+        mensaje: `Se le enviará un email con el nuevo estado (${ESTADOS.find((e) => e.id === value)?.label}).`,
+        detalle: q.email,
+        confirmar: 'Avisar',
+        destructivo: false
+      });
+      if (si) await avisar(q.id);
+    }
   }
 
   async function toggleArchive(q: Quote) {
@@ -411,9 +450,8 @@ export default function AdminPresupuestos() {
                   </td>
                   <td>{q.nombre}</td>
                   <td className="pq-pieza-cell">
-                    {(q.archivos ?? [])
-                      .map((a) => `${a.nombre}${a.cantidad > 1 ? ` ×${a.cantidad}` : ''}`)
-                      .join(', ') || '—'}
+                    {q.origen === 'calculadora' && <span className="pq-origen">Calculadora</span>}
+                    {piezas(q)}
                   </td>
                   <td className="pq-total">
                     {Number(q.precio_final ?? q.precio_total).toFixed(2)} €
@@ -442,10 +480,7 @@ export default function AdminPresupuestos() {
                   </span>
                 </div>
                 <div className="pq-card-mid">
-                  {q.nombre} ·{' '}
-                  {(q.archivos ?? [])
-                    .map((a) => `${a.nombre}${a.cantidad > 1 ? ` ×${a.cantidad}` : ''}`)
-                    .join(', ')}
+                  {q.nombre} · {piezas(q)}
                 </div>
                 <div className="pq-card-bottom">
                   {estadoSelect(q)}
@@ -531,23 +566,20 @@ export default function AdminPresupuestos() {
                   ))}
                 </select>
               </Field>
-              <Field label="Pago">
-                <select
-                  style={inputStyle}
-                  value={pago}
-                  onChange={(e) => {
-                    setPago(e.target.value as QuotePago);
-                    setDirty(true);
-                  }}
-                >
-                  {PAGOS.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
+              <Field label="Pago" hint="Sale del libro de cobros (abajo).">
+                <div style={{ fontSize: 14, padding: '9px 0' }}>
+                  <PagoBadge pago={open.pago ?? 'pendiente'} />{' '}
+                  {PAGO_LABEL[open.pago ?? 'pendiente']} · {Number(open.importe_pagado || 0).toFixed(2)} € cobrados
+                </div>
               </Field>
-              <Field label="Precio final (€)" hint={`Estimado: ${Number(open.precio_total).toFixed(2)} €`}>
+              <Field
+                label="Precio final (€)"
+                hint={
+                  conPedido.has(open.id)
+                    ? 'Lo fija el pedido de la Calculadora.'
+                    : `Estimado: ${Number(open.precio_total).toFixed(2)} €`
+                }
+              >
                 <input
                   style={inputStyle}
                   type="number"
@@ -555,21 +587,9 @@ export default function AdminPresupuestos() {
                   min={0}
                   placeholder={Number(open.precio_total).toFixed(2)}
                   value={precioFinal}
+                  disabled={conPedido.has(open.id)}
                   onChange={(e) => {
                     setPrecioFinal(e.target.value);
-                    setDirty(true);
-                  }}
-                />
-              </Field>
-              <Field label="Importe cobrado (€)">
-                <input
-                  style={inputStyle}
-                  type="number"
-                  step={0.01}
-                  min={0}
-                  value={importePagado}
-                  onChange={(e) => {
-                    setImportePagado(Number(e.target.value) || 0);
                     setDirty(true);
                   }}
                 />
@@ -616,7 +636,13 @@ export default function AdminPresupuestos() {
 
             {open.entrega === 'envio' && <EnvioPanel quote={open} />}
 
-            <ReciboPanel quote={open} />
+            {open.origen === 'calculadora' && open.descripcion && (
+              <Field label="Encargo (pedido de la Calculadora)">
+                <div style={{ fontSize: 13, lineHeight: 1.6 }}>{open.descripcion}</div>
+              </Field>
+            )}
+
+            <ReciboPanel quote={open} onCambio={() => void releer(open.id)} />
 
             <Field label={`Piezas (${(open.archivos ?? []).length})`}>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>

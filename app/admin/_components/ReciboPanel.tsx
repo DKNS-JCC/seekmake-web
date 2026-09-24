@@ -1,12 +1,14 @@
 'use client';
 
-// Justificantes de pago dentro del drawer de un presupuesto.
+// Cobros y justificantes de pago dentro del drawer de un presupuesto.
 //
-// La emisión es SEMIAUTOMÁTICA a propósito: al marcar un pedido como pagado no
-// se emite nada solo, se precarga este formulario y hace falta un clic. Un
-// recibo emitido por un automatismo con la fecha o el método equivocados es un
-// documento erróneo ya enviado al cliente, y eso no se deshace: solo se anula
-// y se emite otro. Un clic cuesta dos segundos y elimina esa clase de error.
+// El dinero vive en el libro `cobros` (0028), el mismo que usa la Calculadora:
+// lo que se registre aquí aparece en el pedido y al revés. `importe_pagado` y
+// el estado de pago de la quote se calculan de ese libro; no se editan a mano.
+//
+// El justificante PDF es OPCIONAL y documenta un cobro concreto. La emisión
+// sigue siendo de un clic y nunca automática: un recibo con la fecha o el
+// método equivocados ya enviado al cliente no se deshace, solo se anula.
 //
 // El PDF lo genera la Edge Function `recibo-emitir`, no el navegador, para que
 // el fichero archivado, el que descarga el cliente y el que va adjunto al
@@ -14,7 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { Quote } from '@/lib/types';
+import type { Cobro, Quote } from '@/lib/types';
 import type { Recibo, ReciboMetodo } from '@/lib/recibo/types';
 import { METODO_LABEL, METODO_OPCIONES, euros, fechaCorta } from '@/lib/recibo/types';
 import { descargarPdfFirmado } from '@/lib/recibo/descargar';
@@ -32,6 +34,7 @@ const box: React.CSSProperties = {
 };
 
 const btnSm: React.CSSProperties = { padding: '7px 14px', fontSize: 12 };
+const btnXs: React.CSSProperties = { padding: '4px 10px', fontSize: 11 };
 
 /** Fecha de hoy en YYYY-MM-DD según el reloj local, no UTC. */
 function hoy(): string {
@@ -42,59 +45,72 @@ function hoy(): string {
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
-export function ReciboPanel({ quote }: { quote: Quote }) {
+const ORIGEN_LABEL: Record<Cobro['origen'], string> = {
+  web: 'web',
+  calculadora: 'Calculadora',
+  migracion: 'histórico'
+};
+
+export function ReciboPanel({ quote, onCambio }: { quote: Quote; onCambio?: () => void }) {
   const { confirmar, dialogo } = useConfirm();
 
+  const [cobros, setCobros] = useState<Cobro[]>([]);
   const [recibos, setRecibos] = useState<Recibo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [abierto, setAbierto] = useState(false);
-  const [busy, setBusy] = useState<'' | 'emitir' | 'descargar'>('');
+  const [busy, setBusy] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
   const total = quote.precio_final != null ? Number(quote.precio_final) : Number(quote.precio_total);
-
-  const cobrado = useMemo(
-    () => round2(recibos.filter((r) => !r.anulado_at).reduce((s, r) => s + Number(r.importe), 0)),
-    [recibos]
-  );
+  const vivos = useMemo(() => cobros.filter((c) => !c.anulado_at), [cobros]);
+  const cobrado = useMemo(() => round2(vivos.reduce((s, c) => s + Number(c.importe), 0)), [vivos]);
   const pendiente = round2(Math.max(0, total - cobrado));
 
-  // Descuadre entre lo que dicen los recibos y `quotes.importe_pagado`.
-  // No se corrige solo: `importe_pagado` puede venir de la Calculadora (el
-  // trigger project_order_to_quote lo sobrescribe) y los recibos no escriben
-  // en quotes. Si no cuadran, lo decide una persona.
-  const importePagado = round2(Number(quote.importe_pagado) || 0);
-  const descuadre = recibos.length > 0 && Math.abs(cobrado - importePagado) > 0.004;
+  const reciboDe = useCallback(
+    (c: Cobro) => recibos.find((r) => r.cobro_id === c.id && !r.anulado_at),
+    [recibos]
+  );
+  // Justificantes antiguos que la migración no pudo casar con un cobro.
+  const sinCasar = useMemo(() => recibos.filter((r) => !r.cobro_id && !r.anulado_at), [recibos]);
 
   // ── Formulario ──
   const [importe, setImporte] = useState('');
   const [metodo, setMetodo] = useState<ReciboMetodo>('bizum');
   const [fechaPago, setFechaPago] = useState(hoy());
   const [concepto, setConcepto] = useState('');
+  const [conJustificante, setConJustificante] = useState(false);
   const [enviarEmail, setEnviarEmail] = useState(true);
 
   const conceptoSugerido = useMemo(() => {
     const piezas = (quote.archivos ?? []).reduce((n, a) => n + (Number(a.cantidad) || 1), 0);
-    const desc = piezas > 0 ? `${piezas} pieza${piezas === 1 ? '' : 's'}` : 'impresión 3D';
-    return `Impresión 3D — ${desc} en ${quote.material} · pedido ${quote.codigo}`;
+    const desc = quote.descripcion?.trim()
+      ? quote.descripcion.trim()
+      : `${piezas > 0 ? `${piezas} pieza${piezas === 1 ? '' : 's'}` : 'impresión 3D'} en ${quote.material}`;
+    return `Impresión 3D — ${desc} · pedido ${quote.codigo}`;
   }, [quote]);
 
   const cargar = useCallback(async () => {
     setCargando(true);
-    const { data, error } = await supabase()
-      .from('recibos')
-      .select('*')
-      .eq('quote_id', quote.id)
-      .order('created_at', { ascending: true });
-    if (error) setErr('No se pudieron cargar los justificantes: ' + error.message);
-    else setRecibos((data ?? []) as Recibo[]);
+    const [c, r] = await Promise.all([
+      supabase().from('cobros').select('*').eq('quote_id', quote.id).order('cobrado_at', { ascending: true }),
+      supabase().from('recibos').select('*').eq('quote_id', quote.id).order('created_at', { ascending: true })
+    ]);
+    if (c.error) setErr('No se pudieron cargar los cobros: ' + c.error.message);
+    else setCobros((c.data ?? []) as Cobro[]);
+    if (r.error) setErr('No se pudieron cargar los justificantes: ' + r.error.message);
+    else setRecibos((r.data ?? []) as Recibo[]);
     setCargando(false);
   }, [quote.id]);
 
   useEffect(() => {
     void cargar();
   }, [cargar]);
+
+  async function recargar() {
+    await cargar();
+    onCambio?.();
+  }
 
   function abrirFormulario() {
     // Se precarga con lo que falta por cobrar; si ya está todo, con el total.
@@ -103,57 +119,94 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
     setMetodo('bizum');
     setFechaPago(hoy());
     setConcepto(conceptoSugerido);
+    setConJustificante(false);
     setEnviarEmail(true);
     setErr(null);
     setInfo(null);
     setAbierto(true);
   }
 
-  async function emitir() {
+  async function invocarRecibo(body: Record<string, unknown>) {
+    const { data, error } = await supabase().functions.invoke('recibo-emitir', { body });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
+  async function registrar() {
     const imp = round2(Number(importe));
     if (!Number.isFinite(imp) || imp <= 0) {
       setErr('El importe tiene que ser mayor que cero.');
       return;
     }
-    if (total > 0 && imp > round2(total - cobrado) + 0.004) {
+    if (total > 0 && imp > pendiente + 0.004) {
       const seguir = await confirmar({
         titulo: 'Importe mayor que lo pendiente',
         mensaje:
-          `Vas a emitir un justificante de ${euros(imp)} cuando solo quedan ` +
+          `Vas a registrar ${euros(imp)} cuando solo quedan ` +
           `${euros(pendiente)} pendientes de un total de ${euros(total)}.`,
-        detalle: 'Comprueba el importe: una vez emitido solo se puede anular.',
-        confirmar: 'Emitir igualmente',
+        detalle: 'Comprueba el importe antes de seguir.',
+        confirmar: 'Registrar igualmente',
         destructivo: false
       });
       if (!seguir) return;
     }
 
-    setBusy('emitir');
+    setBusy('registrar');
     setErr(null);
     setInfo(null);
     try {
-      const { data, error } = await supabase().functions.invoke('recibo-emitir', {
-        body: {
+      if (conJustificante) {
+        // La función registra el cobro y emite su justificante en un paso.
+        const data = await invocarRecibo({
           action: 'emitir',
           quote_id: quote.id,
           importe: imp,
           metodo,
           fecha_pago: fechaPago,
           concepto: concepto.trim(),
-          // Es adelanto si, después de este cobro, sigue quedando algo.
           es_adelanto: total > 0 && round2(cobrado + imp) < round2(total) - 0.004,
           enviar_email: enviarEmail
-        }
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-
-      setInfo(
-        `Justificante ${data.codigo} emitido.` +
-          (data.enviado ? ' Enviado al cliente por email.' : '') +
-          (data.aviso ? ` ⚠ ${data.aviso}` : '')
-      );
+        });
+        setInfo(
+          `Cobro registrado y justificante ${data.codigo} emitido.` +
+            (data.enviado ? ' Enviado al cliente por email.' : '') +
+            (data.aviso ? ` ⚠ ${data.aviso}` : '')
+        );
+        if (data.url) await descargarPdfFirmado(data.url, `justificante-${data.codigo}.pdf`);
+      } else {
+        const { error } = await supabase().rpc('registrar_cobro', {
+          p_importe: imp,
+          p_metodo: METODO_LABEL[metodo],
+          p_quote_id: quote.id,
+          p_fecha: fechaPago,
+          p_nota: concepto.trim()
+        });
+        if (error) throw new Error(error.message);
+        setInfo(`Cobro de ${euros(imp)} registrado. Ya aparece en la Calculadora.`);
+      }
       setAbierto(false);
+      await recargar();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'No se pudo registrar el cobro.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function emitirPara(c: Cobro) {
+    setBusy(c.id);
+    setErr(null);
+    setInfo(null);
+    try {
+      const data = await invocarRecibo({
+        action: 'emitir',
+        cobro_id: c.id,
+        concepto: c.nota || conceptoSugerido,
+        es_adelanto: total > 0 && cobrado < round2(total) - 0.004,
+        enviar_email: false
+      });
+      setInfo(`Justificante ${data.codigo} emitido.${data.aviso ? ` ⚠ ${data.aviso}` : ''}`);
       if (data.url) await descargarPdfFirmado(data.url, `justificante-${data.codigo}.pdf`);
       await cargar();
     } catch (e: unknown) {
@@ -164,14 +217,10 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
   }
 
   async function descargar(r: Recibo) {
-    setBusy('descargar');
+    setBusy(r.id);
     setErr(null);
     try {
-      const { data, error } = await supabase().functions.invoke('recibo-emitir', {
-        body: { action: 'descargar', recibo_codigo: r.codigo }
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      const data = await invocarRecibo({ action: 'descargar', recibo_codigo: r.codigo });
       await descargarPdfFirmado(data.url, `justificante-${r.codigo}.pdf`);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'No se pudo descargar.');
@@ -180,24 +229,43 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
     }
   }
 
-  async function anular(r: Recibo) {
+  async function anularCobro(c: Cobro) {
+    const r = reciboDe(c);
+    const seguir = await confirmar({
+      titulo: `Anular el cobro de ${euros(c.importe)}`,
+      mensaje: 'Deja de contar en lo cobrado, aquí y en la Calculadora. No se borra: queda anulado.',
+      detalle: r ? `Su justificante ${r.codigo} se anulará también.` : undefined,
+      confirmar: 'Anular'
+    });
+    if (!seguir) return;
+    setErr(null);
+    try {
+      const { error } = await supabase().rpc('anular_cobro', {
+        p_cobro_id: c.id,
+        p_motivo: 'Anulado desde el panel'
+      });
+      if (error) throw new Error(error.message);
+      if (r) await invocarRecibo({ action: 'anular', recibo_id: r.id, motivo: 'Cobro anulado' });
+      setInfo('Cobro anulado.');
+      await recargar();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'No se pudo anular.');
+    }
+  }
+
+  async function anularRecibo(r: Recibo) {
     const seguir = await confirmar({
       titulo: `Anular ${r.codigo}`,
-      mensaje: 'Un justificante no se edita ni se borra: se anula y se emite otro.',
+      mensaje: 'Un justificante no se edita ni se borra: se anula y se emite otro. El cobro sigue contando.',
       detalle:
         'Si el cliente ya lo tiene descargado, su código QR pasará a decir "anulado". ' +
         'El PDF archivado se conserva.',
       confirmar: 'Anular'
     });
     if (!seguir) return;
-
     setErr(null);
     try {
-      const { data, error } = await supabase().functions.invoke('recibo-emitir', {
-        body: { action: 'anular', recibo_id: r.id, motivo: 'Anulado desde el panel' }
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      await invocarRecibo({ action: 'anular', recibo_id: r.id, motivo: 'Anulado desde el panel' });
       setInfo(`${r.codigo} anulado.`);
       await cargar();
     } catch (e: unknown) {
@@ -205,18 +273,56 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
     }
   }
 
+  // Un justificante antiguo sin cobro: o era un cobro que el libro no tiene
+  // (se registra), o ya está contado en otro apunte (se deja como está).
+  async function registrarDesdeRecibo(r: Recibo) {
+    setBusy(r.id);
+    setErr(null);
+    try {
+      const { data, error } = await supabase().rpc('registrar_cobro', {
+        p_importe: Number(r.importe),
+        p_metodo: METODO_LABEL[r.metodo] ?? 'Otro',
+        p_quote_id: quote.id,
+        p_fecha: r.fecha_pago,
+        p_nota: r.concepto || `Justificante ${r.codigo}`
+      });
+      if (error) throw new Error(error.message);
+      const cobroId = data?.id;
+      if (cobroId) await supabase().from('recibos').update({ cobro_id: cobroId }).eq('id', r.id);
+      setInfo(`${r.codigo} registrado como cobro.`);
+      await recargar();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'No se pudo registrar.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  const fila: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    padding: '8px 10px',
+    background: 'var(--bg)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r)',
+    fontSize: 12
+  };
+
   return (
     <div style={box}>
       {dialogo}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ fontWeight: 700, fontSize: 13 }}>🧾 Justificantes de pago</span>
+        <span style={{ fontWeight: 700, fontSize: 13 }}>💶 Cobros y justificantes</span>
         <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--muted)' }}>
           {euros(cobrado)} de {euros(total)}
+          {pendiente > 0.004 ? ` · faltan ${euros(pendiente)}` : ''}
         </span>
       </div>
 
-      {descuadre && (
+      {sinCasar.length > 0 && (
         <div
           style={{
             ...box,
@@ -228,75 +334,81 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
             lineHeight: 1.5
           }}
         >
-          ⚠ <strong>Descuadre.</strong> Los justificantes suman {euros(cobrado)}, pero el
-          pedido tiene {euros(importePagado)} como importe cobrado. Puede venir de la
-          Calculadora o de un cobro sin justificante. Revísalo antes de emitir más.
+          ⚠ <strong>Justificantes sin cobro.</strong> Se emitieron antes del libro de cobros
+          y no casan con ningún apunte de la Calculadora. Si el dinero no está ya contado,
+          regístralo; si lo está, anula el justificante duplicado.
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+            {sinCasar.map((r) => (
+              <li key={r.id} style={fila}>
+                <strong style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{r.codigo}</strong>
+                <span style={{ fontWeight: 700 }}>{euros(r.importe)}</span>
+                <span style={{ color: 'var(--muted)' }}>
+                  {METODO_LABEL[r.metodo] ?? r.metodo} · {fechaCorta(r.fecha_pago)}
+                </span>
+                <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  <button type="button" className="btn-outline" style={btnXs} disabled={busy !== ''}
+                    onClick={() => void registrarDesdeRecibo(r)}>
+                    Registrar cobro
+                  </button>
+                  <button type="button" className="btn-outline"
+                    style={{ ...btnXs, borderColor: '#ef4444', color: '#ef4444' }}
+                    onClick={() => void anularRecibo(r)}>
+                    Anular
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
       {cargando ? (
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>Cargando…</div>
-      ) : recibos.length === 0 ? (
+      ) : cobros.length === 0 ? (
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
-          Todavía no has emitido ninguno para este pedido.
+          Todavía no hay cobros de este pedido.
         </div>
       ) : (
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-          {recibos.map((r) => {
-            const anulado = !!r.anulado_at;
+          {cobros.map((c) => {
+            const anulado = !!c.anulado_at;
+            const r = reciboDe(c);
             return (
-              <li
-                key={r.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                  padding: '8px 10px',
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--r)',
-                  fontSize: 12,
-                  opacity: anulado ? 0.55 : 1
-                }}
-              >
-                <strong
-                  style={{
-                    fontFamily: "'IBM Plex Mono', monospace",
-                    textDecoration: anulado ? 'line-through' : 'none'
-                  }}
-                >
-                  {r.codigo}
-                </strong>
-                <span style={{ fontWeight: 700 }}>{euros(r.importe)}</span>
-                <span style={{ color: 'var(--muted)' }}>
-                  {METODO_LABEL[r.metodo] ?? r.metodo} · {fechaCorta(r.fecha_pago)}
-                  {r.es_adelanto ? ' · adelanto' : ''}
+              <li key={c.id} style={{ ...fila, opacity: anulado ? 0.55 : 1 }}>
+                <span style={{ fontWeight: 700, textDecoration: anulado ? 'line-through' : 'none' }}>
+                  {euros(c.importe)}
                 </span>
-                {anulado && (
-                  <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>ANULADO</span>
+                <span style={{ color: 'var(--muted)' }}>
+                  {c.metodo} · {fechaCorta(c.fecha)} · {ORIGEN_LABEL[c.origen]}
+                  {c.tipo === 'ajuste' ? ' · ajuste' : ''}
+                  {c.nota ? ` · ${c.nota}` : ''}
+                </span>
+                {anulado && <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>ANULADO</span>}
+                {r && (
+                  <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{r.codigo}</strong>
                 )}
-                <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                  <button
-                    type="button"
-                    className="btn-outline"
-                    style={{ padding: '4px 10px', fontSize: 11 }}
-                    disabled={busy !== '' || !r.pdf_path}
-                    onClick={() => void descargar(r)}
-                  >
-                    ⬇ PDF
-                  </button>
-                  {!anulado && (
-                    <button
-                      type="button"
-                      className="btn-outline"
-                      style={{ padding: '4px 10px', fontSize: 11, borderColor: '#ef4444', color: '#ef4444' }}
-                      onClick={() => void anular(r)}
-                    >
+                {!anulado && (
+                  <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                    {r ? (
+                      <button type="button" className="btn-outline" style={btnXs}
+                        disabled={busy !== '' || !r.pdf_path} onClick={() => void descargar(r)}>
+                        ⬇ PDF
+                      </button>
+                    ) : (
+                      c.importe > 0 && (
+                        <button type="button" className="btn-outline" style={btnXs}
+                          disabled={busy !== ''} onClick={() => void emitirPara(c)}>
+                          {busy === c.id ? 'Emitiendo…' : '🧾 Justificante'}
+                        </button>
+                      )
+                    )}
+                    <button type="button" className="btn-outline"
+                      style={{ ...btnXs, borderColor: '#ef4444', color: '#ef4444' }}
+                      onClick={() => void anularCobro(c)}>
                       Anular
                     </button>
-                  )}
-                </span>
+                  </span>
+                )}
               </li>
             );
           })}
@@ -305,7 +417,7 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
 
       {!abierto ? (
         <button type="button" className="btn-primary" style={btnSm} onClick={abrirFormulario}>
-          Emitir justificante
+          Registrar cobro
         </button>
       ) : (
         <div style={{ ...box, marginTop: 0, background: 'var(--bg)' }}>
@@ -314,21 +426,12 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
               label="Importe cobrado (€)"
               hint={pendiente > 0.004 ? `Pendiente: ${euros(pendiente)}` : 'Pedido ya cubierto'}
             >
-              <input
-                style={inputStyle}
-                type="number"
-                step={0.01}
-                min={0.01}
-                value={importe}
-                onChange={(e) => setImporte(e.target.value)}
-              />
+              <input style={inputStyle} type="number" step={0.01} min={0.01} value={importe}
+                onChange={(e) => setImporte(e.target.value)} />
             </Field>
             <Field label="Forma de pago">
-              <select
-                style={inputStyle}
-                value={metodo}
-                onChange={(e) => setMetodo(e.target.value as ReciboMetodo)}
-              >
+              <select style={inputStyle} value={metodo}
+                onChange={(e) => setMetodo(e.target.value as ReciboMetodo)}>
                 {METODO_OPCIONES.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.label}
@@ -339,66 +442,40 @@ export function ReciboPanel({ quote }: { quote: Quote }) {
           </div>
 
           <Field label="Fecha del cobro">
-            <input
-              style={inputStyle}
-              type="date"
-              value={fechaPago}
-              max={hoy()}
-              onChange={(e) => setFechaPago(e.target.value)}
-            />
+            <input style={inputStyle} type="date" value={fechaPago} max={hoy()}
+              onChange={(e) => setFechaPago(e.target.value)} />
           </Field>
 
-          <Field label="Concepto" hint="Aparece tal cual en el PDF.">
-            <input
-              style={inputStyle}
-              value={concepto}
-              maxLength={600}
-              onChange={(e) => setConcepto(e.target.value)}
-            />
+          <Field label="Concepto" hint={conJustificante ? 'Aparece tal cual en el PDF.' : 'Nota interna del cobro.'}>
+            <input style={inputStyle} value={concepto} maxLength={600}
+              onChange={(e) => setConcepto(e.target.value)} />
           </Field>
 
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 12,
-              marginBottom: 12,
-              cursor: 'pointer'
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={enviarEmail}
-              onChange={(e) => setEnviarEmail(e.target.checked)}
-            />
-            Enviárselo al cliente por email ({quote.email || 'sin email'})
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={conJustificante} onChange={(e) => setConJustificante(e.target.checked)} />
+            Emitir justificante PDF
           </label>
+          {conJustificante && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 12, marginLeft: 22, cursor: 'pointer' }}>
+              <input type="checkbox" checked={enviarEmail} onChange={(e) => setEnviarEmail(e.target.checked)} />
+              Enviárselo al cliente por email ({quote.email || 'sin email'})
+            </label>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              className="btn-primary"
-              style={btnSm}
-              disabled={busy !== ''}
-              onClick={() => void emitir()}
-            >
-              {busy === 'emitir' ? 'Emitiendo…' : 'Emitir y archivar'}
+            <button type="button" className="btn-primary" style={btnSm} disabled={busy !== ''}
+              onClick={() => void registrar()}>
+              {busy === 'registrar' ? 'Guardando…' : conJustificante ? 'Registrar y emitir' : 'Registrar cobro'}
             </button>
-            <button
-              type="button"
-              className="btn-outline"
-              style={btnSm}
-              disabled={busy !== ''}
-              onClick={() => setAbierto(false)}
-            >
+            <button type="button" className="btn-outline" style={btnSm} disabled={busy !== ''}
+              onClick={() => setAbierto(false)}>
               Cancelar
             </button>
           </div>
 
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
-            Se emite un justificante <strong>por cada cobro</strong>. Una vez emitido no se
-            puede editar, solo anular y volver a emitir.
+            El cobro se apunta en el libro común: la Calculadora lo verá en el pedido. Un
+            justificante emitido no se edita, solo se anula y se vuelve a emitir.
           </div>
         </div>
       )}

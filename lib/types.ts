@@ -103,6 +103,28 @@ export type QuoteEstado =
 
 export type QuotePago = 'pendiente' | 'adelanto' | 'pagado';
 
+export type QuoteOrigen = 'web' | 'calculadora';
+
+/** Apunte del libro de cobros (0028), común a la web y la Calculadora. */
+export type Cobro = {
+  id: string;
+  empresa: string;
+  order_id: string | null;
+  quote_id: string | null;
+  importe: number;
+  /** Texto libre, como en la Calculadora: 'Bizum', 'Efectivo'… */
+  metodo: string;
+  /** YYYY-MM-DD */
+  fecha: string;
+  cobrado_at: string;
+  nota: string;
+  tipo: 'cobro' | 'ajuste';
+  origen: 'calculadora' | 'web' | 'migracion';
+  anulado_at: string | null;
+  anulado_motivo: string;
+  created_at: string;
+};
+
 export type QuoteEntrega = 'recogida' | 'envio';
 
 export type QuoteArchivo = {
@@ -164,6 +186,10 @@ export type Quote = {
   importe_pagado: number;
   archivado: boolean;
   notas_admin: string;
+  /** 'web' = tasador; 'calculadora' = pedido hecho a mano en la Calculadora. */
+  origen?: QuoteOrigen;
+  /** Qué se encarga (pedidos de la Calculadora, que no traen archivos). */
+  descripcion?: string;
   /** Secret accept-link token (emailed to the customer). */
   acepta_token?: string;
   aceptado_at: string | null;
@@ -425,9 +451,48 @@ export type Database = {
         Update: Partial<Omit<Trabajo, 'fecha_efectiva'>>;
         Relationships: [];
       };
+      cobros: {
+        Row: Cobro;
+        // Solo lectura desde el navegador: se escribe con registrar_cobro /
+        // anular_cobro (RLS sin políticas de escritura).
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
+      registrar_cobro: {
+        Args: {
+          p_importe: number;
+          p_metodo: string;
+          p_quote_id?: string;
+          p_empresa?: string;
+          p_order_id?: string;
+          p_fecha?: string;
+          p_nota?: string;
+          p_tipo?: 'cobro' | 'ajuste';
+        };
+        Returns: Cobro;
+      };
+      anular_cobro: {
+        Args: {
+          p_cobro_id?: string;
+          p_empresa?: string;
+          p_order_id?: string;
+          p_payment_id?: string;
+          p_motivo?: string;
+        };
+        Returns: boolean;
+      };
+      quotes_con_pedido: {
+        Args: Record<string, never>;
+        Returns: string[];
+      };
+      get_quote_detalle: {
+        Args: { p_codigo: string };
+        Returns: { codigo: string; origen: QuoteOrigen; descripcion: string }[];
+      };
       tasador_calibracion: {
         Args: Record<string, never>;
         Returns: CalibracionTasadorRow[];

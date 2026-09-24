@@ -1,8 +1,11 @@
 # Web ↔ Calculadora: un solo sistema
 
 **Objetivo:** que tocar algo en un sitio se vea en el otro: estados, cobros,
-correos y tarifas. Hoy cada app tiene su versión de cada cosa y solo una
-pequeña parte viaja, en un único sentido.
+correos y tarifas.
+
+> **Estado (sep. 2026): fases A-E hechas** (migraciones 0024-0028, web y
+> Calculadora 7.2.0). La tabla del apartado 1 describe cómo estaba antes;
+> lo que hay ahora está en los apartados 4-6.
 
 ## 1. Qué está desincronizado (verificado en el código)
 
@@ -43,47 +46,97 @@ pequeña parte viaja, en un único sentido.
 
 ## 3. Fases
 
-| Fase | Contenido | Dónde | Esfuerzo |
+| Fase | Contenido | Dónde | Estado |
 |---|---|---|---|
-| A ✅ | Tarifas: trigger `empresa_docs` → `quote_settings` (hecho en la migración 0024) | solo base de datos | hecho |
-| B | Estados: vocabulario común + triggers en los dos sentidos + «Descartado» | BD + Calculadora (listas de estados) | 1 día |
-| C | Pedido 1:1: crear pedido al recibir solicitud y `quote` al crear pedido | BD + Calculadora (bandeja → lista) | 1-2 días |
-| D | Cobros: libro único + RPC; migrar `payment_history` | BD + Calculadora + web | 1-2 días |
-| E | Correos: todo por Edge Functions, retirar `mailer.js` | Calculadora + funciones | 1 día |
+| A ✅ | Tarifas: trigger `empresa_docs` → `quote_settings` | migración 0024 | hecho |
+| B ✅ | Estados: tabla `pedido_estados`, triggers en los dos sentidos, anti-bucle, copias viejas, «Descartado» y «Nuevo» | 0025, 0026 + Calculadora | hecho |
+| C ✅ | Pedido 1:1: pedido al recibir la solicitud, quote al crear el pedido, relleno inicial | 0027 + Calculadora (bandeja → lista) | hecho |
+| D ✅ | Cobros: libro `cobros` + RPC, migración de `payment_history` y recibos | 0028 + web + Calculadora | hecho |
+| E ✅ | Correos de 3DCC por `notify-quote` / `recibo-emitir` (escritorio y móvil) | funciones + Calculadora | hecho (SILAB3D pendiente, ver §5) |
 
-## 4. Lo que hace falta para empezar
+## 4. Decisiones tomadas
 
-- Subir a GitHub la última versión de la Calculadora (la que ya tiene
-  «Descartado» y el auto-descartado de pedidos sin respuesta).
-- Abrir la sesión con los dos repos: `DKNS-JCC/Calculadora` (escritura) y
-  `DKNS-JCC/seekmake-web` (las migraciones de Supabase viven aquí).
-- Decidir: ¿los pedidos hechos a mano también se ven en /admin/presupuestos y
-  tienen seguimiento público? ¿el aviso al cliente se pregunta siempre o es
-  automático en ciertos estados?
+- **Los pedidos hechos a mano sí tienen quote**, seguimiento público en
+  /presupuesto (con la descripción del encargo), aceptación en un clic,
+  recibos y envíos, y aparecen en /admin/presupuestos marcados como
+  «Calculadora». Solo los de 3DCC: SILAB3D no tiene web.
+- **El aviso al cliente se pregunta siempre**, en las dos apps (diálogo de la
+  Calculadora; en la web, «Guardar y avisar» o la pregunta tras cambiar el
+  estado desde la lista). Nunca se avisa solo. Excepciones fijas: «Nuevo»
+  (ya recibió el acuse de la web) y «Descartado» (limpieza interna) no
+  avisan nunca.
+- **La web no distingue producción de post-procesado**: ambos son
+  `imprimiendo`. Si el pedido está en post-procesado, un `imprimiendo` que
+  llegue de la web no lo mueve.
+- **Rechazado y Descartado son el mismo estado**: `rechazado` en la web,
+  «Descartado» en la Calculadora.
+- **El precio de un pedido lo fija la Calculadora**: en /admin/presupuestos
+  es de solo lectura cuando hay pedido.
+- **Lo cobrado no se edita a mano en ningún sitio**: se registra un cobro (o
+  un ajuste negativo) y el resto se calcula. Quitar un apunte = anularlo.
 
-## 5. Texto para arrancar la sesión de la Calculadora
+## 5. Cómo funciona ahora
 
-> Trabaja en `DKNS-JCC/Calculadora` y `DKNS-JCC/seekmake-web`. Lee
-> `seekmake-web/docs/plan-sincronizacion-web-calculadora.md` y ejecuta las
-> fases B a E en orden, una PR por fase en cada repo que toque. La fase A ya
-> está en la migración 0024. Reglas: los cambios de base de datos van como
-> migraciones nuevas en `seekmake-web/supabase/migrations` (se aplican solas
-> al llegar a `main` con el workflow «Deploy Supabase»), con sus pruebas en
-> `scripts/test-migraciones.mjs`; los triggers en los dos sentidos necesitan
-> protección anti-bucle; no se pierde ningún pedido ni cobro existente
-> (migrar `payment_history` y los estados antiguos, incluido «Descartado»);
-> la Calculadora deja de enviar correos por Electron y usa las Edge
-> Functions. Antes de tocar nada, confírmame las dos decisiones pendientes
-> del apartado 4.
+**Estados.** `pedido_estados` guarda la lista común (etiqueta de la
+Calculadora ↔ código de la web). Cambiar el estado en cualquier sitio lo
+cambia en el otro. Cada proyección marca la transacción con
+`app.sync_desde` y la contraria no se dispara (anti-bucle). La Calculadora
+guarda el pedido entero; si guarda una copia vieja, el servidor conserva el
+estado con el `last_status_update` más reciente.
 
-## 6. Referencias en el código
+**Pedido 1:1.** `submit-quote` inserta la quote → trigger → pedido en
+«Nuevo» con gramos, horas, coste (config de 3DCC), notas con entrega,
+teléfono, colores y mensaje. Un pedido nuevo de 3DCC en la Calculadora →
+trigger → quote `origen = 'calculadora'`. Si alguno de los dos falla, la
+solicitud o el pedido se guardan igual (aviso en el log).
 
-- Estados y proyección actual: `seekmake-web/supabase/migrations/0017_calculadora_quotes_link.sql`,
-  `0018_calc_reject_quote.sql`; Calculadora `src/shared/backend.mjs`
+**Cobros.** `cobros` es la fuente de verdad. `importe_pagado`,
+`payment_status`, `importe_pendiente` y `payment_history` del pedido y
+`importe_pagado` / `pago` de la quote se recalculan del libro en cada
+escritura. Registrar: `registrar_cobro` (web) o, desde la Calculadora, el
+flujo de siempre (editar lo cobrado → el apunte nuevo entra en el libro).
+Anular: `anular_cobro`. Justificante: `recibo-emitir` con `cobro_id` (o
+registra el cobro y emite en un paso).
+
+**Correos.** 3DCC: siempre `notify-quote` con `{ empresa, order_id }`; al
+enviar el presupuesto, el PDF de la Calculadora de escritorio va adjunto.
+Configuración ya no pide la contraseña de Gmail y la borra al guardar.
+
+## 6. Despliegue (orden importante)
+
+1. **Web primero.** Merge a `main` de este repo: el workflow «Deploy
+   Supabase» aplica 0025-0028 y despliega `notify-quote` y `recibo-emitir`.
+   La Calculadora instalada sigue funcionando con la BD nueva (sus cobros
+   entran al libro por el JSON), pero su bandeja web se queda vacía: las
+   solicitudes aparecen ya como pedidos en «Nuevo».
+2. **Después, la Calculadora 7.2.0.** La versión nueva necesita las RPC y la
+   función nueva; instalada antes que la BD, los avisos y anular cobros
+   fallarían.
+3. **Revisar `cobros_revisar`** (vista, solo admin): justificantes antiguos
+   que no casan con ningún cobro de la Calculadora. En el cajón de cada
+   presupuesto salen avisados, con «Registrar cobro» o «Anular».
+
+Pendiente:
+
+- **SILAB3D** sigue mandando sus correos con el mailer de Electron (solo
+  escritorio) y su contraseña en la config. Para pasarlo a Supabase hace
+  falta un remitente suyo en los secrets de las funciones.
+- `supabase/migrations/0024_tarifas_recalibradas.sql` (sin commitear en la
+  copia local) choca en número con `0024_tasador_calculadora.sql` y
+  reescribe `precio_hora`, `tarifa_preparacion` (4 €) y `precio_minimo`, que
+  0024 ya puso en modo calculadora. No se ha incluido: si llegase a `main`,
+  el workflow lo aplicaría y cambiaría los precios de la web.
+
+## 7. Referencias en el código
+
+- Estados: `seekmake-web/supabase/migrations/0026_estados_pedido.sql`
+  (antes 0017/0018/0025); Calculadora `src/shared/backend.mjs`
   (`ORDER_LIFECYCLE`, `normalizeOrder`), `src/components/Orders.vue`
   (cambios de estado y diálogo de correo), `src/components/WebQuotesInbox.vue`.
-- Cobros: `seekmake-web/supabase/migrations/0022_recibos.sql` y
-  `supabase/functions/recibo-emitir`; Calculadora `payment_history` en
+- Pedido 1:1: `0027_pedido_1a1.sql`; Calculadora `src/components/WebQuotesInbox.vue`,
+  `store.presupuestarSolicitud`.
+- Cobros: `0028_cobros.sql`, `0022_recibos.sql`, `supabase/functions/recibo-emitir`,
+  `app/admin/_components/ReciboPanel.tsx`; Calculadora `payment_history` en
   `src/shared/backend.mjs`.
 - Correos: `seekmake-web/supabase/functions/{submit-quote,notify-quote,recibo-emitir}`;
   Calculadora `electron-main/mailer.js`, `src/platform.js`,
