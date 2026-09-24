@@ -1,7 +1,9 @@
 'use client';
 
 // Tasador propio — replaces the SeekMake embed.
-// Flow: drop up to 5 model files → analyze geometry in-browser → configure
+// Flow: drop up to 5 model files → analyze geometry in-browser (a Web
+// Worker lays each part on the bed the cheap way and "slices" it into
+// per-layer statistics, like the shop does in OrcaSlicer) → configure
 // EACH piece independently (material, colors, resistance, detail, quantity;
 // the steps panel edits the selected piece) → live price breakdown →
 // submit. New pieces inherit the active piece's config so the common
@@ -41,6 +43,10 @@ import {
   ensureUVs
 } from '@/lib/three/materials';
 import { analyzeObject, looksDegenerate, suggestScales } from '@/lib/quote/geometry';
+import { analizarEnSegundoPlano } from '@/lib/quote/estimador/cliente';
+import { IDENTIDAD, multiplicar, rotarTriangulos } from '@/lib/quote/estimador/orientar';
+import { rotarModelo, transpuesta, triangulosImpresion } from '@/lib/quote/estimador/three';
+import type { EstimacionEstado } from '@/lib/quote/types';
 import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import {
   computeQuote,
@@ -128,6 +134,13 @@ export function QuoteClient({
   const [status, setStatus] = useState<QuoteStatus>({ kind: 'idle' });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Latest pieces for async callbacks, and a version per piece so a stale
+  // analysis (superseded by a rescale or an orientation toggle) is ignored.
+  const piezasRef = useRef<Pieza[]>([]);
+  piezasRef.current = piezas;
+  const versionAnalisis = useRef(new Map<string, number>());
+  const analisisIniciados = useRef(new Set<string>());
 
   // Sticky price pill: visible only while the real breakdown is off-screen,
   // so the price follows you through the config steps without duplicating.
@@ -319,7 +332,14 @@ export function QuoteClient({
             partNames: model.meshes.map(
               (m, i) => m.name?.trim() || `Parte ${i + 1}`
             ),
-            config: defaultConfig(model.meshes.length)
+            config: defaultConfig(model.meshes.length),
+            estimacion: {
+              estado: 'pendiente',
+              progreso: 0,
+              R: [...IDENTIDAD] as EstimacionEstado['R'],
+              original: true,
+              mantenerOriginal: false
+            }
           };
           setPiezas((prev) => [...prev, pieza]);
           count++;
@@ -346,6 +366,18 @@ export function QuoteClient({
     }
   }
 
+  // Start the analysis of new pieces once the real tariffs (and the printer
+  // profile they carry) are loaded.
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    for (const p of piezas) {
+      if (analisisIniciados.current.has(p.id)) continue;
+      analisisIniciados.current.add(p.id);
+      lanzarAnalisis(p.id, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [piezas, settingsLoaded]);
+
   // Show the active pieza in the viewer whenever it changes.
   useEffect(() => {
     if (activeId) showModel(activeId);
@@ -362,6 +394,7 @@ export function QuoteClient({
       disposeModel(model);
       modelsRef.current.delete(id);
     }
+    versionAnalisis.current.delete(id);
     setPiezas((prev) => {
       const next = prev.filter((p) => p.id !== id);
       if (activeId === id) {
@@ -389,6 +422,83 @@ export function QuoteClient({
     const metrics = analyzeObject(model.root);
     setPiezas((prev) => prev.map((p) => (p.id === id ? { ...p, metrics } : p)));
     if (shownRef.current === id) showModel(id); // refit the camera
+    const pieza = piezasRef.current.find((p) => p.id === id);
+    lanzarAnalisis(id, pieza?.estimacion.mantenerOriginal ?? false);
+  }
+
+  function patchEstimacion(id: string, patch: Partial<EstimacionEstado>) {
+    setPiezas((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, estimacion: { ...p.estimacion, ...patch } } : p))
+    );
+  }
+
+  // Slice-like analysis in the worker. With `mantenerOriginal` false the
+  // worker also picks the cheapest orientation on the bed, and the viewer
+  // is turned to show the part exactly as it will be printed.
+  function lanzarAnalisis(id: string, mantenerOriginal: boolean) {
+    const model = modelsRef.current.get(id);
+    const pieza = piezasRef.current.find((p) => p.id === id);
+    if (!model || !pieza) return;
+    const version = (versionAnalisis.current.get(id) ?? 0) + 1;
+    versionAnalisis.current.set(id, version);
+    const vigente = () => versionAnalisis.current.get(id) === version;
+
+    // Mesh as uploaded: undo whatever orientation the viewer shows now.
+    const tri = rotarTriangulos(
+      triangulosImpresion(model.root),
+      transpuesta(pieza.estimacion.R)
+    );
+    const fil = filamentos.find((f) => f.id === pieza.config.filamentoId);
+    patchEstimacion(id, { estado: 'pendiente', progreso: 0, mantenerOriginal });
+
+    analizarEnSegundoPlano(
+      {
+        id: `${id}:${version}`,
+        tri,
+        ajustes: settings,
+        pieza: {
+          material: fil?.material ?? 'PLA',
+          resistenciaId: pieza.config.resistenciaId,
+          detalleId: pieza.config.detalleId
+        },
+        auto: settings.orientacion_auto && !mantenerOriginal,
+        tolerancia: settings.orientacion_tolerancia_pct / 100
+      },
+      (f) => {
+        if (vigente()) patchEstimacion(id, { progreso: f });
+      }
+    )
+      .then((res) => {
+        if (!vigente()) return;
+        const m = modelsRef.current.get(id);
+        const actual = piezasRef.current.find((p) => p.id === id);
+        if (!m || !actual) return;
+        rotarModelo(m.root, multiplicar(res.R, transpuesta(actual.estimacion.R)));
+        const metrics = analyzeObject(m.root);
+        setPiezas((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  metrics,
+                  estimacion: {
+                    ...p.estimacion,
+                    estado: 'ok',
+                    progreso: 1,
+                    analisis: res.analisis,
+                    R: res.R,
+                    original: res.original
+                  }
+                }
+              : p
+          )
+        );
+        if (shownRef.current === id) showModel(id);
+      })
+      .catch((err) => {
+        console.error(err);
+        if (vigente()) patchEstimacion(id, { estado: 'error', progreso: 1 });
+      });
   }
 
   function setCantidad(id: string, v: number) {
@@ -478,6 +588,7 @@ export function QuoteClient({
         return {
           nombre: p.name,
           metrics: p.metrics,
+          analisis: p.estimacion.estado === 'ok' ? p.estimacion.analisis : null,
           cantidad: p.cantidad,
           material: fil?.material ?? 'PLA',
           colores: piezaColors(p).map((c) => ({
@@ -500,6 +611,12 @@ export function QuoteClient({
   );
   const degenerate = piezas.some((p) => looksDegenerate(p.metrics));
   const piezasSinColor = piezas.filter((p) => piezaColors(p).length === 0);
+  // Pieces still being "sliced": the price waits for them.
+  const analizando = piezas.filter((p) => p.estimacion.estado === 'pendiente');
+  const progresoAnalisis = analizando.length
+    ? analizando.reduce((a, p) => a + p.estimacion.progreso, 0) / analizando.length
+    : 1;
+  const listo = !!quote && analizando.length === 0;
   // Suspiciously tiny model → probably exported in inches/metres.
   const scaleSuggestions = activePieza ? suggestScales(activePieza.metrics) : [];
 
@@ -555,7 +672,7 @@ export function QuoteClient({
   // ─── submit ─────────────────────────────────────────────────────────────
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!piezas.length || !quote) return;
+    if (!piezas.length || !quote || !listo) return;
     if (piezasSinColor.length) {
       setStatus({
         kind: 'err',
@@ -653,7 +770,14 @@ export function QuoteClient({
             peso_g: pr?.pesoG ?? null,
             soporte_g: pr?.soporteG ?? null,
             tiempo_h: pr?.tiempoH ?? null,
-            relleno_pct: pr?.rellenoPct ?? null
+            relleno_pct: pr?.rellenoPct ?? null,
+            // Layer-analysis figures the server prices from (see submit-quote).
+            estimador: pr?.metodo === 'capas' ? 'capas-v1' : 'aproximado',
+            por_cama: pr?.porCama ?? 1,
+            camas: pr?.camas ?? 1,
+            con_soportes: pr?.conSoportes ?? false,
+            orientacion: p.estimacion.original ? 'original' : 'auto',
+            rotacion: p.estimacion.R.map((x) => Math.round(x * 1e4) / 1e4)
           }
         });
       }
@@ -797,6 +921,26 @@ export function QuoteClient({
                 {activePieza.metrics.bboxMm.y} mm
               </span>
               <span>{activePieza.metrics.volumenCm3.toFixed(1)} cm³</span>
+              {activePieza.estimacion.estado === 'ok' && settings.orientacion_auto && (
+                <button
+                  type="button"
+                  className="qt-meta-orient"
+                  onClick={() =>
+                    lanzarAnalisis(activePieza.id, !activePieza.estimacion.mantenerOriginal)
+                  }
+                  title={
+                    activePieza.estimacion.original
+                      ? 'Buscar la colocación más económica en la cama'
+                      : 'Presupuestar la pieza tal y como está en tu archivo'
+                  }
+                >
+                  {activePieza.estimacion.mantenerOriginal
+                    ? 'Tu orientación · optimizar'
+                    : activePieza.estimacion.original
+                      ? 'Orientación óptima'
+                      : 'Colocada para imprimir · usar la mía'}
+                </button>
+              )}
             </div>
           )}
 
@@ -1166,7 +1310,18 @@ export function QuoteClient({
             {piezas.length > 0 && !settingsLoaded && (
               <p className="qt-total-empty">Cargando tarifas…</p>
             )}
-            {piezas.length > 0 && quote && (
+            {piezas.length > 0 && settingsLoaded && analizando.length > 0 && (
+              <div className="qt-total-empty qt-analizando" role="status">
+                <p>
+                  Laminando {analizando.length === 1 ? 'tu pieza' : `${analizando.length} piezas`}{' '}
+                  para calcular gramos y horas reales…
+                </p>
+                <div className="qt-progress">
+                  <span style={{ width: `${Math.round(progresoAnalisis * 100)}%` }} />
+                </div>
+              </div>
+            )}
+            {piezas.length > 0 && listo && quote && (
               <>
                 <ul className="qt-lines">
                   {quote.lineas.map((l, i) => (
@@ -1198,10 +1353,17 @@ export function QuoteClient({
                   </p>
                 )}
                 <p className="qt-total-note">
-                  Estimación orientativa con ~{quote.tiempoH.toFixed(1)} h de impresión
-                  en total, válida {settings.validez_dias} días. Te confirmamos el
+                  Calculado laminando tus piezas como en nuestra impresora
+                  (~{Math.round(quote.pesoG)} g, ~{quote.tiempoH.toFixed(1)} h de impresión
+                  en total), válido {settings.validez_dias} días. Te confirmamos el
                   precio final al revisar las piezas.
                 </p>
+                {quote.piezas.some((p) => p.metodo === 'aproximado') && (
+                  <p className="qt-total-note">
+                    Alguna pieza no se pudo laminar en el navegador; su precio es una
+                    aproximación por volumen.
+                  </p>
+                )}
                 <button
                   type="button"
                   className="btn-outline qt-pdf"
@@ -1215,7 +1377,7 @@ export function QuoteClient({
           </div>
 
           {/* request */}
-          {piezas.length > 0 && quote && status.kind !== 'ok' && !showForm && (
+          {piezas.length > 0 && listo && status.kind !== 'ok' && !showForm && (
             <>
               <button
                 type="button"
@@ -1382,7 +1544,7 @@ export function QuoteClient({
       {/* Sticky price — follows the user while configuring; tapping it jumps
           to the full breakdown. Hidden once the breakdown itself is visible
           or after the request is sent. */}
-      {quote && status.kind !== 'ok' && !totalInView && (
+      {listo && quote && status.kind !== 'ok' && !totalInView && (
         <button
           type="button"
           className="qt-sticky-price"

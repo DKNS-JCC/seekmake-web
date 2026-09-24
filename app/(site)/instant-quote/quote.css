@@ -86,6 +86,34 @@
     backdrop-filter: blur(6px);
 }
 .qt-meta-file { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qt-meta-orient {
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: var(--r);
+    backdrop-filter: blur(6px);
+    color: var(--accent);
+    font: inherit;
+    cursor: pointer;
+}
+.qt-meta-orient:hover { background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+
+.qt-analizando p { margin-bottom: 10px; }
+.qt-progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.qt-progress > span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+    .qt-progress > span { transition: none; }
+}
 
 .qt-changefile {
     position: absolute; top: 12px; right: 12px;

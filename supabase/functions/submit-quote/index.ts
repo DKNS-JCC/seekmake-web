@@ -106,11 +106,28 @@ async function sha256Hex(s: string): Promise<string> {
 
 // ─────────────────────────────────────────────────────────────────────────
 // Server-side pricing — compact port of lib/quote/pricing.ts. The client
-// total is NEVER trusted: we recompute from the per-piece metrics and the
-// quote_settings row. Keep the math in sync with the web version.
+// total is NEVER trusted: we recompute the money from the per-piece figures
+// and the quote_settings row. Grams and hours come from the browser's layer
+// analysis (the server cannot slice within its CPU budget) and are only
+// accepted when they are plausible for the part's volume; otherwise the old
+// volume heuristic is used. Keep the math in sync with the web version.
 // ─────────────────────────────────────────────────────────────────────────
 
+const COSTES_CALCULADORA: any = {
+  impresora_eur: 738,
+  mantenimiento_eur: 100,
+  vida_h: 3000,
+  consumo_kw: 0.15,
+  precio_kwh: 0.24,
+  precio_kg: { PLA: 20, PETG: 18, 'PLA SILK/MARBLE': 23, ASA: 24, TPU: 21 },
+  markup: 2.3,
+  error: 0.25,
+  postpro_soportes_eur: 0
+};
+
 const DEFAULT_SETTINGS: any = {
+  modo_precio: 'calculadora',
+  calculadora: COSTES_CALCULADORA,
   materiales: {
     PLA: { precio_g: 0.05, densidad: 1.24, factor_velocidad: 1 },
     PETG: { precio_g: 0.06, densidad: 1.27, factor_velocidad: 0.9 },
@@ -118,8 +135,10 @@ const DEFAULT_SETTINGS: any = {
     TPU: { precio_g: 0.08, densidad: 1.21, factor_velocidad: 0.4 }
   },
   precio_hora: 0.3,
-  tarifa_preparacion: 1.5,
-  precio_minimo: 5,
+  tarifa_preparacion: 0,
+  precio_minimo: 7,
+  redondeo: 0.05,
+  soporte_min_g: 1,
   caudal_g_h: 18,
   tiempo_capa_s: 6,
   soporte_relleno: 0.15,
@@ -139,48 +158,98 @@ const DEFAULT_SETTINGS: any = {
   recargo_multicolor: { base_pct: 15, por_color_extra: 1 },
   resistencia: [
     { id: 'decorativa', relleno_pct: 10 },
-    { id: 'estandar', relleno_pct: 20 },
+    { id: 'estandar', relleno_pct: 15 },
     { id: 'resistente', relleno_pct: 40 },
     { id: 'maciza', relleno_pct: 100 }
   ],
   detalle: [
-    { id: 'rapido', altura_capa_mm: 0.28, factor_tiempo: 0.7 },
+    { id: 'rapido', altura_capa_mm: 0.24, factor_tiempo: 0.8 },
     { id: 'estandar', altura_capa_mm: 0.2, factor_tiempo: 1 },
     { id: 'fino', altura_capa_mm: 0.12, factor_tiempo: 1.7 }
   ],
-  descuentos_cantidad: [
-    { min: 2, pct: 5 },
-    { min: 6, pct: 12 },
-    { min: 21, pct: 20 }
-  ]
+  descuentos_cantidad: []
 };
 
+function precioKgDe(c: any, material: string): number | undefined {
+  const tabla = c?.precio_kg ?? {};
+  const key = String(material).trim().toUpperCase();
+  for (const [k, v] of Object.entries(tabla)) if (k.toUpperCase() === key) return Number(v);
+  const fam = ['PETG', 'ASA', 'ABS', 'TPU', 'NYLON', 'PLA'].find((f) => key.includes(f));
+  if (fam) for (const [k, v] of Object.entries(tabla)) if (k.toUpperCase() === fam) return Number(v);
+  return undefined;
+}
+
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
 function normalizeServerSettings(raw: any): any {
-  if (!raw || typeof raw !== 'object') return DEFAULT_SETTINGS;
-  return {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const s: any = {
     ...DEFAULT_SETTINGS,
-    ...raw,
-    materiales: { ...DEFAULT_SETTINGS.materiales, ...(raw.materiales ?? {}) },
+    ...r,
+    calculadora: {
+      ...DEFAULT_SETTINGS.calculadora,
+      ...(r.calculadora ?? {}),
+      precio_kg: { ...DEFAULT_SETTINGS.calculadora.precio_kg, ...(r.calculadora?.precio_kg ?? {}) }
+    },
+    materiales: Object.fromEntries(
+      Object.entries({ ...DEFAULT_SETTINGS.materiales, ...(r.materiales ?? {}) })
+        .map(([k, v]: [string, any]) => [k, { ...v }])
+    ),
     recargo_acabado_pct: {
       ...DEFAULT_SETTINGS.recargo_acabado_pct,
-      ...(raw.recargo_acabado_pct ?? {})
+      ...(r.recargo_acabado_pct ?? {})
     },
     recargo_multicolor: {
       ...DEFAULT_SETTINGS.recargo_multicolor,
-      ...(raw.recargo_multicolor ?? {})
+      ...(r.recargo_multicolor ?? {})
     },
-    resistencia: raw.resistencia?.length ? raw.resistencia : DEFAULT_SETTINGS.resistencia,
-    detalle: raw.detalle?.length ? raw.detalle : DEFAULT_SETTINGS.detalle,
-    descuentos_cantidad: raw.descuentos_cantidad?.length
-      ? [...raw.descuentos_cantidad].sort((a: any, b: any) => a.min - b.min)
+    resistencia: r.resistencia?.length ? r.resistencia : DEFAULT_SETTINGS.resistencia,
+    detalle: r.detalle?.length ? r.detalle : DEFAULT_SETTINGS.detalle,
+    descuentos_cantidad: Array.isArray(r.descuentos_cantidad)
+      ? [...r.descuentos_cantidad].sort((a: any, b: any) => a.min - b.min)
       : DEFAULT_SETTINGS.descuentos_cantidad,
-    envio_tramos: raw.envio_tramos?.length
-      ? [...raw.envio_tramos].sort((a: any, b: any) => a.max_g - b.max_g)
+    envio_tramos: r.envio_tramos?.length
+      ? [...r.envio_tramos].sort((a: any, b: any) => a.max_g - b.max_g)
       : DEFAULT_SETTINGS.envio_tramos
   };
+  if (s.modo_precio !== 'tarifa') s.modo_precio = 'calculadora';
+  if (s.modo_precio === 'calculadora') {
+    const c = s.calculadora;
+    const f = Math.max(0, Number(c.markup) || 0) + Math.max(0, Number(c.error) || 0);
+    const vida = Number(c.vida_h) > 0 ? Number(c.vida_h) : 1;
+    const hora = Number(c.consumo_kw) * Number(c.precio_kwh) +
+      (Number(c.impresora_eur) + Number(c.mantenimiento_eur)) / vida;
+    s.precio_hora = r4(hora * f);
+    for (const [k, m] of Object.entries(s.materiales) as [string, any][]) {
+      const kg = precioKgDe(c, k);
+      if (kg !== undefined) m.precio_g = r4((kg / 1000) * f);
+    }
+  }
+  return s;
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+function redondear(n: number, paso: number): number {
+  if (!(paso > 0)) return r2(n);
+  return r2(Math.ceil(r2(n) / paso - 1e-9) * paso);
+}
+
+/**
+ * Grams/hours per unit from the browser's layer analysis, if plausible for
+ * the part's volume (supports can outweigh a part, a hollow shell can be
+ * light, but not by orders of magnitude).
+ */
+function figurasCliente(am: any, densidad: number): { pesoG: number; soporteG: number; tiempoH: number } | null {
+  if (am?.estimador !== 'capas-v1') return null;
+  const pesoG = Number(am.peso_g), tiempoH = Number(am.tiempo_h);
+  const soporteG = Math.max(0, Number(am.soporte_g) || 0);
+  const solido = Math.max(0, Number(am.volumen_cm3) || 0) * densidad;
+  if (!Number.isFinite(pesoG) || !Number.isFinite(tiempoH)) return null;
+  if (pesoG <= 0 || tiempoH <= 0 || tiempoH > 2000) return null;
+  if (pesoG > solido * 3 + 5 || pesoG < solido * 0.05) return null;
+  return { pesoG, soporteG: Math.min(soporteG, pesoG), tiempoH };
+}
 
 /** Recompute the quote from sanitized `archivos` + settings. */
 function computeServerQuote(archivos: any[], entrega: string, settings: any) {
@@ -190,35 +259,54 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
   let pesoTotal = 0;
   let tiempoTotal = 0;
   let unidades = 0;
+  const calculadora = settings.modo_precio === 'calculadora';
 
   for (const a of archivos) {
     const am = a.metricas ?? {};
-    const volumen = Math.max(0, Number(am.volumen_cm3) || 0);
-    const soporteVol = Math.max(0, Number(am.soporte_cm3) || 0);
-    const alturaMm = Math.max(0, Number(am.bbox_mm?.y) || 0);
-
     const mat = settings.materiales[a.material] ?? settings.materiales['PLA'];
     const res =
       settings.resistencia.find((x: any) => x.id === a.resistencia) ?? settings.resistencia[0];
     const det =
       settings.detalle.find((x: any) => x.id === a.detalle) ?? settings.detalle[0];
-
-    const fraccion =
-      settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
     const cantidad = Math.max(1, Math.floor(a.cantidad));
-    const soporteG = soporteVol * settings.soporte_relleno * mat.densidad;
-    const pesoG = volumen * mat.densidad * fraccion + soporteG;
 
-    const caudal =
-      Math.max(settings.caudal_g_h, 1) * Math.max(mat.factor_velocidad ?? 1, 0.05);
-    const capas = det.altura_capa_mm > 0 ? alturaMm / det.altura_capa_mm : 0;
-    const tiempoH =
-      (pesoG / caudal) * det.factor_tiempo + (capas * settings.tiempo_capa_s) / 3600;
+    let pesoG: number, soporteG: number, tiempoH: number, metodo: string;
+    let conSoportes: boolean;
+    const cli = figurasCliente(am, mat.densidad);
+    if (cli) {
+      ({ pesoG, soporteG, tiempoH } = cli);
+      metodo = 'capas';
+      conSoportes = Boolean(am.con_soportes);
+    } else {
+      // Fallback: the old volume heuristic.
+      const volumen = Math.max(0, Number(am.volumen_cm3) || 0);
+      const soporteVol = Math.max(0, Number(am.soporte_cm3) || 0);
+      const alturaMm = Math.max(0, Number(am.bbox_mm?.y) || 0);
+      const fraccion =
+        settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
+      soporteG = soporteVol * settings.soporte_relleno * mat.densidad;
+      pesoG = volumen * mat.densidad * fraccion + soporteG;
+      const caudal =
+        Math.max(settings.caudal_g_h, 1) * Math.max(mat.factor_velocidad ?? 1, 0.05);
+      const capas = det.altura_capa_mm > 0 ? alturaMm / det.altura_capa_mm : 0;
+      tiempoH =
+        (pesoG / caudal) * det.factor_tiempo + (capas * settings.tiempo_capa_s) / 3600;
+      metodo = 'aproximado';
+      conSoportes = soporteG >= Math.max(1, Number(settings.soporte_min_g) || 0);
+    }
 
+    pesoG = Math.round(pesoG * 1000) / 1000;
+    soporteG = Math.round(soporteG * 1000) / 1000;
+    tiempoH = Math.round(tiempoH * 10000) / 10000;
     let unidad = pesoG * mat.precio_g + tiempoH * settings.precio_hora;
 
     const extras: string[] = [];
     if (soporteG >= 1) extras.push(`soportes ~${Math.round(soporteG)} g`);
+    const postpro = Number(settings.calculadora?.postpro_soportes_eur) || 0;
+    if (calculadora && conSoportes && postpro > 0) {
+      unidad += postpro;
+      extras.push('retirada de soportes');
+    }
 
     const acabadoPct = Math.max(
       0,
@@ -238,13 +326,18 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
         settings.recargo_multicolor.por_color_extra * (numColores - 1);
       extras.push(`${numColores} colores`);
     }
+    const porCama = Math.max(1, Math.floor(Number(am.por_cama) || 1));
+    if (metodo === 'capas' && cantidad > 1 && porCama > 1) {
+      extras.push(`${porCama} por cama`);
+    }
 
-    const subtotal = unidad * cantidad;
+    const subtotal = redondear(unidad * cantidad, settings.redondeo);
     piezas.push({
-      peso_g: r2(pesoG),
-      soporte_g: r2(soporteG),
-      tiempo_h: r2(tiempoH),
-      relleno_pct: res.relleno_pct
+      peso_g: pesoG,
+      soporte_g: soporteG,
+      tiempo_h: tiempoH,
+      relleno_pct: res.relleno_pct,
+      metodo
     });
     lineas.push({
       concepto:
@@ -252,7 +345,7 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
         `(~${Math.round(pesoG)} g, ~${tiempoH.toFixed(1)} h${cantidad > 1 ? ' c/u' : ''}` +
         (extras.length ? `, ${extras.join(', ')}` : '') +
         ')',
-      importe: r2(subtotal)
+      importe: subtotal
     });
 
     base += subtotal;
@@ -267,16 +360,20 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
     if (unidades >= tier.min) descuentoPct = tier.pct;
   }
   if (descuentoPct > 0) {
-    const dto = subtotal * (descuentoPct / 100);
+    const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
+    const dto = r2(Math.floor(r2(subtotal * (descuentoPct / 100)) / paso + 1e-9) * paso);
     lineas.push({
       concepto: `Descuento por cantidad (-${descuentoPct}%)`,
-      importe: r2(-dto)
+      importe: -dto
     });
     subtotal -= dto;
   }
 
-  lineas.push({ concepto: 'Preparación y laminado', importe: r2(settings.tarifa_preparacion) });
-  let total = subtotal + settings.tarifa_preparacion;
+  let total = subtotal;
+  if (settings.tarifa_preparacion > 0) {
+    lineas.push({ concepto: 'Preparación y laminado', importe: r2(settings.tarifa_preparacion) });
+    total += settings.tarifa_preparacion;
+  }
 
   const minimoAplicado = total < settings.precio_minimo;
   if (minimoAplicado) total = settings.precio_minimo;
@@ -477,7 +574,8 @@ Deno.serve(async (req: Request) => {
       peso_g: sq.piezas[i]?.peso_g ?? null,
       soporte_g: sq.piezas[i]?.soporte_g ?? null,
       tiempo_h: sq.piezas[i]?.tiempo_h ?? null,
-      relleno_pct: sq.piezas[i]?.relleno_pct ?? null
+      relleno_pct: sq.piezas[i]?.relleno_pct ?? null,
+      estimador: sq.piezas[i]?.metodo === 'capas' ? 'capas-v1' : 'aproximado'
     };
   }
   const metricasServidor = {
