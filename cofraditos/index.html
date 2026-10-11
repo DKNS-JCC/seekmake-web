@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- APP -->
+<title>Cofraditos Salamanca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: visor 3D fijo (izquierda en PC, arriba en móvil) + panel de opciones con barra de pedido pegada abajo */
+:root{
+  --bg:#F3F1F5; --surface:#FFFFFF; --sunken:#ECE8F0; --ink:#1E1925; --muted:#655E6F; --line:#DCD6E2;
+  --accent:#5B2D7A; --accent-ink:#FFFFFF; --accent-soft:#EEE6F5; --gold:#94681F; --danger:#B3261E;
+  --stage-a:#FCFBFD; --stage-b:#E2DCE9;
+  --f-display:"Cinzel", "Trajan Pro", Georgia, serif;
+  --f-body:"Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121016; --surface:#1B1821; --sunken:#25212C; --ink:#EEEAF3; --muted:#A59EAF; --line:#302B38;
+    --accent:#BC97DE; --accent-ink:#170F1D; --accent-soft:#2D2337; --gold:#D6B066; --danger:#F2B8B5;
+    --stage-a:#29232F; --stage-b:#141118;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121016; --surface:#1B1821; --sunken:#25212C; --ink:#EEEAF3; --muted:#A59EAF; --line:#302B38;
+  --accent:#BC97DE; --accent-ink:#170F1D; --accent-soft:#2D2337; --gold:#D6B066; --danger:#F2B8B5;
+  --stage-a:#29232F; --stage-b:#141118;
+  color-scheme:dark;
+}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{display:flex;flex-direction:column;height:100%;padding-inline:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{flex:none;color:var(--accent)}
+.brand b{font:700 21px/1 var(--f-display);letter-spacing:.04em}
+.brand small{display:block;color:var(--muted);font-size:12px;letter-spacing:.02em;margin-top:3px}
+.ghost{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer}
+.ghost:hover{border-color:var(--accent)}
+
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);gap:16px;padding-bottom:16px}
+.stage{position:relative;min-height:0;border-radius:20px;overflow:hidden;background:radial-gradient(120% 90% at 50% 30%,var(--stage-a),var(--stage-b))}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.stage-msg{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+.stage-tools{position:absolute;top:12px;right:12px;display:flex;gap:8px}
+.stage-tools button{border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 86%,transparent);backdrop-filter:blur(6px);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.stage-tools button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stage-tag{position:absolute;left:14px;bottom:12px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;background:color-mix(in srgb,var(--surface) 80%,transparent);padding:4px 10px;border-radius:999px}
+
+.panel{min-height:0;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;display:flex;flex-direction:column}
+.panel-body{padding:20px 20px 8px;display:flex;flex-direction:column;gap:22px}
+.intro h1{margin:0;font:700 26px/1.15 var(--f-display);letter-spacing:.02em;text-wrap:balance}
+.intro p{margin:6px 0 0;color:var(--muted);font-size:14px;max-width:60ch}
+
+.field{display:flex;flex-direction:column;gap:10px}
+.field-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.label{font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.value{font-size:13.5px;font-weight:600}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+select,input[type=text],input[type=number],textarea{width:100%;background:var(--sunken);border:1px solid transparent;border-radius:10px;padding:10px 12px}
+select:hover,input:hover,textarea:hover{border-color:var(--line)}
+textarea{resize:vertical;min-height:64px}
+.invalid{border-color:var(--danger)!important}
+
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:34px;height:34px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);background:var(--c);cursor:pointer;position:relative;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.swatches[aria-disabled="true"]{opacity:.35;pointer-events:none}
+
+.seg{display:flex;background:var(--sunken);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 6px;font-weight:600;font-size:13.5px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 18%,transparent);color:var(--accent)}
+
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:13.5px}
+.switch input{appearance:none;width:40px;height:24px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .15s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.switch input:checked{background:var(--accent)}
+.switch input:checked::after{transform:translateX(16px)}
+
+.formats{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.fmt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;cursor:pointer}
+.fmt b{font-size:14px}
+.fmt span{font-size:12px;color:var(--muted);line-height:1.3}
+.fmt em{font-style:normal;font-size:12px;font-weight:700;color:var(--gold);margin-top:4px;font-variant-numeric:tabular-nums}
+.fmt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:20px;font-weight:600;cursor:pointer;flex:none}
+.qty input{text-align:center;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;max-width:96px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12.5px;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:6px;font-size:12px;font-variant-numeric:tabular-nums}
+.tiers div{background:var(--sunken);border-radius:8px;padding:6px 8px;color:var(--muted);border:1px solid transparent}
+.tiers div b{display:block;color:var(--ink);font-size:13px}
+.tiers div.on{border-color:var(--accent);background:var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid2 .full{grid-column:1/-1}
+label.lbl{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted);min-width:0}
+
+.orderbar{position:sticky;bottom:0;margin-top:auto;background:var(--surface);border-top:1px solid var(--line);padding:12px 20px 14px;display:flex;flex-direction:column;gap:8px}
+.order-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.total b{display:block;font:700 24px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.total span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:700;border-radius:12px;padding:12px 16px;white-space:nowrap;border:0;cursor:pointer}
+.cta:hover{filter:brightness(1.08)}
+.order-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;font-size:12px;color:var(--muted)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:700;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.msgbox{font-family:var(--f-mono);font-size:12px;min-height:150px}
+
+dialog{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px)}
+dialog::backdrop{background:rgba(10,6,14,.5)}
+.dlg{padding:20px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{margin:0;font:700 20px/1.2 var(--f-display)}
+.dlg-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.code{font-family:var(--f-mono);font-size:13px}
+.status{font-size:13px;min-height:1.4em}
+.status.err{color:var(--danger)}
+.plan{font-size:13px;background:var(--sunken);border-radius:10px;padding:10px 12px;font-variant-numeric:tabular-nums}
+.plan ul{margin:6px 0 0;padding-left:18px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);vertical-align:-1px;margin-right:4px}
+
+@media (max-width: 860px){
+  .app{height:auto;min-height:100%}
+  .layout{display:block}
+  .stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;height:44svh;min-height:260px;margin-bottom:12px;box-shadow:0 8px 20px -14px rgba(0,0,0,.35)}
+  .panel{overflow:visible}
+  .panel-body{padding:18px 16px 8px}
+  .orderbar{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-radius:0 0 20px 20px;z-index:3}
+  .intro h1{font-size:22px}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="28" height="34" viewBox="0 0 28 34" aria-hidden="true"><path d="M14 1 L20 17 C24 18 26 21 26 24 L27 33 H1 L2 24 C2 21 4 18 8 17 Z" fill="currentColor"/><circle cx="11" cy="20.5" r="1.3" fill="var(--surface)"/><circle cx="17" cy="20.5" r="1.3" fill="var(--surface)"/></svg>
+      <div><b>Cofraditos</b><small>Salamanca · impresos en 3D</small></div>
+    </div>
+    <button class="ghost" type="button" id="btn-taller">Taller</button>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage" aria-label="Vista previa 3D del cofradito">
+      <canvas id="view"></canvas>
+      <div class="stage-msg" id="stage-msg">Cargando vista 3D…</div>
+      <div class="stage-tools">
+        <button type="button" id="btn-girar" aria-pressed="true">Girar</button>
+        <button type="button" id="btn-centrar">Centrar</button>
+      </div>
+      <div class="stage-tag" id="stage-tag"></div>
+    </section>
+
+    <aside class="panel" id="panel">
+      <div class="panel-body">
+        <div class="intro">
+          <h1>Diseña tu cofradito</h1>
+          <p>Elige colores y formato y lo verás en 3D al momento. Cuando lo tengas, nos mandas el pedido por WhatsApp y te confirmamos precio y plazo.</p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label class="label" for="preset">Colores de cofradía</label></div>
+          <select id="preset"></select>
+          <p class="hint">Colores aproximados. Los revisamos contigo antes de imprimir.</p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="label">Capirote y antifaz</span><span class="value" id="v-arriba"></span></div>
+          <div class="swatches" id="sw-arriba" role="group" aria-label="Color del capirote"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="label">Forma del capirote</span></div>
+          <div class="seg" id="seg-capirote" role="group" aria-label="Forma del capirote"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="label">Túnica</span><span class="value" id="v-abajo"></span></div>
+          <div class="swatches" id="sw-abajo" role="group" aria-label="Color de la túnica"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head">
+            <label class="switch"><input type="checkbox" id="cingulo-on"> <span class="label" style="color:var(--ink)">Cíngulo</span></label>
+            <span class="value" id="v-cingulo"></span>
+          </div>
+          <div class="swatches" id="sw-cingulo" role="group" aria-label="Color del cíngulo"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="label">Formato</span></div>
+          <div class="formats" id="formatos"></div>
+        </div>
+
+        <div class="field" id="f-tamano">
+          <div class="field-head"><span class="label">Tamaño</span></div>
+          <div class="seg" id="seg-tamano" role="group" aria-label="Tamaño de la figura"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label class="label" for="cantidad">Cantidad</label><span class="value" id="v-unidad"></span></div>
+          <div class="qty">
+            <button type="button" id="q-menos" aria-label="Una menos">−</button>
+            <input type="number" id="cantidad" min="1" max="999" inputmode="numeric">
+            <button type="button" id="q-mas" aria-label="Una más">+</button>
+            <div class="chips" id="q-chips"></div>
+          </div>
+          <div class="tiers" id="tiers"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="label">Entrega</span></div>
+          <div class="seg" id="seg-entrega" role="group" aria-label="Entrega"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="label">Tus datos</span></div>
+          <div class="grid2">
+            <label class="lbl">Nombre<input type="text" id="nombre" autocomplete="name" placeholder="Tu nombre"></label>
+            <label class="lbl">Cofradía o grupo<input type="text" id="grupo" placeholder="Opcional"></label>
+            <label class="lbl full">Notas<textarea id="notas" placeholder="Fecha que lo necesitas, dudas, escudo…"></textarea></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="orderbar">
+        <div class="order-row">
+          <div class="total"><b id="total">—</b><span id="total-det"></span></div>
+          <a class="cta" id="btn-wa" href="https://wa.me/" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+            Pedir por WhatsApp
+          </a>
+        </div>
+        <div class="order-foot">
+          <span>Sin pago online. Pagas al confirmar el pedido.</span>
+          <button type="button" class="linkbtn" id="btn-ver-msg">Ver o copiar el mensaje</button>
+        </div>
+        <div class="status" id="order-status" role="status" aria-live="polite"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<dialog id="dlg-msg">
+  <div class="dlg">
+    <h2>Mensaje del pedido</h2>
+    <p class="hint">Si WhatsApp no se abre, cópialo y mándalo tú.</p>
+    <textarea id="msg-text" class="msgbox" readonly></textarea>
+    <div class="status" id="msg-status" role="status" aria-live="polite"></div>
+    <div class="dlg-actions">
+      <button type="button" class="ghost" data-close>Cerrar</button>
+      <button type="button" class="cta" id="btn-copiar">Copiar mensaje</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlg-taller">
+  <div class="dlg">
+    <h2>Taller: archivos de impresión</h2>
+    <p class="hint">Pega el mensaje de WhatsApp (o solo el código <span class="code">COF1…</span>). Se carga la configuración y se genera un .zip con el 3MF por bandeja, las STL por color y las instrucciones.</p>
+    <label class="lbl">Pedido<textarea id="t-codigo" class="code" rows="3"></textarea></label>
+    <label class="lbl">Impresora / bandeja<select id="t-bandeja"></select></label>
+    <div class="plan" id="t-plan"></div>
+    <div class="status" id="t-status" role="status" aria-live="polite"></div>
+    <div class="dlg-actions">
+      <button type="button" class="ghost" data-close>Cerrar</button>
+      <button type="button" class="ghost" id="t-cargar">Cargar pedido</button>
+      <button type="button" class="cta" id="t-generar">Descargar .zip</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "fflate": "https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { zipSync, strToU8 } from 'fflate';
+
+/* ───────────── Configuración del negocio (editar aquí) ───────────── */
+const CONFIG = {
+  whatsapp: '',            // Número del taller con prefijo, sin + ni espacios: '34600123456'. Vacío = WhatsApp deja elegir contacto.
+  urlPublica: '',          // Si la web está publicada, p. ej. 'https://impresion3dcc.com/cofraditos/'. Se añade al mensaje un enlace al diseño.
+  envio: 4,                // € por envío
+  extraCingulo: 0.2,       // € por unidad
+  tramos: [                // precio por unidad (mini de 3 cm) según cantidad
+    { min: 1,   precio: 3.5 },
+    { min: 10,  precio: 2.5 },
+    { min: 25,  precio: 2.0 },
+    { min: 50,  precio: 1.6 },
+    { min: 100, precio: 1.3 },
+  ],
+};
+
+const COLORES = [
+  { id: 'bla', nombre: 'Blanco',        hex: '#F2F0EA' },
+  { id: 'hue', nombre: 'Hueso',         hex: '#E3D7BC' },
+  { id: 'neg', nombre: 'Negro',         hex: '#1F1E23' },
+  { id: 'mor', nombre: 'Morado',        hex: '#5A2A86' },
+  { id: 'gra', nombre: 'Granate',       hex: '#6C1626' },
+  { id: 'roj', nombre: 'Rojo',          hex: '#C2272F' },
+  { id: 'azc', nombre: 'Azul cielo',    hex: '#86BFE6' },
+  { id: 'azm', nombre: 'Azul marino',   hex: '#1F3268' },
+  { id: 'ver', nombre: 'Verde',         hex: '#2E8B57' },
+  { id: 'vbo', nombre: 'Verde botella', hex: '#1E4A33' },
+  { id: 'mar', nombre: 'Marrón',        hex: '#6B4428' },
+  { id: 'gri', nombre: 'Gris',          hex: '#8B8E93' },
+  { id: 'oro', nombre: 'Oro',           hex: '#D2A42C' },
+];
+const OJOS = 'neg';
+
+const FORMATOS = [
+  { id: 'figura',  nombre: 'Figura',  detalle: 'De pie, para tener',             extra: 0   },
+  { id: 'iman',    nombre: 'Imán',    detalle: 'Relieve 4 cm, imán detrás',      extra: 0.8 },
+  { id: 'pin',     nombre: 'Pin',     detalle: 'Relieve 3,3 cm con broche',      extra: 0.8 },
+  { id: 'lapiz',   nombre: 'Lápiz',   detalle: '4 cm, hueco Ø 7,8 mm',           extra: 1   },
+  { id: 'llavero', nombre: 'Llavero', detalle: '3,5 cm, anilla en el capirote',  extra: 0.5 },
+];
+const TAMANOS = [
+  { id: 'p', nombre: 'Mini · 3 cm', escala: 1,   extra: 0 },
+  { id: 'm', nombre: '4,5 cm',      escala: 1.5, extra: 1 },
+  { id: 'g', nombre: '6 cm',        escala: 2,   extra: 2 },
+];
+const CAPIROTES = [
+  { id: 'normal',  nombre: 'Normal' },
+  { id: 'alto',    nombre: 'Alto' },
+  { id: 'capucha', nombre: 'Capucha' },
+];
+const ENTREGAS = [
+  { id: 'recogida', nombre: 'Recogida en Salamanca' },
+  { id: 'envio',    nombre: 'Envío' },
+];
+// Orientativos, a partir de los hábitos publicados. Confirmar con cada cofradía.
+const COFRADIAS = [
+  { id: 'veracruz',    nombre: 'Vera Cruz',                     arriba: 'azc', abajo: 'bla', cingulo: null,  capirote: 'normal' },
+  { id: 'huerto',      nombre: 'Oración en el Huerto',          arriba: 'ver', abajo: 'hue', cingulo: 'ver', capirote: 'normal' },
+  { id: 'yacente',     nombre: 'Cristo Yacente',                arriba: 'bla', abajo: 'bla', cingulo: 'roj', capirote: 'normal' },
+  { id: 'rosario',     nombre: 'Rosario',                       arriba: 'bla', abajo: 'bla', cingulo: null,  capirote: 'alto' },
+  { id: 'soledad',     nombre: 'Soledad',                       arriba: 'neg', abajo: 'neg', cingulo: null,  capirote: 'normal' },
+  { id: 'morado',      nombre: 'Rescatado / Jesús Nazareno',    arriba: 'mor', abajo: 'mor', cingulo: null,  capirote: 'normal' },
+  { id: 'amorpaz',     nombre: 'Amor y Paz',                    arriba: 'neg', abajo: 'neg', cingulo: null,  capirote: 'capucha' },
+  { id: 'franciscana', nombre: 'Franciscana',                   arriba: 'mar', abajo: 'mar', cingulo: 'bla', capirote: 'capucha' },
+];
+const BANDEJAS = [
+  { id: 'bambu256', nombre: 'Bambu X1 / P1 · 256 × 256 mm', w: 256, d: 256 },
+  { id: 'bambuA1m', nombre: 'Bambu A1 mini · 180 × 180 mm', w: 180, d: 180 },
+  { id: 'prusamk4', nombre: 'Prusa MK4 · 250 × 210 mm',     w: 250, d: 210 },
+  { id: 'ender220', nombre: 'Ender 3 · 220 × 220 mm',       w: 220, d: 220 },
+];
+
+/* ───────────── Estado ───────────── */
+const state = {
+  preset: '', arriba: 'roj', abajo: 'neg', cinguloOn: true, cingulo: 'roj',
+  capirote: 'normal', formato: 'figura', tamano: 'p', cantidad: 25, entrega: 'recogida',
+  nombre: '', grupo: '', notas: '',
+};
+const color = id => COLORES.find(c => c.id === id);
+const eur = n => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+
+function precios(st) {
+  let base = CONFIG.tramos[0].precio;
+  for (const t of CONFIG.tramos) if (st.cantidad >= t.min) base = t.precio;
+  const fmt = FORMATOS.find(f => f.id === st.formato);
+  const tam = st.formato === 'figura' ? TAMANOS.find(t => t.id === st.tamano).extra : 0;
+  const unidad = base + fmt.extra + tam + (st.cinguloOn ? CONFIG.extraCingulo : 0);
+  const envio = st.entrega === 'envio' ? CONFIG.envio : 0;
+  return { base, unidad, envio, total: unidad * st.cantidad + envio };
+}
+
+function codigo(st) {
+  return ['COF1', st.arriba, st.abajo, st.cinguloOn ? st.cingulo : 'no', st.capirote, st.formato,
+    st.formato === 'figura' ? st.tamano : 'x', st.cantidad].join('.');
+}
+function leerCodigo(txt) {
+  const m = String(txt).match(/COF1\.[a-z0-9.]+/i);
+  if (!m) return null;
+  const p = m[0].replace(/\.+$/, '').split('.');
+  if (p.length !== 8) return null;
+  const [, arriba, abajo, cing, capirote, formato, tam, cant] = p;
+  const ok = id => !!color(id);
+  if (!ok(arriba) || !ok(abajo) || (cing !== 'no' && !ok(cing)) || !CAPIROTES.some(c => c.id === capirote)
+      || !FORMATOS.some(f => f.id === formato) || (tam !== 'x' && !TAMANOS.some(t => t.id === tam))) return null;
+  const cantidad = Math.max(1, Math.min(999, parseInt(cant, 10) || 1));
+  return { arriba, abajo, cinguloOn: cing !== 'no', cingulo: cing !== 'no' ? cing : state.cingulo, capirote, formato,
+    tamano: tam !== 'x' ? tam : 'p', cantidad };
+}
+
+function mensaje(st) {
+  const p = precios(st);
+  const fmt = FORMATOS.find(f => f.id === st.formato);
+  const cap = CAPIROTES.find(c => c.id === st.capirote);
+  const L = [
+    'Hola, quiero encargar cofraditos:',
+    `• Cantidad: ${st.cantidad} uds`,
+    `• Formato: ${fmt.nombre}`,
+    `• Capirote: ${color(st.arriba).nombre} (${cap.nombre.toLowerCase()})`,
+    `• Túnica: ${color(st.abajo).nombre}`,
+    `• Cíngulo: ${st.cinguloOn ? color(st.cingulo).nombre : 'sin cíngulo'}`,
+  ];
+  if (st.formato === 'figura') L.splice(3, 0, `• Tamaño: ${TAMANOS.find(t => t.id === st.tamano).nombre}`);
+  L.push(`• Entrega: ${ENTREGAS.find(e => e.id === st.entrega).nombre}`);
+  L.push(`• Precio orientativo: ${eur(p.total)} (${eur(p.unidad)}/ud${p.envio ? ` + ${eur(p.envio)} envío` : ''})`);
+  L.push('', `Nombre: ${st.nombre.trim() || '—'}`);
+  if (st.grupo.trim()) L.push(`Cofradía / grupo: ${st.grupo.trim()}`);
+  if (st.notas.trim()) L.push(`Notas: ${st.notas.trim()}`);
+  L.push('', `Código: ${codigo(st)}`);
+  if (CONFIG.urlPublica) L.push(`Ver diseño: ${CONFIG.urlPublica}#${codigo(st)}`);
+  return L.join('\n');
+}
+
+/* ───────────── Geometría (la misma para la vista y para imprimir) ─────────────
+   Unidades: mm. Eje Y hacia arriba, la figura mira hacia +Z.                    */
+const V2 = (r, y) => new THREE.Vector2(r, y);
+const suave = (pts, n) => new THREE.SplineCurve(pts.map(([r, y]) => V2(r, y))).getPoints(n);
+const HUECO = { r: 3.9, prof: 10 };                 // lápiz: Ø 7,8 mm, 10 mm de profundidad (medidas finales)
+const ESCALA_FORMATO = { lapiz: 1.35, llavero: 1.15, iman: 1.3, pin: 1.1 };   // la figura usa el tamaño elegido
+const RELIEVE = { iman: 0.6, pin: 0.5 };            // grosor del relieve respecto a la figura redonda
+const NOMBRE_PIEZA = { abajo: 'Túnica', arriba: 'Capirote', cingulo: 'Cíngulo', ojos: 'Ojos' };
+const escalaDe = st => st.formato === 'figura' ? TAMANOS.find(t => t.id === st.tamano).escala : ESCALA_FORMATO[st.formato];
+
+// Diseñado a 30 mm de alto (el tamaño mini). El resto de tamaños escala desde aquí.
+function perfilTunica(hueco) {
+  const curva = suave([[6.0, 0.35], [5.95, 1.5], [5.5, 3.5], [5.0, 5.5], [4.7, 7], [4.6, 9], [4.7, 11.2]], 32);
+  const p = hueco ? [V2(0, hueco.prof), V2(hueco.r, hueco.prof), V2(hueco.r, 0)] : [V2(0, 0)];
+  p.push(V2(5.7, 0), ...curva, V2(4.8, 12), V2(0, 12));
+  return { perfil: p, curva };
+}
+function radioEn(curva, y) {
+  for (let i = 0; i < curva.length - 1; i++) {
+    const a = curva[i], b = curva[i + 1];
+    if (y >= a.y && y <= b.y) return a.x + (b.x - a.x) * ((y - a.y) / (b.y - a.y || 1));
+  }
+  return curva[curva.length - 1].x;
+}
+// Antifaz que cae sobre los hombros y capirote alto, como los cofraditos de la foto de referencia.
+function perfilArriba(forma, llavero) {
+  const p = [V2(0, 12), ...suave([[4.8, 12], [5.3, 12.5], [5.9, 13.2], [6.2, 13.9], [5.8, 14.7], [5.0, 15.8],
+    [4.6, 17], [4.4, 18.5], [4.1, 20]], 40)];
+  let cima;
+  if (forma === 'capucha') {
+    p.push(...suave([[4.1, 20], [3.6, 21.6], [2.7, 23.1], [1.5, 24.3], [0.45, 25.0]], 12).slice(1), V2(0, 25.15));
+    cima = 25.15;
+  } else {
+    const punta = forma === 'alto' ? 34 : 30;
+    if (llavero) {
+      cima = punta - 2.8;
+      p.push(V2(4.1 - 3.6 * ((cima - 20) / (punta - 20)), cima), V2(0, cima));
+    } else {
+      p.push(V2(0.5, punta), V2(0, punta + 0.2));
+      cima = punta + 0.2;
+    }
+  }
+  return { perfil: p, cima };
+}
+
+// Cara plana trasera de un relieve: el perfil y su reflejo, en el plano z = 0, mirando hacia -Z.
+function tapa(perfil) {
+  const der = perfil.map(v => V2(v.x, v.y));
+  const izq = perfil.slice(1, -1).reverse().map(v => V2(-v.x, v.y));
+  const c = [];
+  for (const v of [...der, ...izq]) if (!c.length || c[c.length - 1].distanceTo(v) > 1e-6) c.push(v);
+  if (c[0].distanceTo(c[c.length - 1]) < 1e-6) c.pop();
+  const pos = [];
+  for (let [a, b, d] of THREE.ShapeUtils.triangulateShape(c, [])) {
+    const cz = (c[b].x - c[a].x) * (c[d].y - c[a].y) - (c[b].y - c[a].y) * (c[d].x - c[a].x);
+    if (cz > 0) [b, d] = [d, b];
+    for (const i of [a, b, d]) pos.push(c[i].x, c[i].y, 0);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
+}
+function torno(perfil, relieve) {
+  if (!relieve) return [new THREE.LatheGeometry(perfil, 72)];
+  return [new THREE.LatheGeometry(perfil, 36, -Math.PI / 2, Math.PI), tapa(perfil)];
+}
+function anillo(R, t, y, relieve) {
+  if (!relieve) return [new THREE.TorusGeometry(R, t, 12, 72).rotateX(Math.PI / 2).translate(0, y, 0)];
+  const g = new THREE.TorusGeometry(R, t, 12, 36, Math.PI).rotateX(Math.PI / 2).translate(0, y, 0);
+  const tapas = [];
+  for (const s of [1, -1]) {
+    const pos = [], n = 12;
+    for (let j = 0; j < n; j++) {
+      const v0 = (j / n) * Math.PI * 2, v1 = ((j + 1) / n) * Math.PI * 2;
+      const P = v => [s * (R + t * Math.cos(v)), y - t * Math.sin(v), 0];
+      let a = [s * R, y, 0], b = P(v0), d = P(v1);
+      const cz = (b[0] - a[0]) * (d[1] - a[1]) - (b[1] - a[1]) * (d[0] - a[0]);
+      if (cz > 0) [b, d] = [d, b];
+      pos.push(...a, ...b, ...d);
+    }
+    const tg = new THREE.BufferGeometry();
+    tg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    tg.computeVertexNormals();
+    tapas.push(tg);
+  }
+  return [g, ...tapas];
+}
+const esfera = (r, p) => new THREE.SphereGeometry(r, 14, 10).translate(p.x, p.y, p.z);
+function cilindro(a, b, r) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const g = new THREE.CylinderGeometry(r, r, dir.length(), 10, 1, false);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()));
+  const m = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+  return g.translate(m.x, m.y, m.z);
+}
+
+function construir(st) {
+  const relieve = st.formato === 'iman' || st.formato === 'pin';
+  const s = escalaDe(st);
+  const hueco = st.formato === 'lapiz' ? { r: HUECO.r / s, prof: HUECO.prof / s } : null;
+  const { perfil: pT, curva } = perfilTunica(hueco);
+  const rT = y => radioEn(curva, y);
+  const { perfil: pA, cima } = perfilArriba(st.capirote, st.formato === 'llavero');
+  const piezas = [
+    { id: 'abajo', color: st.abajo, geos: torno(pT, relieve) },
+    { id: 'arriba', color: st.arriba, geos: torno(pA, relieve) },
+  ];
+  if (st.cinguloOn) {
+    // Cinturón en la cintura y cordón doble colgando por delante, con borlas.
+    const yw = 7, g = anillo(rT(yw) + 0.15, 0.55, yw, relieve);
+    const pr = (a, y, extra) => { const r = rT(y) + extra; return new THREE.Vector3(r * Math.sin(a), y, r * Math.cos(a)); };
+    g.push(esfera(0.8, pr(0, yw - 0.2, 0.55)));
+    for (const [a, yFin] of [[-0.09, 1.7], [0.09, 2.5]]) {
+      const pts = [];
+      for (let i = 0; i <= 4; i++) pts.push(pr(a * (i / 4), yw - 0.6 + (yFin - (yw - 0.6)) * (i / 4), 0.4));
+      for (let i = 0; i < pts.length - 1; i++) g.push(cilindro(pts[i], pts[i + 1], 0.45), esfera(0.45, pts[i + 1]));
+      const fin = pr(a, yFin - 0.5, 0.55);
+      g.push(new THREE.SphereGeometry(0.65, 14, 10).scale(1, 1.4, 1).translate(fin.x, fin.y, fin.z));
+    }
+    piezas.push({ id: 'cingulo', color: st.cingulo, geos: g });
+  }
+  piezas.push({ id: 'ojos', color: OJOS, geos: [-1, 1].map(lado => {
+    const a = lado * 0.34, r = 4.5;
+    return new THREE.SphereGeometry(1, 16, 12).scale(0.55, 0.75, 0.3).rotateY(a).translate(r * Math.sin(a), 17, r * Math.cos(a));
+  }) });
+
+  for (const p of piezas) for (const g of p.geos) { if (relieve) g.scale(1, 1, RELIEVE[st.formato]); g.scale(s, s, s); }
+
+  const alto = cima * s;
+  const accesorios = [];
+  if (st.formato === 'llavero') {
+    const yc = alto + 2.6 - 0.5;
+    piezas.find(p => p.id === 'arriba').geos.push(new THREE.TorusGeometry(2.6, 0.9, 12, 40).translate(0, yc, 0));
+    accesorios.push({ geo: new THREE.TorusGeometry(7, 0.6, 10, 56).rotateY(Math.PI / 2).translate(0, yc + 7.9, 0), mat: 'metal' });
+  }
+  if (st.formato === 'lapiz') {
+    accesorios.push({ geo: new THREE.CylinderGeometry(3.6, 3.6, 62, 6).translate(0, HUECO.prof - 0.5 - 31, 0), mat: 'lapiz' });
+    accesorios.push({ geo: new THREE.CylinderGeometry(3.6, 1.0, 10, 6).translate(0, HUECO.prof - 0.5 - 67, 0), mat: 'madera' });
+    accesorios.push({ geo: new THREE.CylinderGeometry(1.0, 0.1, 2.6, 12).translate(0, HUECO.prof - 0.5 - 73.3, 0), mat: 'grafito' });
+  }
+  if (st.formato === 'iman') accesorios.push({ geo: new THREE.CylinderGeometry(5, 5, 2, 32).rotateX(Math.PI / 2).translate(0, alto * 0.3, -1), mat: 'metal' });
+  if (st.formato === 'pin') {
+    accesorios.push({ geo: new THREE.BoxGeometry(11, 2.4, 1.2).translate(0, alto * 0.3, -0.6), mat: 'metal' });
+    accesorios.push({ geo: new THREE.CylinderGeometry(0.3, 0.3, 13, 8).rotateZ(Math.PI / 2).translate(0, alto * 0.3 + 1.8, -1.5), mat: 'metal' });
+  }
+  return { piezas, accesorios, relieve, alto: alto + (st.formato === 'llavero' ? 4.7 : 0) };
+}
+
+/* ───────────── Vista 3D ───────────── */
+const canvas = document.getElementById('view');
+const stage = document.getElementById('stage');
+const stageMsg = document.getElementById('stage-msg');
+let renderer = null, scene, camera, controls, raiz, suelo, modeloActual = null;
+const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function iniciarVista() {
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  } catch (e) {
+    stageMsg.textContent = 'Este dispositivo no puede mostrar la vista 3D, pero puedes configurar y pedir igualmente.';
+    return;
+  }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(30, 1, 1, 3000);
+  camera.position.set(70, 70, 190);
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.enablePan = false;
+  controls.minDistance = 25;
+  controls.maxDistance = 450;
+  controls.autoRotate = !reducido;
+  controls.autoRotateSpeed = 1.5;
+  controls.addEventListener('start', () => setGiro(false));
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x7d7288, 1.5));
+  const luz = new THREE.DirectionalLight(0xffffff, 2.3);
+  luz.position.set(60, 130, 100);
+  luz.castShadow = true;
+  luz.shadow.mapSize.set(1024, 1024);
+  Object.assign(luz.shadow.camera, { left: -70, right: 70, top: 90, bottom: -70, near: 10, far: 400 });
+  luz.shadow.bias = -0.0005;
+  const contra = new THREE.DirectionalLight(0xe0d4ff, 0.9);
+  contra.position.set(-90, 60, -100);
+  scene.add(luz, contra);
+
+  suelo = new THREE.Mesh(new THREE.CircleGeometry(70, 48).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.16 }));
+  suelo.receiveShadow = true;
+  raiz = new THREE.Group();
+  scene.add(raiz, suelo);
+
+  new ResizeObserver(ajustarTam).observe(stage);
+  ajustarTam();
+  stageMsg.hidden = true;
+  const bucle = () => { if (!document.hidden) { controls.update(); renderer.render(scene, camera); } requestAnimationFrame(bucle); };
+  bucle();
+}
+function ajustarTam() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+const MATS = {
+  metal:   () => new THREE.MeshStandardMaterial({ color: 0xb9bcc3, metalness: 0.55, roughness: 0.3 }),
+  lapiz:   () => new THREE.MeshStandardMaterial({ color: 0xe9b62a, roughness: 0.5 }),
+  madera:  () => new THREE.MeshStandardMaterial({ color: 0xe4c495, roughness: 0.8 }),
+  grafito: () => new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6 }),
+};
+let ultimaForma = '';
+function pintarModelo(st) {
+  if (!renderer) return;
+  for (const o of [...raiz.children]) {
+    o.traverse(n => { if (n.isMesh) { n.geometry.dispose(); n.material.dispose(); } });
+    raiz.remove(o);
+  }
+  const m = construir(st);
+  modeloActual = m;
+  const fig = new THREE.Group();
+  for (const p of m.piezas) {
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(color(p.color).hex), roughness: 0.52, metalness: 0 });
+    for (const g of p.geos) {
+      const mesh = new THREE.Mesh(g, mat.clone());
+      mesh.castShadow = mesh.receiveShadow = true;
+      fig.add(mesh);
+    }
+    mat.dispose();
+  }
+  const acc = new THREE.Group();
+  for (const a of m.accesorios) { const mesh = new THREE.Mesh(a.geo, MATS[a.mat]()); mesh.castShadow = true; acc.add(mesh); }
+  raiz.add(fig, acc);
+
+  const caja = new THREE.Box3().setFromObject(fig);
+  suelo.visible = st.formato !== 'lapiz';
+  suelo.position.y = caja.min.y - 0.01;
+  const forma = [st.formato, st.capirote, st.tamano].join();
+  if (forma !== ultimaForma) { encuadrar(caja); ultimaForma = forma; }
+  document.getElementById('stage-tag').textContent = `Altura aprox. ${(m.alto / 10).toFixed(1).replace('.', ',')} cm`;
+}
+let cajaActual = null;
+function encuadrar(caja = cajaActual) {
+  if (!caja) return;
+  cajaActual = caja;
+  const centro = caja.getCenter(new THREE.Vector3());
+  const radio = caja.getSize(new THREE.Vector3()).length() / 2;
+  const dist = radio / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.08;
+  const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+  if (!isFinite(dir.x)) dir.set(0.3, 0.25, 1).normalize();
+  controls.target.copy(centro);
+  camera.position.copy(centro).addScaledVector(dir, dist);
+  controls.update();
+}
+function setGiro(on) {
+  if (controls) controls.autoRotate = on;
+  document.getElementById('btn-girar').setAttribute('aria-pressed', String(on));
+}
+
+/* ───────────── Archivos de impresión ─────────────
+   3MF: un objeto con varias piezas (una por color) y N copias por bandeja.
+   Formato de proyecto de PrusaSlicer (Metadata/Slic3r_PE_model.config), que también
+   leen OrcaSlicer y Bambu Studio. Cada triángulo lleva además su color (basematerials). */
+function soldar(geos, mapa) {
+  const idx = new Map(), v = [], t = [];
+  const P = new THREE.Vector3();
+  const id = (x, y, z) => {
+    const k = `${Math.round(x * 1e4)},${Math.round(y * 1e4)},${Math.round(z * 1e4)}`;
+    let i = idx.get(k);
+    if (i === undefined) { i = v.length / 3; idx.set(k, i); v.push(x, y, z); }
+    return i;
+  };
+  for (const g of geos) {
+    const pos = g.attributes.position, ind = g.index;
+    const n = ind ? ind.count : pos.count;
+    for (let i = 0; i < n; i += 3) {
+      const tri = [0, 1, 2].map(j => {
+        P.fromBufferAttribute(pos, ind ? ind.getX(i + j) : i + j);
+        const [x, y, z] = mapa(P);
+        return id(x, y, z);
+      });
+      if (tri[0] !== tri[1] && tri[1] !== tri[2] && tri[0] !== tri[2]) t.push(...tri);
+    }
+  }
+  return { v, t };
+}
+const num = x => (Math.round(x * 1e4) / 1e4).toString();
+const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function hacer3MF(piezas, filamentos, items, miniatura) {
+  const verts = [], tris = [], vols = [];
+  let vOff = 0;
+  for (const p of piezas) {
+    const first = tris.length;
+    for (let i = 0; i < p.v.length; i += 3) verts.push(`<vertex x="${num(p.v[i])}" y="${num(p.v[i + 1])}" z="${num(p.v[i + 2])}"/>`);
+    for (let i = 0; i < p.t.length; i += 3) tris.push(`<triangle v1="${p.t[i] + vOff}" v2="${p.t[i + 1] + vOff}" v3="${p.t[i + 2] + vOff}" pid="1" p1="${p.slot - 1}"/>`);
+    vols.push({ ...p, first, last: tris.length - 1 });
+    vOff += p.v.length / 3;
+  }
+  const model = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="es-ES" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">
+ <metadata name="slic3rpe:Version3mf">1</metadata>
+ <metadata name="Title">Cofraditos</metadata>
+ <metadata name="Application">Cofraditos Salamanca</metadata>
+ <resources>
+  <basematerials id="1">
+${filamentos.map(f => `   <base name="F${f.slot} ${color(f.color).nombre}" displaycolor="${color(f.color).hex}FF"/>`).join('\n')}
+  </basematerials>
+  <object id="2" name="cofradito" type="model" pid="1" pindex="0">
+   <mesh>
+    <vertices>
+${verts.join('\n')}
+    </vertices>
+    <triangles>
+${tris.join('\n')}
+    </triangles>
+   </mesh>
+  </object>
+ </resources>
+ <build>
+${items.map(([x, y]) => `  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 ${num(x)} ${num(y)} 0"/>`).join('\n')}
+ </build>
+</model>
+`;
+  const config = `<?xml version="1.0" encoding="UTF-8"?>
+<config>
+ <object id="2" instances_count="${items.length}">
+  <metadata type="object" key="name" value="cofradito"/>
+${vols.map(p => `  <volume firstid="${p.first}" lastid="${p.last}">
+   <metadata type="volume" key="name" value="${p.nombre}"/>
+   <metadata type="volume" key="volume_type" value="ModelPart"/>
+   <metadata type="volume" key="extruder" value="${p.slot}"/>
+   <mesh edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0"/>
+  </volume>`).join('\n')}
+ </object>
+</config>
+`;
+  const files = {
+    '[Content_Types].xml': strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+ <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+ <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
+ <Default Extension="png" ContentType="image/png"/>
+</Types>
+`),
+    '_rels/.rels': strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
+${miniatura ? ' <Relationship Target="/Metadata/thumbnail.png" Id="rel-2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/>\n' : ''}</Relationships>
+`),
+    '3D/3dmodel.model': strToU8(model),
+    'Metadata/Slic3r_PE_model.config': strToU8(config),
+  };
+  if (miniatura) files['Metadata/thumbnail.png'] = [miniatura, { level: 0 }];
+  return zipSync(files, { level: 6 });
+}
+
+function stl(p, titulo) {
+  const n = p.t.length / 3;
+  const buf = new ArrayBuffer(84 + n * 50), dv = new DataView(buf);
+  const cab = strToU8(titulo.slice(0, 79));
+  new Uint8Array(buf, 0, cab.length).set(cab);
+  dv.setUint32(80, n, true);
+  let o = 84;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), nn = new THREE.Vector3(), e = new THREE.Vector3();
+  for (let i = 0; i < p.t.length; i += 3) {
+    a.fromArray(p.v, p.t[i] * 3); b.fromArray(p.v, p.t[i + 1] * 3); c.fromArray(p.v, p.t[i + 2] * 3);
+    nn.subVectors(b, a).cross(e.subVectors(c, a)).normalize();
+    for (const q of [nn, a, b, c]) { dv.setFloat32(o, q.x, true); dv.setFloat32(o + 4, q.y, true); dv.setFloat32(o + 8, q.z, true); o += 12; }
+    o += 2;
+  }
+  return new Uint8Array(buf);
+}
+
+function miniaturaPNG() {
+  if (!renderer) return null;
+  try {
+    renderer.render(scene, camera);
+    const b64 = canvas.toDataURL('image/png').split(',')[1];
+    const bin = atob(b64), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch { return null; }
+}
+
+function planificar(st, bandeja) {
+  const m = construir(st);
+  // De pie: Y de three → Z de impresión, y la cara (+Z) mira al frente de la cama (−Y). Relieve: boca arriba, cara plana en la cama.
+  const mapa = m.relieve ? P => [P.x, P.y, P.z] : P => [P.x, -P.z, P.y];
+  const orden = ['abajo', 'arriba', 'cingulo', 'ojos'];
+  const filamentos = [], slotDe = {};
+  for (const id of orden) {
+    const p = m.piezas.find(q => q.id === id);
+    if (!p) continue;
+    let f = filamentos.find(x => x.color === p.color);
+    if (!f) { f = { slot: filamentos.length + 1, color: p.color }; filamentos.push(f); }
+    slotDe[id] = f.slot;
+  }
+  const piezas = orden.map(id => m.piezas.find(q => q.id === id)).filter(Boolean)
+    .map(p => ({ ...soldar(p.geos, mapa), id: p.id, nombre: NOMBRE_PIEZA[p.id], slot: slotDe[p.id] }));
+  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+  for (const p of piezas) for (let i = 0; i < p.v.length; i++) { const k = i % 3; if (p.v[i] < min[k]) min[k] = p.v[i]; if (p.v[i] > max[k]) max[k] = p.v[i]; }
+  const cx = (min[0] + max[0]) / 2, cy = (min[1] + max[1]) / 2;
+  for (const p of piezas) for (let i = 0; i < p.v.length; i += 3) { p.v[i] -= cx; p.v[i + 1] -= cy; p.v[i + 2] -= min[2]; }
+  const w = max[0] - min[0], d = max[1] - min[1], h = max[2] - min[2];
+  const hueco = 4, margen = 6;
+  const cols = Math.max(1, Math.floor((bandeja.w - 2 * margen + hueco) / (w + hueco)));
+  const filas = Math.max(1, Math.floor((bandeja.d - 2 * margen + hueco) / (d + hueco)));
+  const porBandeja = cols * filas;
+  const nBandejas = Math.ceil(st.cantidad / porBandeja);
+  return { m, piezas, filamentos, w, d, h, cols, porBandeja, nBandejas };
+}
+
+function generarZip(st, bandeja) {
+  const plan = planificar(st, bandeja);
+  const { piezas, filamentos, w, d, h, cols, porBandeja, nBandejas } = plan;
+  const cod = codigo(st);
+  const carpeta = `cofraditos_${st.cantidad}uds_${slug(color(st.arriba).nombre)}-${slug(color(st.abajo).nombre)}_${st.formato}`;
+  const thumb = miniaturaPNG();
+  const files = {};
+  const hueco = 4;
+  for (let b = 0; b < nBandejas; b++) {
+    const n = Math.min(porBandeja, st.cantidad - b * porBandeja);
+    const c = Math.min(n, cols), f = Math.ceil(n / cols);
+    const x0 = bandeja.w / 2 - (c * w + (c - 1) * hueco) / 2 + w / 2;
+    const y0 = bandeja.d / 2 + (f * d + (f - 1) * hueco) / 2 - d / 2;
+    const items = [];
+    for (let i = 0; i < n; i++) items.push([x0 + (i % cols) * (w + hueco), y0 - Math.floor(i / cols) * (d + hueco)]);
+    files[`${carpeta}/bandeja-${b + 1}_${n}uds.3mf`] = [hacer3MF(piezas, filamentos, items, thumb), { level: 0 }];
+  }
+  for (const f of filamentos) {
+    const del = piezas.filter(p => p.slot === f.slot);
+    const junta = { v: [], t: [] };
+    for (const p of del) { const off = junta.v.length / 3; junta.v.push(...p.v); junta.t.push(...p.t.map(i => i + off)); }
+    files[`${carpeta}/stl_una_figura/F${f.slot}_${slug(color(f.color).nombre)}_${del.map(p => slug(p.nombre)).join('-')}.stl`] = stl(junta, `Cofradito F${f.slot} ${color(f.color).nombre}`);
+  }
+  if (thumb) files[`${carpeta}/vista.png`] = [thumb, { level: 0 }];
+  files[`${carpeta}/LEEME.txt`] = strToU8(leeme(st, plan, bandeja));
+  return { bytes: zipSync(files, { level: 6 }), nombre: `${carpeta}.zip`, plan };
+}
+
+function leeme(st, plan, bandeja) {
+  const fmt = FORMATOS.find(f => f.id === st.formato);
+  const montaje = {
+    figura: 'Figura de pie. Imprimir sin soportes.',
+    iman: 'Relieve boca arriba (cara plana en la cama). Pegar un imán de neodimio 10×2 mm detrás con cianoacrilato o epoxi.',
+    pin: 'Relieve boca arriba (cara plana en la cama). Pegar un broche de pin de 15–20 mm detrás.',
+    lapiz: `De pie, con el hueco hacia la cama. Hueco Ø ${(HUECO.r * 2).toFixed(1)} mm × ${HUECO.prof} mm: si el lápiz entra flojo o muy justo, ajustar HUECO en el código.`,
+    llavero: 'De pie. Pasar una anilla de llavero de 20–25 mm por el aro del capirote.',
+  }[st.formato];
+  const mm = x => x.toFixed(1).replace('.', ',');
+  return [
+    'COFRADITOS · PEDIDO',
+    '===================',
+    `Código: ${codigo(st)}`,
+    `Cantidad: ${st.cantidad} · Formato: ${fmt.nombre}${st.formato === 'figura' ? ' ' + TAMANOS.find(t => t.id === st.tamano).nombre : ''} · Capirote: ${CAPIROTES.find(c => c.id === st.capirote).nombre}`,
+    `Medida de cada figura en la cama: ${mm(plan.w)} × ${mm(plan.d)} mm, ${mm(plan.h)} mm de alto`,
+    `Bandeja: ${bandeja.nombre} → caben ${plan.porBandeja} por bandeja → ${plan.nBandejas} bandeja(s)`,
+    '',
+    'FILAMENTOS (asignar así en el laminador)',
+    ...plan.filamentos.map(f => `  F${f.slot}: ${color(f.color).nombre} (${color(f.color).hex}) → ${plan.piezas.filter(p => p.slot === f.slot).map(p => p.nombre).join(', ')}`),
+    '',
+    'ARCHIVOS',
+    '  bandeja-N_XXuds.3mf  → Proyecto listo: un objeto con una pieza por color y todas las copias colocadas.',
+    '                         Abrir con PrusaSlicer, OrcaSlicer o Bambu Studio. Comprobar que cada pieza',
+    '                         tiene su filamento (F1, F2…) y poner los colores de arriba a esos filamentos.',
+    '  stl_una_figura/      → Plan B universal: una STL por color de UNA figura. Arrastrarlas todas a la vez',
+    '                         al laminador y aceptar "cargar como un objeto con varias piezas". Asignar filamento',
+    '                         a cada pieza y multiplicar el objeto (clic derecho → Instancias).',
+    '',
+    'MONTAJE',
+    `  ${montaje}`,
+    '',
+    'AJUSTES RECOMENDADOS',
+    '  PLA · capa 0,12–0,16 mm · 2 perímetros · relleno 15 % · sin soportes.',
+    '  Imprimir muchas a la vez reduce la purga por figura en multicolor.',
+    '',
+    `Generado el ${new Date().toLocaleString('es-ES')}`,
+  ].join('\r\n');
+}
+
+const usarDescargas = window.claude?.use ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+async function guardar(nombre, bytes) {
+  const dl = await usarDescargas;
+  if (dl) {
+    await dl.save({ filename: nombre, data: new Blob([bytes], { type: 'application/zip' }) });
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/zip' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: nombre });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+/* ───────────── Interfaz ───────────── */
+const $ = id => document.getElementById(id);
+function swatches(el, key) {
+  el.innerHTML = COLORES.map(c => `<button type="button" class="sw" data-key="${key}" data-val="${c.id}" style="--c:${c.hex}" aria-label="${c.nombre}" title="${c.nombre}"></button>`).join('');
+}
+function segmentos(el, key, lista) {
+  el.innerHTML = lista.map(o => `<button type="button" data-key="${key}" data-val="${o.id}">${o.nombre}</button>`).join('');
+}
+function montarUI() {
+  $('preset').innerHTML = `<option value="">Personalizado</option>` + COFRADIAS.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+  for (const k of ['arriba', 'abajo', 'cingulo']) swatches($('sw-' + k), k);
+  segmentos($('seg-tamano'), 'tamano', TAMANOS);
+  segmentos($('seg-capirote'), 'capirote', CAPIROTES);
+  segmentos($('seg-entrega'), 'entrega', ENTREGAS);
+  $('formatos').innerHTML = FORMATOS.map(f => `<button type="button" class="fmt" data-key="formato" data-val="${f.id}"><b>${f.nombre}</b><span>${f.detalle}</span><em>${f.extra ? '+' + eur(f.extra) + '/ud' : 'Incluido'}</em></button>`).join('');
+  $('q-chips').innerHTML = [1, 10, 25, 50, 100].map(n => `<button type="button" class="chip" data-key="cantidad" data-val="${n}">${n}</button>`).join('');
+  $('tiers').innerHTML = CONFIG.tramos.map((t, i) => {
+    const hasta = CONFIG.tramos[i + 1] ? `${t.min}–${CONFIG.tramos[i + 1].min - 1}` : `${t.min}+`;
+    return `<div data-min="${t.min}"><b>${eur(t.precio)}</b>${hasta} uds</div>`;
+  }).join('');
+  $('t-bandeja').innerHTML = BANDEJAS.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-key][data-val]');
+    if (!b) return;
+    const { key, val } = b.dataset;
+    if (key === 'cantidad') state.cantidad = +val;
+    else {
+      state[key] = val;
+      if (key === 'cingulo') state.cinguloOn = true;
+      if (['arriba', 'abajo', 'cingulo', 'capirote'].includes(key)) state.preset = '';
+    }
+    sync();
+  });
+  $('preset').addEventListener('change', e => {
+    const c = COFRADIAS.find(x => x.id === e.target.value);
+    state.preset = e.target.value;
+    if (c) Object.assign(state, { arriba: c.arriba, abajo: c.abajo, capirote: c.capirote, cinguloOn: !!c.cingulo, cingulo: c.cingulo || state.cingulo });
+    sync();
+  });
+  $('cingulo-on').addEventListener('change', e => { state.cinguloOn = e.target.checked; state.preset = ''; sync(); });
+  const fijarCant = v => { state.cantidad = Math.max(1, Math.min(999, Math.round(v) || 1)); sync(); };
+  $('q-menos').addEventListener('click', () => fijarCant(state.cantidad - 1));
+  $('q-mas').addEventListener('click', () => fijarCant(state.cantidad + 1));
+  $('cantidad').addEventListener('change', e => fijarCant(+e.target.value));
+  for (const k of ['nombre', 'grupo', 'notas']) $(k).addEventListener('input', e => {
+    state[k] = e.target.value;
+    if (k === 'nombre') e.target.classList.remove('invalid');
+    syncPedido();
+  });
+
+  $('btn-wa').addEventListener('click', e => {
+    if (!state.nombre.trim()) {
+      e.preventDefault();
+      $('nombre').classList.add('invalid');
+      $('nombre').focus();
+      estado('order-status', 'Pon tu nombre para que sepamos quién hace el pedido.', true);
+      return;
+    }
+    estado('order-status', 'Abriendo WhatsApp con tu pedido. Si no se abre, usa «Ver o copiar el mensaje».');
+  });
+  $('btn-ver-msg').addEventListener('click', () => { $('msg-text').value = mensaje(state); estado('msg-status', ''); $('dlg-msg').showModal(); });
+  $('btn-copiar').addEventListener('click', async () => {
+    const t = $('msg-text');
+    try { await navigator.clipboard.writeText(t.value); estado('msg-status', 'Mensaje copiado.'); }
+    catch { t.focus(); t.select(); estado('msg-status', 'Texto seleccionado: cópialo con Ctrl+C o mantén pulsado.'); }
+  });
+  for (const d of document.querySelectorAll('dialog')) {
+    d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  }
+
+  $('btn-girar').addEventListener('click', () => setGiro(!(controls && controls.autoRotate)));
+  $('btn-centrar').addEventListener('click', () => encuadrar());
+
+  $('btn-taller').addEventListener('click', () => { $('t-codigo').value = codigo(state); estado('t-status', ''); planTaller(); $('dlg-taller').showModal(); });
+  $('t-bandeja').addEventListener('change', planTaller);
+  $('t-codigo').addEventListener('input', planTaller);
+  $('t-cargar').addEventListener('click', () => {
+    const c = leerCodigo($('t-codigo').value);
+    if (!c) return estado('t-status', 'No encuentro un código válido. Debe empezar por COF1. y tener 8 partes.', true);
+    Object.assign(state, c, { preset: '' });
+    sync();
+    estado('t-status', 'Pedido cargado en la vista.');
+  });
+  $('t-generar').addEventListener('click', async () => {
+    const c = leerCodigo($('t-codigo').value);
+    if (!c) return estado('t-status', 'No encuentro un código válido. Debe empezar por COF1. y tener 8 partes.', true);
+    Object.assign(state, c, { preset: '' });
+    sync();
+    pintarModelo(state);
+    estado('t-status', 'Generando archivos…');
+    await new Promise(r => setTimeout(r, 30));
+    try {
+      const { bytes, nombre } = generarZip(state, BANDEJAS.find(b => b.id === $('t-bandeja').value));
+      await guardar(nombre, bytes);
+      estado('t-status', `Listo: ${nombre} (${(bytes.length / 1024).toFixed(0)} KB).`);
+    } catch (err) {
+      if (err && err.code === 'declined') estado('t-status', 'Descarga cancelada.');
+      else estado('t-status', 'No se pudo generar el archivo: ' + (err && err.message || err), true);
+    }
+  });
+}
+function planTaller() {
+  const c = leerCodigo($('t-codigo').value);
+  if (!c) { $('t-plan').textContent = 'Pega un código para ver cuántas bandejas salen.'; return; }
+  const st = { ...state, ...c };
+  const bandeja = BANDEJAS.find(b => b.id === $('t-bandeja').value);
+  const p = planificar(st, bandeja);
+  const mm = x => x.toFixed(0);
+  $('t-plan').innerHTML = `<b>${st.cantidad} uds · ${FORMATOS.find(f => f.id === st.formato).nombre}</b> · ${mm(p.w)} × ${mm(p.d)} × ${mm(p.h)} mm cada una<br>
+    Caben ${p.porBandeja} por bandeja → <b>${p.nBandejas} bandeja${p.nBandejas > 1 ? 's' : ''}</b>
+    <ul>${p.filamentos.map(f => `<li><span class="dot" style="--c:${color(f.color).hex}"></span>F${f.slot} ${color(f.color).nombre}: ${p.piezas.filter(q => q.slot === f.slot).map(q => q.nombre).join(', ')}</li>`).join('')}</ul>`;
+}
+function estado(id, txt, err = false) { const el = $(id); el.textContent = txt; el.classList.toggle('err', err); }
+
+let pendiente = false;
+function sync() {
+  $('preset').value = state.preset;
+  for (const b of document.querySelectorAll('[data-key][data-val]')) {
+    const { key, val } = b.dataset;
+    const on = key === 'cantidad' ? state.cantidad === +val : state[key] === val;
+    b.setAttribute('aria-pressed', String(on));
+  }
+  $('v-arriba').textContent = color(state.arriba).nombre;
+  $('v-abajo').textContent = color(state.abajo).nombre;
+  $('v-cingulo').textContent = state.cinguloOn ? color(state.cingulo).nombre : 'Sin cíngulo';
+  $('cingulo-on').checked = state.cinguloOn;
+  $('sw-cingulo').setAttribute('aria-disabled', String(!state.cinguloOn));
+  $('f-tamano').hidden = state.formato !== 'figura';
+  $('cantidad').value = state.cantidad;
+  syncPedido();
+  if (!pendiente) { pendiente = true; requestAnimationFrame(() => { pendiente = false; pintarModelo(state); }); }
+}
+function syncPedido() {
+  const p = precios(state);
+  $('total').textContent = eur(p.total);
+  $('total-det').textContent = `${state.cantidad} × ${eur(p.unidad)}${p.envio ? ` + ${eur(p.envio)} envío` : ''}`;
+  $('v-unidad').textContent = `${eur(p.unidad)}/ud`;
+  for (const t of $('tiers').children) t.classList.toggle('on', +t.dataset.min === CONFIG.tramos.filter(x => state.cantidad >= x.min).pop().min);
+  const tel = CONFIG.whatsapp.replace(/\D/g, '');
+  $('btn-wa').href = `https://wa.me/${tel}?text=${encodeURIComponent(mensaje(state))}`;
+}
+
+montarUI();
+const desdeEnlace = leerCodigo(decodeURIComponent(location.hash.slice(1)));
+if (desdeEnlace) Object.assign(state, desdeEnlace, { preset: '' });
+iniciarVista();
+sync();
+</script>
+</body>
+</html>
