@@ -41,9 +41,16 @@ export async function generateMetadata({
   const p = await loadProduct(slug);
   const alternates = { canonical: siteUrl(`/catalogo/${slug}/`) };
   if (!p) return { alternates, robots: { index: false } };
-  const full = `${p.nombre}: impreso en 3D | 3DCC`;
-  const title = full.length <= 60 ? full : p.nombre;
-  const description = p.descripcion.replace(/\s+/g, ' ').trim().slice(0, 155);
+  // Sin concordancia de género («Lámpara… impreso»): «· Impresión 3D» vale para todos.
+  const full = `${p.nombre} · Impresión 3D | 3DCC`;
+  const title = full.length <= 60 ? full : `${p.nombre} | 3DCC`;
+  // La ficha lleva un texto largo; a Google le damos las frases completas que quepan en 155.
+  const text = p.descripcion.replace(/\s+/g, ' ').trim();
+  const description =
+    text.length <= 155
+      ? text
+      : (text.slice(0, 156).match(/^.*[.!?](?=\s)/)?.[0] ??
+        text.slice(0, 155).replace(/\s+\S*$/, '') + '…');
   return {
     title,
     description,

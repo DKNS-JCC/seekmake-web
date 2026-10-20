@@ -348,7 +348,7 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
                 )}
                 <div className="p-card-img">
                   {p.imagen ? (
-                    <img src={p.imagen} alt={p.nombre} loading="lazy" />
+                    <img src={p.imagen} alt={`${p.nombre}, ${p.categoria.toLowerCase()} impreso en 3D`} loading="lazy" />
                   ) : (
                     <div className="p-card-img-placeholder">
                       <svg
