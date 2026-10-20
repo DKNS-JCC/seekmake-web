@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Snowfall from 'react-snowfall';
 import { useFadeUp } from '@/components/useFadeUp';
 import { WA_LINK } from '@/components/WhatsAppFAB';
 import { TrabajosSection } from '@/components/TrabajosSection';
@@ -11,11 +13,40 @@ import './page.css';
 import { CONTACTO, mailtoUrl } from '@/lib/contacto';
 import type { Trabajo } from '@/lib/types';
 
+// Copo de seis brazos; se pinta en el canvas de react-snowfall como imagen.
+const COPO_SVG =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 24 24" stroke="#7d95b8" stroke-width="1.6" stroke-linecap="round" fill="none">' +
+      [0, 60, 120].map((r) => `<g transform="rotate(${r})"><path d="M0-11V11M0-7l-3-3M0-7l3-3M0 7l-3 3M0 7l3 3"/></g>`).join('') +
+      '</svg>',
+  );
+
 export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
   useFadeUp();
+  const [copos, setCopos] = useState<HTMLImageElement[]>();
+  useEffect(() => {
+    const img = new Image();
+    img.src = COPO_SVG;
+    img.onload = () => setCopos([img]);
+  }, []);
 
   return (
     <>
+      {/* Nieve de invierno: decorativa, sin bloquear clics. */}
+      <div className="nieve" aria-hidden="true">
+        {copos && (
+          <Snowfall
+            images={copos}
+            snowflakeCount={35}
+            radius={[5, 11]}
+            speed={[0.4, 1.2]}
+            rotationSpeed={[-1, 1]}
+            opacity={[0.45, 0.8]}
+            style={{ position: 'fixed', pointerEvents: 'none', zIndex: 4 }}
+          />
+        )}
+      </div>
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section id="inicio">
         <div className="hero-left">
