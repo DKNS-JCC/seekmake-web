@@ -205,6 +205,7 @@ export type Quote = {
 
 export type QuoteEventoTipo =
   | 'pieza_anadida'
+  | 'precio_visto'
   | 'solicitud_enviada'
   | 'pdf_descargado'
   | 'aceptado';

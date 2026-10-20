@@ -24,7 +24,13 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { createClient } from '@/lib/supabase/client';
-import { acabadoLabel, type Color, type Filamento, type QuoteEntrega } from '@/lib/types';
+import {
+  acabadoLabel,
+  type Color,
+  type Filamento,
+  type QuoteEntrega,
+  type QuoteEventoTipo
+} from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import { useCatalogoColores } from '@/lib/useCatalogoColores';
 import {
@@ -61,8 +67,19 @@ const MAX_FILE_MB = 50;
 const MAX_FILES = 5;
 const ACCEPT = '.stl,.3mf,.obj';
 
-// Anonymous funnel id for quote_events (per page load, never identifies).
-const SESSION_ID = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+// Anonymous funnel id for quote_events (never identifies). Kept in
+// sessionStorage so a reload in the same tab stays the same visit.
+const SESSION_ID = (() => {
+  const nuevo = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+  try {
+    const guardado = sessionStorage.getItem('qt-session');
+    if (guardado) return guardado;
+    sessionStorage.setItem('qt-session', nuevo);
+  } catch {
+    // SSR or storage blocked: one id per page load.
+  }
+  return nuevo;
+})();
 
 function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);
@@ -178,7 +195,7 @@ export function QuoteClient({
   }, []);
 
   // Fire-and-forget funnel event (errors are irrelevant to the customer).
-  function trackEvent(evento: 'pieza_anadida' | 'solicitud_enviada' | 'pdf_descargado', payload: Record<string, unknown> = {}) {
+  function trackEvent(evento: Exclude<QuoteEventoTipo, 'aceptado'>, payload: Record<string, unknown> = {}) {
     void createClient()
       .from('quote_events')
       .insert({ session_id: SESSION_ID, evento, payload })
@@ -617,6 +634,15 @@ export function QuoteClient({
     ? analizando.reduce((a, p) => a + p.estimacion.progreso, 0) / analizando.length
     : 1;
   const listo = !!quote && analizando.length === 0;
+
+  // First time the price is on screen: the funnel's "saw the price" step.
+  const precioVistoRef = useRef(false);
+  useEffect(() => {
+    if (!listo || !quote || precioVistoRef.current) return;
+    precioVistoRef.current = true;
+    trackEvent('precio_visto', { total: quote.total, piezas: piezas.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listo]);
   // Suspiciously tiny model → probably exported in inches/metres.
   const scaleSuggestions = activePieza ? suggestScales(activePieza.metrics) : [];
 

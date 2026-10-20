@@ -33,6 +33,8 @@ const ORDEN_ESTADOS: QuoteEstado[] = [
   'nuevo', 'revisado', 'aceptado', 'imprimiendo', 'listo', 'entregado', 'rechazado'
 ];
 
+const ESTADOS_EN_FIRME: QuoteEstado[] = ['aceptado', 'imprimiendo', 'listo', 'entregado'];
+
 const cardStyle: React.CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--border)',
@@ -128,9 +130,7 @@ export default function AdminEstadisticas() {
         .order('created_at', { ascending: false })
         .limit(5000)
     ]).then(([qres, eres]) => {
-      // Estadísticas del tasador: los pedidos hechos a mano en la Calculadora
-      // (origen 'calculadora', 0027) no pasaron por el embudo web.
-      setQuotes(((qres.data as Quote[]) ?? []).filter((q) => q.origen !== 'calculadora'));
+      setQuotes((qres.data as Quote[]) ?? []);
       setEventos((eres.data as QuoteEvento[]) ?? []);
       setLoading(false);
     });
@@ -139,16 +139,21 @@ export default function AdminEstadisticas() {
   const desde = useMemo(() => Date.now() - dias * 24 * 3600 * 1000, [dias]);
 
   const stats = useMemo(() => {
-    const visibles = quotes.filter((q) => !q.archivado);
-    const periodo = visibles.filter((q) => new Date(q.created_at).getTime() >= desde);
+    // Archivar un pedido terminado (0027) no lo borra de la historia; el resto
+    // de archivados son descartes a mano o pedidos borrados en la Calculadora.
+    const visibles = quotes.filter(
+      (q) => !q.archivado || q.estado === 'entregado' || q.estado === 'rechazado'
+    );
+    // Lo del tasador: los pedidos hechos a mano en la Calculadora (origen
+    // 'calculadora', 0027) no pasaron por el embudo web. Dinero y pipeline sí.
+    const web = visibles.filter((q) => q.origen !== 'calculadora');
+    const periodo = web.filter((q) => new Date(q.created_at).getTime() >= desde);
 
     const porEstado = new Map<QuoteEstado, number>();
     for (const e of ORDEN_ESTADOS) porEstado.set(e, 0);
     for (const q of visibles) porEstado.set(q.estado, (porEstado.get(q.estado) ?? 0) + 1);
 
-    const avanzados = visibles.filter((q) =>
-      ['aceptado', 'imprimiendo', 'listo', 'entregado'].includes(q.estado)
-    );
+    const avanzados = visibles.filter((q) => ESTADOS_EN_FIRME.includes(q.estado));
     const entregados = visibles.filter((q) => q.estado === 'entregado');
 
     const ingresos = visibles.reduce((s, q) => s + num(q.importe_pagado), 0);
@@ -174,7 +179,7 @@ export default function AdminEstadisticas() {
     for (let w = 7; w >= 0; w--) {
       const fin = Date.now() - w * 7 * 24 * 3600 * 1000;
       const ini = fin - 7 * 24 * 3600 * 1000;
-      const count = visibles.filter((q) => {
+      const count = web.filter((q) => {
         const t = new Date(q.created_at).getTime();
         return t > ini && t <= fin;
       }).length;
@@ -185,18 +190,27 @@ export default function AdminEstadisticas() {
       });
     }
 
-    // Funnel from anonymous events (selected period).
+    // Funnel from anonymous events (selected period), per session so a
+    // double submit or several PDFs don't inflate the rates.
     const ev = eventos.filter((e) => new Date(e.created_at).getTime() >= desde);
-    const sesionesConPieza = new Set(
-      ev.filter((e) => e.evento === 'pieza_anadida' && e.session_id).map((e) => e.session_id)
-    ).size;
-    const solicitudes = ev.filter((e) => e.evento === 'solicitud_enviada').length;
-    const pdfs = ev.filter((e) => e.evento === 'pdf_descargado').length;
-    const aceptadosEv = ev.filter((e) => e.evento === 'aceptado').length;
-    const aceptadosPeriodo = periodo.filter((q) => q.aceptado_at != null).length;
+    const sesiones = (tipo: QuoteEvento['evento']) =>
+      new Set(ev.filter((e) => e.evento === tipo && e.session_id).map((e) => e.session_id));
+    const conPieza = sesiones('pieza_anadida');
+    const conPrecio = sesiones('precio_visto');
+    const conSolicitud = sesiones('solicitud_enviada');
+    const conPdf = sesiones('pdf_descargado');
+    // Vieron el precio y se fueron sin solicitar ni descargar el PDF.
+    const abandonos = [...conPrecio].filter((s) => !conSolicitud.has(s) && !conPdf.has(s)).length;
+    // Se fueron mientras se laminaba (o el archivo no se pudo tasar).
+    const antesDelPrecio = [...conPieza].filter((s) => !conPrecio.has(s)).length;
+    // From the quotes, not the 'aceptado' event: that one also fires for
+    // Calculadora orders and misses acceptances made from the admin.
+    const aceptados = periodo.filter(
+      (q) => q.aceptado_at != null || ESTADOS_EN_FIRME.includes(q.estado)
+    ).length;
 
     return {
-      total: visibles.length,
+      total: web.length,
       periodo: periodo.length,
       porEstado,
       avanzados: avanzados.length,
@@ -209,10 +223,13 @@ export default function AdminEstadisticas() {
       porMaterial: [...porMaterial.entries()].sort((a, b) => b[1] - a[1]),
       semanas,
       funnel: {
-        sesionesConPieza,
-        solicitudes,
-        pdfs,
-        aceptados: Math.max(aceptadosEv, aceptadosPeriodo)
+        sesionesConPieza: conPieza.size,
+        precioVisto: conPrecio.size,
+        antesDelPrecio,
+        solicitudes: conSolicitud.size,
+        pdfs: conPdf.size,
+        abandonos,
+        aceptados
       }
     };
   }, [quotes, eventos, desde]);
@@ -226,6 +243,7 @@ export default function AdminEstadisticas() {
   const f = stats.funnel;
   const convSolicitud = f.sesionesConPieza > 0 ? (f.solicitudes / f.sesionesConPieza) * 100 : 0;
   const convAceptado = f.solicitudes > 0 ? (f.aceptados / f.solicitudes) * 100 : 0;
+  const pctAbandono = f.precioVisto > 0 ? (f.abandonos / f.precioVisto) * 100 : 0;
 
   return (
     <div>
@@ -263,8 +281,9 @@ export default function AdminEstadisticas() {
         </div>
       </div>
       <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 24 }}>
-        El embudo y los materiales usan el periodo seleccionado; pipeline e
-        importes son históricos.
+        El embudo, las solicitudes y los materiales son solo del tasador web y
+        usan el periodo seleccionado; pipeline e importes son históricos e
+        incluyen los pedidos de la Calculadora.
       </p>
 
       {/* KPIs */}
@@ -284,12 +303,16 @@ export default function AdminEstadisticas() {
       <section style={cardStyle}>
         <h2 style={h2Style}>Embudo ({dias} días)</h2>
         <Bar label="Subieron pieza" value={f.sesionesConPieza} max={Math.max(1, f.sesionesConPieza)} color="#0EA5E9" />
+        <Bar label="Antes del precio" value={f.antesDelPrecio} max={Math.max(1, f.sesionesConPieza)} color="#6b7280" />
+        <Bar label="Vieron el precio" value={f.precioVisto} max={Math.max(1, f.sesionesConPieza)} color="#0EA5E9" />
+        <Bar label="Se fueron sin más" value={f.abandonos} max={Math.max(1, f.sesionesConPieza)} color="#ef4444" />
+        <Bar label="Descargaron PDF" value={f.pdfs} max={Math.max(1, f.sesionesConPieza)} color="#eab308" />
         <Bar label="Solicitaron" value={f.solicitudes} max={Math.max(1, f.sesionesConPieza)} color="#a855f7" />
         <Bar label="Aceptaron" value={f.aceptados} max={Math.max(1, f.sesionesConPieza)} color="#10b981" />
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
           Conversión a solicitud: <strong>{convSolicitud.toFixed(0)}%</strong> ·
           solicitud → aceptado: <strong>{convAceptado.toFixed(0)}%</strong> ·
-          PDFs descargados: <strong>{f.pdfs}</strong>
+          abandono tras ver el precio: <strong>{pctAbandono.toFixed(0)}%</strong>
         </p>
       </section>
 
