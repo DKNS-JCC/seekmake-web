@@ -1,37 +1,11 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { renderMarkdown } from '@/lib/markdown';
-import { AdSlot } from '@/components/AdSlot';
 import type { BlogPost } from '@/lib/types';
 import { CONTACTO, siteUrl } from '@/lib/contacto';
 
-export function BlogPostView({ slug }: { slug: string }) {
-  const [post, setPost] = useState<BlogPost | null | 'missing'>(null);
-
-  useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!url) {
-      setPost('missing');
-      return;
-    }
-    const supabase = createClient();
-    supabase
-      .from('blog_posts')
-      .select('*')
-      .eq('slug', slug)
-      .eq('published', true)
-      .single()
-      .then(({ data }) => setPost(data ?? 'missing'));
-  }, [slug]);
-
-  if (post === null) {
-    return <div className="blog-loading">Cargando…</div>;
-  }
-
-  if (post === 'missing') {
+// Server-rendered: the post is fetched at build time in page.tsx.
+export function BlogPostView({ post }: { post: BlogPost | null }) {
+  if (!post) {
     return (
       <div className="blog-article">
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48 }}>
@@ -57,7 +31,7 @@ export function BlogPostView({ slug }: { slug: string }) {
     dateModified: post.updated_at,
     author: { '@type': 'Organization', name: CONTACTO.nombre, url: CONTACTO.sitio },
     publisher: { '@type': 'Organization', name: CONTACTO.nombre, url: CONTACTO.sitio },
-    mainEntityOfPage: siteUrl(`/blog/${post.slug}`),
+    mainEntityOfPage: siteUrl(`/blog/${post.slug}/`),
   };
 
   return (
@@ -103,8 +77,6 @@ export function BlogPostView({ slug }: { slug: string }) {
         // The markdown comes from our admin only and we trust the input.
         dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
       />
-
-      <AdSlot slot="blog-post-bottom" format="rectangle" style={{ marginTop: 32 }} />
 
       <Link href="/blog" className="blog-back">
         ← Volver al blog

@@ -2,12 +2,14 @@ import { createClient as createServerClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import type { Database } from '@/lib/types';
 import { buildSafe } from '@/lib/supabase/buildSafe';
+import { siteUrl } from '@/lib/contacto';
 import { MuestrarioClient } from './MuestrarioClient';
 
 export const metadata: Metadata = {
-  title: 'Muestrario | 3DCC Salamanca',
+  title: 'Colores y materiales de impresión 3D (PLA, PETG, TPU) | 3DCC',
   description:
-    'Muestrario completo de colores y materiales (PLA, PETG, ASA, TPU) para impresión 3D.'
+    'Todos los colores y materiales disponibles para tu impresión 3D: PLA, PETG, ASA, TPU y más. Pide una foto real del color antes de encargar.',
+  alternates: { canonical: siteUrl('/muestrario/') }
 };
 
 // Static-export: this fetches at build time. The Supabase URL/anon-key must

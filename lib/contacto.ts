@@ -9,7 +9,7 @@ const PHONE_E164 = '34923793123';
 export const CONTACTO = {
   nombre: '3DCC Salamanca',
   /** Canonical site origin, no trailing slash. */
-  sitio: 'https://impresion3dcc.com',
+  sitio: 'https://www.impresion3dcc.com',
   /** Bare host, for display in copy and PDFs. */
   dominio: 'impresion3dcc.com',
   email: 'info@impresion3dcc.com',
@@ -17,7 +17,10 @@ export const CONTACTO = {
   telefono: '+34 923 793 123',
   /** Dial string, for href="tel:". */
   telefonoTel: `+${PHONE_E164}`,
-  whatsapp: PHONE_E164
+  whatsapp: PHONE_E164,
+  instagram: 'https://www.instagram.com/impresion3dcc/',
+  /** Google Business profile, by its stable CID. */
+  googleMaps: 'https://www.google.com/maps?cid=5037644109956242266'
 } as const;
 
 /** `mailto:` link, optionally with a prefilled subject. */

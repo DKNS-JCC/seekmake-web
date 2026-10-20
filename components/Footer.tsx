@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CONTACTO } from '@/lib/contacto';
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -9,6 +10,18 @@ export function Footer() {
           &copy; {year} Impresión 3DCC Salamanca. Todos los derechos reservados.
         </span>
         <span className="footer-copy">
+          <a href={CONTACTO.instagram} className="footer-link" target="_blank" rel="noopener noreferrer">
+            Instagram
+          </a>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <a href={CONTACTO.googleMaps} className="footer-link" target="_blank" rel="noopener noreferrer">
+            Google Maps
+          </a>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/impresion-3d-salamanca-provincia" className="footer-link">
+            Salamanca y provincia
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/blog" className="footer-link">
             Blog
           </Link>

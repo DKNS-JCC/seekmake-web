@@ -111,6 +111,7 @@
   color: #991b1b;
 }
 
+.contacto-aside h2,
 .contacto-aside h3 {
   font-family: var(--font-display), sans-serif;
   font-size: 20px;

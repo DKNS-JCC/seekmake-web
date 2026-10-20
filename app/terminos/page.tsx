@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description:
     'Términos y condiciones del servicio de impresión 3D de 3DCC Salamanca.',
   robots: { index: false, follow: true },
-  alternates: { canonical: siteUrl('/terminos') }
+  alternates: { canonical: siteUrl('/terminos/') }
 };
 
 export default function TerminosPage() {
@@ -17,7 +17,7 @@ export default function TerminosPage() {
       <nav id="navbar">
         <div className="nav-inner">
           <Link href="/" className="nav-logo">
-            <img src="/icons/android-chrome-192x192.png" alt="3DCC Logo" width={192} height={192} />
+            <img src="/icons/android-chrome-192x192.png" alt="" width={192} height={192} />
             <div>
               <span className="nav-logo-name">3DCC</span>
               <span className="nav-logo-sub">Impresión 3D</span>
@@ -42,7 +42,7 @@ export default function TerminosPage() {
               letterSpacing: '0.1em'
             }}
           >
-            Última actualización: 14 de junio de 2026
+            Última actualización: 20 de octubre de 2026
           </p>
 
           <div className="terms-card">
@@ -197,7 +197,7 @@ export default function TerminosPage() {
 
             <h2>8. Calidad y características técnicas</h2>
             <p>
-              Las impresiones se realizan con tecnología FDM/FFF y/o resina
+              Las impresiones se realizan con tecnología FDM/FFF
               mediante equipos domésticos o semi-profesionales. El cliente
               reconoce y acepta que las piezas pueden presentar
               características inherentes a estas tecnologías, en particular:
@@ -206,8 +206,7 @@ export default function TerminosPage() {
               <li>líneas de capa visibles propias del proceso aditivo,</li>
               <li>pequeñas imperfecciones superficiales,</li>
               <li>
-                variaciones leves de tonalidad entre lotes de filamento o
-                resina,
+                variaciones leves de tonalidad entre lotes de filamento,
               </li>
               <li>
                 necesidad de post-procesado (lijado, imprimación, pintura)
@@ -345,13 +344,7 @@ export default function TerminosPage() {
                 pago, en la medida estrictamente necesaria. El sitio se apoya
                 además en <strong>Supabase</strong> como proveedor de
                 alojamiento de la base de datos, que actúa como encargado del
-                tratamiento. Con carácter independiente, el sitio utiliza{' '}
-                <strong>Google AdSense</strong> con fines publicitarios, cuyas
-                cookies únicamente se activan si las aceptas en el banner de
-                cookies; en ese caso Google puede tratar datos de navegación y
-                realizar transferencias internacionales amparadas en las
-                Cláusulas Contractuales Tipo y en el marco EU-US Data Privacy
-                Framework. El detalle de estos servicios figura en la{' '}
+                tratamiento. El detalle de estos servicios figura en la{' '}
                 <Link href="/privacidad">Política de Privacidad</Link>.
               </li>
               <li>
@@ -387,15 +380,6 @@ export default function TerminosPage() {
               calcular el presupuesto y gestionar el pedido, y se alojan en{' '}
               <strong>Supabase</strong>, que actúa como encargado del
               tratamiento por cuenta del titular.
-            </p>
-            <p>
-              El sitio utiliza además <strong>Google AdSense</strong> para
-              mostrar publicidad. Las cookies publicitarias solo se cargan si
-              las aceptas en el banner de cookies; puedes rechazarlas o retirar
-              tu consentimiento en cualquier momento. El tratamiento de datos
-              por parte de Google, incluidas las posibles transferencias
-              internacionales, se detalla en la{' '}
-              <Link href="/privacidad">Política de Privacidad</Link>.
             </p>
 
             <h2>14. Modificación de los Términos</h2>

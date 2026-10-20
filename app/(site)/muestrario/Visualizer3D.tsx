@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type { Color, Filamento } from '@/lib/types';
+import { acabadoLabel, type Color, type Filamento } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import {
   acabadoMaterialProps,
@@ -409,7 +409,7 @@ export function Visualizer3D({
                 <div className="viz-selected-name">{selected.color.nombre}</div>
                 <div className="viz-selected-mat">
                   {selected.filamento.material}
-                  {selected.color.acabado && ' · ' + selected.color.acabado}
+                  {selected.color.acabado && ' · ' + acabadoLabel(selected.color.acabado)}
                   {selected.color.agotado && ' · Agotado'}
                 </div>
               </div>

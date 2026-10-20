@@ -51,7 +51,7 @@ trabajos:
   - titulo: "Lámpara de Diseño"
     descripcion: "Iluminación ambiental paramétrica"
     imagen: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800"
-    material: "PLA Translucido"
+    material: "PLA Translúcido"
     etiquetas: ["iluminacion", "lampara", "diseño"]
     destacado: true
     orden: 8

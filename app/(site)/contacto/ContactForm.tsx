@@ -7,7 +7,6 @@ import {
   useRef,
   useState
 } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { ESCRIBENOS } from '@/lib/contacto';
 
 type Status =
@@ -128,6 +127,8 @@ export function ContactForm() {
       prev.map((a) => (a.id === att.id ? { ...a, status: 'uploading' } : a))
     );
 
+    // Loaded on demand: keeps the Supabase client out of the home page bundle.
+    const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
     const path = randomPath(att.file.name);
     const { error: upErr } = await supabase.storage
@@ -195,6 +196,8 @@ export function ContactForm() {
       .map((a) => ({ nombre: a.file.name, url: a.url!, tamano: a.file.size }));
 
     try {
+      // Loaded on demand: keeps the Supabase client out of the home page bundle.
+      const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
       const { data, error } = await supabase.functions.invoke(
         'send-contact-email',

@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { CookieBanner } from '@/components/CookieBanner';
 import { BackToTop } from '@/components/BackToTop';
 import { WhatsAppFAB } from '@/components/WhatsAppFAB';
 import { CONTACTO, siteUrl } from '@/lib/contacto';
@@ -14,7 +13,7 @@ const jsonLd = {
       '@id': siteUrl('/#business'),
       name: '3DCC Salamanca — Impresión 3D',
       description:
-        'Servicio de impresión 3D en Salamanca. Piezas a medida, prototipos y figuras. Envíos a toda España.',
+        'Taller de impresión 3D en Salamanca. Regalos personalizados, repuestos y piezas técnicas a medida. Recogida en mano en Salamanca y envíos a toda España.',
       url: CONTACTO.sitio,
       telephone: CONTACTO.telefonoTel,
       email: CONTACTO.email,
@@ -30,10 +29,15 @@ const jsonLd = {
         latitude: 40.9701,
         longitude: -5.6635,
       },
-      areaServed: { '@type': 'Country', name: 'España' },
-      priceRange: '€€',
-      image: siteUrl('/images/main_banner.png'),
-      sameAs: [],
+      areaServed: [
+        { '@type': 'City', name: 'Salamanca' },
+        { '@type': 'AdministrativeArea', name: 'Provincia de Salamanca' },
+        { '@type': 'Country', name: 'España' },
+      ],
+      priceRange: '€',
+      image: siteUrl('/images/og.jpg'),
+      hasMap: CONTACTO.googleMaps,
+      sameAs: [CONTACTO.instagram, CONTACTO.googleMaps],
     },
     {
       '@type': 'Service',
@@ -48,7 +52,7 @@ const jsonLd = {
         '@type': 'Offer',
         priceCurrency: 'EUR',
         availability: 'https://schema.org/InStock',
-        url: siteUrl('/instant-quote'),
+        url: siteUrl('/instant-quote/'),
       },
     },
   ],
@@ -69,7 +73,6 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
       <Navigation />
       {children}
       <Footer />
-      <CookieBanner />
       <BackToTop />
       <WhatsAppFAB />
     </>

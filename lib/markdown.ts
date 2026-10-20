@@ -12,16 +12,4 @@ export function renderMarkdown(md: string): string {
   return marked.parse(md, { async: false }) as string;
 }
 
-/**
- * Generate a URL-safe slug from a title. Lowercases, strips diacritics,
- * collapses non-alphanumerics into single dashes.
- */
-export function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-+)|(-+$)/g, '')
-    .slice(0, 96);
-}
+export { slugify } from './slug';

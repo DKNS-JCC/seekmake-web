@@ -10,6 +10,9 @@ export type Acabado =
   | 'Mate'
   | 'Flexible';
 
+// The DB enum value lacks the accent; show the correct Spanish spelling.
+export const acabadoLabel = (a: string) => (a === 'Translucido' ? 'Translúcido' : a);
+
 export type Categoria = string;
 
 export type { MuestraTipo } from './color-preview';

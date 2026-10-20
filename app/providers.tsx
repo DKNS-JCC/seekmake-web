@@ -22,8 +22,6 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'));
-    // AdSense ya no se inyecta aquí: se carga solo tras el consentimiento
-    // del usuario en <CookieConsent /> (LSSI art. 22.2 + RGPD).
   }, []);
 
   const setDark = useCallback((value: boolean) => {

@@ -1,16 +1,36 @@
+import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
+import type { Database } from '@/lib/types';
+import { buildSafe } from '@/lib/supabase/buildSafe';
 import { BlogList } from './BlogList';
 import './blog.css';
 import { siteUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
-  title: 'Blog | 3DCC Salamanca',
+  title: 'Blog de impresión 3D en Salamanca | 3DCC',
   description:
     'Artículos sobre impresión 3D: materiales, técnicas, casos de uso y novedades de 3DCC Salamanca.',
-  alternates: { canonical: siteUrl('/blog') }
+  alternates: { canonical: siteUrl('/blog/') }
 };
 
-export default function BlogPage() {
+async function loadPosts() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+  return buildSafe(async () => {
+    const supabase = createClient<Database>(url, key);
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('published', true)
+      .order('published_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  }, []);
+}
+
+export default async function BlogPage() {
+  const posts = await loadPosts();
   return (
     <main className="blog-page">
       <header className="blog-hero">
@@ -21,7 +41,7 @@ export default function BlogPage() {
           innecesarios.
         </p>
       </header>
-      <BlogList />
+      <BlogList posts={posts} />
     </main>
   );
 }

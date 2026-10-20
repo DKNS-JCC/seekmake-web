@@ -4,15 +4,15 @@ import './impresoras.css';
 import { siteUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
-  title: 'Sobre nuestras impresoras - 3DCC Salamanca | Impresión 3D',
+  title: 'Nuestras impresoras 3D en Salamanca | 3DCC',
   description:
     'Conoce al equipo detrás de 3DCC Salamanca. Nuestras impresoras 3D trabajan sin descanso para convertir tus ideas en piezas reales con precisión profesional.',
-  alternates: { canonical: siteUrl('/impresoras') },
+  alternates: { canonical: siteUrl('/impresoras/') },
   openGraph: {
-    title: 'Sobre nuestras impresoras - 3DCC Salamanca',
+    title: 'Nuestras impresoras 3D en Salamanca | 3DCC',
     description:
       'Conoce al equipo de impresoras 3D de 3DCC Salamanca. Tecnología de precisión al servicio de tus ideas.',
-    images: ['/images/main_banner.png'],
+    images: ['/images/og.jpg'],
     locale: 'es_ES'
   }
 };
@@ -135,7 +135,7 @@ export default function ImpresorasPage() {
           </h1>
           <div className="slogan">Capa a capa, idea a realidad</div>
           <p className="about-intro-block">
-            Aquí no hay oficinas ni cubículos — solo{' '}
+            Aquí no hay oficinas ni cubículos: solo{' '}
             <strong>máquinas de precisión</strong> trabajando sin descanso.
             Nuestro taller en Salamanca combina velocidad y detalle para
             convertir cualquier archivo en una pieza real. Cada impresora

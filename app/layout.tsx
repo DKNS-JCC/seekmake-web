@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import { Bebas_Neue, Barlow, IBM_Plex_Mono } from 'next/font/google';
 import { Providers } from './providers';
-import { CookieConsent } from '../components/CookieConsent';
 import './globals.css';
 import { CONTACTO, siteUrl } from '@/lib/contacto';
 
@@ -43,12 +42,18 @@ const fontVariables = `${barlow.variable} ${bebasNeue.variable} ${ibmPlexMono.va
 // Default metadata — pages override what they need.
 export const metadata: Metadata = {
   metadataBase: new URL(CONTACTO.sitio),
-  title: '3DCC Salamanca | Impresión 3D',
+  title: 'Impresión 3D en Salamanca y envío a toda España | 3DCC',
   description:
-    'Servicio de impresión 3D en Salamanca. Diseño, prototipado y figuras a medida. Calculadora de precio online y envío nacional.',
+    'Taller de impresión 3D en Salamanca. Regalos personalizados, repuestos y piezas técnicas en PLA, PETG o TPU. Precio al instante, recogida en mano en Salamanca y envío a toda España.',
   authors: [{ name: '3DCC Salamanca' }],
-  keywords: ['impresión 3D', 'Salamanca', 'prototipado', '3D printing', 'PLA', 'PETG'],
   alternates: { canonical: siteUrl('/') },
+  // Pages without their own openGraph inherit this, so every shared link gets a preview image.
+  openGraph: {
+    type: 'website',
+    siteName: CONTACTO.nombre,
+    locale: 'es_ES',
+    images: ['/images/og.jpg']
+  },
   icons: {
     icon: [
       { url: '/icons/favicon.ico' },
@@ -88,7 +93,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <Providers>{children}</Providers>
-        <CookieConsent />
       </body>
     </html>
   );

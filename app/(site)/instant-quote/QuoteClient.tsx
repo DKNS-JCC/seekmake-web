@@ -24,7 +24,7 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { createClient } from '@/lib/supabase/client';
-import type { Color, Filamento, QuoteEntrega } from '@/lib/types';
+import { acabadoLabel, type Color, type Filamento, type QuoteEntrega } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import { useCatalogoColores } from '@/lib/useCatalogoColores';
 import {
@@ -1164,7 +1164,7 @@ export function QuoteClient({
                         disabled={c.agotado}
                         title={
                           c.nombre +
-                          (c.acabado ? ` · ${c.acabado}` : '') +
+                          (c.acabado ? ` · ${acabadoLabel(c.acabado)}` : '') +
                           (c.agotado ? ' · Agotado' : '')
                         }
                         onClick={() => pickColor(c)}

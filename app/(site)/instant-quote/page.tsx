@@ -2,12 +2,14 @@ import { createClient as createServerClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import type { Database } from '@/lib/types';
 import { buildSafe } from '@/lib/supabase/buildSafe';
+import { siteUrl } from '@/lib/contacto';
 import { QuoteClient } from './QuoteClient';
 
 export const metadata: Metadata = {
-  title: 'Calculadora de Precio | 3DCC Salamanca',
+  title: 'Presupuesto de impresión 3D online al instante: sube tu STL | 3DCC',
   description:
-    'Sube tu pieza 3D (STL, 3MF, OBJ) y obtén el precio al instante. Elige material, color y acabado del muestrario real.'
+    'Sube tu pieza 3D (STL, 3MF, OBJ) y obtén el precio al instante. Elige material, color y acabado del muestrario real.',
+  alternates: { canonical: siteUrl('/instant-quote/') }
 };
 
 // Static-export: filamentos/colores are fetched at build time (same model as

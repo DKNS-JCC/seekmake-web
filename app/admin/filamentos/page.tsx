@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { Acabado, Color, Filamento } from '@/lib/types';
+import { acabadoLabel, type Acabado, type Color, type Filamento } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { ColorEditor } from '../_components/ColorEditor';
@@ -278,7 +278,10 @@ export default function AdminFilamentos() {
               >
                 <div className="filamento-pill-name">{f.material}</div>
                 <div className="filamento-pill-meta">
-                  {colores.filter((c) => c.filamento_id === f.id).length} colores
+                  {colores.filter((c) => c.filamento_id === f.id).length}{' '}
+                  {colores.filter((c) => c.filamento_id === f.id).length === 1
+                    ? 'color'
+                    : 'colores'}
                 </div>
               </button>
             ))}
@@ -395,7 +398,7 @@ export default function AdminFilamentos() {
                           )}
                         </div>
                         {c.acabado && (
-                          <span className="color-acabado">{c.acabado}</span>
+                          <span className="color-acabado">{acabadoLabel(c.acabado)}</span>
                         )}
                       </div>
                       <div className="color-info">
@@ -553,7 +556,7 @@ export default function AdminFilamentos() {
                   <option value="">— Sin acabado —</option>
                   {ACABADOS.map((a) => (
                     <option key={a} value={a}>
-                      {a}
+                      {acabadoLabel(a)}
                     </option>
                   ))}
                 </select>

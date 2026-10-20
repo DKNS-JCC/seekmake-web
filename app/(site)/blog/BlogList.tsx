@@ -1,33 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import type { BlogPost } from '@/lib/types';
 
-// Fetch published posts client-side so new posts appear without rebuilding.
-export function BlogList() {
-  const [posts, setPosts] = useState<BlogPost[] | null>(null);
-
-  useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!url) {
-      setPosts([]);
-      return;
-    }
-    const supabase = createClient();
-    supabase
-      .from('blog_posts')
-      .select('*')
-      .eq('published', true)
-      .order('published_at', { ascending: false })
-      .then(({ data }) => setPosts(data ?? []));
-  }, []);
-
-  if (posts === null) {
-    return <div className="blog-loading">Cargando…</div>;
-  }
-
+// Posts are fetched at build time in page.tsx (admin rebuild publishes new ones).
+export function BlogList({ posts }: { posts: BlogPost[] }) {
   if (posts.length === 0) {
     return (
       <div className="blog-empty">

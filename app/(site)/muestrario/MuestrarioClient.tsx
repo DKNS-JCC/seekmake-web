@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import type { Acabado, Color, Filamento } from '@/lib/types';
+import { acabadoLabel, type Acabado, type Color, type Filamento } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import { useCatalogoColores } from '@/lib/useCatalogoColores';
 import './muestrario.css';
@@ -548,7 +548,7 @@ export function MuestrarioClient({
                   <h2 className="mu-section-name">{f.nombre}</h2>
                   <span className="mu-section-desc">{f.descripcion}</span>
                   <span className="mu-section-count">
-                    {items.length} colores
+                    {items.length} {items.length === 1 ? 'color' : 'colores'}
                   </span>
                 </div>
 
@@ -597,7 +597,7 @@ export function MuestrarioClient({
                             <div className="mu-swatch-agotado">AGOTADO</div>
                           )}
                           {c.acabado && (
-                            <span className="mu-swatch-acabado">{c.acabado}</span>
+                            <span className="mu-swatch-acabado">{acabadoLabel(c.acabado)}</span>
                           )}
                         </div>
                         <div className="mu-color-info">
@@ -783,7 +783,7 @@ function ColorModal({
             </svg>
           </button>
           {color.acabado && (
-            <span className="mu-modal-acabado-badge">{color.acabado}</span>
+            <span className="mu-modal-acabado-badge">{acabadoLabel(color.acabado)}</span>
           )}
           {color.agotado && <div className="mu-swatch-agotado">AGOTADO</div>}
         </div>

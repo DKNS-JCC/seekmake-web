@@ -4,10 +4,10 @@ import './contacto.css';
 import { CONTACTO, mailtoUrl, siteUrl, whatsappUrl } from '@/lib/contacto';
 
 export const metadata: Metadata = {
-  title: 'Contacto | 3DCC Salamanca',
+  title: 'Contacto: impresión 3D en Salamanca | 3DCC',
   description:
-    'Contacta con 3DCC Salamanca: presupuestos personalizados, consultas y soporte sobre impresión 3D.',
-  alternates: { canonical: siteUrl('/contacto') }
+    'Contacta con 3DCC, taller de impresión 3D en Salamanca. Presupuestos por WhatsApp o email, recogida en mano en Salamanca y envíos a toda España.',
+  alternates: { canonical: siteUrl('/contacto/') }
 };
 
 const WA_LINK =
@@ -34,7 +34,7 @@ export default function ContactoPage() {
 
         {/* ── Direct channels ──────────────────── */}
         <aside className="contacto-aside">
-          <h3>Canales directos</h3>
+          <h2>Canales directos</h2>
 
           <div className="contacto-aside-item">
             <div className="contacto-aside-label">WhatsApp / Llamadas</div>

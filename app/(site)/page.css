@@ -117,32 +117,11 @@
     .portfolio-sub { font-size: 10px; }
 }
 
-#resenas { padding: 112px 0; }
-.reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.review-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 28px; position: relative; transition: border-color 0.3s; }
-.review-card:hover { border-color: var(--border-h); }
-.review-stars { display: flex; gap: 2px; margin-bottom: 16px; color: #FBBF24; }
-.review-text { font-size: 14px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; font-style: italic; }
-.review-author { display: flex; align-items: center; gap: 12px; }
-.review-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-display), sans-serif; font-size: 16px; flex-shrink: 0; }
-.review-name { font-weight: 600; font-size: 14px; color: var(--text); }
-.review-source { font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
-.reviews-footer { margin-top: 32px; text-align: center; }
-.reviews-google-link { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
-.reviews-google-link:hover { opacity: 0.7; }
-.review-card:nth-child(1).fade-up { transition-delay: 0.05s; } .review-card:nth-child(2).fade-up { transition-delay: 0.15s; } .review-card:nth-child(3).fade-up { transition-delay: 0.25s; }
-@media (max-width: 768px) {
-    #resenas { padding: 48px 0; }
-    .reviews-grid { grid-template-columns: 1fr; gap: 14px; }
-    .review-card { padding: 20px; }
-    .review-text { font-size: 13px; }
-}
 #presupuesto { padding: 112px 0; background: var(--accent); position: relative; overflow: hidden; }
 #presupuesto::after { content: '3DCC'; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); font-family: var(--font-display), sans-serif; font-size: 280px; line-height: 1; color: rgba(255,255,255,0.06); pointer-events: none; }
 #presupuesto .section-tag { color: rgba(255,255,255,0.65); } #presupuesto .section-tag::before { background: rgba(255,255,255,0.65); }
 #presupuesto .section-title { color: #fff; } #presupuesto .section-desc { color: rgba(255,255,255,0.78); }
 @media (max-width: 768px) {
-    #resenas { padding: 48px 0; }
     #presupuesto { padding: 56px 0; }
     #presupuesto::after { font-size: 120px; right: -10px; }
 }

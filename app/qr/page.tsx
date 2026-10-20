@@ -49,7 +49,7 @@ export default function QrPage() {
           <section className="qr-profile qr-fade">
             <img
               src="/icons/android-chrome-512x512.png"
-              alt="3DCC Logo"
+              alt="Logotipo de 3DCC, taller de impresión 3D en Salamanca"
               className="qr-avatar"
               width={512}
               height={512}
@@ -155,7 +155,7 @@ export default function QrPage() {
           <div className="qr-label qr-fade">Contacto</div>
           <div className="qr-links">
             <a
-              href="https://www.instagram.com/impresion3dcc/"
+              href={CONTACTO.instagram}
               target="_blank"
               rel="noopener noreferrer"
               className="qr-link qr-fade"
@@ -252,7 +252,7 @@ export default function QrPage() {
             <div className="qr-gallery-item">
               <img
                 src="/images/examples/corporativa.jpg"
-                alt="Productos corporativos"
+                alt="Productos corporativos personalizados impresos en 3D"
                 loading="lazy"
                 decoding="async"
                 width={2784}
@@ -262,7 +262,7 @@ export default function QrPage() {
             <div className="qr-gallery-item">
               <img
                 src="/images/examples/Decoracion.jpeg"
-                alt="Decoración 3D"
+                alt="Pieza decorativa impresa en 3D"
                 loading="lazy"
                 decoding="async"
                 width={2160}
@@ -272,7 +272,7 @@ export default function QrPage() {
             <div className="qr-gallery-item">
               <img
                 src="/images/examples/repuesto.png"
-                alt="Repuestos 3D"
+                alt="Pieza de repuesto fabricada con impresión 3D"
                 loading="lazy"
                 decoding="async"
                 width={1059}

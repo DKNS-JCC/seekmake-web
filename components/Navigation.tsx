@@ -18,6 +18,7 @@ const ITEMS: NavItem[] = [
   { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
   { href: '/muestrario', label: 'Muestrario' },
   { href: '/catalogo',   label: 'Catálogo' },
+  { href: '/servicios',  label: 'Servicios' },
   { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true },
   { href: '/impresoras', label: 'Impresoras' },
   { href: '/#contacto',  label: 'Contacto',   isHomeAnchor: true }
@@ -46,7 +47,7 @@ export function Navigation() {
     <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
       <div className="nav-inner">
         <Link href="/#inicio" className="nav-logo">
-          <img src="/icons/android-chrome-192x192.png" alt="3DCC Logo" />
+          <img src="/icons/android-chrome-192x192.png" alt="" width={192} height={192} />
           <div>
             <span className="nav-logo-name">3DCC</span>
             <span className="nav-logo-sub">Impresión 3D</span>

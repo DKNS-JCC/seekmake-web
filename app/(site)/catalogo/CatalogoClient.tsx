@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import type { Producto } from '@/lib/types';
 import './catalogo.css';
 import { activable } from '@/lib/a11y';
+import { whatsappUrl } from '@/lib/contacto';
+import { productoSlug } from '@/lib/slug';
 
 type SortKey = 'destacado' | 'precio-asc' | 'precio-desc' | 'nombre';
 type ViewMode = 'grid' | 'list';
@@ -366,7 +368,16 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
                 </div>
                 <div className="p-card-body">
                   <div className="p-card-category">{p.categoria}</div>
-                  <h3 className="p-card-name">{p.nombre}</h3>
+                  <h3 className="p-card-name">
+                    {/* Real link so crawlers reach the product page; the card itself opens the modal. */}
+                    <a
+                      href={`/catalogo/${productoSlug(p)}/`}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                    >
+                      {p.nombre}
+                    </a>
+                  </h3>
                   <p className="p-card-desc">{p.descripcion}</p>
                   <div className="p-card-footer">
                     <span className="p-card-price">
@@ -477,89 +488,107 @@ function ProductModal({
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
         </button>
-        <div className="cat-modal-image">
-          {active.imagen ? (
-            <img src={active.imagen} alt={active.nombre} loading="lazy" decoding="async" />
-          ) : (
+        <ProductDetail p={active} />
+      </div>
+    </div>
+  );
+}
+
+/** Image + specs + actions, shared by the catalog modal and /catalogo/[slug]/. */
+export function ProductDetail({ p, titleAs: Title = 'h3' }: { p: Producto; titleAs?: 'h1' | 'h3' }) {
+  return (
+    <>
+      <div className="cat-modal-image">
+        {p.imagen ? (
+          <img src={p.imagen} alt={`${p.nombre}, ${p.categoria.toLowerCase()} impreso en 3D`} loading="lazy" decoding="async" />
+        ) : (
+          <svg
+            width="48"
+            height="48"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1}
+            style={{ color: 'var(--muted)', opacity: 0.3 }}
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="m21 15-5-5L5 21" />
+          </svg>
+        )}
+      </div>
+      <div className="cat-modal-body">
+        <div className="cat-modal-tag">{p.categoria}</div>
+        <Title className="cat-modal-title">{p.nombre}</Title>
+        <p className="cat-modal-desc">{p.descripcion}</p>
+
+        <div className="cat-modal-specs">
+          <div className="cat-modal-spec">
+            <div className="cat-modal-spec-label">Precio</div>
+            <div className="cat-modal-spec-value price-val">
+              {p.precio.toFixed(2)}€
+            </div>
+          </div>
+          <div className="cat-modal-spec">
+            <div className="cat-modal-spec-label">Material</div>
+            <div className="cat-modal-spec-value">{p.material}</div>
+          </div>
+          <div className="cat-modal-spec">
+            <div className="cat-modal-spec-label">Colores</div>
+            <div className="cat-modal-spec-value">
+              {p.colores.length > 0
+                ? p.colores.join(', ')
+                : 'Consultar'}
+            </div>
+          </div>
+          <div className="cat-modal-spec">
+            <div className="cat-modal-spec-label">Dimensiones</div>
+            <div className="cat-modal-spec-value">
+              {p.dimensiones || '—'}
+            </div>
+          </div>
+          <div className="cat-modal-spec" style={{ gridColumn: '1 / -1' }}>
+            <div className="cat-modal-spec-label">Peso aproximado</div>
+            <div className="cat-modal-spec-value">{p.peso || '—'}</div>
+          </div>
+        </div>
+
+        <div className="cat-modal-actions">
+          <Link
+            href="/#contacto"
+            className="btn-primary"
+            style={{ flex: 1, justifyContent: 'center' }}
+          >
+            Solicitar
             <svg
-              width="48"
-              height="48"
+              width="14"
+              height="14"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              strokeWidth={1}
-              style={{ color: 'var(--muted)', opacity: 0.3 }}
+              strokeWidth={2}
             >
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="m21 15-5-5L5 21" />
+              <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          )}
-        </div>
-        <div className="cat-modal-body">
-          <div className="cat-modal-tag">{active.categoria}</div>
-          <h3 className="cat-modal-title">{active.nombre}</h3>
-          <p className="cat-modal-desc">{active.descripcion}</p>
-
-          <div className="cat-modal-specs">
-            <div className="cat-modal-spec">
-              <div className="cat-modal-spec-label">Precio</div>
-              <div className="cat-modal-spec-value price-val">
-                {active.precio.toFixed(2)}€
-              </div>
-            </div>
-            <div className="cat-modal-spec">
-              <div className="cat-modal-spec-label">Material</div>
-              <div className="cat-modal-spec-value">{active.material}</div>
-            </div>
-            <div className="cat-modal-spec">
-              <div className="cat-modal-spec-label">Colores</div>
-              <div className="cat-modal-spec-value">
-                {active.colores.length > 0
-                  ? active.colores.join(', ')
-                  : 'Consultar'}
-              </div>
-            </div>
-            <div className="cat-modal-spec">
-              <div className="cat-modal-spec-label">Dimensiones</div>
-              <div className="cat-modal-spec-value">
-                {active.dimensiones || '—'}
-              </div>
-            </div>
-            <div className="cat-modal-spec" style={{ gridColumn: '1 / -1' }}>
-              <div className="cat-modal-spec-label">Peso aproximado</div>
-              <div className="cat-modal-spec-value">{active.peso || '—'}</div>
-            </div>
-          </div>
-
-          <div className="cat-modal-actions">
-            <Link
-              href="/#contacto"
-              className="btn-primary"
-              style={{ flex: 1, justifyContent: 'center' }}
-            >
-              Solicitar
-              <svg
-                width="14"
-                height="14"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-            <Link
-              href="/muestrario"
-              className="btn-outline"
-              style={{ flex: 1, justifyContent: 'center' }}
-            >
-              Ver Colores
-            </Link>
-          </div>
+          </Link>
+          <a
+            href={whatsappUrl(`Hola, me interesa: ${p.nombre}`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-outline"
+            style={{ flex: 1, justifyContent: 'center' }}
+          >
+            Pedir por WhatsApp
+          </a>
+          <Link
+            href="/muestrario"
+            className="btn-outline"
+            style={{ flex: 1, justifyContent: 'center' }}
+          >
+            Ver Colores
+          </Link>
         </div>
       </div>
-    </div>
+    </>
   );
 }
