@@ -15,7 +15,8 @@ export async function buildSafe<T>(
     try {
       return await fn();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      // Supabase lanza PostgrestError (objeto plano, no Error): String(e) daría [object Object].
+      const msg = (e as { message?: string })?.message ?? String(e);
       console.warn(`[build] fetch falló (intento ${i + 1}/${tries}): ${msg}`);
       if (i < tries - 1) await new Promise((r) => setTimeout(r, 500 * (i + 1)));
     }

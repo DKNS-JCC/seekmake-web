@@ -4,6 +4,8 @@
 // in the browser. If we later need SSR (e.g. for protected admin server actions),
 // remove the `output: 'export'` line and deploy to Vercel.
 const nextConfig = {
+  // Hay otro package-lock.json en ~/Desktop: fija la raíz para que Next no la infiera mal.
+  turbopack: { root: import.meta.dirname },
   output: 'export',
   trailingSlash: true,
   images: {
