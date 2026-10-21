@@ -26,6 +26,14 @@ export function Footer() {
             Blog
           </Link>
           <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/servicios" className="footer-link">
+            Servicios
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/impresoras" className="footer-link">
+            Impresoras
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/terminos" className="footer-link">
             Términos y Condiciones
           </Link>

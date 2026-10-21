@@ -14,13 +14,11 @@ interface NavItem {
   isHomeAnchor?: boolean;
 }
 
+// Inicio lo cubre el logo; Servicios e Impresoras viven en el Footer.
 const ITEMS: NavItem[] = [
-  { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
-  { href: '/muestrario', label: 'Muestrario' },
   { href: '/catalogo',   label: 'Catálogo' },
-  { href: '/servicios',  label: 'Servicios' },
+  { href: '/muestrario', label: 'Muestrario' },
   { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true },
-  { href: '/impresoras', label: 'Impresoras' },
   { href: '/#contacto',  label: 'Contacto',   isHomeAnchor: true }
 ];
 
