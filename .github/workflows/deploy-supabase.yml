@@ -64,7 +64,8 @@ jobs:
             if echo "$cambiadas" | grep -qx '_shared'; then
               funciones=$(ls -d supabase/functions/*/ | xargs -n1 basename | grep -v '^_' | tr '\n' ' ')
             else
-              funciones=$(echo "$cambiadas" | grep -v '^_' | grep -v '\.json$' | tr '\n' ' ')
+              # xargs, not tr: with no changes echo leaves a lone "\n" that tr turns into " " (non-empty).
+              funciones=$(echo "$cambiadas" | grep -v '^_' | grep -v '\.json$' | xargs)
             fi
           fi
           echo "migraciones=$migraciones" >> "$GITHUB_OUTPUT"
