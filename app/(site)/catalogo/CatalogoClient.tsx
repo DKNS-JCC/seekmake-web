@@ -106,8 +106,6 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
     <>
       {/* Hero */}
       <section className="cat-hero">
-        <div className="cat-hero-bg" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.1), rgba(0,0,0,0.8))' }}>
-        </div>
         <div className="cat-hero-content">
           <div className="cat-hero-tag">Catálogo 3DCC</div>
           <h1>
@@ -383,7 +381,7 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
                     <span className="p-card-price">
                       {Math.floor(p.precio)}
                       <span className="eur">
-                        .{((p.precio % 1) * 100).toString().padStart(2, '0')}€
+                        ,{p.precio.toFixed(2).slice(-2)} €
                       </span>
                     </span>
                     <button
@@ -526,7 +524,7 @@ export function ProductDetail({ p, titleAs: Title = 'h3' }: { p: Producto; title
           <div className="cat-modal-spec">
             <div className="cat-modal-spec-label">Precio</div>
             <div className="cat-modal-spec-value price-val">
-              {p.precio.toFixed(2)}€
+              {p.precio.toFixed(2).replace('.', ',')} €
             </div>
           </div>
           <div className="cat-modal-spec">

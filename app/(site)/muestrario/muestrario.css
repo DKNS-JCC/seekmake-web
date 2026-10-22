@@ -16,7 +16,7 @@
     line-height: 1.7;
 }
 .mu-hero-tip {
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-block;
     padding: 8px 16px;
     background: var(--surface);
     border: 1px solid var(--border);

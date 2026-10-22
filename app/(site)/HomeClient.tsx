@@ -26,6 +26,9 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
   useFadeUp();
   const [copos, setCopos] = useState<HTMLImageElement[]>();
   useEffect(() => {
+    // Solo de diciembre a febrero, y nunca con movimiento reducido.
+    if (![11, 0, 1].includes(new Date().getMonth())) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const img = new Image();
     img.src = COPO_SVG;
     img.onload = () => setCopos([img]);

@@ -1,6 +1,15 @@
 .servicio-list { margin: 8px 0 24px 22px; color: var(--muted); font-size: 16px; line-height: 1.8; }
 .servicio-list li { margin-bottom: 8px; }
+ul.servicio-list { list-style: disc; }
+ol.servicio-list { list-style: decimal; }
+.servicio-list li::marker { color: var(--accent); }
 .servicio-list strong { color: var(--text); }
 .servicio-faq { margin: 8px 0 24px; }
 .servicio-faq h3 { font-size: 17px; color: var(--text); margin: 24px 0 8px; }
 a.value-card { display: block; color: inherit; text-decoration: none; }
+
+/* La rejilla es de 3 columnas: la última tarjeta ocupa el hueco que sobre. */
+@media (min-width: 901px) {
+  .values-grid > .value-card:last-child:nth-child(3n + 2) { grid-column: span 2; }
+  .values-grid > .value-card:last-child:nth-child(3n + 1) { grid-column: span 3; }
+}
