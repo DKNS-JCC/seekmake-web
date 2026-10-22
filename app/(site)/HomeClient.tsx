@@ -26,8 +26,10 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
   useFadeUp();
   const [copos, setCopos] = useState<HTMLImageElement[]>();
   useEffect(() => {
-    // Solo de diciembre a febrero, y nunca con movimiento reducido.
-    if (![11, 0, 1].includes(new Date().getMonth())) return;
+    // Solo del 15 de octubre al 7 de enero, y nunca con movimiento reducido.
+    const hoy = new Date();
+    const mmdd = (hoy.getMonth() + 1) * 100 + hoy.getDate();
+    if (mmdd < 1015 && mmdd > 107) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const img = new Image();
     img.src = COPO_SVG;
