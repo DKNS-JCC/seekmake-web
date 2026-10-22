@@ -14,8 +14,9 @@ interface NavItem {
   isHomeAnchor?: boolean;
 }
 
-// Inicio lo cubre el logo; Servicios e Impresoras viven en el Footer.
+// Servicios e Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
 const ITEMS: NavItem[] = [
+  { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
   { href: '/catalogo',   label: 'Catálogo' },
   { href: '/muestrario', label: 'Muestrario' },
   { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true },
@@ -44,7 +45,7 @@ export function Navigation() {
   return (
     <nav id="navbar" className={scrolled ? 'scrolled' : ''}>
       <div className="nav-inner">
-        <Link href="/#inicio" className="nav-logo">
+        <Link href="/#inicio" className="nav-logo" aria-label="3DCC, ir al inicio" title="Ir al inicio">
           <img src="/icons/android-chrome-192x192.png" alt="" width={192} height={192} />
           <div>
             <span className="nav-logo-name">3DCC</span>
@@ -61,7 +62,7 @@ export function Navigation() {
                   'nav-link' +
                   // Static active state for top-level routes.
                   (!item.isHomeAnchor &&
-                  pathname === item.href.replace(/^\/#?/, '/').replace(/\/$/, '')
+                  pathname.replace(/\/$/, '') === item.href
                     ? ' active'
                     : '')
                 }
@@ -79,8 +80,8 @@ export function Navigation() {
             >
               {isDark ? (
                 <svg
-                  width="14"
-                  height="14"
+                  width="18"
+                  height="18"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -91,8 +92,8 @@ export function Navigation() {
                 </svg>
               ) : (
                 <svg
-                  width="14"
-                  height="14"
+                  width="18"
+                  height="18"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
