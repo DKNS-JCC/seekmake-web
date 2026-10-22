@@ -126,7 +126,7 @@ Deno.serve(async (req: Request) => {
   try {
     body = await req.json();
   } catch (err) {
-    return json({ error: 'Invalid JSON: ' + String(err) }, 400, allowedOrigin);
+    return json({ error: 'Solicitud no válida.' }, 400, allowedOrigin);
   }
 
   const nombre   = String(body?.nombre   ?? '').trim();
@@ -163,10 +163,11 @@ Deno.serve(async (req: Request) => {
     // Bot filled the honeypot field. Pretend it worked.
     return json({ ok: true }, 200, allowedOrigin);
   }
-  if (!nombre || nombre.length < 2)         return json({ error: 'Nombre requerido (min 2). Value: ' + nombre },         400, allowedOrigin);
-  if (!isValidEmail(email))                 return json({ error: 'Email inválido: ' + email },           400, allowedOrigin);
-  if (!mensaje || mensaje.length < 10)      return json({ error: 'Mensaje demasiado corto (min 10). Length: ' + mensaje.length },  400, allowedOrigin);
-  if (mensaje.length > 5000)                return json({ error: 'Mensaje demasiado largo (max 5000). Length: ' + mensaje.length },  400, allowedOrigin);
+  if (nombre.length < 2 || nombre.length > 120) return json({ error: 'Escribe tu nombre (2 a 120 caracteres).' }, 400, allowedOrigin);
+  if (email.length > 254 || !isValidEmail(email)) return json({ error: 'El email no es válido.' }, 400, allowedOrigin);
+  if (telefono.length > 40 || tipo.length > 80) return json({ error: 'Solicitud no válida.' }, 400, allowedOrigin);
+  if (mensaje.length < 10)                      return json({ error: 'El mensaje es demasiado corto (mínimo 10 caracteres).' }, 400, allowedOrigin);
+  if (mensaje.length > 5000)                    return json({ error: 'El mensaje es demasiado largo (máximo 5000 caracteres).' }, 400, allowedOrigin);
 
   // ── Rate limit ──
   const ip =
@@ -186,22 +187,12 @@ Deno.serve(async (req: Request) => {
   // Gmail's UI shows the app password with spaces — accept that gracefully.
   const gmailPass = Deno.env.get('GMAIL_APP_PASSWORD')?.replace(/\s+/g, '');
   const recipient = Deno.env.get('CONTACT_RECIPIENT')?.trim() ?? gmailUser;
-  if (!gmailUser || !gmailPass || !recipient) {
-    return json(
-      { error: 'Server not configured. Faltan secrets GMAIL_USER / GMAIL_APP_PASSWORD / CONTACT_RECIPIENT.' },
-      500,
-      allowedOrigin
+  // The visitor sees the error: the config details only go to the logs.
+  if (!gmailUser || !gmailPass || !recipient || gmailPass.length !== 16) {
+    console.error(
+      'send-contact-email mal configurado: revisa GMAIL_USER / CONTACT_RECIPIENT y que GMAIL_APP_PASSWORD tenga 16 caracteres.'
     );
-  }
-  if (gmailPass.length !== 16) {
-    return json(
-      {
-        error:
-          'GMAIL_APP_PASSWORD inválido: deben ser 16 caracteres (los espacios se ignoran). Genera uno nuevo en https://myaccount.google.com/apppasswords'
-      },
-      500,
-      allowedOrigin
-    );
+    return json({ error: 'No hemos podido enviar tu mensaje. Escríbenos por WhatsApp o a info@impresion3dcc.com.' }, 500, allowedOrigin);
   }
 
   // ── Send ──
@@ -288,22 +279,7 @@ Fecha:     ${new Date().toISOString()}
     // Console logs show up in Supabase Dashboard → Edge Functions → Logs.
     console.error('SMTP send failed:', msg, err);
 
-    // Map common Gmail SMTP errors to actionable Spanish text.
-    let userMessage = 'Fallo al enviar el email.';
-    if (/535|Username and Password/i.test(msg)) {
-      userMessage =
-        'Gmail rechazó las credenciales SMTP. Genera una nueva App Password (https://myaccount.google.com/apppasswords) y actualízala con `supabase secrets set GMAIL_APP_PASSWORD=...`. Recuerda que la cuenta debe tener 2FA activado.';
-    } else if (/550|Daily user sending quota/i.test(msg)) {
-      userMessage = 'Has superado la cuota diaria de envío de Gmail.';
-    } else if (/timeout|ECONNREFUSED|EAI_AGAIN|getaddrinfo/i.test(msg)) {
-      userMessage = 'No se pudo conectar a smtp.gmail.com. Reintenta en unos segundos.';
-    }
-
-    return json(
-      { error: userMessage, detail: msg },
-      502,
-      allowedOrigin
-    );
+    return json({ error: 'No hemos podido enviar tu mensaje. Escríbenos por WhatsApp o a info@impresion3dcc.com.' }, 502, allowedOrigin);
   } finally {
     try { await client.close(); } catch { /* ignore */ }
   }

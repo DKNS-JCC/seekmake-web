@@ -22,8 +22,20 @@ export function Footer() {
             Salamanca y provincia
           </Link>
           <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/servicios/semana-santa/" className="footer-link">
+            Semana Santa
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/blog" className="footer-link">
             Blog
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/servicios" className="footer-link">
+            Servicios
+          </Link>
+          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          <Link href="/impresoras" className="footer-link">
+            Impresoras
           </Link>
           <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/terminos" className="footer-link">

@@ -47,6 +47,11 @@ const SERVICIOS = [
     desc: 'Con nombre o logo, a uno o dos colores, sueltos o en lotes para empresas.'
   },
   {
+    href: '/servicios/semana-santa/',
+    titulo: 'Figuras de Semana Santa',
+    desc: 'Mini nazarenos con los colores de tu hermandad: figura, capuchón de lápiz o pin.'
+  },
+  {
     href: '/servicios/diseno-3d-a-medida/',
     titulo: 'Diseño 3D a medida',
     desc: 'De una foto, un boceto o unas medidas a una pieza impresa.'

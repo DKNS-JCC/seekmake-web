@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Términos y Condiciones - 3DCC Salamanca',
   description:
     'Términos y condiciones del servicio de impresión 3D de 3DCC Salamanca.',
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
   alternates: { canonical: siteUrl('/terminos/') }
 };
 
@@ -407,17 +407,10 @@ export default function TerminosPage() {
               .
             </p>
             <p>
-              Cuando el cliente sea consumidor, podrá igualmente acudir a la
-              plataforma de resolución de litigios en línea de la Comisión
-              Europea, disponible en{' '}
-              <a
-                href="https://ec.europa.eu/consumers/odr"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                ec.europa.eu/consumers/odr
-              </a>
-              .
+              Cuando el cliente sea consumidor, podrá igualmente presentar su
+              reclamación ante los organismos de consumo competentes, como la
+              Oficina Municipal de Información al Consumidor (OMIC) de su
+              localidad o la Junta Arbitral de Consumo de Castilla y León.
             </p>
 
             <h2>16. Contacto</h2>

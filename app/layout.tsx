@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(CONTACTO.sitio),
   title: 'Impresión 3D en Salamanca y envío a toda España | 3DCC',
   description:
-    'Taller de impresión 3D en Salamanca. Regalos personalizados, repuestos y piezas técnicas en PLA, PETG o TPU. Precio al instante, recogida en mano en Salamanca y envío a toda España.',
+    'Taller de impresión 3D en Salamanca: regalos personalizados, repuestos y piezas técnicas. Precio al instante, recogida en mano o envío a toda España.',
   authors: [{ name: '3DCC Salamanca' }],
   alternates: { canonical: siteUrl('/') },
   // Pages without their own openGraph inherit this, so every shared link gets a preview image.

@@ -9,9 +9,19 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
+      '@type': 'WebSite',
+      '@id': siteUrl('/#website'),
+      name: CONTACTO.nombre,
+      url: CONTACTO.sitio,
+      inLanguage: 'es-ES',
+      publisher: { '@id': siteUrl('/#business') },
+    },
+    {
       '@type': 'LocalBusiness',
       '@id': siteUrl('/#business'),
-      name: '3DCC Salamanca — Impresión 3D',
+      // Mismo nombre, categoría y punto que la ficha de Google Maps.
+      name: '3DCC | Impresión 3D',
+      alternateName: '3DCC Salamanca',
       description:
         'Taller de impresión 3D en Salamanca. Regalos personalizados, repuestos y piezas técnicas a medida. Recogida en mano en Salamanca y envíos a toda España.',
       url: CONTACTO.sitio,
@@ -21,19 +31,26 @@ const jsonLd = {
         '@type': 'PostalAddress',
         streetAddress: 'Plza. Barrio Vidal',
         addressLocality: 'Salamanca',
+        addressRegion: 'Salamanca',
         postalCode: '37006',
         addressCountry: 'ES',
       },
       geo: {
         '@type': 'GeoCoordinates',
-        latitude: 40.9701,
-        longitude: -5.6635,
+        latitude: 40.9739679,
+        longitude: -5.6668086,
       },
       areaServed: [
         { '@type': 'City', name: 'Salamanca' },
         { '@type': 'AdministrativeArea', name: 'Provincia de Salamanca' },
         { '@type': 'Country', name: 'España' },
       ],
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '09:00',
+        closes: '21:00',
+      },
       priceRange: '€',
       image: siteUrl('/images/og.jpg'),
       hasMap: CONTACTO.googleMaps,
@@ -47,7 +64,7 @@ const jsonLd = {
       serviceType: 'Impresión 3D FDM',
       areaServed: { '@type': 'Country', name: 'España' },
       description:
-        'Impresión 3D FDM con múltiples materiales (PLA, PETG, TPU) y más de 20 colores. Piezas técnicas, figuras y prototipos.',
+        'Impresión 3D FDM con múltiples materiales (PLA, PETG, ASA, TPU) y más de 20 colores. Piezas técnicas, figuras y prototipos.',
       offers: {
         '@type': 'Offer',
         priceCurrency: 'EUR',

@@ -7,7 +7,7 @@ import {
   useRef,
   useState
 } from 'react';
-import { ESCRIBENOS } from '@/lib/contacto';
+import { CONTACTO, ESCRIBENOS } from '@/lib/contacto';
 
 type Status =
   | { kind: 'idle' }
@@ -440,10 +440,15 @@ export function ContactForm() {
         }}
       >
         Al enviar aceptas nuestros{' '}
-        <a href="/terminos" style={{ color: 'var(--accent)' }}>
+        <a href="/terminos/" style={{ color: 'var(--accent)' }}>
           Términos
         </a>
-        . Tus datos se usan únicamente para responderte. Los archivos
+        . Responsable: {CONTACTO.nombre}. Tus datos se usan únicamente para
+        responderte; más información en la{' '}
+        <a href="/privacidad/" style={{ color: 'var(--accent)' }}>
+          Política de Privacidad
+        </a>
+        . Los archivos
         adjuntos se almacenan de forma temporal y se eliminan
         periódicamente.
       </p>

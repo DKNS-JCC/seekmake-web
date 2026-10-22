@@ -6,7 +6,7 @@ import { CONTACTO, mailtoUrl, siteUrl } from '@/lib/contacto';
 export const metadata: Metadata = {
   title: 'Política de Privacidad - 3DCC Salamanca',
   description:
-    'Política de privacidad y uso de cookies de 3DCC Salamanca.',
+    'Qué datos trata 3DCC Salamanca, para qué, con qué proveedores, cuánto tiempo se guardan y cómo ejercer tus derechos.',
   robots: { index: true, follow: true },
   alternates: { canonical: siteUrl('/privacidad/') }
 };
@@ -48,64 +48,144 @@ export default function PrivacidadPage() {
           <div className="terms-card">
             <h2>1. Responsable del tratamiento</h2>
             <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-              <li><strong>Titular:</strong> Jorge Cuadrado Criado</li>
+              <li><strong>Titular:</strong> Jorge Cuadrado Criado ({CONTACTO.nombre})</li>
               <li>
                 <strong>Email:</strong>{' '}
                 <a href={mailtoUrl()}>{CONTACTO.email}</a>
               </li>
-              <li><strong>Ubicación:</strong> Salamanca, España</li>
+              <li>
+                <strong>Teléfono / WhatsApp:</strong>{' '}
+                <a href={`tel:${CONTACTO.telefonoTel}`}>{CONTACTO.telefono}</a>
+              </li>
+              <li><strong>Ubicación:</strong> Plza. Barrio Vidal, 37006 Salamanca, España</li>
             </ul>
 
             <h2>2. Datos que recogemos</h2>
-            <p>
-              Este sitio web recoge los siguientes tipos de información:
-            </p>
             <ul>
               <li>
-                <strong>Datos que tú nos facilitas</strong> al solicitar un presupuesto
-                o contactar con nosotros: nombre, email, teléfono y dirección de envío.
+                <strong>Formulario de contacto:</strong> nombre, email, teléfono (opcional),
+                el tipo de consulta, tu mensaje y los archivos que adjuntes.
+              </li>
+              <li>
+                <strong>Calculadora de presupuesto:</strong> nombre, email, teléfono,
+                dirección de envío si eliges envío, los archivos 3D que subes y la
+                configuración de cada pieza (material, color, cantidad).
+              </li>
+              <li>
+                <strong>Encargos y pagos:</strong> importes, fechas y método de pago
+                (efectivo, Bizum o transferencia) para emitir justificantes. No
+                guardamos datos de tarjetas ni de cuentas bancarias.
+              </li>
+              <li>
+                <strong>Seguridad:</strong> un resumen cifrado (hash) de tu dirección IP
+                al enviar un presupuesto, solo para frenar envíos masivos.
+              </li>
+              <li>
+                <strong>Uso de la calculadora:</strong> eventos anónimos (por ejemplo,
+                «archivo analizado» o «presupuesto enviado») con un identificador
+                aleatorio que no te identifica, para saber qué pasos fallan.
               </li>
             </ul>
+            <p>
+              Si nos escribes por WhatsApp o Instagram, esa conversación se rige
+              también por la política de privacidad de Meta.
+            </p>
 
-            <h2>3. Cookies</h2>
+            <h2>3. Cookies y almacenamiento local</h2>
             <p>
               Una cookie es un pequeño archivo de texto que un sitio web almacena en
-              tu navegador. Este sitio solo utiliza cookies y almacenamiento local propios:
+              tu navegador. Este sitio no usa cookies de publicidad ni de analítica.
+              Solo guarda, en tu propio navegador:
             </p>
             <ul>
               <li>
-                <strong>Cookies estrictamente necesarias:</strong> permiten funciones
-                básicas del sitio (p. ej., recuerdan tus votos en la galería de trabajos
-                sin necesidad de cuenta). No requieren consentimiento.
+                <strong>3dcc_voter</strong> (cookie y almacenamiento local, 5 años):
+                un identificador aleatorio que recuerda tus votos en la galería de
+                trabajos sin necesidad de cuenta.
+              </li>
+              <li>
+                <strong>theme</strong> (almacenamiento local): si prefieres el modo
+                claro u oscuro.
               </li>
             </ul>
             <p>
-              Puedes gestionar o desactivar las cookies desde la configuración de tu
-              navegador. Ten en cuenta que deshabilitar ciertas cookies puede afectar
-              al funcionamiento del sitio.
+              Son estrictamente necesarias para lo que pides y no requieren
+              consentimiento. La página de enlaces rápidos (/qr) muestra un mapa de
+              Google Maps: al cargarlo, Google puede recibir tu IP y usar sus propias
+              cookies según su{' '}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                política de privacidad
+              </a>
+              . Puedes borrar o bloquear las cookies desde la configuración de tu
+              navegador; sin ellas la galería no recordará tus votos.
             </p>
 
             <h2>4. Finalidades y base jurídica</h2>
             <ul>
               <li>
-                <strong>Gestión de encargos y contacto</strong>. Base: ejecución del
-                contrato o medidas precontractuales (art. 6.1.b RGPD).
+                <strong>Responder consultas, preparar presupuestos y realizar y enviar
+                encargos.</strong> Base: ejecución del contrato o medidas
+                precontractuales a petición tuya (art. 6.1.b RGPD).
+              </li>
+              <li>
+                <strong>Emitir justificantes y cumplir obligaciones contables y
+                fiscales.</strong> Base: obligación legal (art. 6.1.c RGPD).
+              </li>
+              <li>
+                <strong>Proteger los formularios frente a abusos y mejorar la
+                calculadora con datos anónimos.</strong> Base: interés legítimo
+                (art. 6.1.f RGPD).
               </li>
             </ul>
+            <p>No tomamos decisiones automatizadas ni elaboramos perfiles.</p>
 
             <h2>5. Destinatarios y transferencias internacionales</h2>
             <p>
-              Los datos personales que nos facilitas directamente no se ceden a
-              terceros salvo a las empresas de mensajería y pasarelas de pago
-              estrictamente necesarias para la prestación del servicio.
+              No vendemos ni cedemos tus datos. Los tratan, por cuenta nuestra y solo
+              para prestar el servicio, estos proveedores:
+            </p>
+            <ul>
+              <li>
+                <strong>Supabase</strong>: base de datos, almacenamiento de archivos y
+                funciones del servidor.
+              </li>
+              <li>
+                <strong>Google (Gmail)</strong>: envío y recepción de los emails de
+                contacto, presupuestos y justificantes.
+              </li>
+              <li>
+                <strong>GitHub (GitHub Pages)</strong>: alojamiento de la web, que
+                registra técnicamente las visitas (IP y navegador).
+              </li>
+              <li>
+                <strong>Sendcloud y la empresa de mensajería</strong> que se elija, solo
+                si el encargo se envía: nombre, dirección, teléfono y email de entrega.
+              </li>
+            </ul>
+            <p>
+              Algunos de estos proveedores pueden tratar datos en Estados Unidos. En ese
+              caso, la transferencia se ampara en el Marco de Privacidad de Datos
+              UE-EE. UU. o en las cláusulas contractuales tipo aprobadas por la
+              Comisión Europea.
             </p>
 
             <h2>6. Plazo de conservación</h2>
-            <p>
-              Los datos relacionados con encargos se conservan durante la vigencia
-              de la relación y, posteriormente, durante los plazos legales aplicables
-              para la atención de eventuales responsabilidades.
-            </p>
+            <ul>
+              <li>
+                <strong>Archivos 3D del presupuesto:</strong> se borran solos a las 48 h
+                si no llegas a enviar el presupuesto, 30 días después de entregar o
+                rechazar el encargo y, como máximo, a los 120 días.
+              </li>
+              <li>
+                <strong>Consultas de contacto:</strong> el tiempo necesario para
+                atenderlas.
+              </li>
+              <li>
+                <strong>Encargos y justificantes de pago:</strong> mientras dure la
+                relación y, después, los plazos legales aplicables (hasta seis años
+                para la documentación contable, art. 30 del Código de Comercio).
+              </li>
+            </ul>
 
             <h2>7. Tus derechos</h2>
             <p>
@@ -113,7 +193,8 @@ export default function PrivacidadPage() {
               rectificación, supresión, oposición, limitación y portabilidad
               escribiéndonos a{' '}
               <a href={mailtoUrl()}>{CONTACTO.email}</a>
-              , acreditando tu identidad. También puedes reclamar ante la{' '}
+              , acreditando tu identidad. Te responderemos en el plazo de un mes.
+              Si crees que no hemos atendido bien tu solicitud, puedes reclamar ante la{' '}
               <a
                 href="https://www.aepd.es"
                 target="_blank"

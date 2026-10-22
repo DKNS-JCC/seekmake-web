@@ -28,14 +28,18 @@ export async function generateMetadata({
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 155);
+  // Google corta hacia los 60 caracteres: el sufijo solo si cabe.
+  const conMarca = `${post.title} | 3DCC`;
   return {
-    title: `${post.title} | 3DCC Salamanca`,
+    title: conMarca.length <= 60 ? conMarca : post.title,
     description,
     alternates,
     openGraph: {
       title: post.title,
       description,
       type: 'article',
+      publishedTime: post.published_at ?? undefined,
+      modifiedTime: post.updated_at,
       url: alternates.canonical,
       ...(post.cover_image ? { images: [post.cover_image] } : {})
     }

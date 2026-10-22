@@ -298,7 +298,7 @@ export default function QrPage() {
               />
             </div>
             <a
-              href="https://maps.google.com/?q=3DCC+Impresion+3D+Salamanca"
+              href={CONTACTO.googleMaps}
               target="_blank"
               rel="noopener noreferrer"
               className="qr-map-link"

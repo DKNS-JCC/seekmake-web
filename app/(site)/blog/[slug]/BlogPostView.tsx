@@ -68,7 +68,7 @@ export function BlogPostView({ post }: { post: BlogPost | null }) {
 
       {post.cover_image && (
         <div className="blog-article-cover">
-          <img src={post.cover_image} alt="" loading="lazy" decoding="async" />
+          <img src={post.cover_image} alt={post.title} fetchPriority="high" decoding="async" />
         </div>
       )}
 

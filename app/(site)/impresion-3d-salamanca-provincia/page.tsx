@@ -6,7 +6,7 @@ import { siteUrl, whatsappUrl } from '@/lib/contacto';
 
 const TITLE = 'Impresión 3D en Salamanca y provincia: recogida y envío | 3DCC';
 const DESCRIPTION =
-  'Taller de impresión 3D en Salamanca. Recogida en persona en la capital, entrega cómoda en el área metropolitana y envío a Béjar, Ciudad Rodrigo, Guijuelo y el resto de la provincia.';
+  'Impresión 3D en Salamanca: recogida en persona en la capital y envío a Béjar, Ciudad Rodrigo, Guijuelo y el resto de la provincia.';
 
 export const metadata: Metadata = {
   title: TITLE,

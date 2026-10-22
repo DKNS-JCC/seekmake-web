@@ -209,7 +209,7 @@ function construirColumnas(
     for (let t = 0; t < nTri; t++) {
       const o = t * 9;
       const v = t * 3;
-      let ax = qx[v], ay = qy[v];
+      const ax = qx[v], ay = qy[v];
       let bx = qx[v + 1], by = qy[v + 1];
       let cx = qx[v + 2], cy = qy[v + 2];
       const az = tri[o + 2];

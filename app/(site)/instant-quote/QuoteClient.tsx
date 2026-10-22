@@ -1503,7 +1503,7 @@ export function QuoteClient({
                 />
                 <span>
                   He leído y acepto los{' '}
-                  <a href="/terminos" target="_blank" rel="noopener noreferrer">
+                  <a href="/terminos/" target="_blank" rel="noopener noreferrer">
                     Términos y Condiciones
                   </a>
                 </span>
@@ -1534,7 +1534,7 @@ export function QuoteClient({
                 Tus datos y tus archivos se usan únicamente para preparar y gestionar
                 este presupuesto, y se eliminan periódicamente. Puedes ejercer tus
                 derechos escribiendo a {CONTACTO.email}. Más información en
-                nuestra <a href="/privacidad">Política de Privacidad</a>.
+                nuestra <a href="/privacidad/">Política de Privacidad</a>.
               </p>
             </form>
           )}
