@@ -23,7 +23,7 @@ export function Footer() {
           </Link>
           <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/servicios/semana-santa/" className="footer-link">
-            Semana Santa
+            Mini cofrades Semana Santa
           </Link>
           <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
           <Link href="/blog" className="footer-link">

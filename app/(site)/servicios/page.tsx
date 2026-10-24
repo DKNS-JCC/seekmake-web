@@ -48,7 +48,7 @@ const SERVICIOS = [
   },
   {
     href: '/servicios/semana-santa/',
-    titulo: 'Figuras de Semana Santa',
+    titulo: 'Mini cofrades de Semana Santa',
     desc: 'Mini nazarenos con los colores de tu hermandad: figura, capuchón de lápiz o pin.'
   },
   {
