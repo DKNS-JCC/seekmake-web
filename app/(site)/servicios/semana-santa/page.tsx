@@ -26,15 +26,29 @@ export const metadata: Metadata = {
   }
 };
 
+// Habits of the Semana Santa de Salamanca brotherhoods (semanasantasa.com, semanasantasalamanca.info, 2026),
+// mapped to the nearest picker colour: lienzo crudo/esparto/lana natural → crema, eminencia → morado.
+// Jesús Amigo de los Niños (la Borriquilla) is left out: turbante, no capirote.
 const PRESETS: Combinacion[] = [
-  { file: 'nazareno-rojo-negro', capirote: 'rojo', cingulo: 'rojo', tunica: 'negro', alt: 'Mini nazareno con capirote rojo y túnica negra' },
-  { file: 'nazareno-morado-blanco', capirote: 'morado', cingulo: 'morado', tunica: 'blanco', alt: 'Figurita de Semana Santa: nazareno con capirote morado y túnica blanca' },
-  { file: 'nazareno-verde-blanco', capirote: 'verde', cingulo: 'verde', tunica: 'blanco', alt: 'Nazarenito de la Esperanza con capirote verde y túnica blanca' },
-  { file: 'nazareno-blanco-negro', capirote: 'blanco', cingulo: 'blanco', tunica: 'negro', alt: 'Mini cofrade con capirote blanco y túnica negra' },
-  { file: 'nazareno-morado-oro', capirote: 'morado', cingulo: 'oro', tunica: 'morado', alt: 'Nazareno en miniatura morado con cíngulo dorado' },
-  { file: 'nazareno-negro-oro', capirote: 'negro', cingulo: 'oro', tunica: 'negro', alt: 'Mini nazareno negro con cíngulo dorado' },
-  { file: 'nazareno-azul-blanco', capirote: 'azul marino', cingulo: 'azul marino', tunica: 'blanco', alt: 'Figurita cofrade con capirote azul marino y túnica blanca' },
-  { file: 'nazareno-granate-crema', capirote: 'granate', cingulo: 'granate', tunica: 'crema', alt: 'Mini nazareno con capirote granate y túnica crema' }
+  { nombre: 'Vera Cruz', capirote: 'celeste', cingulo: 'azul', tunica: 'blanco' },
+  { nombre: 'Soledad', capirote: 'negro', cingulo: 'negro', tunica: 'negro' },
+  { nombre: 'Jesús Rescatado', capirote: 'morado', cingulo: 'oro', tunica: 'morado' },
+  { nombre: 'Jesús Nazareno', capirote: 'morado', cingulo: 'crema', tunica: 'morado' },
+  { nombre: 'Cristo de la Agonía', capirote: 'morado', cingulo: 'morado', tunica: 'blanco' },
+  { nombre: 'Dominicana', capirote: 'negro', cingulo: 'negro', tunica: 'crema' },
+  { nombre: 'Dominicana · Piedad', capirote: 'rojo', cingulo: 'rojo', tunica: 'crema' },
+  { nombre: 'Dominicana · Esperanza', capirote: 'verde', cingulo: 'verde', tunica: 'crema' },
+  { nombre: 'Jesús del Perdón', capirote: 'rojo', cingulo: 'rojo', tunica: 'blanco' },
+  { nombre: 'Universitaria', capirote: 'negro', cingulo: 'blanco', tunica: 'negro' },
+  { nombre: 'Jesús Flagelado', capirote: 'morado', cingulo: 'morado', tunica: 'negro' },
+  { nombre: 'Oración en el Huerto', capirote: 'verde', cingulo: 'verde', tunica: 'blanco' },
+  { nombre: 'Amor y Paz', capirote: 'blanco', cingulo: 'crema', tunica: 'blanco' },
+  { nombre: 'Cristo Yacente', capirote: 'blanco', cingulo: 'rojo', tunica: 'blanco' },
+  { nombre: 'Silencio', capirote: 'rojo', cingulo: 'rojo', tunica: 'negro' },
+  { nombre: 'Vía Crucis', capirote: 'blanco', cingulo: 'marrón', tunica: 'blanco' },
+  { nombre: 'Jesús Despojado', capirote: 'granate', cingulo: 'granate', tunica: 'crema' },
+  { nombre: 'Franciscana', capirote: 'marrón', cingulo: 'crema', tunica: 'marrón' },
+  { nombre: 'Rosario', capirote: 'blanco', cingulo: 'blanco', tunica: 'blanco' }
 ];
 
 // real photos of printed ones: examples of each format, and a bit of decoration under the picker
@@ -46,7 +60,7 @@ const FOTOS = [
 ];
 
 const FAQ = [
-  { q: '¿Podéis hacer el nazareno con los colores de mi hermandad?', a: 'Sí. Elige arriba los colores del capirote, el cíngulo y la túnica, o mándame una foto del hábito por WhatsApp, y lo imprimo con esa combinación.' },
+  { q: '¿Podéis hacer el nazareno con los colores de mi hermandad?', a: 'Sí. Las hermandades de Salamanca ya están arriba con su hábito; si es otra, elige los colores del capirote, el cíngulo y la túnica o mándame una foto del hábito por WhatsApp, y lo imprimo con esa combinación.' },
   { q: '¿Qué formatos hay?', a: 'Es el mismo mini nazareno en cuatro versiones: figura de pie, capuchón para lápiz, capuchón para boli y pin de solapa con aguja detrás.' },
   { q: '¿El color se desgasta?', a: 'No. Cada parte se imprime en PLA de su color, sin pintar, así que el color va en el propio plástico y no se descascarilla con el uso.' },
   { q: '¿Puedo pedir un solo mini cofrade?', a: 'Sí, hago mini cofrades sueltos para regalar y también lotes para hermandades y cofradías.' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { whatsappUrl } from '@/lib/contacto';
 import { useCatalogoColores } from '@/lib/useCatalogoColores';
 import type { Color as ColorMuestrario, Filamento } from '@/lib/types';
@@ -27,7 +27,7 @@ export const COLORES = {
 
 export type Cofradia = keyof typeof COLORES;
 type Parte = 'capirote' | 'cingulo' | 'tunica';
-export type Combinacion = Record<Parte, Cofradia> & { file: string; alt: string };
+export type Combinacion = Record<Parte, Cofradia> & { nombre: string };
 type Opcion = { nombre: string; hex: string };
 
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -66,19 +66,27 @@ export function ColorPicker({
   const grupos: Opcion[][] = [Object.entries(COLORES).map(([nombre, hex]) => ({ nombre, hex })), extra];
   const hexDe = (n: string) => grupos.flat().find((o) => o.nombre === n)?.hex ?? COLORES.negro;
   const [sel, setSel] = useState<Record<Parte, string>>(presets[0]);
+  // one part's swatches at a time, so on a phone the figure and every colour fit on one screen
+  const [parte, setParte] = useState<Parte>('capirote');
   // stock colours stay folded so a first look is just the usual cofradía set
-  const [abiertas, setAbiertas] = useState<Partial<Record<Parte, boolean>>>({});
+  const [abierto, setAbierto] = useState(false);
+  const stage = useRef<HTMLDivElement>(null);
   // without cíngulo the tunic covers its area and the photo layers drop the belt's relief
   const [conCingulo, setConCingulo] = useState(true);
   const sin = conCingulo ? '' : '-sin-cingulo';
   const resumen = conCingulo
     ? `capirote ${sel.capirote}, cíngulo ${sel.cingulo} y túnica ${sel.tunica}`
     : `capirote ${sel.capirote} y túnica ${sel.tunica}, sin cíngulo`;
-  const wa = whatsappUrl(`Hola, os escribo desde la web. Quería un mini nazareno con ${resumen}.`);
+  const hermandad = conCingulo
+    ? presets.find((p) => p.capirote === sel.capirote && p.cingulo === sel.cingulo && p.tunica === sel.tunica)
+    : undefined;
+  const wa = whatsappUrl(
+    `Hola, os escribo desde la web. Quería un mini nazareno${hermandad ? ` de ${hermandad.nombre}` : ''} con ${resumen}.`
+  );
 
   return (
     <div className="ss-picker">
-      <div className="ss-picker-stage" role="img" aria-label={`Mini nazareno con ${resumen}`}>
+      <div ref={stage} className="ss-picker-stage" role="img" aria-label={`Mini nazareno con ${resumen}`}>
         <img src={`${IMG}nazareno-base${sin}.webp`} alt="" width={800} height={1000} />
         {PARTES.map((p) => (
           <div
@@ -98,73 +106,85 @@ export function ColorPicker({
 
       <div className="ss-picker-side">
         <p className="ss-picker-label" aria-live="polite">
-          {conCingulo ? `${sel.capirote} · ${sel.cingulo} · ${sel.tunica}` : `${sel.capirote} · ${sel.tunica}`}
+          {hermandad?.nombre ??
+            (conCingulo ? `${sel.capirote} · ${sel.cingulo} · ${sel.tunica}` : `${sel.capirote} · ${sel.tunica}`)}
         </p>
 
-        {PARTES.map((p) => (
-          <fieldset key={p.id} className="ss-row">
-            <legend>{p.label}</legend>
-            <div className="ss-swatches">
-              {grupos.map((grupo, g) =>
-                g && !(abiertas[p.id] || grupo.some((c) => c.nombre === sel[p.id]))
-                  ? grupo.length > 0 && (
-                      <button
-                        key="mas"
-                        type="button"
-                        className="ss-mas"
-                        onClick={() => setAbiertas({ ...abiertas, [p.id]: true })}
-                      >
-                        + Más colores
-                      </button>
-                    )
-                  : grupo.map((c, i) => (
-                      <button
-                        key={c.nombre}
-                        type="button"
-                        aria-pressed={sel[p.id] === c.nombre && (p.id !== 'cingulo' || conCingulo)}
-                        aria-label={`${p.label} ${c.nombre}`}
-                        title={c.nombre}
-                        className={g && !i ? 'ss-swatch ss-swatch-muestrario' : 'ss-swatch'}
-                        style={{ background: c.hex }}
-                        onClick={() => {
-                          setSel({ ...sel, [p.id]: c.nombre });
-                          if (p.id === 'cingulo') setConCingulo(true);
-                        }}
-                      />
-                    ))
-              )}
-              {p.id === 'cingulo' && (
-                <button
-                  type="button"
-                  className="ss-mas"
-                  aria-pressed={!conCingulo}
-                  onClick={() => setConCingulo(false)}
-                >
-                  Sin cíngulo
-                </button>
-              )}
-            </div>
-          </fieldset>
-        ))}
+        <div className="ss-tabs" role="group" aria-label="Parte a colorear">
+          {PARTES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="ss-tab"
+              aria-pressed={parte === p.id}
+              onClick={() => setParte(p.id)}
+            >
+              <span
+                className="ss-dot"
+                style={{ background: p.id === 'cingulo' && !conCingulo ? 'transparent' : hexDe(sel[p.id]) }}
+              />
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="ss-swatches">
+          {grupos.flatMap((grupo, g) =>
+            g && !(abierto || grupo.some((c) => c.nombre === sel[parte]))
+              ? grupo.length > 0 && (
+                  <button key="mas" type="button" className="ss-mas" onClick={() => setAbierto(true)}>
+                    + Más colores
+                  </button>
+                )
+              : grupo.map((c, i) => (
+                  <button
+                    key={c.nombre}
+                    type="button"
+                    aria-pressed={sel[parte] === c.nombre && (parte !== 'cingulo' || conCingulo)}
+                    aria-label={`${parte} ${c.nombre}`}
+                    title={c.nombre}
+                    className={g && !i ? 'ss-swatch ss-swatch-muestrario' : 'ss-swatch'}
+                    style={{ background: c.hex }}
+                    onClick={() => {
+                      setSel({ ...sel, [parte]: c.nombre });
+                      if (parte === 'cingulo') setConCingulo(true);
+                    }}
+                  />
+                ))
+          )}
+          {parte === 'cingulo' && (
+            <button type="button" className="ss-mas" aria-pressed={!conCingulo} onClick={() => setConCingulo(false)}>
+              Sin cíngulo
+            </button>
+          )}
+        </div>
 
         <a href={wa} className="btn-primary ss-picker-cta" target="_blank" rel="noopener noreferrer">
           Pedir esta combinación
         </a>
 
-        <p className="ss-row-title">Combinaciones típicas</p>
+        <p className="ss-row-title">Hermandades de Salamanca</p>
         <div className="ss-presets">
           {presets.map((p) => (
             <button
-              key={p.file}
+              key={p.nombre}
               type="button"
               className="ss-preset"
-              aria-pressed={conCingulo && p.capirote === sel.capirote && p.cingulo === sel.cingulo && p.tunica === sel.tunica}
+              aria-pressed={hermandad === p}
               onClick={() => {
                 setSel(p);
                 setConCingulo(true);
+                // on a phone the figure is above the list: bring it back into view to show the change
+                const r = stage.current?.getBoundingClientRect();
+                if (r && r.top < 0) stage.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
             >
-              <img src={`${IMG}${p.file}.webp`} alt={p.alt} width={400} height={500} loading="lazy" decoding="async" />
+              <span className="ss-preset-colores" aria-hidden="true">
+                {PARTES.map((parte) => (
+                  <span key={parte.id} style={{ background: hexDe(p[parte.id]) }} />
+                ))}
+              </span>
+              {p.nombre}
             </button>
           ))}
         </div>
