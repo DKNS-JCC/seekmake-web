@@ -37,6 +37,14 @@ const PRESETS: Combinacion[] = [
   { file: 'nazareno-granate-crema', capirote: 'granate', cingulo: 'granate', tunica: 'crema', alt: 'Mini nazareno con capirote granate y túnica crema' }
 ];
 
+// real photos of printed ones: examples of each format, and a bit of decoration under the picker
+const FOTOS = [
+  { file: 'mini-nazareno-figura', pie: 'Figura de pie', alt: 'Mini nazareno impreso en 3D con capirote morado y túnica negra sobre la mesa' },
+  { file: 'mini-nazareno-capuchon-lapiz', pie: 'Capuchón de lápiz', alt: 'Capuchón de lápiz con forma de nazareno verde y negro' },
+  { file: 'mini-nazarenos-lote-hermandad', pie: 'Lote para hermandad', alt: 'Lote de mini nazarenos impresos en 3D con capirotes de muchos colores' },
+  { file: 'mini-nazareno-procesion-salamanca', pie: 'En la procesión', alt: 'Mini nazareno en la mano durante una procesión de Semana Santa en Salamanca' }
+];
+
 const FAQ = [
   { q: '¿Podéis hacer el nazareno con los colores de mi hermandad?', a: 'Sí. Elige arriba los colores del capirote, el cíngulo y la túnica, o mándame una foto del hábito por WhatsApp, y lo imprimo con esa combinación.' },
   { q: '¿Qué formatos hay?', a: 'Es el mismo mini nazareno en cuatro versiones: figura de pie, capuchón para lápiz, capuchón para boli y pin de solapa con aguja detrás.' },
@@ -66,8 +74,7 @@ const jsonLd = [
     image: [
       siteUrl(`${IMG}nazareno-rojo-negro-grande.webp`),
       siteUrl(`${IMG}nazareno-morado-blanco-grande.webp`),
-      siteUrl(`${IMG}mini-nazareno-procesion-salamanca.webp`),
-      siteUrl(`${IMG}mini-nazareno-capuchon-lapiz.webp`)
+      ...FOTOS.map((f) => siteUrl(`${IMG}${f.file}.webp`))
     ],
     provider: { '@id': siteUrl('/#business') },
     areaServed: [
@@ -123,6 +130,18 @@ export default async function SemanaSantaPage() {
           <p className="ss-picker-note">
             Los colores de la pantalla son orientativos. Antes de imprimir te mando una foto real.
           </p>
+
+          <section className="ss-galeria" aria-labelledby="ss-galeria-titulo">
+            <p id="ss-galeria-titulo" className="ss-row-title">Así quedan impresos</p>
+            <div className="ss-fotos">
+              {FOTOS.map((f) => (
+                <figure key={f.file} className="ss-foto">
+                  <img src={`${IMG}${f.file}.webp`} alt={f.alt} width={800} height={1000} loading="lazy" decoding="async" />
+                  <figcaption>{f.pie}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
 
           {/* SEO copy, folded: indexed by Google but out of the way of the picker */}
           <details className="ss-info">

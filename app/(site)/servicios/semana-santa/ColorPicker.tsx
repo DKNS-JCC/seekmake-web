@@ -68,32 +68,37 @@ export function ColorPicker({
   const [sel, setSel] = useState<Record<Parte, string>>(presets[0]);
   // stock colours stay folded so a first look is just the usual cofradía set
   const [abiertas, setAbiertas] = useState<Partial<Record<Parte, boolean>>>({});
-  const resumen = `capirote ${sel.capirote}, cíngulo ${sel.cingulo} y túnica ${sel.tunica}`;
+  // without cíngulo the tunic covers its area and the photo layers drop the belt's relief
+  const [conCingulo, setConCingulo] = useState(true);
+  const sin = conCingulo ? '' : '-sin-cingulo';
+  const resumen = conCingulo
+    ? `capirote ${sel.capirote}, cíngulo ${sel.cingulo} y túnica ${sel.tunica}`
+    : `capirote ${sel.capirote} y túnica ${sel.tunica}, sin cíngulo`;
   const wa = whatsappUrl(`Hola, os escribo desde la web. Quería un mini nazareno con ${resumen}.`);
 
   return (
     <div className="ss-picker">
       <div className="ss-picker-stage" role="img" aria-label={`Mini nazareno con ${resumen}`}>
-        <img src={`${IMG}nazareno-base.webp`} alt="" width={800} height={1000} />
+        <img src={`${IMG}nazareno-base${sin}.webp`} alt="" width={800} height={1000} />
         {PARTES.map((p) => (
           <div
             key={p.id}
             className="ss-layer"
             style={{
-              background: hexDe(sel[p.id]),
+              background: hexDe(p.id === 'cingulo' && !conCingulo ? sel.tunica : sel[p.id]),
               maskImage: `url(${IMG}mascara-${p.id}.png)`,
               WebkitMaskImage: `url(${IMG}mascara-${p.id}.png)`
             }}
           />
         ))}
         {/* untinted glints, then the background with a soft hole so edges blend exactly */}
-        <img src={`${IMG}nazareno-brillo.webp`} alt="" width={800} height={1000} className="ss-brillo" />
+        <img src={`${IMG}nazareno-brillo${sin}.webp`} alt="" width={800} height={1000} className="ss-brillo" />
         <img src={`${IMG}nazareno-fondo.webp`} alt="" width={800} height={1000} />
       </div>
 
       <div className="ss-picker-side">
         <p className="ss-picker-label" aria-live="polite">
-          {sel.capirote} · {sel.cingulo} · {sel.tunica}
+          {conCingulo ? `${sel.capirote} · ${sel.cingulo} · ${sel.tunica}` : `${sel.capirote} · ${sel.tunica}`}
         </p>
 
         {PARTES.map((p) => (
@@ -116,14 +121,27 @@ export function ColorPicker({
                       <button
                         key={c.nombre}
                         type="button"
-                        aria-pressed={sel[p.id] === c.nombre}
+                        aria-pressed={sel[p.id] === c.nombre && (p.id !== 'cingulo' || conCingulo)}
                         aria-label={`${p.label} ${c.nombre}`}
                         title={c.nombre}
                         className={g && !i ? 'ss-swatch ss-swatch-muestrario' : 'ss-swatch'}
                         style={{ background: c.hex }}
-                        onClick={() => setSel({ ...sel, [p.id]: c.nombre })}
+                        onClick={() => {
+                          setSel({ ...sel, [p.id]: c.nombre });
+                          if (p.id === 'cingulo') setConCingulo(true);
+                        }}
                       />
                     ))
+              )}
+              {p.id === 'cingulo' && (
+                <button
+                  type="button"
+                  className="ss-mas"
+                  aria-pressed={!conCingulo}
+                  onClick={() => setConCingulo(false)}
+                >
+                  Sin cíngulo
+                </button>
               )}
             </div>
           </fieldset>
@@ -140,8 +158,11 @@ export function ColorPicker({
               key={p.file}
               type="button"
               className="ss-preset"
-              aria-pressed={p.capirote === sel.capirote && p.cingulo === sel.cingulo && p.tunica === sel.tunica}
-              onClick={() => setSel(p)}
+              aria-pressed={conCingulo && p.capirote === sel.capirote && p.cingulo === sel.cingulo && p.tunica === sel.tunica}
+              onClick={() => {
+                setSel(p);
+                setConCingulo(true);
+              }}
             >
               <img src={`${IMG}${p.file}.webp`} alt={p.alt} width={400} height={500} loading="lazy" decoding="async" />
             </button>
