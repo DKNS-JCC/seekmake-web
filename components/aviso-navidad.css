@@ -1,22 +1,24 @@
-/* Barra de anuncio fina, en el color de la marca, justo bajo el menú. */
+/* Barra fina verde pino bajo el menú, con un abeto impreso por capas. */
 .aviso-navidad {
     display: flex; align-items: center; justify-content: center; gap: 16px;
     margin-top: var(--nav-h); padding: 10px 20px; min-height: 40px;
-    background: var(--accent); color: #fff; text-decoration: none;
+    background: #1f4d36; color: #f4efe6; text-decoration: none;
     font-size: 14px; line-height: 1.4; text-align: center;
     position: relative; z-index: 3;
 }
 .aviso-navidad strong { font-weight: 700; }
 .aviso-navidad-ver { text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; font-weight: 600; }
 .aviso-navidad:hover .aviso-navidad-ver { text-decoration-thickness: 2px; }
-.aviso-navidad:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.aviso-navidad:focus-visible { outline: 2px solid #f4efe6; outline-offset: -4px; }
 /* La barra ya deja el hueco del menú: el hero no lo repite. */
 .aviso-navidad + #inicio { padding-top: 0; }
 
-/* En modo oscuro el azul de acento es claro: texto oscuro para que se lea. */
-.dark .aviso-navidad { color: #0a0b0e; }
-.dark .aviso-navidad:focus-visible { outline-color: #0a0b0e; }
+/* Capas color PLA natural y tronco de madera. */
+.aviso-navidad-abeto { flex: none; }
+.aviso-navidad-abeto rect { fill: #e7dcc4; }
+.aviso-navidad-abeto .tronco { fill: #a67c52; }
+.aviso-navidad-abeto .estrella { fill: #e9b949; }
 
 @media (max-width: 600px) {
-    .aviso-navidad { font-size: 13px; gap: 10px; padding: 9px 16px; }
+    .aviso-navidad { font-size: 13px; gap: 10px; padding: 9px 16px; justify-content: flex-start; text-align: left; }
 }
