@@ -51,7 +51,7 @@ const S: Servicio = {
   ],
   waMensaje: 'Hola, os escribo desde la web. Quería una figura a partir de una foto.',
   hermano: { href: '/servicios/litofanias-personalizadas/', texto: 'las litofanías personalizadas con tus fotos' },
-  ficha: { precio: 'Desde 22 €', tamano: '10 cm de alto', plazo: '3 días de taller' }
+  ficha: { precio: 'Desde 20 €', tamano: '10 cm de alto', plazo: '3 días de taller' }
 };
 
 export const metadata = servicioMetadata(S);
