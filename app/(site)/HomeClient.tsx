@@ -28,18 +28,29 @@ export function HomeClient({ trabajos, resenas }: { trabajos: Trabajo[]; resenas
             Taller de impresión 3D en Salamanca con envíos a toda España: regalos
             personalizados, repuestos imposibles y piezas técnicas, con precio al instante.
           </p>
+          {/* El tasador va en azul; WhatsApp ya está siempre a mano en el botón flotante. */}
           <div className="hero-actions">
+            <Link href="/instant-quote" className="btn-primary">
+              <svg
+                width="15"
+                height="15"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>{' '}
+              Calcular precio
+            </Link>
             <a
               href={whatsappUrl('Hola, os mando una foto de lo que quiero imprimir.')}
-              className="btn-primary"
+              className="btn-outline"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Pedir por WhatsApp con una foto
+              Sin archivo: pedir por WhatsApp
             </a>
-            <Link href="/instant-quote" className="btn-outline">
-              Calcular precio con mi archivo
-            </Link>
           </div>
           <div className="hero-stats">
             <div>

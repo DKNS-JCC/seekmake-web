@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDarkMode } from '@/app/providers';
-import { whatsappUrl } from '@/lib/contacto';
 
 interface NavItem {
   href: string;
@@ -18,6 +17,7 @@ interface NavItem {
 // Ordenado por lo que busca el cliente. Muestrario, Contacto, Servicios e
 // Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
 // Navidad entra en la Fase 2 y Grupos en la 3, cuando existan sus páginas.
+// El CTA azul sigue siendo el tasador; WhatsApp ya tiene su botón flotante.
 const ITEMS: NavItem[] = [
   { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
   { href: '/catalogo',   label: 'Regalos' },
@@ -107,9 +107,9 @@ export function Navigation() {
             </button>
           </li>
           <li>
-            <a href={whatsappUrl()} className="nav-cta" target="_blank" rel="noopener noreferrer">
-              Pedir por WhatsApp
-            </a>
+            <Link href="/instant-quote" className="nav-cta">
+              Obtener Precio
+            </Link>
           </li>
         </ul>
 
@@ -134,7 +134,7 @@ export function Navigation() {
             {item.label}
           </Link>
         ))}
-        <a href={whatsappUrl()} target="_blank" rel="noopener noreferrer">→ Pedir por WhatsApp</a>
+        <Link href="/instant-quote">→ Obtener Precio</Link>
       </div>
     </nav>
   );
