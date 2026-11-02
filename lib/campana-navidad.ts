@@ -73,14 +73,15 @@ export const PRODUCTOS: ProductoNavidad[] = [
   }
 ];
 
-export type FechaLimite = { fecha: string; texto: string };
+/** `corto`: la misma fecha en pocas palabras, para la barra de aviso. */
+export type FechaLimite = { fecha: string; texto: string; corto: string };
 
 /** Fechas límite de pedido, en orden. */
 export const FECHAS: FechaLimite[] = [
-  { fecha: '2026-12-11', texto: 'Figuras con envío antes de Nochebuena' },
-  { fecha: '2026-12-14', texto: 'Resto de personalizados con envío antes de Nochebuena' },
-  { fecha: '2026-12-17', texto: 'Recogida en Salamanca antes de Nochebuena' },
-  { fecha: '2026-12-28', texto: 'Para Reyes' }
+  { fecha: '2026-12-11', texto: 'Figuras con envío antes de Nochebuena', corto: 'Figuras para Nochebuena' },
+  { fecha: '2026-12-14', texto: 'Resto de personalizados con envío antes de Nochebuena', corto: 'Envíos para Nochebuena' },
+  { fecha: '2026-12-17', texto: 'Recogida en Salamanca antes de Nochebuena', corto: 'Recogida para Nochebuena' },
+  { fecha: '2026-12-28', texto: 'Para Reyes', corto: 'Pedidos para Reyes' }
 ];
 
 /** YYYY-MM-DD de hoy en Madrid. */
@@ -104,6 +105,11 @@ export function proximaFecha(hoy = hoyMadrid()): FechaLimite | null {
 
 export function fechaCorta(iso: string): string {
   return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+}
+
+/** "11 dic" */
+export function fechaMinima(iso: string): string {
+  return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).replace('.', '');
 }
 
 export type Plazas = { semana: number; ocupadas: number };
