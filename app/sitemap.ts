@@ -11,6 +11,7 @@ const BASE = CONTACTO.sitio;
 const STATIC: MetadataRoute.Sitemap = [
   { url: `${BASE}/`,                      priority: 1.0,  changeFrequency: 'weekly'  },
   { url: `${BASE}/impresion-3d-salamanca-provincia/`, priority: 0.9, changeFrequency: 'monthly' },
+  { url: `${BASE}/navidad/`, priority: 0.9,  changeFrequency: 'weekly' },
   { url: `${BASE}/servicios/`, priority: 0.8,  changeFrequency: 'monthly' },
   { url: `${BASE}/servicios/litofanias-personalizadas/`, priority: 0.8,  changeFrequency: 'monthly' },
   { url: `${BASE}/servicios/repuestos-impresion-3d/`, priority: 0.8,  changeFrequency: 'monthly' },

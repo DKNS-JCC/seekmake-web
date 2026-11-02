@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 // Mensaje prellenado según dónde está el cliente. El primer prefijo que
 // encaje gana; el resto cae en el genérico.
 const MENSAJES: [string, string][] = [
+  ['/navidad', 'Hola, quiero un regalo de Navidad.'],
   ['/catalogo', 'Hola, he visto el catálogo y quiero pedir un regalo.'],
   ['/servicios/litofanias', 'Hola, quiero una litofanía. Os mando la foto.'],
   ['/servicios/llaveros', 'Hola, quiero llaveros personalizados.'],

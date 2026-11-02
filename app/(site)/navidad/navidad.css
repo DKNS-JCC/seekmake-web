@@ -1,0 +1,78 @@
+/* /navidad/: la pieza real delante, productos en filas y fechas como cola de impresión. */
+
+.nv-hero { padding: calc(var(--nav-h) + 56px) 0 72px; }
+.nv-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; }
+.nv-h1 {
+    font-family: var(--font-display), sans-serif;
+    font-size: clamp(44px, 5.6vw, 84px); line-height: 0.92; letter-spacing: 0.02em; color: var(--text);
+    margin-bottom: 22px;
+}
+.nv-h1 .accent { color: var(--accent); display: block; }
+.nv-intro { font-size: 17px; color: var(--muted); line-height: 1.75; max-width: 540px; margin-bottom: 28px; }
+.nv-acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.nv-hero-foto { margin: 0; }
+.nv-hero-foto img { width: 100%; height: auto; max-height: 620px; object-fit: cover; border-radius: 10px; display: block; }
+.nv-hero-foto figcaption, .nv-producto-foto figcaption {
+    font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin-top: 10px;
+}
+
+.nv-productos { padding: 88px 0; background: var(--surface); }
+.nv-productos .section-title { margin-bottom: 48px; }
+.nv-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 64px; }
+.nv-producto { display: grid; grid-template-columns: 360px 1fr; gap: 48px; align-items: center; }
+.nv-producto:nth-child(even) { grid-template-columns: 1fr 360px; }
+.nv-producto:nth-child(even) .nv-producto-foto { order: 2; }
+.nv-producto-foto img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 8px; display: block; }
+/* Sin foto real: la cama de la impresora con capas, nunca una imagen de banco. */
+.nv-capas {
+    aspect-ratio: 4 / 5; border-radius: 8px; display: grid; place-items: center; text-align: center;
+    background: repeating-linear-gradient(0deg, var(--surface-2) 0 6px, var(--bg) 6px 8px);
+    border: 1px dashed var(--border-h);
+    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--muted); line-height: 1.7;
+}
+.nv-capas span { background: var(--bg); padding: 10px 14px; border-radius: 4px; }
+.nv-producto-texto h3 { font-family: var(--font-display), sans-serif; font-size: clamp(30px, 3.4vw, 44px); line-height: 1; color: var(--text); }
+.nv-producto-texto .nv-precio { font-family: var(--font-display), sans-serif; font-size: 28px; color: var(--accent); margin: 6px 0 14px; }
+.nv-ficha { display: flex; gap: 28px; margin: 0 0 16px; }
+.nv-ficha dt { font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.nv-ficha dd { margin: 2px 0 0; font-weight: 600; color: var(--text); }
+.nv-producto-texto p { font-size: 16px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; max-width: 560px; }
+.nv-necesitamos strong { color: var(--text); }
+.nv-producto-texto .btn-primary { margin-top: 8px; }
+
+.nv-fechas { padding: 88px 0; }
+.nv-cola {
+    list-style: none; padding: 0; margin: 36px 0 28px; max-width: 860px;
+    font-family: var(--font-mono), monospace; font-size: 14px;
+    border: 1px solid var(--border-h); border-radius: 8px; overflow: hidden;
+}
+.nv-cola li { display: grid; grid-template-columns: 52px 130px 1fr auto; gap: 16px; align-items: center; padding: 16px 20px; }
+.nv-cola li + li { border-top: 1px solid var(--border); }
+.nv-job { color: var(--muted); }
+.nv-dia { color: var(--text); font-weight: 600; }
+.nv-que { color: var(--text); font-family: var(--font-sans), sans-serif; font-size: 15px; }
+.nv-estado { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.nv-cola li.cerrada > span { color: var(--muted); text-decoration: line-through; }
+.nv-cola li.cerrada .nv-estado { text-decoration: none; }
+.nv-regaliz { max-width: 640px; font-size: 15px; color: var(--muted); line-height: 1.7; }
+.nv-regaliz strong { color: var(--text); }
+
+@media (max-width: 900px) {
+    .nv-hero { padding: calc(var(--nav-h) + 28px) 0 48px; }
+    .nv-hero-grid { grid-template-columns: 1fr; gap: 32px; }
+    .nv-hero-foto { order: -1; }
+    .nv-hero-foto img { max-height: 340px; }
+    .nv-intro { font-size: 15px; }
+    .nv-acciones .btn-primary, .nv-acciones .btn-outline { width: 100%; justify-content: center; }
+    .nv-productos, .nv-fechas { padding: 56px 0; }
+    .nv-lista { gap: 48px; }
+    .nv-producto, .nv-producto:nth-child(even) { grid-template-columns: 1fr; gap: 20px; }
+    .nv-producto:nth-child(even) .nv-producto-foto { order: 0; }
+    .nv-producto-foto img, .nv-capas { aspect-ratio: 4 / 3; }
+    .nv-producto-texto .btn-primary { width: 100%; justify-content: center; }
+    .nv-cola li { grid-template-columns: auto 1fr; gap: 4px 12px; padding: 14px 16px; }
+    .nv-job { display: none; }
+    .nv-que { grid-column: 1 / -1; }
+    .nv-estado { grid-row: 1; grid-column: 2; justify-self: end; }
+}

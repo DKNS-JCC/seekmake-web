@@ -6,17 +6,32 @@ import { TrabajosSection } from '@/components/TrabajosSection';
 import { FaqSection } from '@/components/FaqSection';
 import { ResenasSection } from '@/components/ResenasSection';
 import type { ResenasData } from '@/lib/resenas';
+import { ImpresoraNavidad } from '@/components/ImpresoraNavidad';
+import type { Plazas } from '@/lib/campana-navidad';
 import { ContactForm } from '@/app/(site)/contacto/ContactForm';
 import '@/app/(site)/contacto/contacto.css';
 import './page.css';
 import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
 import type { Trabajo } from '@/lib/types';
 
-export function HomeClient({ trabajos, resenas }: { trabajos: Trabajo[]; resenas: ResenasData }) {
+export function HomeClient({
+  trabajos,
+  resenas,
+  plazas,
+  hoy
+}: {
+  trabajos: Trabajo[];
+  resenas: ResenasData;
+  plazas: Plazas | null;
+  hoy: string;
+}) {
   useFadeUp();
 
   return (
     <>
+      {/* Campaña de Navidad: se oculta sola después de Reyes. */}
+      <ImpresoraNavidad plazas={plazas} hoy={hoy} variante="banner" />
+
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section id="inicio">
         <div className="hero-left">

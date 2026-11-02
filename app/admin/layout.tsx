@@ -30,6 +30,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/admin/filamentos" className="nav-link">Filamentos</Link>
         <Link href="/admin/trabajos" className="nav-link">Trabajos</Link>
         <Link href="/admin/resenas" className="nav-link">Reseñas</Link>
+        <Link href="/admin/navidad" className="nav-link">Navidad</Link>
         <Link href="/admin/blog" className="nav-link">Blog</Link>
         <Link href="/admin/presupuestos" className="nav-link">
           Presupuestos<NuevosBadge />
