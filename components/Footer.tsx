@@ -13,39 +13,47 @@ export function Footer() {
           <a href={CONTACTO.instagram} className="footer-link" target="_blank" rel="noopener noreferrer">
             Instagram
           </a>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <a href={CONTACTO.googleMaps} className="footer-link" target="_blank" rel="noopener noreferrer">
             Google Maps
           </a>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/impresion-3d-salamanca-provincia" className="footer-link">
             Salamanca y provincia
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/servicios/semana-santa/" className="footer-link">
             Mini cofrades Semana Santa
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
+          <Link href="/muestrario" className="footer-link">
+            Muestrario
+          </Link>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
+          <Link href="/contacto" className="footer-link">
+            Contacto
+          </Link>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/blog" className="footer-link">
             Blog
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/servicios" className="footer-link">
             Servicios
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/impresoras" className="footer-link">
-            Impresoras
+            El taller
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/terminos" className="footer-link">
             Términos y Condiciones
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/privacidad" className="footer-link">
             Política de Privacidad
           </Link>
-          <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           Servicio ofrecido como hobby sin ánimo de lucro
         </span>
       </div>

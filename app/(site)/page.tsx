@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types';
 import { buildSafe } from '@/lib/supabase/buildSafe';
+import { loadResenas } from '@/lib/resenas';
 import { HomeClient } from './HomeClient';
 
 async function loadTrabajos() {
@@ -19,6 +20,6 @@ async function loadTrabajos() {
 }
 
 export default async function HomePage() {
-  const trabajos = await loadTrabajos();
-  return <HomeClient trabajos={trabajos} />;
+  const [trabajos, resenas] = await Promise.all([loadTrabajos(), loadResenas()]);
+  return <HomeClient trabajos={trabajos} resenas={resenas} />;
 }

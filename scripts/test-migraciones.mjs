@@ -1019,6 +1019,30 @@ await check('RLS: cada empresa ve solo sus cobros; sin sesión, ninguno', async 
   assert(nadie.length === 0, `sin sesión ve ${nadie.length}`);
 });
 
+// ── Reseñas (20261102200000) ───────────────────────────────────────────────
+console.log('\n▸ Reseñas y clic en WhatsApp');
+await check('anon solo lee reseñas publicadas y no puede escribir', async () => {
+  await comoAdmin();
+  await client.query(`insert into public.resenas (autor_visible, texto, publicada)
+                      values ('Ana G.', 'Rapidísimos', true), ('Borrador B.', 'Oculta', false)`);
+  await client.query('begin');
+  try {
+    await client.query('set local role anon');
+    await comoAnon();
+    const { rows } = await client.query('select autor_visible from public.resenas');
+    assert(rows.length === 1 && rows[0].autor_visible === 'Ana G.', `anon ve ${rows.length}`);
+    let lanzo = false;
+    await client.query('savepoint s');
+    try {
+      await client.query(`insert into public.resenas (autor_visible, texto) values ('X', 'spam')`);
+    } catch { lanzo = true; await client.query('rollback to savepoint s'); }
+    assert(lanzo, 'anon pudo insertar una reseña');
+    await client.query(`insert into public.quote_events (evento, payload) values ('whatsapp_clic', '{"pagina":"/"}')`);
+  } finally {
+    await client.query('rollback');
+  }
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();

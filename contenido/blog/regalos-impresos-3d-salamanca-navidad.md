@@ -7,7 +7,7 @@ cover_image: "(sube una foto real de un regalo impreso desde el panel)"
 
 Cada diciembre pasa lo mismo: llega la cena de empresa, el amigo invisible, los Reyes, y otra vez buscando algo que no sea una taza o unos calcetines. Un regalo impreso en 3D tiene una ventaja clara: se hace para una persona concreta. Lleva su nombre, su foto o algo que solo entiende ella, y eso se nota cuando lo abre.
 
-Desde el taller de 3DCC en Salamanca te dejo unas cuantas ideas que funcionan muy bien, con lo que hay que tener en cuenta para cada una.
+Desde el taller de 3DCC en Salamanca te dejamos unas cuantas ideas que funcionan muy bien, con lo que hay que tener en cuenta para cada una.
 
 ## Llaveros con nombre
 
@@ -19,11 +19,11 @@ Consejo práctico: si vas a pedir varios con nombres distintos, prepara la lista
 
 Una litofanía es una lámina impresa que, apagada, parece un relieve blanco sin más. Cuando le pones una luz detrás aparece la foto con todo su detalle. Es de esos regalos que provocan un "¿y esto cómo se hace?" al momento.
 
-Funcionan especialmente bien con fotos de familia, de abuelos con nietos, de una boda o de una mascota que ya no está. Para que salga bien conviene elegir una foto con buen contraste y la cara de las personas bien visible. Si tienes dudas sobre si tu foto vale, mándamela por WhatsApp y te lo digo antes de imprimir.
+Funcionan especialmente bien con fotos de familia, de abuelos con nietos, de una boda o de una mascota que ya no está. Para que salga bien conviene elegir una foto con buen contraste y la cara de las personas bien visible. Si tienes dudas sobre si tu foto vale, mándanosla por WhatsApp y te lo decimos antes de imprimir.
 
 ## Placas y carteles personalizados
 
-Una placa para la puerta de casa, un cartel para la habitación de un niño, una placa con el nombre de un negocio para el mostrador o un recuerdo con una fecha importante. Aquí el color importa mucho, porque la placa se va a ver todos los días. En el [muestrario](/muestrario/) tienes más de 30 colores, y si quieres estar seguro te mando una foto real del filamento antes de empezar. En pantalla los colores engañan.
+Una placa para la puerta de casa, un cartel para la habitación de un niño, una placa con el nombre de un negocio para el mostrador o un recuerdo con una fecha importante. Aquí el color importa mucho, porque la placa se va a ver todos los días. En el [muestrario](/muestrario/) tienes más de 30 colores, y si quieres estar seguro te mandamos una foto real del filamento antes de empezar. En pantalla los colores engañan.
 
 Si la placa va a estar en el exterior, por ejemplo en la puerta de una casa de pueblo, lo recomendable es imprimirla en ASA, que aguanta mucho mejor el sol que el PLA.
 
@@ -35,7 +35,7 @@ No todo el mundo es de regalos decorativos. Para quien prefiere cosas útiles ha
 - Soportes para el móvil, los auriculares o el mando de la consola.
 - Piezas para su afición: un soporte para la caña de pescar, un accesorio para la bici, un organizador para las pinturas de miniaturas.
 
-Si tienes en mente algo concreto pero no existe tal cual, cuéntamelo. A veces se puede diseñar desde cero a partir de unas medidas o un boceto.
+Si tienes en mente algo concreto pero no existe tal cual, cuéntanoslo. A veces se puede diseñar desde cero a partir de unas medidas o un boceto.
 
 ## Ideas ya diseñadas
 
@@ -46,16 +46,16 @@ Si no quieres complicarte, en el [catálogo](/catalogo/) tienes piezas ya prepar
 Hay dos caminos:
 
 1. **Si tienes el archivo** (STL, 3MF u OBJ, por ejemplo descargado de una web de modelos), súbelo a la [calculadora de presupuesto](/instant-quote/) y verás el precio al momento.
-2. **Si solo tienes la idea**, escríbeme por WhatsApp con lo que quieres, el nombre o la foto, y lo preparamos juntos.
+2. **Si solo tienes la idea**, escríbenos por WhatsApp con lo que quieres, el nombre o la foto, y lo preparamos juntos.
 
 El pago puede ser en efectivo, por Bizum o por transferencia.
 
 ## Recogida en Salamanca o envío
 
-Si estás en Salamanca capital puedes recoger el regalo en persona en la zona del Barrio Vidal. Si vives en el área metropolitana, en Santa Marta, Carbajosa, Villamayor o alrededores, también te pilla cerca. Y si estás en Béjar, Ciudad Rodrigo, Guijuelo o cualquier otro punto de la provincia o de España, te lo envío. Tienes más detalles en la página de [impresión 3D en Salamanca y provincia](/impresion-3d-salamanca-provincia/).
+Si estás en Salamanca capital puedes recoger el regalo en persona en la zona del Barrio Vidal. Si vives en el área metropolitana, en Santa Marta, Carbajosa, Villamayor o alrededores, también te pilla cerca. Y si estás en Béjar, Ciudad Rodrigo, Guijuelo o cualquier otro punto de la provincia o de España, te lo enviamos. Tienes más detalles en la página de [impresión 3D en Salamanca y provincia](/impresion-3d-salamanca-provincia/).
 
 ## No lo dejes para el último día
 
-Lo único que no puedo hacer es imprimir más rápido que la máquina. El plazo depende de la pieza (tamaño, cantidad, si lleva varios colores) y te lo confirmo al hacer el pedido, pero en diciembre se junta mucho trabajo. Si quieres que llegue antes de Nochebuena o de Reyes, cuanto antes me escribas, mejor.
+Lo único que no podemos hacer es imprimir más rápido que la máquina. El plazo depende de la pieza (tamaño, cantidad, si lleva varios colores) y te lo confirmamos al hacer el pedido, pero en diciembre se junta mucho trabajo. Si quieres que llegue antes de Nochebuena o de Reyes, cuanto antes nos escribas, mejor.
 
 Un regalo hecho a mano, en un taller de aquí, con el nombre de quien lo recibe. Es difícil encontrar algo más personal.

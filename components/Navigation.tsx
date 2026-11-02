@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDarkMode } from '@/app/providers';
+import { whatsappUrl } from '@/lib/contacto';
 
 interface NavItem {
   href: string;
@@ -14,13 +15,14 @@ interface NavItem {
   isHomeAnchor?: boolean;
 }
 
-// Servicios e Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
+// Ordenado por lo que busca el cliente. Muestrario, Contacto, Servicios e
+// Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
+// Navidad entra en la Fase 2 y Grupos en la 3, cuando existan sus páginas.
 const ITEMS: NavItem[] = [
   { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
-  { href: '/catalogo',   label: 'Catálogo' },
-  { href: '/muestrario', label: 'Muestrario' },
-  { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true },
-  { href: '/#contacto',  label: 'Contacto',   isHomeAnchor: true }
+  { href: '/catalogo',   label: 'Regalos' },
+  { href: '/servicios/repuestos-impresion-3d', label: 'Piezas' },
+  { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true }
 ];
 
 export function Navigation() {
@@ -105,9 +107,9 @@ export function Navigation() {
             </button>
           </li>
           <li>
-            <Link href="/instant-quote" className="nav-cta">
-              Obtener Precio
-            </Link>
+            <a href={whatsappUrl()} className="nav-cta" target="_blank" rel="noopener noreferrer">
+              Pedir por WhatsApp
+            </a>
           </li>
         </ul>
 
@@ -132,7 +134,7 @@ export function Navigation() {
             {item.label}
           </Link>
         ))}
-        <Link href="/instant-quote">→ Obtener Precio</Link>
+        <a href={whatsappUrl()} target="_blank" rel="noopener noreferrer">→ Pedir por WhatsApp</a>
       </div>
     </nav>
   );

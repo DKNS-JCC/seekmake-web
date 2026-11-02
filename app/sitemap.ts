@@ -23,8 +23,6 @@ const STATIC: MetadataRoute.Sitemap = [
   { url: `${BASE}/instant-quote/`,   priority: 0.6,  changeFrequency: 'monthly' },
   { url: `${BASE}/contacto/`,        priority: 0.6,  changeFrequency: 'monthly' },
   { url: `${BASE}/impresoras/`,      priority: 0.5,  changeFrequency: 'monthly' },
-  { url: `${BASE}/terminos/`,        priority: 0.2,  changeFrequency: 'yearly'  },
-  { url: `${BASE}/privacidad/`,      priority: 0.2,  changeFrequency: 'yearly'  },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

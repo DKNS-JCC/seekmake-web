@@ -205,6 +205,14 @@ export default function AdminEstadisticas() {
     const antesDelPrecio = [...conPieza].filter((s) => !conPrecio.has(s)).length;
     // From the quotes, not the 'aceptado' event: that one also fires for
     // Calculadora orders and misses acceptances made from the admin.
+    // Clics en cualquier enlace de WhatsApp, por página (WhatsAppFAB).
+    const porPagina = new Map<string, number>();
+    for (const e of ev) {
+      if (e.evento !== 'whatsapp_clic') continue;
+      const pagina = String((e.payload as { pagina?: unknown })?.pagina ?? '?');
+      porPagina.set(pagina, (porPagina.get(pagina) ?? 0) + 1);
+    }
+    const whatsapp = [...porPagina.entries()].sort((a, b) => b[1] - a[1]);
     const aceptados = periodo.filter(
       (q) => q.aceptado_at != null || ESTADOS_EN_FIRME.includes(q.estado)
     ).length;
@@ -222,6 +230,7 @@ export default function AdminEstadisticas() {
       horas,
       porMaterial: [...porMaterial.entries()].sort((a, b) => b[1] - a[1]),
       semanas,
+      whatsapp,
       funnel: {
         sesionesConPieza: conPieza.size,
         precioVisto: conPrecio.size,
@@ -314,6 +323,16 @@ export default function AdminEstadisticas() {
           solicitud → aceptado: <strong>{convAceptado.toFixed(0)}%</strong> ·
           abandono tras ver el precio: <strong>{pctAbandono.toFixed(0)}%</strong>
         </p>
+      </section>
+
+      {/* WhatsApp */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>
+          Clics en WhatsApp ({dias} días): {stats.whatsapp.reduce((n, [, c]) => n + c, 0)}
+        </h2>
+        {stats.whatsapp.slice(0, 8).map(([pagina, c]) => (
+          <Bar key={pagina} label={pagina} value={c} max={Math.max(1, stats.whatsapp[0][1])} color="#15803d" />
+        ))}
       </section>
 
       {/* Pipeline */}

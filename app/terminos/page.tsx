@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Términos y Condiciones - 3DCC Salamanca',
   description:
     'Términos y condiciones del servicio de impresión 3D de 3DCC Salamanca.',
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: true },
   alternates: { canonical: siteUrl('/terminos/') }
 };
 

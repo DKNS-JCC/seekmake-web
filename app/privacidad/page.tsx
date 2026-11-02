@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Política de Privacidad - 3DCC Salamanca',
   description:
     'Qué datos trata 3DCC Salamanca, para qué, con qué proveedores, cuánto tiempo se guardan y cómo ejercer tus derechos.',
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: true },
   alternates: { canonical: siteUrl('/privacidad/') }
 };
 
@@ -99,11 +99,6 @@ export default function PrivacidadPage() {
             </p>
             <ul>
               <li>
-                <strong>3dcc_voter</strong> (cookie y almacenamiento local, 5 años):
-                un identificador aleatorio que recuerda tus votos en la galería de
-                trabajos sin necesidad de cuenta.
-              </li>
-              <li>
                 <strong>theme</strong> (almacenamiento local): si prefieres el modo
                 claro u oscuro.
               </li>
@@ -117,7 +112,7 @@ export default function PrivacidadPage() {
                 política de privacidad
               </a>
               . Puedes borrar o bloquear las cookies desde la configuración de tu
-              navegador; sin ellas la galería no recordará tus votos.
+              navegador.
             </p>
 
             <h2>4. Finalidades y base jurídica</h2>

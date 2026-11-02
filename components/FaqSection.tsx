@@ -5,23 +5,23 @@ import './faq.css';
 const FAQS: { q: string; a: string }[] = [
   {
     q: '¿Cómo hago un pedido?',
-    a: 'Si ya tienes el archivo (STL, 3MF u OBJ), súbelo a la calculadora de presupuesto online y verás el precio al momento. Si no tienes archivo o tienes dudas, escríbeme por WhatsApp con una foto o una idea de lo que necesitas y lo vemos juntos.'
+    a: 'Si ya tienes el archivo (STL, 3MF u OBJ), súbelo a la calculadora de presupuesto online y verás el precio al momento. Si no tienes archivo o tienes dudas, escríbenos por WhatsApp con una foto o una idea de lo que necesitas y lo vemos juntos.'
   },
   {
     q: '¿Qué formas de pago aceptáis?',
-    a: 'Efectivo, Bizum o transferencia bancaria. Te confirmo el importe antes de empezar a imprimir.'
+    a: 'Efectivo, Bizum o transferencia bancaria. Te confirmamos el importe antes de empezar a imprimir.'
   },
   {
     q: '¿Puedo recoger el pedido en persona o lo enviáis?',
-    a: 'Las dos cosas. Si estás en Salamanca puedes recogerlo en persona en la zona del Barrio Vidal, y si no, lo envío a cualquier punto de España. El plazo depende de la pieza y te lo confirmo al hacer el pedido.'
+    a: 'Las dos cosas. Si estás en Salamanca puedes recogerlo en persona en la zona del Barrio Vidal, y si no, lo enviamos a cualquier punto de España. El plazo depende de la pieza y te lo confirmamos al hacer el pedido.'
   },
   {
     q: '¿Qué material me conviene: PLA, PETG, ASA, TPU o Nylon?',
-    a: 'PLA para figuras, regalos y piezas decorativas de interior. PETG si la pieza va a recibir golpes, algo de calor o humedad. ASA para exterior, porque aguanta mejor el sol. TPU cuando necesitas algo flexible, como fundas o topes. Nylon para piezas técnicas que sufren desgaste. Si no lo tienes claro, cuéntame para qué es y te recomiendo uno.'
+    a: 'PLA para figuras, regalos y piezas decorativas de interior. PETG si la pieza va a recibir golpes, algo de calor o humedad. ASA para exterior, porque aguanta mejor el sol. TPU cuando necesitas algo flexible, como fundas o topes. Nylon para piezas técnicas que sufren desgaste. Si no lo tienes claro, cuéntanos para qué es y te recomendamos uno.'
   },
   {
     q: '¿Podéis copiar una pieza rota?',
-    a: 'En muchos casos sí. Mándame fotos de la pieza, mejor con una regla o un metro al lado para ver las medidas, y te digo si se puede reproducir y en qué material. Es una buena solución para repuestos que ya no se fabrican.'
+    a: 'En muchos casos sí. Mándanos fotos de la pieza, mejor con una regla o un metro al lado para ver las medidas, y te decimos si se puede reproducir y en qué material. Es una buena solución para repuestos que ya no se fabrican.'
   },
   {
     q: '¿Qué formatos de archivo necesitáis?',
@@ -29,11 +29,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: '¿Diseñáis piezas desde cero si no tengo archivo?',
-    a: 'Sí. A partir de una foto, unas medidas o un boceto puedo preparar el modelo antes de imprimirlo. Escríbeme por WhatsApp y te cuento cómo lo haríamos en tu caso.'
+    a: 'Sí. A partir de una foto, unas medidas o un boceto preparamos el modelo antes de imprimirlo. Escríbenos por WhatsApp y te contamos cómo lo haríamos en tu caso.'
   },
   {
     q: '¿Puedo ver el color real antes de encargar?',
-    a: 'Claro. En el muestrario tienes más de 30 colores, y si quieres estar seguro te mando una foto real del filamento antes de imprimir, porque en pantalla los colores pueden variar.'
+    a: 'Claro. En el muestrario tienes más de 30 colores, y si quieres estar seguro te mandamos una foto real del filamento antes de imprimir, porque en pantalla los colores pueden variar.'
   }
 ];
 
@@ -58,7 +58,7 @@ export function FaqSection() {
         <div className="section-header">
           <div className="section-tag">Preguntas frecuentes</div>
           <h2 id="faq-title" className="section-title">
-            Lo que más me preguntáis
+            Lo que más nos preguntáis
           </h2>
         </div>
         <div className="faq-list">

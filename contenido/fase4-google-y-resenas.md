@@ -21,7 +21,7 @@ Entra en business.google.com con la cuenta que la creó.
 - [ ] **Teléfono:** el mismo de la web (+34 923 79 31 23). Si solo es WhatsApp, actívalo como chat en la ficha.
 - [ ] **Descripción** (pegar tal cual):
 
-  > Taller de impresión 3D en Salamanca. Hago regalos personalizados (llaveros con nombre, litofanías, placas), repuestos que ya no se fabrican y piezas técnicas en PLA, PETG, ASA y TPU, con más de 30 colores. Sube tu archivo a la calculadora de la web y ves el precio al momento, o escríbeme por WhatsApp con una foto de lo que necesitas. Recogida en mano en Salamanca y envío a toda España.
+  > Taller de impresión 3D en Salamanca. Hacemos regalos personalizados (llaveros con nombre, litofanías, placas), repuestos que ya no se fabrican y piezas técnicas en PLA, PETG, ASA y TPU, con más de 30 colores. Sube tu archivo a la calculadora de la web y ves el precio al momento, o escríbenos por WhatsApp con una foto de lo que necesitas. Recogida en mano en Salamanca y envío a toda España.
 
 - [ ] **Servicios:** Impresión 3D desde tu archivo, Diseño 3D a medida, Réplica de pieza rota, Litofanías, Llaveros personalizados, Llaveros corporativos por lotes.
 - [ ] **Productos:** sube 6 a 10 del catálogo, **con tus fotos**, precio y enlace a `/catalogo/`.
@@ -36,10 +36,10 @@ Objetivo: **15 reseñas antes del 1 de diciembre**, y después 2 a 4 al mes. Pla
 - [ ] Saca tu enlace directo en la ficha (botón "Pedir reseñas") y comprueba que `reviewthis.biz/3dcc` (el de la página /qr) lleva ahí.
 - [ ] Escribe hoy a los últimos 10 o 15 clientes contentos (el colectivo de breaking, Charro King…):
 
-  > ¡Hola, [nombre]! Soy Jorge, de 3DCC. ¿Qué tal funcionan las [piezas]? Estoy empezando a darme a conocer en Google y me ayudaría muchísimo una reseña tuya, son 30 segundos: [enlace]. Si puedes, cuenta qué te hice; eso ayuda a que otros lo encuentren. ¡Gracias!
+  > ¡Hola, [nombre]! Te escribimos de 3DCC. ¿Qué tal funcionan las [piezas]? Estamos empezando a darnos a conocer en Google y nos ayudaría muchísimo una reseña tuya, son 30 segundos: [enlace]. Si puedes, cuenta qué te hicimos; eso ayuda a que otros nos encuentren. ¡Gracias!
 
 - [ ] Mete en cada pedido una tarjeta con el QR de `/qr` y el texto "¿Te ha gustado? Cuéntalo en Google".
-- [ ] **Responde a todas** en 48 h, mencionando de forma natural la pieza y la ciudad ("¡Gracias, Laura! Encantado de hacerte las litofanías aquí en Salamanca").
+- [ ] **Responde a todas** en 48 h, mencionando de forma natural la pieza y la ciudad ("¡Gracias, Laura! Encantados de hacerte las litofanías aquí en Salamanca").
 - [ ] Nunca ofrezcas descuentos a cambio de reseñas ni las escribas tú: Google las borra y puede penalizar la ficha.
 
 ## 3. Mismos datos en todas partes (NAP)

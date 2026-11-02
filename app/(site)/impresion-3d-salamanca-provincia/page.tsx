@@ -75,9 +75,9 @@ export default function ZonaSalamancaPage() {
             <span className="accent">Salamanca y alrededores</span>
           </h1>
           <p className="about-intro-block">
-            3DCC es un taller pequeño en Salamanca, con una persona detrás que
-            atiende cada pedido. Imprimo en <strong>FDM</strong> con PLA, PETG,
-            ASA, TPU y Nylon, y trabajo igual para alguien del barrio que para
+            3DCC es un taller pequeño en Salamanca que atiende cada pedido de
+            tú a tú. Imprimimos en <strong>FDM</strong> con PLA, PETG, ASA, TPU
+            y Nylon, y trabajamos igual para alguien del barrio que para
             alguien de la otra punta de la provincia. Lo único que cambia es
             cómo te llega la pieza.
           </p>
@@ -96,7 +96,7 @@ export default function ZonaSalamancaPage() {
           </p>
           <p>
             Puedes pagar en efectivo, por Bizum o por transferencia. El plazo
-            depende de la pieza (tamaño, material, cantidad) y te lo confirmo
+            depende de la pieza (tamaño, material, cantidad) y te lo confirmamos
             al hacer el pedido, sin prometer fechas que luego no se cumplen.
           </p>
 
@@ -104,7 +104,7 @@ export default function ZonaSalamancaPage() {
           <p>
             Para los municipios pegados a la capital, la recogida en Salamanca
             sigue siendo lo habitual, porque estás a pocos minutos. Si te viene
-            mejor, también puedo enviártelo. Esto aplica, entre otros, a:
+            mejor, también podemos enviártelo. Esto aplica, entre otros, a:
           </p>
           <ul className="zona-towns">
             {AREA_METRO.map((t) => (
@@ -114,10 +114,11 @@ export default function ZonaSalamancaPage() {
 
           <h2>Resto de la provincia: envío a domicilio</h2>
           <p>
-            Si estás más lejos, envío la pieza bien protegida a tu casa o a tu
-            trabajo. Todo se gestiona a distancia: me mandas el archivo o unas
-            fotos, te paso precio y plazo, pagas por Bizum o transferencia y
-            te llega por mensajería. Envío a toda la provincia, por ejemplo a:
+            Si estás más lejos, enviamos la pieza bien protegida a tu casa o a
+            tu trabajo. Todo se gestiona a distancia: nos mandas el archivo o
+            unas fotos, te pasamos precio y plazo, pagas por Bizum o
+            transferencia y te llega por mensajería. Enviamos a toda la
+            provincia, por ejemplo a:
           </p>
           <ul className="zona-towns">
             {PROVINCIA.map((t) => (
@@ -125,7 +126,7 @@ export default function ZonaSalamancaPage() {
             ))}
           </ul>
           <p>
-            Y si no estás en Salamanca, también envío al resto de España.
+            Y si no estás en Salamanca, también enviamos al resto de España.
           </p>
         </div>
       </section>
@@ -133,7 +134,7 @@ export default function ZonaSalamancaPage() {
       <section className="values-section">
         <div className="container-3dcc">
           <div className="section-header">
-            <div className="section-tag">Qué puedo hacer por ti</div>
+            <div className="section-tag">Qué podemos hacer por ti</div>
             <h2 className="section-title">Piezas que se piden de verdad</h2>
           </div>
           <div className="values-grid">
@@ -150,7 +151,7 @@ export default function ZonaSalamancaPage() {
               <h3 className="value-title">Repuestos difíciles de encontrar</h3>
               <p className="value-desc">
                 Esa pestaña rota del electrodoméstico, el clip de la persiana o
-                la pieza que el fabricante ya no vende. Mándame fotos con
+                la pieza que el fabricante ya no vende. Mándanos fotos con
                 medidas y vemos si se puede reproducir.
               </p>
             </div>
@@ -175,12 +176,12 @@ export default function ZonaSalamancaPage() {
             verás el precio al momento. Si prefieres partir de algo ya hecho,
             echa un vistazo al <Link href="/catalogo/">catálogo</Link>. Para
             elegir color, en el <Link href="/muestrario/">muestrario</Link>{' '}
-            tienes más de 30, y si quieres te mando una foto real del
+            tienes más de 30, y si quieres te mandamos una foto real del
             filamento antes de imprimir.
           </p>
           <p>
-            ¿No tienes archivo o no sabes qué material elegir? Escríbeme por
-            WhatsApp con una foto o una idea y te digo cómo lo haría.
+            ¿No tienes archivo o no sabes qué material elegir? Escríbenos por
+            WhatsApp con una foto o una idea y te decimos cómo lo haríamos.
           </p>
           <div className="zona-actions">
             <Link href="/instant-quote/" className="btn-primary">

@@ -64,7 +64,7 @@ const jsonLd = {
       serviceType: 'Impresión 3D FDM',
       areaServed: { '@type': 'Country', name: 'España' },
       description:
-        'Impresión 3D FDM con múltiples materiales (PLA, PETG, ASA, TPU) y más de 20 colores. Piezas técnicas, figuras y prototipos.',
+        'Impresión 3D FDM con múltiples materiales (PLA, PETG, ASA, TPU) y más de 30 colores. Piezas técnicas, figuras y prototipos.',
       offers: {
         '@type': 'Offer',
         priceCurrency: 'EUR',
