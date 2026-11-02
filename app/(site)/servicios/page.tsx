@@ -74,9 +74,9 @@ export default function ServiciosPage() {
             <span className="accent">impresión 3D</span>
           </h1>
           <p className="about-intro-block">
-            Imprimo en FDM en mi taller de Salamanca y envío a toda España.
-            Estos son los encargos que más me piden. Si el tuyo no encaja en
-            ninguno, escríbeme igualmente.
+            Imprimimos en FDM en nuestro taller de Salamanca y enviamos a toda
+            España. Estos son los encargos que más nos piden. Si el tuyo no
+            encaja en ninguno, escríbenos igualmente.
           </p>
         </div>
       </section>

@@ -131,7 +131,7 @@ export default function ImpresorasPage() {
           <div className="section-tag">Sobre nosotros</div>
           <h1>
             Nuestro<br />
-            <span className="accent">Equipo</span>
+            <span className="accent">taller</span>
           </h1>
           <div className="slogan">Capa a capa, idea a realidad</div>
           <p className="about-intro-block">

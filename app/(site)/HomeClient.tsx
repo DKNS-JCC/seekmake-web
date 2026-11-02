@@ -1,57 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Snowfall from 'react-snowfall';
 import { useFadeUp } from '@/components/useFadeUp';
-import { WA_LINK } from '@/components/WhatsAppFAB';
 import { TrabajosSection } from '@/components/TrabajosSection';
 import { FaqSection } from '@/components/FaqSection';
+import { ResenasSection } from '@/components/ResenasSection';
+import type { ResenasData } from '@/lib/resenas';
 import { ContactForm } from '@/app/(site)/contacto/ContactForm';
 import '@/app/(site)/contacto/contacto.css';
 import './page.css';
-import { CONTACTO, mailtoUrl } from '@/lib/contacto';
+import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
 import type { Trabajo } from '@/lib/types';
 
-// Copo de seis brazos; se pinta en el canvas de react-snowfall como imagen.
-const COPO_SVG =
-  'data:image/svg+xml,' +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 24 24" stroke="#7d95b8" stroke-width="1.6" stroke-linecap="round" fill="none">' +
-      [0, 60, 120].map((r) => `<g transform="rotate(${r})"><path d="M0-11V11M0-7l-3-3M0-7l3-3M0 7l-3 3M0 7l3 3"/></g>`).join('') +
-      '</svg>',
-  );
-
-export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
+export function HomeClient({ trabajos, resenas }: { trabajos: Trabajo[]; resenas: ResenasData }) {
   useFadeUp();
-  const [copos, setCopos] = useState<HTMLImageElement[]>();
-  useEffect(() => {
-    // Solo del 15 de octubre al 7 de enero, y nunca con movimiento reducido.
-    const hoy = new Date();
-    const mmdd = (hoy.getMonth() + 1) * 100 + hoy.getDate();
-    if (mmdd < 1015 && mmdd > 107) return;
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const img = new Image();
-    img.src = COPO_SVG;
-    img.onload = () => setCopos([img]);
-  }, []);
 
   return (
     <>
-      {/* Nieve de invierno: decorativa, sin bloquear clics. */}
-      <div className="nieve" aria-hidden="true">
-        {copos && (
-          <Snowfall
-            images={copos}
-            snowflakeCount={35}
-            radius={[5, 11]}
-            speed={[0.4, 1.2]}
-            rotationSpeed={[-1, 1]}
-            opacity={[0.45, 0.8]}
-            style={{ position: 'fixed', pointerEvents: 'none', zIndex: 4 }}
-          />
-        )}
-      </div>
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section id="inicio">
         <div className="hero-left">
@@ -63,6 +28,7 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
             Taller de impresión 3D en Salamanca con envíos a toda España: regalos
             personalizados, repuestos imposibles y piezas técnicas, con precio al instante.
           </p>
+          {/* El tasador va en azul; WhatsApp ya está siempre a mano en el botón flotante. */}
           <div className="hero-actions">
             <Link href="/instant-quote" className="btn-primary">
               <svg
@@ -75,11 +41,16 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
               >
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
               </svg>{' '}
-              Calcular Precio
+              Calcular precio
             </Link>
-            <Link href="#contacto" className="btn-outline">
-              Contactar
-            </Link>
+            <a
+              href={whatsappUrl('Hola, os mando una foto de lo que quiero imprimir.')}
+              className="btn-outline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Sin archivo: pedir por WhatsApp
+            </a>
           </div>
           <div className="hero-stats">
             <div>
@@ -87,7 +58,7 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
               <span className="stat-label">Proyectos completados</span>
             </div>
             <div>
-              <span className="stat-num">20+</span>
+              <span className="stat-num">30+</span>
               <span className="stat-label">Colores disponibles</span>
             </div>
             <div>
@@ -153,36 +124,10 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
           <div className="services-grid">
             {[
               {
-                title: 'Impresión Rápida',
-                desc:
-                  'Entrega express disponible para proyectos urgentes en Salamanca y alrededores',
+                title: 'Regalos',
+                desc: 'Figuras desde tu foto, litofanías y detalles con nombre.',
+                href: '/catalogo/',
                 num: '01',
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"
-                  />
-                )
-              },
-              {
-                title: 'Amplia Variedad',
-                desc:
-                  'Múltiples colores y materiales para adaptarnos a tu proyecto específico',
-                num: '02',
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
-                  />
-                )
-              },
-              {
-                title: 'Envío Nacional',
-                desc:
-                  'Servicio de envío seguro a toda España con seguimiento completo',
-                num: '03',
                 icon: (
                   <path
                     strokeLinecap="round"
@@ -192,20 +137,47 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
                 )
               },
               {
-                title: 'Precio Instantáneo',
-                desc:
-                  'Sistema automático de cotización para conocer tu precio al instante',
+                title: 'Trofeos y medallas',
+                desc: 'Para clubes, colegios y asociaciones, con vuestro diseño y desde pocas unidades.',
+                href: whatsappUrl('Hola, queremos trofeos o medallas para un grupo.'),
+                num: '02',
+                icon: (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0"
+                  />
+                )
+              },
+              {
+                title: 'Repuestos',
+                desc: 'La pieza que ya no se fabrica, a partir de la rota o de unas medidas.',
+                href: '/servicios/repuestos-impresion-3d/',
+                num: '03',
+                icon: (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21.75 6.75a4.5 4.5 0 0 1-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 1 1-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 0 1 6.336-4.486l-3.276 3.276a3.004 3.004 0 0 0 2.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852Z"
+                  />
+                )
+              },
+              {
+                title: 'Diseño a medida',
+                desc: 'Si no hay archivo, lo diseñamos nosotros a partir de tu idea.',
+                href: '/servicios/diseno-3d-a-medida/',
                 num: '04',
                 icon: (
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"
+                    d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
                   />
                 )
               }
             ].map((s) => (
-              <div key={s.num} className="service-card fade-up">
+              <a key={s.num} href={s.href} className="service-card fade-up"
+                {...(s.href.startsWith('https:') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
                 <svg
                   className="service-icon"
                   fill="none"
@@ -218,7 +190,7 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
                 <h3 className="service-title">{s.title}</h3>
                 <p className="service-desc">{s.desc}</p>
                 <span className="service-num">{s.num}</span>
-              </div>
+              </a>
             ))}
           </div>
           <Link href="/servicios/" className="btn-outline" style={{ marginTop: 32 }}>
@@ -277,6 +249,8 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
 
       {/* ── TRABAJOS ─────────────────────────────────────────── */}
       <TrabajosSection trabajos={trabajos} />
+
+      <ResenasSection {...resenas} />
 
       {/* ── PRESUPUESTO CTA ─────────────────────────────────── */}
       <section id="presupuesto">
@@ -420,7 +394,7 @@ export function HomeClient({ trabajos }: { trabajos: Trabajo[] }) {
                   Llamar
                 </a>
                 <a
-                  href={WA_LINK}
+                  href={whatsappUrl('Hola, quiero pedir algo impreso en 3D.')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="cbtn cbtn-wa"

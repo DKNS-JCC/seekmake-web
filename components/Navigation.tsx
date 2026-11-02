@@ -14,13 +14,15 @@ interface NavItem {
   isHomeAnchor?: boolean;
 }
 
-// Servicios e Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
+// Ordenado por lo que busca el cliente. Muestrario, Contacto, Servicios e
+// Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
+// Navidad entra en la Fase 2 y Grupos en la 3, cuando existan sus páginas.
+// El CTA azul sigue siendo el tasador; WhatsApp ya tiene su botón flotante.
 const ITEMS: NavItem[] = [
   { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
-  { href: '/catalogo',   label: 'Catálogo' },
-  { href: '/muestrario', label: 'Muestrario' },
-  { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true },
-  { href: '/#contacto',  label: 'Contacto',   isHomeAnchor: true }
+  { href: '/catalogo',   label: 'Regalos' },
+  { href: '/servicios/repuestos-impresion-3d', label: 'Piezas' },
+  { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true }
 ];
 
 export function Navigation() {

@@ -5,9 +5,9 @@ excerpt: "Guía práctica para elegir entre PLA, PETG, TPU, ASA y Nylon según p
 cover_image: "(sube una foto real de bobinas o piezas en distintos materiales)"
 ---
 
-Una de las preguntas que más me llegan al taller es "¿en qué material lo hago?". Y es normal, porque la misma pieza puede salir perfecta o romperse a la semana según el plástico que elijas. La buena noticia es que no hace falta saber química: basta con pensar dónde va a estar la pieza y qué va a tener que aguantar.
+Una de las preguntas que más nos llegan al taller es "¿en qué material lo hago?". Y es normal, porque la misma pieza puede salir perfecta o romperse a la semana según el plástico que elijas. La buena noticia es que no hace falta saber química: basta con pensar dónde va a estar la pieza y qué va a tener que aguantar.
 
-En 3DCC imprimo en FDM, es decir, con filamento que se funde y se deposita capa a capa. Los materiales con los que trabajo son PLA, PETG, ASA, TPU y Nylon. Vamos uno por uno, con ejemplos de para qué sirve cada uno.
+En 3DCC imprimimos en FDM, es decir, con filamento que se funde y se deposita capa a capa. Los materiales con los que trabajamos son PLA, PETG, ASA, TPU y Nylon. Vamos uno por uno, con ejemplos de para qué sirve cada uno.
 
 ## PLA: el todoterreno para interior
 
@@ -27,7 +27,7 @@ El PETG es un paso más en resistencia. Es algo menos rígido que el PLA, pero a
 
 ## ASA: para piezas de exterior
 
-El ASA es el material que recomiendo cuando la pieza va a vivir fuera: placas para la puerta, piezas para el jardín, accesorios para la bici o el coche, soportes en la terraza. Su gran ventaja es que resiste los rayos UV, así que no se decolora ni se vuelve quebradizo con el sol como le pasa a otros plásticos.
+El ASA es el material que recomendamos cuando la pieza va a vivir fuera: placas para la puerta, piezas para el jardín, accesorios para la bici o el coche, soportes en la terraza. Su gran ventaja es que resiste los rayos UV, así que no se decolora ni se vuelve quebradizo con el sol como le pasa a otros plásticos.
 
 **Úsalo para:** cualquier cosa que vaya a estar a la intemperie. En el campo salmantino, con los veranos que tenemos y las heladas de invierno, se nota la diferencia.
 
@@ -37,7 +37,7 @@ El TPU es un material flexible, con un tacto parecido a la goma. Se dobla y vuel
 
 **Úsalo para:** fundas, topes y protectores, juntas, pies antideslizantes para muebles o aparatos, correas y cualquier pieza que tenga que absorber golpes o ajustarse a presión.
 
-**Ten en cuenta que:** no sirve para piezas que tengan que ser rígidas. Si me pides un soporte en TPU, se va a doblar.
+**Ten en cuenta que:** no sirve para piezas que tengan que ser rígidas. Si nos pides un soporte en TPU, se va a doblar.
 
 ## Nylon: para piezas técnicas que sufren desgaste
 
@@ -57,12 +57,12 @@ El Nylon es el más "industrial" de la lista. Es muy resistente al desgaste y a 
 
 ## ¿Y el color?
 
-Casi todos los materiales están disponibles en varios colores. En el [muestrario](/muestrario/) puedes ver más de 30. Si te preocupa que el tono no sea exactamente el que imaginas, pídeme una foto real del filamento antes de imprimir. La pantalla del móvil cambia mucho los colores.
+Casi todos los materiales están disponibles en varios colores. En el [muestrario](/muestrario/) puedes ver más de 30. Si te preocupa que el tono no sea exactamente el que imaginas, pídenos una foto real del filamento antes de imprimir. La pantalla del móvil cambia mucho los colores.
 
 ## Si sigues con dudas
 
-Lo más fácil es que me cuentes para qué es la pieza: dónde va a ir, si va a llevar peso, si va a estar al sol, si se va a mojar. Con eso te digo qué material usaría yo. Puedes escribirme por WhatsApp o, si ya tienes el archivo en STL, 3MF u OBJ, subirlo a la [calculadora de presupuesto](/instant-quote/), donde puedes probar distintos materiales y ver el precio de cada uno.
+Lo más fácil es que nos cuentes para qué es la pieza: dónde va a ir, si va a llevar peso, si va a estar al sol, si se va a mojar. Con eso te decimos qué material usaríamos. Puedes escribirnos por WhatsApp o, si ya tienes el archivo en STL, 3MF u OBJ, subirlo a la [calculadora de presupuesto](/instant-quote/), donde puedes probar distintos materiales y ver el precio de cada uno.
 
-Si buscas ideas ya hechas, en el [catálogo](/catalogo/) tienes piezas listas para encargar. Y si estás en Salamanca o en la provincia, en esta página te explico [cómo funcionan la recogida y el envío](/impresion-3d-salamanca-provincia/).
+Si buscas ideas ya hechas, en el [catálogo](/catalogo/) tienes piezas listas para encargar. Y si estás en Salamanca o en la provincia, en esta página te explicamos [cómo funcionan la recogida y el envío](/impresion-3d-salamanca-provincia/).
 
-Elegir bien el material es la mitad del trabajo. La otra mitad ya me toca a mí.
+Elegir bien el material es la mitad del trabajo. La otra mitad ya nos toca a nosotros.

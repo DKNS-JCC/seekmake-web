@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 };
 
 const WA_QR =
-  whatsappUrl('Hola! Acabo de escanear tu QR y me gustaría información sobre impresión 3D');
+  whatsappUrl('Hola! Acabo de escanear vuestro QR y me gustaría información sobre impresión 3D');
 const WA_FAB =
-  whatsappUrl('Hola! Acabo de escanear tu QR');
+  whatsappUrl('Hola! Acabo de escanear vuestro QR');
 const REVIEW_URL = 'https://reviewthis.biz/3dcc';
 
 // Filled-star path used many times.

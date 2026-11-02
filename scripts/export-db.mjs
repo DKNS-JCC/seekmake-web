@@ -41,7 +41,7 @@ const TABLAS = [
   'recibos', 'cobros', 'quotes', 'quote_events', 'quote_settings', 'orders', 'pedido_estados',
   'envios', 'productos', 'filamentos', 'colores',
   'empresas', 'empresa_users', 'empresa_docs',
-  'trabajos', 'trabajos_votos', 'blog_posts',
+  'trabajos', 'blog_posts',
 ]
 
 const OUT = path.resolve('..', 'export-db')

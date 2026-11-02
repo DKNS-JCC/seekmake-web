@@ -232,53 +232,6 @@
   border-radius: 2px;
 }
 
-/* ── Vote buttons ─────────────────────────────────────────────────────── */
-
-.tr-vote-row {
-  display: flex;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  margin-top: 2px;
-}
-.tr-vote {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 8px 10px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.18s;
-}
-.tr-vote:hover { transform: translateY(-1px); }
-
-.tr-like:hover {
-  border-color: #10b981;
-  color: #10b981;
-}
-.tr-like.active {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: #10b981;
-  color: #10b981;
-}
-.tr-dislike:hover {
-  border-color: #ef4444;
-  color: #ef4444;
-}
-.tr-dislike.active {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: #ef4444;
-  color: #ef4444;
-}
-
 /* ── Nav arrows ───────────────────────────────────────────────────────── */
 
 .tr-nav {

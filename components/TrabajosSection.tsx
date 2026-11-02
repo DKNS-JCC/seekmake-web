@@ -1,7 +1,7 @@
 import type { Trabajo } from '@/lib/types';
 import { TrabajosTimeline } from './TrabajosTimeline';
 
-// Trabajos are fetched at build time in app/(site)/page.tsx; votes stay client-side in TrabajosTimeline.
+// Trabajos are fetched at build time in app/(site)/page.tsx.
 export function TrabajosSection({ trabajos: items }: { trabajos: Trabajo[] }) {
   if (items.length === 0) return null;
 
@@ -13,7 +13,7 @@ export function TrabajosSection({ trabajos: items }: { trabajos: Trabajo[] }) {
           <h2 className="section-title">Nuestros Trabajos</h2>
           <p className="section-desc">
             Línea temporal completa: desliza para recorrer cronológicamente
-            los proyectos que hemos hecho. Vota los que más te gusten.
+            los proyectos que hemos hecho.
           </p>
         </div>
       </div>

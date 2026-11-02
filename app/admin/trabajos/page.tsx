@@ -16,7 +16,7 @@ import { ErrorBanner } from '../_components/ErrorBanner';
 
 type Draft = Omit<
   Trabajo,
-  'id' | 'created_at' | 'updated_at' | 'fecha_efectiva' | 'likes' | 'dislikes'
+  'id' | 'created_at' | 'updated_at' | 'fecha_efectiva'
 >;
 
 const emptyDraft = (): Draft => ({
@@ -102,7 +102,7 @@ export default function AdminTrabajos() {
     setError(null);
     const res = editingId
       ? await supabase().from('trabajos').update(draft).eq('id', editingId)
-      : await supabase().from('trabajos').insert({ ...draft, likes: 0, dislikes: 0 });
+      : await supabase().from('trabajos').insert(draft);
     if (res.error) {
       setError(mensajeDeError(res.error, 'No se pudo guardar el trabajo'));
       setSaveState('error');

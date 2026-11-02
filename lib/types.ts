@@ -45,6 +45,26 @@ export type Color = {
   orden: number;
 };
 
+/** Reseña de Google elegida a mano para la web (/admin/resenas). */
+export type Resena = {
+  id: string;
+  autor_visible: string;
+  texto: string;
+  estrellas: number;
+  fecha: string; // YYYY-MM-DD
+  orden: number;
+  publicada: boolean;
+  created_at: string;
+};
+
+/** Fila única con la nota y el total de la ficha de Google. */
+export type ResenasResumen = {
+  id: boolean;
+  media: number;
+  total: number;
+  actualizado_el: string;
+};
+
 export type Trabajo = {
   id: string;
   titulo: string;
@@ -54,8 +74,6 @@ export type Trabajo = {
   etiquetas: string[];
   destacado: boolean;
   orden: number;
-  likes: number;
-  dislikes: number;
   fecha_realizacion: string | null;  // YYYY-MM-DD; null = use created_at
   fecha_efectiva: string;             // computed: fecha_realizacion ?? created_at
   created_at: string;
@@ -205,6 +223,7 @@ export type Quote = {
 
 export type QuoteEventoTipo =
   | 'pieza_anadida'
+  | 'whatsapp_clic'
   | 'precio_visto'
   | 'solicitud_enviada'
   | 'pdf_descargado'
@@ -444,6 +463,18 @@ export type Database = {
           }
         ];
       };
+      resenas: {
+        Row: Resena;
+        Insert: Omit<Resena, 'id' | 'created_at'> & { id?: string; created_at?: string };
+        Update: Partial<Resena>;
+        Relationships: [];
+      };
+      resenas_resumen: {
+        Row: ResenasResumen;
+        Insert: Partial<ResenasResumen>;
+        Update: Partial<ResenasResumen>;
+        Relationships: [];
+      };
       trabajos: {
         Row: Trabajo;
         // fecha_efectiva is a STORED generated column — cannot be written.
@@ -533,14 +564,6 @@ export type Database = {
       verificar_recibo: {
         Args: { p_codigo: string; p_token: string };
         Returns: ReciboVerificado[];
-      };
-      vote_trabajo: {
-        Args: { p_id: string; p_voter_id: string; p_target: string };
-        Returns: { likes: number; dislikes: number; my_vote: string | null }[];
-      };
-      get_my_trabajo_votes: {
-        Args: { p_voter_id: string; p_trabajo_ids: string[] };
-        Returns: { trabajo_id: string; vote: string }[];
       };
     };
     Enums: { [_ in never]: never };
