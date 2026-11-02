@@ -17,12 +17,13 @@ interface NavItem {
 
 // Ordenado por lo que busca el cliente. Muestrario, Contacto, Servicios e
 // Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
-// Navidad sale hasta Reyes (FIN_CAMPANA); Grupos entra en la Fase 3.
+// Navidad sale hasta Reyes (FIN_CAMPANA).
 // El CTA azul sigue siendo el tasador; WhatsApp ya tiene su botón flotante.
 const NAVIDAD: NavItem = { href: '/navidad', label: 'Navidad' };
 const BASE_ITEMS: NavItem[] = [
   { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
   { href: '/catalogo',   label: 'Regalos' },
+  { href: '/servicios/grupos', label: 'Grupos' },
   { href: '/servicios/repuestos-impresion-3d', label: 'Piezas' },
   { href: '/#trabajos',  label: 'Trabajos',   isHomeAnchor: true }
 ];

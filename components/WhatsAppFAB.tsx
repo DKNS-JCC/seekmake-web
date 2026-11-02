@@ -10,6 +10,9 @@ import { createClient } from '@/lib/supabase/client';
 const MENSAJES: [string, string][] = [
   ['/navidad', 'Hola, quiero un regalo de Navidad.'],
   ['/catalogo', 'Hola, he visto el catálogo y quiero pedir un regalo.'],
+  ['/servicios/figuras', 'Hola, quiero una figura desde una foto.'],
+  ['/servicios/trofeos', 'Hola, queremos trofeos o medallas.'],
+  ['/servicios/grupos', 'Hola, queremos hacer un pedido para un grupo.'],
   ['/servicios/litofanias', 'Hola, quiero una litofanía. Os mando la foto.'],
   ['/servicios/llaveros', 'Hola, quiero llaveros personalizados.'],
   ['/servicios/repuestos', 'Hola, necesito una pieza de repuesto. Os mando fotos.'],

@@ -26,6 +26,8 @@ export type Servicio = {
   faq: { q: string; a: string }[];
   waMensaje: string;
   hermano: { href: string; texto: string };
+  /** Precio orientativo, tamaño y plazo, para los servicios con precio cerrado. */
+  ficha?: { precio: string; tamano: string; plazo: string };
 };
 
 export function servicioMetadata(s: Servicio): Metadata {
@@ -94,6 +96,13 @@ export default async function ServicioLanding({ s }: { s: Servicio }) {
             <span className="accent">{s.h1Accent}</span>
           </h1>
           <p className="about-intro-block">{s.intro}</p>
+          {s.ficha && (
+            <dl className="servicio-ficha">
+              <div><dt>Precio</dt><dd>{s.ficha.precio}</dd></div>
+              <div><dt>Tamaño</dt><dd>{s.ficha.tamano}</dd></div>
+              <div><dt>Plazo</dt><dd>{s.ficha.plazo}</dd></div>
+            </dl>
+          )}
         </div>
       </section>
 
