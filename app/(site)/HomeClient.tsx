@@ -6,7 +6,7 @@ import { TrabajosSection } from '@/components/TrabajosSection';
 import { FaqSection } from '@/components/FaqSection';
 import { ResenasSection } from '@/components/ResenasSection';
 import type { ResenasData } from '@/lib/resenas';
-import { ImpresoraNavidad } from '@/components/ImpresoraNavidad';
+import { AvisoNavidad } from '@/components/AvisoNavidad';
 import type { Plazas } from '@/lib/campana-navidad';
 import { ContactForm } from '@/app/(site)/contacto/ContactForm';
 import '@/app/(site)/contacto/contacto.css';
@@ -30,7 +30,7 @@ export function HomeClient({
   return (
     <>
       {/* Campaña de Navidad: se oculta sola después de Reyes. */}
-      <ImpresoraNavidad plazas={plazas} hoy={hoy} variante="banner" />
+      <AvisoNavidad plazas={plazas} hoy={hoy} />
 
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section id="inicio">
