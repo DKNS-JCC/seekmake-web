@@ -153,7 +153,7 @@ img { max-width: 100%; height: auto; }
     .section-header { margin-bottom: 36px; }
     .section-desc { font-size: 14px; margin-top: 10px; }
 
-    .btn-primary, .btn-outline { padding: 12px 22px; font-size: 11px; width: 100%; justify-content: center; }
+    .btn-primary, .btn-outline { padding: 12px 22px; font-size: 11px; }
     .btn-white { padding: 14px 28px; font-size: 12px; margin-top: 28px; }
 
     .cbtn { padding: 14px 20px; font-size: 11px; }
@@ -271,6 +271,10 @@ footer.site-footer {
     box-shadow: 0 4px 18px rgba(21,128,61,0.4); text-decoration: none;
 }
 .wa-fab:hover { transform: translateY(-2px); box-shadow: 0 6px 26px rgba(21,128,61,0.55); }
+/* Botones a todo el ancho solo con el móvil en vertical; en horizontal, en fila. */
+@media (max-width: 640px) {
+    .btn-primary, .btn-outline { width: 100%; justify-content: center; }
+}
 /* Después de la regla base: si va antes, la base la pisa. */
 @media (max-width: 768px) {
     .wa-fab { height: 42px; padding: 0 14px 0 11px; gap: 8px; font-size: 11px; letter-spacing: 0.02em; bottom: 16px; right: 16px; }

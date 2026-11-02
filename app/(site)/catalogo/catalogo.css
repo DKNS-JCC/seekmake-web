@@ -595,6 +595,15 @@
             display: flex; gap: 12px;
         }
 
+        /* /catalogo/[slug]/: el menú es fijo, las migas van por debajo. En
+           escritorio, foto y ficha lado a lado en vez de una tarjeta estrecha. */
+        .cat-pagina { max-width: 1200px; margin: 0 auto; padding: calc(var(--nav-h) + 32px) 24px 64px; }
+        @media (min-width: 901px) {
+            .cat-detalle { display: grid; grid-template-columns: 1fr 1fr; max-width: none; }
+            .cat-detalle .cat-modal-image { height: auto; min-height: 520px; }
+            .cat-pagina > .cat-modal-actions { max-width: 640px; margin-left: auto; }
+        }
+
         /* Staggered card animation */
         .p-card {
             opacity: 0;

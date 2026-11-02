@@ -1,5 +1,6 @@
 .zona-section { padding: 72px 0; }
-.zona-prose { max-width: 760px; }
+/* Alineada a la izquierda con el resto de secciones; el texto, a ancho de lectura. */
+.container-3dcc.zona-prose > * { max-width: 760px; }
 .zona-prose h2 {
     font-family: var(--font-display), sans-serif;
     font-size: clamp(30px, 3.5vw, 44px); line-height: 1.05;

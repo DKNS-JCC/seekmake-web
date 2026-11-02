@@ -125,7 +125,7 @@ export default async function ServicioLanding({ s }: { s: Servicio }) {
                   Pedir por WhatsApp
                 </a>
                 <Link href="/instant-quote/" className="btn-outline">
-                  Calcular precio con mi archivo
+                  Calcular precio
                 </Link>
               </div>
             </div>

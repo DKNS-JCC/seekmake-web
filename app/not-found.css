@@ -13,7 +13,7 @@
 .nf-texto { color: var(--muted); max-width: 520px; line-height: 1.7; margin: 18px 0 32px; font-size: 16px; }
 .nf-acciones { display: flex; gap: 12px; flex-wrap: wrap; }
 
-@media (max-width: 760px) {
+@media (max-width: 640px) {
     .nf-main { grid-template-columns: 1fr; gap: 32px; padding-top: calc(var(--nav-h) + 32px); }
     .nf-pieza span { width: 96px; height: 9px; }
     .nf-acciones .btn-primary, .nf-acciones .btn-outline { width: 100%; justify-content: center; }

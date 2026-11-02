@@ -118,7 +118,7 @@ export default async function ProductoPage({
   ];
 
   return (
-    <main style={{ maxWidth: 860, margin: '0 auto', padding: '32px 24px 64px' }}>
+    <main className="cat-pagina">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -126,7 +126,7 @@ export default async function ProductoPage({
       <nav aria-label="Migas de pan" style={{ marginBottom: 16, color: 'var(--muted)', fontSize: 13 }}>
         <Link href="/">Inicio</Link> › <Link href="/catalogo/">Catálogo</Link> › {p.nombre}
       </nav>
-      <article className="cat-modal" style={{ transform: 'none', maxHeight: 'none' }}>
+      <article className="cat-modal cat-detalle" style={{ transform: 'none', maxHeight: 'none' }}>
         <ProductDetail p={p} titleAs="h1" />
       </article>
       <div className="cat-modal-actions" style={{ marginTop: 24 }}>
