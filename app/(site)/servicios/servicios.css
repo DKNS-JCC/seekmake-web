@@ -13,3 +13,24 @@ a.value-card { display: block; color: inherit; text-decoration: none; }
   .values-grid > .value-card:last-child:nth-child(3n + 2) { grid-column: span 2; }
   .values-grid > .value-card:last-child:nth-child(3n + 1) { grid-column: span 3; }
 }
+
+/* Cómo funciona + formulario, lado a lado; en móvil, uno debajo del otro. */
+.servicio-pedir { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+.servicio-pedir h2 {
+    font-family: var(--font-display), sans-serif;
+    font-size: clamp(30px, 3.5vw, 44px); line-height: 1.05;
+    letter-spacing: 0.02em; color: var(--text); margin-bottom: 16px;
+}
+.servicio-alt { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 8px 0 0; }
+.servicio-info { padding-top: 20px; border-top: 1px solid var(--border); }
+.servicio-info > summary {
+    cursor: pointer; list-style: none; font-size: 15px; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.servicio-info > summary::-webkit-details-marker { display: none; }
+.servicio-info > summary::after { content: '+'; font-family: var(--font-mono), monospace; color: var(--accent); }
+.servicio-info[open] > summary::after { content: '−'; }
+.servicio-info > summary:hover { color: var(--text); }
+@media (max-width: 900px) {
+    .servicio-pedir { grid-template-columns: 1fr; gap: 36px; }
+}
