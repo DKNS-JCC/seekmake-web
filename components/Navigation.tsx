@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDarkMode } from '@/app/providers';
+import { campanaActiva } from '@/lib/campana-navidad';
 
 interface NavItem {
   href: string;
@@ -16,9 +17,10 @@ interface NavItem {
 
 // Ordenado por lo que busca el cliente. Muestrario, Contacto, Servicios e
 // Impresoras viven en el Footer. Inicio va explícito: el logo solo no basta.
-// Navidad entra en la Fase 2 y Grupos en la 3, cuando existan sus páginas.
+// Navidad sale hasta Reyes (FIN_CAMPANA); Grupos entra en la Fase 3.
 // El CTA azul sigue siendo el tasador; WhatsApp ya tiene su botón flotante.
-const ITEMS: NavItem[] = [
+const NAVIDAD: NavItem = { href: '/navidad', label: 'Navidad' };
+const BASE_ITEMS: NavItem[] = [
   { href: '/#inicio',    label: 'Inicio',     isHomeAnchor: true },
   { href: '/catalogo',   label: 'Regalos' },
   { href: '/servicios/repuestos-impresion-3d', label: 'Piezas' },
@@ -27,6 +29,8 @@ const ITEMS: NavItem[] = [
 
 export function Navigation() {
   const pathname = usePathname();
+  // Se evalúa en build (rebuild cada 15 min) y en cliente: desaparece tras Reyes.
+  const ITEMS = campanaActiva() ? [BASE_ITEMS[0], NAVIDAD, ...BASE_ITEMS.slice(1)] : BASE_ITEMS;
   const { isDark, toggle } = useDarkMode();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);

@@ -1043,6 +1043,24 @@ await check('anon solo lee reseñas publicadas y no puede escribir', async () =>
   }
 });
 
+await check('campana_navidad: una fila, anon lee y no escribe, ocupadas <= semana', async () => {
+  await comoAdmin();
+  let lanzo = false;
+  try { await client.query('update public.campana_navidad set plazas_ocupadas = 99'); } catch { lanzo = true; }
+  assert(lanzo, 'aceptó más ocupadas que plazas');
+  await client.query('begin');
+  try {
+    await client.query('set local role anon');
+    await comoAnon();
+    const { rows } = await client.query('select plazas_semana from public.campana_navidad');
+    assert(rows.length === 1 && rows[0].plazas_semana === 15, `anon ve ${JSON.stringify(rows)}`);
+    const r = await client.query('update public.campana_navidad set plazas_ocupadas = 1');
+    assert(r.rowCount === 0, 'anon pudo cambiar las plazas');
+  } finally {
+    await client.query('rollback');
+  }
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();

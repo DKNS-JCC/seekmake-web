@@ -65,6 +65,14 @@ export type ResenasResumen = {
   actualizado_el: string;
 };
 
+/** Fila única con las plazas de la semana de la campaña de Navidad. */
+export type CampanaNavidad = {
+  id: boolean;
+  plazas_semana: number;
+  plazas_ocupadas: number;
+  actualizado_el: string;
+};
+
 export type Trabajo = {
   id: string;
   titulo: string;
@@ -462,6 +470,12 @@ export type Database = {
             referencedColumns: ['id'];
           }
         ];
+      };
+      campana_navidad: {
+        Row: CampanaNavidad;
+        Insert: Partial<CampanaNavidad>;
+        Update: Partial<CampanaNavidad>;
+        Relationships: [];
       };
       resenas: {
         Row: Resena;
