@@ -6,8 +6,7 @@ import { buildSafe } from '@/lib/supabase/buildSafe';
 import { siteUrl, whatsappUrl } from '@/lib/contacto';
 import { loadResenas } from '@/lib/resenas';
 import { ResenasSection } from '@/components/ResenasSection';
-import { ImpresoraNavidad } from '@/components/ImpresoraNavidad';
-import { FECHAS, PRODUCTOS, fechaCorta, hoyMadrid, loadPlazas } from '@/lib/campana-navidad';
+import { FECHAS, PRODUCTOS, fechaCorta, hoyMadrid, loadPlazas, proximaFecha } from '@/lib/campana-navidad';
 import '@/components/faq.css';
 import './navidad.css';
 
@@ -74,6 +73,8 @@ export default async function NavidadPage() {
   const [fotos, plazas, resenas] = await Promise.all([loadFotos(), loadPlazas(), loadResenas()]);
   const hoy = hoyMadrid();
   const portada = fotos['Litofanía personalizada'];
+  const prox = proximaFecha(hoy);
+  const libres = plazas ? Math.max(0, plazas.semana - plazas.ocupadas) : null;
 
   return (
     <main id="inicio" className="nv-page">
@@ -90,7 +91,12 @@ export default async function NavidadPage() {
               Una figura de tu perro, la foto de los abuelos que se enciende, un llavero con un nombre.
               Lo imprimimos en nuestro taller de Salamanca, con plazas limitadas cada semana para llegar a tiempo.
             </p>
-            <ImpresoraNavidad plazas={plazas} hoy={hoy} variante="pagina" />
+            {prox && (
+              <p className="nv-proximo">
+                <strong>{prox.texto}:</strong> pide hasta el {fechaCorta(prox.fecha)}.
+                {libres !== null && <> Quedan {libres} {libres === 1 ? 'plaza' : 'plazas'} esta semana.</>}
+              </p>
+            )}
             <div className="nv-acciones">
               <a href={whatsappUrl('Hola, quiero un regalo de Navidad.')} className="btn-primary" target="_blank" rel="noopener noreferrer">
                 Pedir por WhatsApp
