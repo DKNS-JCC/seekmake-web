@@ -90,7 +90,7 @@
     .nv-acciones .btn-primary, .nv-acciones .btn-outline { width: 100%; justify-content: center; }
     .nv-producto, .nv-producto:nth-child(even) { grid-template-columns: 1fr; gap: 20px; }
     .nv-producto:nth-child(even) .nv-producto-foto { order: 0; }
-    .nv-producto-foto img, .nv-capas { aspect-ratio: 4 / 3; }
+    .nv-capas { aspect-ratio: 4 / 3; }
     .nv-producto-texto .btn-primary { width: 100%; justify-content: center; }
     .nv-cola li { grid-template-columns: auto 1fr; gap: 4px 12px; padding: 14px 16px; }
     .nv-job { display: none; }

@@ -118,14 +118,15 @@ export default async function NavidadPage() {
           <h2 id="nv-productos-titulo" className="section-title">Qué imprimimos esta Navidad</h2>
           <ol className="nv-lista">
             {PRODUCTOS.map((p) => {
-              const foto = p.fotoTrabajo ? fotos[p.fotoTrabajo] : undefined;
+              const trabajo = p.fotoTrabajo ? fotos[p.fotoTrabajo] : undefined;
+              const foto = p.foto ?? (trabajo && p.fotoTrabajo ? { src: trabajo, alt: p.fotoTrabajo, pie: p.fotoTrabajo } : undefined);
               return (
                 <li key={p.id} className="nv-producto" id={p.id}>
                   <div className="nv-producto-foto">
                     {foto ? (
                       <figure>
-                        <img src={foto} alt={p.fotoTrabajo} loading="lazy" decoding="async" />
-                        <figcaption>{p.fotoTrabajo}</figcaption>
+                        <img src={foto.src} alt={foto.alt} loading="lazy" decoding="async" />
+                        <figcaption>{foto.pie}</figcaption>
                       </figure>
                     ) : (
                       <div className="nv-capas" aria-hidden="true">
