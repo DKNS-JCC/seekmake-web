@@ -157,7 +157,7 @@ export function HomeClient({
               {
                 title: 'Trofeos y medallas',
                 desc: 'Para clubes, colegios y asociaciones, con vuestro diseño y desde pocas unidades.',
-                href: whatsappUrl('Hola, queremos trofeos o medallas para un grupo.'),
+                href: '/servicios/trofeos-y-medallas/',
                 num: '02',
                 icon: (
                   <path

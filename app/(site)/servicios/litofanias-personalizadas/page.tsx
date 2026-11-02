@@ -50,7 +50,8 @@ const S: Servicio = {
     }
   ],
   waMensaje: 'Hola, os escribo desde la web. Quería pedir una litofanía personalizada con una foto.',
-  hermano: { href: '/servicios/llaveros-personalizados/', texto: 'los llaveros personalizados en 3D' }
+  hermano: { href: '/servicios/llaveros-personalizados/', texto: 'los llaveros personalizados en 3D' },
+  ficha: { precio: 'Desde 14 €', tamano: '10 x 15 cm', plazo: '2 días de taller' }
 };
 
 export const metadata = servicioMetadata(S);

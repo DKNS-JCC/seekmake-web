@@ -7,7 +7,7 @@ import { siteUrl } from '@/lib/contacto';
 
 const TITLE = 'Servicios de impresión 3D | 3DCC';
 const DESCRIPTION =
-  'Litofanías, repuestos, llaveros personalizados y diseño 3D a medida en un taller de Salamanca. Recogida en persona y envío a toda España.';
+  'Figuras desde foto, litofanías, trofeos, repuestos, llaveros y diseño 3D a medida en un taller de Salamanca. Recogida en persona y envío a toda España.';
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -32,6 +32,21 @@ const breadcrumbLd = {
 
 const SERVICIOS = [
   {
+    href: '/servicios/figuras-desde-foto/',
+    titulo: 'Figuras desde tu foto',
+    desc: 'Una persona, una pareja o una mascota convertida en figura.'
+  },
+  {
+    href: '/servicios/trofeos-y-medallas/',
+    titulo: 'Trofeos y medallas',
+    desc: 'Con vuestro logo y colores, para clubes, colegios y ligas. Desde pocas unidades.'
+  },
+  {
+    href: '/servicios/grupos/',
+    titulo: 'Pedidos para grupos',
+    desc: 'Llaveros de socio, detalles con nombre y amigo invisible, con precio a medida.'
+  },
+  {
     href: '/servicios/litofanias-personalizadas/',
     titulo: 'Litofanías personalizadas',
     desc: 'Tu foto convertida en relieve que aparece al ponerle luz detrás.'
@@ -39,7 +54,7 @@ const SERVICIOS = [
   {
     href: '/servicios/repuestos-impresion-3d/',
     titulo: 'Repuestos y piezas descatalogadas',
-    desc: 'Copio la pieza rota a partir de fotos con medidas o de la original.'
+    desc: 'Copiamos la pieza rota a partir de fotos con medidas o de la original.'
   },
   {
     href: '/servicios/llaveros-personalizados/',
