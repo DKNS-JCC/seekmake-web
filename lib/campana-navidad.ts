@@ -27,7 +27,7 @@ export const PRODUCTOS: ProductoNavidad[] = [
   {
     id: 'figura-foto',
     nombre: 'Figura desde tu foto',
-    precio: 'Desde 22 €',
+    precio: 'Desde 20 €',
     tamano: '10 cm de alto',
     plazo: '3 días de taller',
     descripcion:
@@ -38,11 +38,11 @@ export const PRODUCTOS: ProductoNavidad[] = [
   {
     id: 'litofania',
     nombre: 'Litofanía',
-    precio: '14 €',
+    precio: 'Desde 10 €',
     tamano: '10 x 15 cm',
     plazo: '2 días de taller',
     descripcion:
-      'Parece una placa blanca con relieve hasta que le pones luz detrás: entonces aparece la foto con todos sus tonos.',
+      'Parece una placa blanca con relieve hasta que le pones luz detrás: entonces aparece la foto con todos sus tonos. Si pides varias, cada una sale más barata.',
     necesitamos: 'La foto original, no una captura. Mejor si las caras se ven grandes.',
     fotoTrabajo: 'Litofanía personalizada',
     waMensaje: 'Hola, quiero una litofanía para Navidad. Os mando la foto.'
@@ -66,8 +66,8 @@ export const PRODUCTOS: ProductoNavidad[] = [
     tamano: 'Desde 10 unidades',
     plazo: '4 días de taller',
     descripcion:
-      'Un detalle con el nombre de cada uno para la oficina, la clase o la cuadrilla. Lo hablamos por WhatsApp y os pasamos una muestra.',
-    necesitamos: 'Cuántas unidades, la lista de nombres y para qué fecha.',
+      'Para el amigo invisible de la oficina, la clase o la cuadrilla: un regalo distinto con el nombre de cada uno, todos con el mismo presupuesto. Nos decís cuántos sois y lo que queréis gastar por persona, y os proponemos ideas y una muestra.',
+    necesitamos: 'Cuántos sois, el presupuesto por persona, la lista de nombres y la fecha del intercambio.',
     fotoTrabajo: 'Abrelatas Scout',
     waMensaje: 'Hola, queremos un pack para el amigo invisible.'
   }
