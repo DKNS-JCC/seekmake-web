@@ -6,7 +6,8 @@
 }
 
 .blog-hero {
-  max-width: 760px;
+  /* Mismo ancho que la rejilla de artículos, para que el título quede alineado. */
+  max-width: 1200px;
   margin: 0 auto 56px;
   padding: 0 24px;
 }

@@ -6,11 +6,13 @@
 }
 
 .contacto-wrap {
-  max-width: 960px;
+  /* Alineado con el menú (1200 px); el formulario no pasa de un ancho cómodo. */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 640px) minmax(0, 420px);
+  justify-content: space-between;
   gap: 48px;
   align-items: start;
 }

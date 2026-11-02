@@ -25,6 +25,13 @@
     padding: 0 24px 22px;
     font-size: 15px; color: var(--muted); line-height: 1.75;
 }
+/* Escritorio: el título a la izquierda y fijo; las preguntas a la derecha. */
+@media (min-width: 901px) {
+    .faq-section .container-3dcc { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; column-gap: 64px; align-items: start; }
+    .faq-section .section-header { grid-row: 1 / span 3; position: sticky; top: calc(var(--nav-h) + 24px); margin-bottom: 0; }
+    .faq-section .container-3dcc > :not(.section-header) { grid-column: 2; }
+    .faq-section .faq-list { max-width: none; }
+}
 @media (max-width: 900px) {
     .faq-section { padding: 64px 0; }
     .faq-q { padding: 18px 16px; font-size: 15px; }
