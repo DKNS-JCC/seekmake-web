@@ -1,6 +1,6 @@
 /* Ported verbatim from legacy/index.html <style> block. */
 
-#inicio {
+section#inicio {
     min-height: 100vh; padding-top: var(--nav-h);
     display: grid; grid-template-columns: 1fr 1fr;
     position: relative; overflow: hidden;
@@ -37,7 +37,7 @@
 .scroll-line::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: scan 2s ease-in-out infinite; }
 @keyframes scan { 0%{left:-100%} 100%{left:100%} }
 @media (max-width: 900px) {
-    #inicio { grid-template-columns: 1fr; min-height: auto; }
+    section#inicio { grid-template-columns: 1fr; min-height: auto; }
     .hero-left { padding: 8px 20px 32px; }
     .hero-title { font-size: clamp(48px, 12vw, 72px); margin-bottom: 20px; }
     .hero-desc { font-size: 15px; margin-bottom: 32px; }

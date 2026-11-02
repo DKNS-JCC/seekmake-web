@@ -20,6 +20,8 @@ export type ProductoNavidad = {
   necesitamos: string;
   /** Título de un trabajo real cuya foto se usa; sin foto si no existe. */
   fotoTrabajo?: string;
+  /** Foto propia en /public, para piezas que no están en Trabajos. */
+  foto?: { src: string; alt: string; pie: string };
   waMensaje: string;
 };
 
@@ -33,6 +35,11 @@ export const PRODUCTOS: ProductoNavidad[] = [
     descripcion:
       'Una persona, una pareja o una mascota convertida en figura. La modelamos a partir de la foto y la imprimimos en el color que elijas.',
     necesitamos: 'Una foto de cuerpo entero, con buena luz y sin nada tapando. Con permiso de quien sale.',
+    foto: {
+      src: '/images/navidad/figura-chanel.webp',
+      alt: 'Foto de Chanel, una perra samoyedo blanca sentada en la calle, junto a la figura impresa en 3D que hicimos a partir de ella',
+      pie: 'Chanel: la foto que nos mandaron y su figura'
+    },
     waMensaje: 'Hola, quiero una figura desde una foto para Navidad.'
   },
   {
@@ -50,7 +57,7 @@ export const PRODUCTOS: ProductoNavidad[] = [
   {
     id: 'nombre',
     nombre: 'Nombre o llavero personalizado',
-    precio: 'Desde 4 €',
+    precio: 'A consultar',
     tamano: 'Unos 6 cm',
     plazo: '2 días de taller',
     descripcion:
