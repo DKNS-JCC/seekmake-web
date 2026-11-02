@@ -113,3 +113,15 @@
     .ss-galeria { margin-top: 40px; }
     .ss-fotos { grid-template-columns: repeat(2, 1fr); gap: 16px; }
 }
+
+/* Escritorio: cabecera, galería y texto plegado centrados; si no, en pantallas
+   anchas todo queda pegado a la izquierda con un hueco enorme a la derecha. */
+@media (min-width: 901px) {
+    .ss-hero .section-tag { justify-content: center; }
+    .ss-h1 { text-align: center; }
+    .ss-lead, .ss-picker-note { margin-left: auto; margin-right: auto; text-align: center; }
+    .ss-galeria .ss-row-title { text-align: center; }
+    .ss-fotos { margin: 0 auto; }
+    .ss-info { margin-left: auto; margin-right: auto; }
+    .ss-info > summary { display: flex; justify-content: center; }
+}

@@ -49,8 +49,11 @@ export function HomeClient({ trabajos, resenas }: { trabajos: Trabajo[]; resenas
               target="_blank"
               rel="noopener noreferrer"
             >
-              Sin archivo: pedir por WhatsApp
+              Pedir por WhatsApp
             </a>
+            <Link href="#contacto" className="btn-outline">
+              Contáctanos
+            </Link>
           </div>
           <div className="hero-stats">
             <div>

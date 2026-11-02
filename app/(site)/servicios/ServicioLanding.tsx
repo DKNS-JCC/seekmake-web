@@ -6,6 +6,8 @@ import './servicios.css';
 import { siteUrl, whatsappUrl } from '@/lib/contacto';
 import { loadResenas } from '@/lib/resenas';
 import { ResenasSection } from '@/components/ResenasSection';
+import { ContactForm } from '../contacto/ContactForm';
+import '../contacto/contacto.css';
 
 export type Servicio = {
   slug: string;
@@ -95,75 +97,95 @@ export default async function ServicioLanding({ s }: { s: Servicio }) {
         </div>
       </section>
 
+      <section className="zona-section">
+        <div className="container-3dcc">
+          <div className="servicio-pedir">
+            <div>
+              <h2>Cómo funciona</h2>
+              <ol className="servicio-list">
+                {s.pasos.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ol>
+              <p className="servicio-alt">
+                ¿Prefieres hablarlo directamente? Escríbenos por WhatsApp y te
+                contestamos en el día.
+              </p>
+              <div className="zona-actions">
+                <a href={wa} className="btn-primary" target="_blank" rel="noopener noreferrer">
+                  Pedir por WhatsApp
+                </a>
+                <Link href="/instant-quote/" className="btn-outline">
+                  Calcular precio con mi archivo
+                </Link>
+              </div>
+            </div>
+            <div className="contact-form-container">
+              <ContactForm />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <ResenasSection {...resenas} />
 
       <section className="zona-section">
         <div className="container-3dcc zona-prose">
-          <h2>Cómo funciona</h2>
-          <ol className="servicio-list">
-            {s.pasos.map((p) => (
-              <li key={p}>{p}</li>
+          {/* Para Google y para quien quiera leer; plegado para no tapar el formulario. */}
+          <details className="servicio-info">
+            <summary>Más información: qué mandarnos, materiales y preguntas frecuentes</summary>
+
+            <h2>Qué necesitamos que nos mandes</h2>
+            <ul className="servicio-list">
+              {s.enviar.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+
+            <h2>Qué material elegir</h2>
+            {s.materiales.map((p) => (
+              <p key={p}>{p}</p>
             ))}
-          </ol>
+            <p>
+              Tienes todos los colores en el{' '}
+              <Link href="/muestrario/">muestrario</Link>, y si dudas entre dos te
+              mandamos una foto real del filamento antes de imprimir.
+            </p>
 
-          <h2>Qué necesitamos que nos mandes</h2>
-          <ul className="servicio-list">
-            {s.enviar.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
+            <h2>Para qué se suele pedir</h2>
+            <ul className="servicio-list">
+              {s.usos.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
 
-          <h2>Qué material elegir</h2>
-          {s.materiales.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
-          <p>
-            Tienes todos los colores en el{' '}
-            <Link href="/muestrario/">muestrario</Link>, y si dudas entre dos te
-            mandamos una foto real del filamento antes de imprimir.
-          </p>
+            <h2>Preguntas frecuentes</h2>
+            <div className="servicio-faq">
+              {s.faq.map((f) => (
+                <div key={f.q}>
+                  <h3>{f.q}</h3>
+                  <p>{f.a}</p>
+                </div>
+              ))}
+            </div>
 
-          <h2>Para qué se suele pedir</h2>
-          <ul className="servicio-list">
-            {s.usos.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
-
-          <h2>Preguntas frecuentes</h2>
-          <div className="servicio-faq">
-            {s.faq.map((f) => (
-              <div key={f.q}>
-                <h3>{f.q}</h3>
-                <p>{f.a}</p>
-              </div>
-            ))}
-          </div>
-
-          <h2>Recogida en Salamanca o envío a toda España</h2>
-          <p>
-            Puedes recoger la pieza en persona en Salamanca, por la zona del
-            Barrio Vidal, o te la enviamos por mensajería a cualquier punto de
-            España. Más detalles en{' '}
-            <Link href="/impresion-3d-salamanca-provincia/">
-              impresión 3D en Salamanca y provincia
-            </Link>
-            . Pagas en efectivo, por Bizum o por transferencia, y el plazo te
-            lo confirmamos al hacer el pedido.
-          </p>
-          <p>
-            Si buscas ideas ya hechas, pásate por el{' '}
-            <Link href="/catalogo/">catálogo</Link>. Y quizá también te
-            interese <Link href={s.hermano.href}>{s.hermano.texto}</Link>.
-          </p>
-          <div className="zona-actions">
-            <Link href="/instant-quote/" className="btn-primary">
-              Calcular precio
-            </Link>
-            <a href={wa} className="btn-outline" target="_blank" rel="noopener noreferrer">
-              Escribir por WhatsApp
-            </a>
-          </div>
+            <h2>Recogida en Salamanca o envío a toda España</h2>
+            <p>
+              Puedes recoger la pieza en persona en Salamanca, por la zona del
+              Barrio Vidal, o te la enviamos por mensajería a cualquier punto de
+              España. Más detalles en{' '}
+              <Link href="/impresion-3d-salamanca-provincia/">
+                impresión 3D en Salamanca y provincia
+              </Link>
+              . Pagas en efectivo, por Bizum o por transferencia, y el plazo te
+              lo confirmamos al hacer el pedido.
+            </p>
+            <p>
+              Si buscas ideas ya hechas, pásate por el{' '}
+              <Link href="/catalogo/">catálogo</Link>. Y quizá también te
+              interese <Link href={s.hermano.href}>{s.hermano.texto}</Link>.
+            </p>
+          </details>
         </div>
       </section>
     </main>
