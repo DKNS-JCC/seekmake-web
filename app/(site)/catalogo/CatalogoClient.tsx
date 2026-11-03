@@ -379,10 +379,16 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
                   <p className="p-card-desc">{p.descripcion}</p>
                   <div className="p-card-footer">
                     <span className="p-card-price">
-                      {Math.floor(p.precio)}
-                      <span className="eur">
-                        ,{p.precio.toFixed(2).slice(-2)} €
-                      </span>
+                      {p.precio > 0 ? (
+                        <>
+                          {Math.floor(p.precio)}
+                          <span className="eur">
+                            ,{p.precio.toFixed(2).slice(-2)} €
+                          </span>
+                        </>
+                      ) : (
+                        <span className="eur">A consultar</span>
+                      )}
                     </span>
                     <button
                       type="button"
@@ -524,7 +530,7 @@ export function ProductDetail({ p, titleAs: Title = 'h3' }: { p: Producto; title
           <div className="cat-modal-spec">
             <div className="cat-modal-spec-label">Precio</div>
             <div className="cat-modal-spec-value price-val">
-              {p.precio.toFixed(2).replace('.', ',')} €
+              {p.precio > 0 ? `${p.precio.toFixed(2).replace('.', ',')} €` : 'A consultar'}
             </div>
           </div>
           <div className="cat-modal-spec">

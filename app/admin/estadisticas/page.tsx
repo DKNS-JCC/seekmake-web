@@ -201,8 +201,23 @@ export default function AdminEstadisticas() {
     const conPdf = sesiones('pdf_descargado');
     // Vieron el precio y se fueron sin solicitar ni descargar el PDF.
     const abandonos = [...conPrecio].filter((s) => !conSolicitud.has(s) && !conPdf.has(s)).length;
-    // Se fueron mientras se laminaba (o el archivo no se pudo tasar).
-    const antesDelPrecio = [...conPieza].filter((s) => !conPrecio.has(s)).length;
+    // Se fueron mientras se laminaba (o el archivo no se pudo tasar). Solo
+    // desde el primer 'precio_visto': antes el tasador no lo mandaba y toda
+    // sesión antigua contaría aquí.
+    const inicioPrecio = Math.min(
+      ...eventos.filter((e) => e.evento === 'precio_visto').map((e) => new Date(e.created_at).getTime())
+    );
+    const antesDelPrecio = new Set(
+      ev
+        .filter(
+          (e) =>
+            e.evento === 'pieza_anadida' &&
+            e.session_id &&
+            !conPrecio.has(e.session_id) &&
+            new Date(e.created_at).getTime() >= inicioPrecio
+        )
+        .map((e) => e.session_id)
+    ).size;
     // From the quotes, not the 'aceptado' event: that one also fires for
     // Calculadora orders and misses acceptances made from the admin.
     // Clics en cualquier enlace de WhatsApp, por página (WhatsAppFAB).
