@@ -115,7 +115,7 @@ jobs:
             extra=""
             if echo " $NO_VERIFY_JWT " | grep -q " $f "; then extra="--no-verify-jwt"; fi
             echo "▸ $f $extra"
-            supabase functions deploy "$f" --project-ref "$ref" --use-api $extra
+            supabase functions deploy "$f" --project-ref "$ref" --use-api --yes $extra
           done
 
       - name: Republicar la web
