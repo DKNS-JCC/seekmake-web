@@ -328,7 +328,8 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
       extras.push(`acabado +${acabadoPct}%`);
     }
 
-    const numColores = a.colores.length;
+    // Multi-part 3MFs send one entry per part; count distinct colors like the client does.
+    const numColores = new Set(a.colores.map((c: any) => `${c.nombre}|${c.hex}`)).size;
     if (numColores > 1) {
       unidad =
         unidad * (1 + settings.recargo_multicolor.base_pct / 100) +
