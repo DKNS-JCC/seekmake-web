@@ -42,7 +42,7 @@ export default function PrivacidadPage() {
               letterSpacing: '0.1em'
             }}
           >
-            Última actualización: 20 de octubre de 2026
+            Última actualización: 3 de noviembre de 2026
           </p>
 
           <div className="terms-card">
@@ -70,6 +70,11 @@ export default function PrivacidadPage() {
                 <strong>Calculadora de presupuesto:</strong> nombre, email, teléfono,
                 dirección de envío si eliges envío, los archivos 3D que subes y la
                 configuración de cada pieza (material, color, cantidad).
+              </li>
+              <li>
+                <strong>Fotos para tu encargo:</strong> las que nos mandas para una
+                figura, una litofanía u otra pieza personalizada, por WhatsApp, por
+                email o desde el formulario.
               </li>
               <li>
                 <strong>Encargos y pagos:</strong> importes, fechas y método de pago
@@ -132,6 +137,12 @@ export default function PrivacidadPage() {
                 (art. 6.1.f RGPD).
               </li>
             </ul>
+            <p>
+              Las fotos que nos mandas solo las usamos para preparar e imprimir tu
+              pieza. No las publicamos ni las enseñamos a nadie sin tu permiso
+              expreso. Si nos dejas enseñar el resultado (por ejemplo, la foto junto
+              a la figura), puedes pedirnos que lo retiremos cuando quieras.
+            </p>
             <p>No tomamos decisiones automatizadas ni elaboramos perfiles.</p>
 
             <h2>5. Destinatarios y transferencias internacionales</h2>
@@ -170,6 +181,17 @@ export default function PrivacidadPage() {
                 <strong>Archivos 3D del presupuesto:</strong> se borran solos a las 48 h
                 si no llegas a enviar el presupuesto, 30 días después de entregar o
                 rechazar el encargo y, como máximo, a los 120 días.
+              </li>
+              <li>
+                <strong>Fotos para tu encargo:</strong> las borramos de WhatsApp, del
+                correo y de nuestros equipos 30 días después de entregarte la pieza,
+                o en cuanto nos digas que el encargo no sigue adelante. Si nos pides
+                que la guardemos para repetirla, la conservamos hasta que nos digas
+                lo contrario.
+              </li>
+              <li>
+                <strong>Archivos adjuntos del formulario de contacto:</strong> se
+                borran solos a los 60 días.
               </li>
               <li>
                 <strong>Consultas de contacto:</strong> el tiempo necesario para

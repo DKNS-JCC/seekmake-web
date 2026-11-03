@@ -449,8 +449,7 @@ export function ContactForm() {
           Política de Privacidad
         </a>
         . Los archivos
-        adjuntos se almacenan de forma temporal y se eliminan
-        periódicamente.
+        adjuntos se borran solos a los 60 días.
       </p>
     </form>
   );

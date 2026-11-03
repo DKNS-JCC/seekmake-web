@@ -360,7 +360,7 @@ export default function AdminProductos() {
                   ))}
                 </datalist>
               </Field>
-              <Field label="Precio (€)">
+              <Field label="Precio (€, 0 = a consultar)">
                 <input
                   type="number"
                   step="0.01"

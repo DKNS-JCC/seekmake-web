@@ -42,7 +42,7 @@ productos:
 - id: 4
   nombre: "Litofanía personalizada"
   descripcion: "Una foto convertida en una placa de luz: a contraluz revela la imagen con un detalle sorprendente. Regalo emocional que dura años."
-  precio: 14.00
+  precio: 10.00
   categoria: "Personalizado"
   material: "PLA blanco"
   colores: [ "Blanco translúcido" ]
@@ -122,7 +122,7 @@ productos:
 - id: 20
   nombre: "Llavero con nombre"
   descripcion: "Llavero con tu nombre, una palabra o una iniciales. Doble color con relieve, terminación suave al tacto. Texto y color a tu elección."
-  precio: 4.00
+  precio: 0.00
   categoria: "Regalos"
   material: "PLA"
   colores: [ "Combinación a elegir (2 colores)" ]
@@ -281,7 +281,7 @@ productos:
 - id: 50
   nombre: "Llaveros corporativos con logo"
   descripcion: "Pedidos a partir de 25 unidades. Tu logo en doble color, terminación pulida. Ideal para detalles de evento, ferias o entrada a clientes nuevos."
-  precio: 2.50
+  precio: 0.00
   categoria: "Empresas y Eventos"
   material: "PLA"
   colores: [ "A elegir (corporativos)" ]
