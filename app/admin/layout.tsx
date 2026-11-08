@@ -36,6 +36,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           Presupuestos<NuevosBadge />
         </Link>
         <Link href="/admin/tarifas" className="nav-link">Tarifas</Link>
+        <Link href="/admin/cupones" className="nav-link">Códigos</Link>
         <Link href="/admin/estadisticas" className="nav-link">Estadísticas</Link>
         <Link href="/" className="nav-link">Ver sitio</Link>
       </header>

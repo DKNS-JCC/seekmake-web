@@ -49,7 +49,7 @@ function corsHeaders(origin: string): Record<string, string> {
 // Pricing version of this function. The Pages build refuses to publish a
 // web whose tasador expects a newer server (see deploy-pages.yml): otherwise
 // the customer would see one price and get another one by email.
-const TASADOR_VERSION = '4';
+const TASADOR_VERSION = '5';
 
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
@@ -260,8 +260,8 @@ function figurasCliente(am: any, densidad: number): { pesoG: number; soporteG: n
   return { pesoG, soporteG: Math.min(soporteG, pesoG), tiempoH };
 }
 
-/** Recompute the quote from sanitized `archivos` + settings. */
-function computeServerQuote(archivos: any[], entrega: string, settings: any) {
+/** Recompute the quote from sanitized `archivos` + settings (+ a valid code). */
+function computeServerQuote(archivos: any[], entrega: string, settings: any, cupon: any = null) {
   const lineas: Array<{ concepto: string; importe: number }> = [];
   const piezas: any[] = [];
   let base = 0;
@@ -369,14 +369,36 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
   for (const tier of settings.descuentos_cantidad) {
     if (unidades >= tier.min) descuentoPct = tier.pct;
   }
-  if (descuentoPct > 0) {
-    const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
-    const dto = r2(Math.floor(r2(subtotal * (descuentoPct / 100)) / paso + 1e-9) * paso);
+  const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
+  const aPaso = (n: number) => r2(Math.floor(r2(n) / paso + 1e-9) * paso);
+  const dtoCantidad = descuentoPct > 0 ? aPaso(subtotal * (descuentoPct / 100)) : 0;
+
+  // Discount code: same rules as the web (bigger discount wins, before the minimum).
+  let dtoCupon = 0;
+  if (cupon && subtotal >= Number(cupon.pedido_minimo)) {
+    const valor = Number(cupon.valor);
+    dtoCupon = aPaso(Math.min(subtotal, cupon.tipo === 'pct' ? subtotal * (valor / 100) : valor));
+  }
+  if (dtoCupon > 0 && dtoCupon >= dtoCantidad) {
+    descuentoPct = 0;
+    const valor = Number(cupon.valor);
     lineas.push({
-      concepto: `Descuento por cantidad (-${descuentoPct}%)`,
-      importe: -dto
+      concepto:
+        `Código ${cupon.codigo} (` +
+        (cupon.tipo === 'pct' ? `-${valor}%` : `-${valor.toFixed(2)} €`) +
+        ')',
+      importe: -dtoCupon
     });
-    subtotal -= dto;
+    subtotal -= dtoCupon;
+  } else {
+    dtoCupon = 0;
+    if (dtoCantidad > 0) {
+      lineas.push({
+        concepto: `Descuento por cantidad (-${descuentoPct}%)`,
+        importe: -dtoCantidad
+      });
+      subtotal -= dtoCantidad;
+    }
   }
 
   let total = subtotal;
@@ -411,6 +433,8 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any) {
     total: r2(total),
     lineas,
     descuentoPct,
+    cupon: dtoCupon > 0 ? cupon.codigo : null,
+    cuponDescuento: dtoCupon,
     minimoAplicado,
     envio: r2(envio),
     pesoG: r2(pesoTotal),
@@ -459,6 +483,7 @@ Deno.serve(async (req: Request) => {
       }
     : {};
   const precioTotal = Math.max(0, Math.min(99999, Number(body?.precio_total) || 0));
+  const cuponPedido = String(body?.cupon ?? '').trim().toUpperCase().slice(0, 30);
 
   const colores = (Array.isArray(body?.colores) ? body.colores : [])
     .slice(0, 8)
@@ -567,7 +592,26 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   const settings = normalizeServerSettings(settingsRow?.config ?? null);
 
-  const sq = computeServerQuote(archivos, entrega, settings);
+  // The code is checked again here: it may have expired or run out since the
+  // customer saw the price. Refuse rather than email them a different total.
+  let cupon: any = null;
+  if (cuponPedido) {
+    const { data: filas, error: cupErr } = await supabase.rpc('validar_cupon', { p_codigo: cuponPedido });
+    if (cupErr) {
+      console.error('validar_cupon failed:', cupErr);
+      return json({ error: 'No se pudo comprobar el código de descuento.' }, 500, allowedOrigin);
+    }
+    cupon = filas?.[0] ?? null;
+    if (!cupon) {
+      return json(
+        { error: `El código ${cuponPedido} ya no es válido.`, cupon_invalido: true },
+        409,
+        allowedOrigin
+      );
+    }
+  }
+
+  const sq = computeServerQuote(archivos, entrega, settings, cupon);
   const clienteTotal = precioTotal;
   const precioServidor = sq.total;
   const desvio = Math.abs(precioServidor - clienteTotal) > 0.01;
@@ -598,6 +642,7 @@ Deno.serve(async (req: Request) => {
   const desgloseServidor = {
     lineas: sq.lineas,
     descuento_pct: sq.descuentoPct,
+    ...(sq.cupon ? { cupon_descuento: sq.cuponDescuento } : {}),
     minimo_aplicado: sq.minimoAplicado,
     envio: sq.envio,
     ...(desvio ? { cliente_total: clienteTotal } : {})
@@ -624,6 +669,7 @@ Deno.serve(async (req: Request) => {
       metricas: metricasServidor,
       desglose: desgloseServidor,
       precio_total: precioServidor,
+      cupon: sq.cupon,
       valido_hasta: validoHasta.toISOString(),
       ip_hash: ipHash
     })
@@ -768,7 +814,7 @@ Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
 Resumen:
 ${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${a.material} (${coloresDe(a)})`).join('\n')}
   Entrega:      ${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}
-  Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}
+  Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
 
   TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' (envío incluido)' : ''}
 
@@ -798,6 +844,7 @@ ${acceptUrl}
     <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${escapeHtml(a.material)} (${escapeHtml(coloresDe(a))})`).join('<br/>')}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}</td></tr>
+    ${sq.cupon ? `<tr><td style="padding:6px 12px 6px 0;color:#666;">Código</td><td>${escapeHtml(sq.cupon)} (−${sq.cuponDescuento.toFixed(2)} €)</td></tr>` : ''}
     <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' <span style="font-size:11px;color:#999;font-weight:400;">(envío incluido)</span>' : ''}</td></tr>
   </table>
   <p style="margin:20px 0;color:#444;line-height:1.6;font-size:13px;">
@@ -823,7 +870,7 @@ ${acceptUrl}
         from: `3DCC Tasador <${gmailUser}>`,
         to: recipient,
         replyTo: `${asciiHeader(nombre)} <${email}>`,
-        subject: asciiHeader(`[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} € — ${nombre}`),
+        subject: asciiHeader(`[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} €${sq.cupon ? ` (${sq.cupon})` : ''} — ${nombre}`),
         content: text,
         html
       });

@@ -379,6 +379,30 @@
     font-size: 11px; color: var(--muted); line-height: 1.5;
 }
 
+/* ── Discount code ───────────────────────────────────── */
+.qt-cupon { margin-top: 10px; font-size: 12px; }
+.qt-cupon-abrir, .qt-cupon-quitar {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font: inherit; color: var(--accent); text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.qt-cupon-quitar { margin-left: 8px; color: var(--muted); }
+.qt-cupon-form { display: flex; gap: 8px; }
+.qt-cupon-form input {
+    flex: 1; min-width: 0;
+    padding: 9px 12px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r);
+    /* 16px: iOS zooms into smaller inputs on focus. */
+    font-family: var(--font-mono), monospace; font-size: 16px;
+    text-transform: uppercase; outline: none;
+}
+.qt-cupon-form input:focus { border-color: var(--accent); }
+.qt-cupon-form .btn-outline { padding: 8px 16px; font-size: 11px; }
+.qt-cupon-ok { color: var(--accent); }
+.qt-cupon-aviso { color: var(--muted); }
+.qt-cupon-error { margin-top: 6px; color: #e0524d; }
+
 /* ── Sticky price pill ───────────────────────────────── */
 .qt-sticky-price {
     position: fixed;

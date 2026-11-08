@@ -357,6 +357,15 @@ export interface PiezaResult {
   conSoportes: boolean;
 }
 
+/** A discount code as validar_cupon() returns it. */
+export interface Cupon {
+  codigo: string;
+  tipo: 'pct' | 'fijo';
+  valor: number;
+  /** Pieces must add up to this (€) before the code applies. */
+  pedido_minimo: number;
+}
+
 export interface QuoteLine {
   concepto: string;
   importe: number;
@@ -370,6 +379,10 @@ export interface QuoteResult {
   piezas: PiezaResult[];
   lineas: QuoteLine[];
   descuentoPct: number;
+  /** The discount code that took effect (null: none, or below its minimum). */
+  cupon: string | null;
+  /** € taken off by the code (0 when it did not apply). */
+  cuponDescuento: number;
   total: number;
   /** True when precio_minimo kicked in. */
   minimoAplicado: boolean;
@@ -409,7 +422,8 @@ function estimacionAproximada(
 export function computeQuote(
   piezas: PiezaInput[],
   settings: QuoteSettings,
-  entrega: 'recogida' | 'envio' = 'recogida'
+  entrega: 'recogida' | 'envio' = 'recogida',
+  cupon: Cupon | null = null
 ): QuoteResult {
   const lineas: QuoteLine[] = [];
   const piezasOut: PiezaResult[] = [];
@@ -526,15 +540,38 @@ export function computeQuote(
   for (const tier of settings.descuentos_cantidad) {
     if (unidades >= tier.min) descuentoPct = tier.pct;
   }
-  if (descuentoPct > 0) {
-    // Rounded down to the price step so the lines still add up.
-    const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
-    const dto = round2(Math.floor(round2(subtotal * (descuentoPct / 100)) / paso + 1e-9) * paso);
+  // Rounded down to the price step so the lines still add up.
+  const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
+  const aPaso = (n: number) => round2(Math.floor(round2(n) / paso + 1e-9) * paso);
+  const dtoCantidad = descuentoPct > 0 ? aPaso(subtotal * (descuentoPct / 100)) : 0;
+
+  // Discount code: on the pieces, never stacked with the quantity discount
+  // (the bigger one wins), before the minimum order so that still holds.
+  let dtoCupon = 0;
+  if (cupon && subtotal >= cupon.pedido_minimo) {
+    dtoCupon = aPaso(
+      Math.min(subtotal, cupon.tipo === 'pct' ? subtotal * (cupon.valor / 100) : cupon.valor)
+    );
+  }
+  if (dtoCupon > 0 && dtoCupon >= dtoCantidad) {
+    descuentoPct = 0;
     lineas.push({
-      concepto: `Descuento por cantidad (-${descuentoPct}%)`,
-      importe: -dto
+      concepto:
+        `Código ${cupon!.codigo} (` +
+        (cupon!.tipo === 'pct' ? `-${cupon!.valor}%` : `-${cupon!.valor.toFixed(2)} €`) +
+        ')',
+      importe: -dtoCupon
     });
-    subtotal -= dto;
+    subtotal -= dtoCupon;
+  } else {
+    dtoCupon = 0;
+    if (dtoCantidad > 0) {
+      lineas.push({
+        concepto: `Descuento por cantidad (-${descuentoPct}%)`,
+        importe: -dtoCantidad
+      });
+      subtotal -= dtoCantidad;
+    }
   }
 
   let total = subtotal;
@@ -574,6 +611,8 @@ export function computeQuote(
     piezas: piezasOut,
     lineas,
     descuentoPct,
+    cupon: dtoCupon > 0 ? cupon!.codigo : null,
+    cuponDescuento: dtoCupon,
     total: round2(total),
     minimoAplicado,
     diasEstimados,

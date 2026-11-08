@@ -58,6 +58,7 @@ import {
   computeQuote,
   normalizeSettings,
   DEFAULT_QUOTE_SETTINGS,
+  type Cupon,
   type QuoteSettings
 } from '@/lib/quote/pricing';
 import './quote.css';
@@ -136,6 +137,13 @@ export function QuoteClient({
   const [dragging, setDragging] = useState(false);
   const [entrega, setEntrega] = useState<QuoteEntrega>('recogida');
 
+  // ─── discount code (validated by validar_cupon, re-checked on submit) ──
+  const [cupon, setCupon] = useState<Cupon | null>(null);
+  const [cuponTxt, setCuponTxt] = useState('');
+  const [cuponAbierto, setCuponAbierto] = useState(false);
+  const [cuponError, setCuponError] = useState<string | null>(null);
+  const [cuponCargando, setCuponCargando] = useState(false);
+
   // ─── request form ───────────────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false);
   const [nombre, setNombre] = useState('');
@@ -192,6 +200,36 @@ export function QuoteClient({
         if (data?.config) setSettings(normalizeSettings(data.config));
         setSettingsLoaded(true);
       });
+  }, []);
+
+  async function aplicarCupon(txt: string) {
+    const codigo = txt.trim().toUpperCase();
+    if (!codigo) return;
+    setCuponCargando(true);
+    setCuponError(null);
+    const { data, error } = await createClient().rpc('validar_cupon', { p_codigo: codigo });
+    setCuponCargando(false);
+    setCuponAbierto(true);
+    const fila = Array.isArray(data) ? data[0] : null;
+    if (error) {
+      setCuponError('No hemos podido comprobar el código. Inténtalo de nuevo.');
+    } else if (!fila) {
+      setCuponError(`El código ${codigo} no existe o ya no está activo.`);
+    } else {
+      setCupon({
+        codigo: fila.codigo,
+        tipo: fila.tipo,
+        valor: Number(fila.valor),
+        pedido_minimo: Number(fila.pedido_minimo)
+      });
+      setCuponTxt('');
+    }
+  }
+
+  // Campaign links: /instant-quote?cupon=NAVIDAD10 applies it straight away.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('cupon');
+    if (c) void aplicarCupon(c);
   }, []);
 
   // Fire-and-forget funnel event (errors are irrelevant to the customer).
@@ -618,9 +656,10 @@ export function QuoteClient({
         };
       }),
       settings,
-      entrega
+      entrega,
+      cupon
     );
-  }, [piezas, filamentos, settings, settingsLoaded, entrega]);
+  }, [piezas, filamentos, settings, settingsLoaded, entrega, cupon]);
 
   const maxBedMm = settings.max_bed_mm;
   const tooBig = piezas.some(
@@ -850,12 +889,31 @@ export function QuoteClient({
             minimo_aplicado: quote.minimoAplicado,
             envio: quote.envio
           },
-          precio_total: quote.total
+          precio_total: quote.total,
+          cupon: quote.cupon ?? undefined
         }
       });
 
       if (error) {
-        setStatus({ kind: 'err', message: error.message ?? 'No se pudo enviar la solicitud.' });
+        // Non-2xx: the function's own message is in the response body.
+        const cuerpo = await (error as { context?: Response }).context
+          ?.json()
+          .catch(() => null);
+        if (cuerpo?.cupon_invalido) {
+          // Expired or ran out since the price was shown: drop it and let the
+          // customer see the new total before sending again.
+          setCupon(null);
+          setCuponError(cuerpo.error);
+          setStatus({
+            kind: 'err',
+            message: `${cuerpo.error} Hemos recalculado el precio sin él: revísalo y vuelve a enviar.`
+          });
+          return;
+        }
+        setStatus({
+          kind: 'err',
+          message: cuerpo?.error ?? error.message ?? 'No se pudo enviar la solicitud.'
+        });
         return;
       }
       if (data?.error) {
@@ -1364,6 +1422,51 @@ export function QuoteClient({
                 {quote.minimoAplicado && (
                   <p className="qt-total-note">Se aplica el pedido mínimo.</p>
                 )}
+                <div className="qt-cupon">
+                  {cupon ? (
+                    <p className={quote.cupon ? 'qt-cupon-ok' : 'qt-cupon-aviso'}>
+                      {quote.cupon
+                        ? `Código ${cupon.codigo} aplicado: −${quote.cuponDescuento.toFixed(2)} €` +
+                          (quote.minimoAplicado
+                            ? `, pero el total no baja del pedido mínimo (${settings.precio_minimo.toFixed(2)} €).`
+                            : '')
+                        : quote.descuentoPct > 0
+                          ? `El descuento por cantidad es mayor que el código ${cupon.codigo}; aplicamos ese.`
+                          : `El código ${cupon.codigo} es para pedidos desde ${cupon.pedido_minimo.toFixed(2)} € en piezas.`}
+                      <button type="button" className="qt-cupon-quitar" onClick={() => setCupon(null)}>
+                        Quitar
+                      </button>
+                    </p>
+                  ) : cuponAbierto ? (
+                    <form
+                      className="qt-cupon-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void aplicarCupon(cuponTxt);
+                      }}
+                    >
+                      <input
+                        value={cuponTxt}
+                        onChange={(e) => setCuponTxt(e.target.value)}
+                        placeholder="Código de descuento"
+                        aria-label="Código de descuento"
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        maxLength={30}
+                      />
+                      <button type="submit" className="btn-outline" disabled={cuponCargando || !cuponTxt.trim()}>
+                        {cuponCargando ? '…' : 'Aplicar'}
+                      </button>
+                    </form>
+                  ) : (
+                    <button type="button" className="qt-cupon-abrir" onClick={() => setCuponAbierto(true)}>
+                      ¿Tienes un código de descuento?
+                    </button>
+                  )}
+                  {cuponError && !cupon && (
+                    <p className="qt-cupon-error" role="alert">{cuponError}</p>
+                  )}
+                </div>
                 <p className="qt-total-plazo">
                   <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <circle cx="12" cy="12" r="9" />

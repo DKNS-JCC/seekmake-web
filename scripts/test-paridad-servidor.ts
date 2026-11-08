@@ -6,7 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { transformSync } from 'esbuild';
-import { computeQuote, normalizeSettings, type PiezaInput } from '../lib/quote/pricing';
+import { computeQuote, normalizeSettings, type Cupon, type PiezaInput } from '../lib/quote/pricing';
 import { analizarPieza } from '../lib/quote/estimador/analizar';
 import { configAnalisis } from '../lib/quote/estimador';
 import { caja, cilindro, malla } from './_mallas';
@@ -19,7 +19,7 @@ if (ini < 0 || fin < 0) throw new Error('no encuentro el bloque de precios en su
 const js = transformSync(src.slice(ini, fin), { loader: 'ts' }).code;
 const servidor = new Function(`${js}; return { normalizeServerSettings, computeServerQuote };`)() as {
   normalizeServerSettings: (raw: unknown) => any;
-  computeServerQuote: (archivos: any[], entrega: string, settings: any) => any;
+  computeServerQuote: (archivos: any[], entrega: string, settings: any, cupon?: any) => any;
 };
 
 /** What the quote page sends for each piece (see QuoteClient submit()). */
@@ -94,6 +94,57 @@ for (const [nombre, raw] of casos) {
   trampa[0].metricas.peso_g = 0.001;
   const srv = servidor.computeServerQuote(trampa, 'recogida', servidor.normalizeServerSettings(raw));
   check('rechaza un peso imposible', srv.piezas[0].metodo === 'aproximado');
+}
+
+// ── Discount codes ──────────────────────────────────────────────────────
+section('códigos de descuento');
+{
+  // No minimum order, so the discounts show in the totals.
+  const raw = { descuentos_cantidad: [{ min: 10, pct: 5 }], precio_minimo: 0 };
+  const s = normalizeSettings(raw);
+  const ss = servidor.normalizeServerSettings(raw);
+  const met = { volumenCm3: 8, soporteCm3: 0, areaCm2: 0, bboxMm: { x: 20, y: 20, z: 20 }, triangulos: 12, mallas: 1, overhangCm2: 0 };
+  const pieza = (cantidad: number): PiezaInput[] => [{
+    nombre: 'cubo', metrics: met, analisis: analizarPieza(cubo, configAnalisis(s)), cantidad, material: 'PLA',
+    colores: [{ nombre: 'N', hex: '#000', acabado: null }], resistenciaId: 'estandar', detalleId: 'estandar'
+  }];
+  const pct = (valor: number, pedido_minimo = 0): Cupon => ({ codigo: 'PRUEBA', tipo: 'pct', valor, pedido_minimo });
+  const fijo = (valor: number, pedido_minimo = 0): Cupon => ({ codigo: 'FIJO', tipo: 'fijo', valor, pedido_minimo });
+
+  const casosCupon: [string, PiezaInput[], Cupon, 'recogida' | 'envio'][] = [
+    ['-10 % con envío', pieza(6), pct(10), 'envio'],
+    ['-3 € fijo', pieza(6), fijo(3), 'recogida'],
+    ['mínimo de piezas sin alcanzar', pieza(1), pct(10, 500), 'recogida'],
+    ['-2 % pierde frente al 5 % por cantidad', pieza(12), pct(2), 'recogida'],
+    ['-20 % gana al 5 % por cantidad', pieza(12), pct(20), 'recogida'],
+    ['fijo mayor que las piezas', pieza(1), fijo(999), 'envio']
+  ];
+  for (const [nombre, piezas, cupon, entrega] of casosCupon) {
+    const cli = computeQuote(piezas, s, entrega, cupon);
+    const srv = servidor.computeServerQuote(archivos(piezas, cli), entrega, ss, { ...cupon, valor: String(cupon.valor) });
+    eq(`${nombre}: total servidor = cliente (${cli.total} €)`, srv.total, cli.total, 0.001);
+    check(`${nombre}: mismas líneas`, JSON.stringify(srv.lineas) === JSON.stringify(cli.lineas),
+      JSON.stringify(srv.lineas) + ' vs ' + JSON.stringify(cli.lineas));
+    check(`${nombre}: mismo cupón aplicado`, srv.cupon === cli.cupon && srv.cuponDescuento === cli.cuponDescuento);
+  }
+
+  // The rules themselves.
+  const sin = computeQuote(pieza(6), s, 'envio');
+  const con = computeQuote(pieza(6), s, 'envio', pct(10));
+  const piezasSin = sin.total - sin.envio;
+  eq('-10 % descuenta el 10 % de las piezas (a 5 cts)', con.cuponDescuento,
+    Math.floor((piezasSin * 0.1) / 0.05 + 1e-9) * 0.05, 0.001);
+  eq('el envío no se descuenta', con.envio, sin.envio, 0.001);
+  check('bajo el mínimo de piezas no aplica', computeQuote(pieza(1), s, 'recogida', pct(10, 500)).cupon === null);
+  const gana = computeQuote(pieza(12), s, 'recogida', pct(20));
+  check('no se acumula con el de cantidad', gana.cupon === 'PRUEBA' && gana.descuentoPct === 0 &&
+    !gana.lineas.some((l) => l.concepto.startsWith('Descuento por cantidad')));
+  const pierde = computeQuote(pieza(12), s, 'recogida', pct(2));
+  check('si el de cantidad es mayor, gana ese', pierde.cupon === null && pierde.descuentoPct === 5);
+  eq('un fijo mayor que las piezas las deja a 0', computeQuote(pieza(1), s, 'recogida', fijo(999)).total, 0, 0.001);
+  const conMinimo = normalizeSettings(null);
+  eq('el pedido mínimo sigue mandando', computeQuote(pieza(1), conMinimo, 'recogida', fijo(999)).total,
+    conMinimo.precio_minimo, 0.001);
 }
 
 done();
