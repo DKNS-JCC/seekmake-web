@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { CampanaNavidad } from '@/lib/types';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
-import { RebuildButton } from '../_components/RebuildButton';
+import { AdminCabecera } from '../_components/AdminNav';
 import { mensajeDeError } from '@/lib/errors';
 import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { ErrorBanner } from '../_components/ErrorBanner';
@@ -69,10 +69,7 @@ export default function AdminNavidad() {
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
-        <h1 className="section-title" style={{ fontSize: 32 }}>Navidad</h1>
-        <RebuildButton small />
-      </div>
+      <AdminCabecera titulo="Navidad" />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
 

@@ -3,6 +3,7 @@
 
 import { CONTACTO } from '@/lib/contacto';
 import type { QuoteResult, QuoteSettings } from './pricing';
+import { euros } from '@/lib/recibo/types';
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -23,7 +24,7 @@ export function buildQuotePdfHtml(quote: QuoteResult, settings: QuoteSettings): 
     .map(
       (l) =>
         `<tr><td>${esc(l.concepto)}</td>` +
-        `<td style="text-align:right;white-space:nowrap;">${l.importe.toFixed(2)} €</td></tr>`
+        `<td style="text-align:right;white-space:nowrap;">${euros(l.importe)}</td></tr>`
     )
     .join('');
 
@@ -39,7 +40,7 @@ export function buildQuotePdfHtml(quote: QuoteResult, settings: QuoteSettings): 
 </style></head><body>
 <h1>${CONTACTO.nombre} — Estimación de impresión 3D</h1>
 <p class="sub">${fecha} · ${CONTACTO.dominio} · Estimación orientativa, válida hasta el ${validez}</p>
-<table>${filas}<tr class="total"><td>TOTAL ESTIMADO</td><td style="text-align:right;">${quote.total.toFixed(2)} €</td></tr></table>
+<table>${filas}<tr class="total"><td>TOTAL ESTIMADO</td><td style="text-align:right;">${euros(quote.total)}</td></tr></table>
 <p class="nota">
   ~${Math.round(quote.pesoG)} g de material · ~${quote.tiempoH.toFixed(1)} h de impresión ·
   listo en ~${quote.diasEstimados} día${quote.diasEstimados !== 1 ? 's' : ''} laborables.<br>

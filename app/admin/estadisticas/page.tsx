@@ -8,6 +8,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Quote, QuoteEstado, QuoteEvento } from '@/lib/types';
 import { AccesoDenegado, useAdminAuth } from '../_components/useAdminAuth';
+import { AdminCabecera } from '../_components/AdminNav';
+import { Abandonos } from './Abandonos';
+import { euros } from '@/lib/recibo/types';
 
 const ESTADO_LABEL: Record<QuoteEstado, string> = {
   nuevo: 'Nuevo',
@@ -271,25 +274,9 @@ export default function AdminEstadisticas() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: 8,
-          flexWrap: 'wrap',
-          gap: 12
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 36,
-            letterSpacing: '0.02em'
-          }}
-        >
-          Estadísticas del tasador
-        </h1>
+      <AdminCabecera
+        titulo="Estadísticas del tasador"
+        acciones={
         <div style={{ display: 'flex', gap: 8 }}>
           {[7, 30, 90].map((d) => (
             <button
@@ -303,19 +290,19 @@ export default function AdminEstadisticas() {
             </button>
           ))}
         </div>
-      </div>
-      <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 24 }}>
+        }
+      >
         El embudo, las solicitudes y los materiales son solo del tasador web y
         usan el periodo seleccionado; pipeline e importes son históricos e
         incluyen los pedidos de la Calculadora.
-      </p>
+      </AdminCabecera>
 
       {/* KPIs */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <Kpi label="Solicitudes" value={String(stats.total)} sub={`${stats.periodo} en ${dias} días`} />
         <Kpi label="Pedidos en firme" value={String(stats.avanzados)} sub={`${stats.entregados} entregados`} />
-        <Kpi label="Cobrado" value={`${stats.ingresos.toFixed(2)} €`} sub={`${stats.confirmado.toFixed(2)} € confirmados`} />
-        <Kpi label="Ticket medio" value={`${stats.ticketMedio.toFixed(2)} €`} sub="pedidos aceptados o más" />
+        <Kpi label="Cobrado" value={`${euros(stats.ingresos)}`} sub={`${euros(stats.confirmado)} confirmados`} />
+        <Kpi label="Ticket medio" value={`${euros(stats.ticketMedio)}`} sub="pedidos aceptados o más" />
         <Kpi
           label="Material impreso"
           value={stats.pesoG >= 1000 ? `${(stats.pesoG / 1000).toFixed(1)} kg` : `${Math.round(stats.pesoG)} g`}
@@ -338,6 +325,17 @@ export default function AdminEstadisticas() {
           solicitud → aceptado: <strong>{convAceptado.toFixed(0)}%</strong> ·
           abandono tras ver el precio: <strong>{pctAbandono.toFixed(0)}%</strong>
         </p>
+      </section>
+
+      {/* Who left without asking */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Se fueron sin pedir ({dias} días)</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
+          Cada visita anónima que subió algo y no envió la solicitud: qué subió, cuántas veces y el
+          último precio que vio. «También en otras visitas» es la misma pieza subida otro día o por
+          otra persona. Las miniaturas se borran a los 30 días.
+        </p>
+        <Abandonos eventos={eventos} desde={desde} />
       </section>
 
       {/* WhatsApp */}

@@ -58,10 +58,10 @@ export function RebuildButton({ small = false }: { small?: boolean }) {
     status === 'sending'
       ? 'Lanzando…'
       : status === 'ok'
-        ? '✓ Rebuild lanzado'
+        ? '✓ Publicando'
         : status === 'error'
           ? '! Error — reintentar'
-          : 'Republicar sitio';
+          : 'Publicar ya';
 
   const bg =
     status === 'ok'
@@ -71,13 +71,13 @@ export function RebuildButton({ small = false }: { small?: boolean }) {
         : 'var(--accent)';
 
   return (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
       <button
         type="button"
         onClick={trigger}
         disabled={status === 'sending'}
         className="btn-primary"
-        title="Dispara un rebuild en GitHub Actions. ~2 min hasta que esté live."
+        title="Publica la web ahora en vez de esperar a la siguiente publicación automática (~2 min)."
         style={{
           background: bg,
           padding: small ? '8px 16px' : undefined,
@@ -93,7 +93,7 @@ export function RebuildButton({ small = false }: { small?: boolean }) {
             fontSize: 11,
             color: '#dc2626',
             maxWidth: 320,
-            textAlign: 'right',
+            textAlign: 'left',
             fontFamily: "'IBM Plex Mono', monospace"
           }}
         >

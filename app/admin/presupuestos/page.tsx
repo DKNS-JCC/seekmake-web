@@ -10,7 +10,6 @@
 // taller en la Calculadora.
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import type { Quote, QuoteEstado, QuotePago } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import { downloadQuoteFile } from '@/lib/quote/compress';
@@ -25,6 +24,9 @@ import { whatsappTo } from '@/lib/contacto';
 import { mensajeDeError } from '@/lib/errors';
 import { activable, activableRow } from '@/lib/a11y';
 import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { AdminCabecera } from '../_components/AdminNav';
+import { ErrorBanner } from '../_components/ErrorBanner';
+import { euros } from '@/lib/recibo/types';
 
 const ESTADOS: { id: QuoteEstado; label: string }[] = [
   { id: 'nuevo', label: 'Nuevo' },
@@ -101,10 +103,35 @@ export default function AdminPresupuestos() {
   const { authed, supabase } = useAdminAuth();
   const { confirmar, dialogo } = useConfirm();
 
+  // Filters live in the URL so reload / back / links from «Hoy» keep them.
+  const [abrir, setAbrir] = useState<string | null>(null);
   useEffect(() => {
+    const u = new URLSearchParams(window.location.search);
+    const e = u.get('estado');
+    if (e && (e === 'todos' || ESTADOS.some((x) => x.id === e))) setFilter(e as QuoteEstado | 'todos');
+    setQuery(u.get('q') ?? '');
+    setShowArchived(u.get('archivados') === '1');
+    setAbrir(u.get('abrir'));
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    const u = new URLSearchParams();
+    if (filter !== 'todos') u.set('estado', filter);
+    if (query.trim()) u.set('q', query.trim());
+    if (showArchived) u.set('archivados', '1');
+    if (open) u.set('abrir', open.codigo);
+    const qs = u.toString();
+    window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
+  }, [filter, query, showArchived, open]);
+  // ?abrir=Q-… opens that quote once the list has loaded.
+  useEffect(() => {
+    if (!abrir || loading) return;
+    const q = quotes.find((x) => x.codigo === abrir);
+    if (q) openQuote(q);
+    setAbrir(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abrir, loading, quotes]);
 
   async function refresh() {
     setLoading(true);
@@ -316,58 +343,28 @@ export default function AdminPresupuestos() {
   return (
     <div>
       {dialogo}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-          flexWrap: 'wrap',
-          gap: 8
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 36,
-            letterSpacing: '0.02em'
-          }}
-        >
-          Presupuestos
-          {(counts['nuevo'] ?? 0) > 0 && (
-            <span
-              style={{
-                marginLeft: 12,
-                verticalAlign: 'middle',
-                display: 'inline-block',
-                padding: '3px 10px',
-                background: 'var(--accent)',
-                color: '#fff',
-                borderRadius: 'var(--r)',
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 11,
-                letterSpacing: '0.08em'
-              }}
-            >
-              {counts['nuevo']} nuevos
-            </span>
-          )}
-        </h1>
-        <Link href="/admin/tarifas" className="nav-link">
-          Editar tarifas →
-        </Link>
-      </div>
+      <AdminCabecera
+        titulo={
+          <>
+            Presupuestos
+            {(counts['nuevo'] ?? 0) > 0 && <span className="pq-nuevos">{counts['nuevo']} nuevos</span>}
+          </>
+        }
+      />
 
       <div className="pq-toolbar">
         <input
           className="pq-search"
           type="search"
+          aria-label="Buscar presupuestos"
+          spellCheck={false}
           placeholder="Buscar por código, nombre, email o archivo…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <select
           className="pq-sort"
+          aria-label="Ordenar"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
         >
@@ -416,7 +413,7 @@ export default function AdminPresupuestos() {
         ))}
       </div>
 
-      {error && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+      {error && !open && <ErrorBanner>{error}</ErrorBanner>}
       {loading && <p style={{ color: 'var(--muted)' }}>Cargando…</p>}
       {!loading && visible.length === 0 && (
         <p style={{ color: 'var(--muted)', fontSize: 14 }}>No hay presupuestos que coincidan.</p>
@@ -424,6 +421,7 @@ export default function AdminPresupuestos() {
 
       {visible.length > 0 && (
         <>
+          {/* Estado is changed from the list on desktop; on phones, inside the quote. */}
           {/* desktop table */}
           <table className="pq-table">
             <thead>
@@ -453,9 +451,7 @@ export default function AdminPresupuestos() {
                     {q.origen === 'calculadora' && <span className="pq-origen">Calculadora</span>}
                     {piezas(q)}
                   </td>
-                  <td className="pq-total">
-                    {Number(q.precio_final ?? q.precio_total).toFixed(2)} €
-                  </td>
+                  <td className="pq-total">{euros(q.precio_final ?? q.precio_total)}</td>
                   <td>
                     <PagoBadge pago={q.pago ?? 'pendiente'} />
                   </td>
@@ -475,15 +471,18 @@ export default function AdminPresupuestos() {
               >
                 <div className="pq-card-top">
                   <span className="pq-codigo">{q.codigo}</span>
-                  <span className="pq-total">
-                    {Number(q.precio_final ?? q.precio_total).toFixed(2)} €
-                  </span>
+                  <span className="pq-total">{euros(q.precio_final ?? q.precio_total)}</span>
                 </div>
                 <div className="pq-card-mid">
                   {q.nombre} · {piezas(q)}
                 </div>
                 <div className="pq-card-bottom">
-                  {estadoSelect(q)}
+                  <span
+                    className="pq-estado-badge"
+                    style={{ color: ESTADO_COLOR[q.estado], borderColor: ESTADO_COLOR[q.estado] }}
+                  >
+                    {ESTADOS.find((e) => e.id === q.estado)?.label}
+                  </span>
                   <PagoBadge pago={q.pago ?? 'pendiente'} />
                   <span className="pq-card-fecha">{fecha(q.created_at)}</span>
                 </div>
@@ -496,24 +495,11 @@ export default function AdminPresupuestos() {
       <Drawer
         open={!!open}
         onClose={() => setOpen(null)}
+        error={error}
+        dirty={dirty}
         title={open?.codigo ?? ''}
         footer={
           <>
-            <button
-              type="button"
-              className="btn-outline"
-              style={{ marginRight: 'auto', borderColor: '#ef4444', color: '#ef4444' }}
-              onClick={() => open && void removeQuote(open)}
-            >
-              Borrar
-            </button>
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={() => open && void toggleArchive(open)}
-            >
-              {open?.archivado ? 'Desarchivar' : 'Archivar'}
-            </button>
             <button
               type="button"
               className="btn-outline"
@@ -548,53 +534,6 @@ export default function AdminPresupuestos() {
                 ✓ {info}
               </p>
             )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label="Estado">
-                <select
-                  style={inputStyle}
-                  value={estado}
-                  onChange={(e) => {
-                    setEstado(e.target.value as QuoteEstado);
-                    setDirty(true);
-                  }}
-                >
-                  {ESTADOS.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Pago" hint="Sale del libro de cobros (abajo).">
-                <div style={{ fontSize: 14, padding: '9px 0' }}>
-                  <PagoBadge pago={open.pago ?? 'pendiente'} />{' '}
-                  {PAGO_LABEL[open.pago ?? 'pendiente']} · {Number(open.importe_pagado || 0).toFixed(2)} € cobrados
-                </div>
-              </Field>
-              <Field
-                label="Precio final (€)"
-                hint={
-                  conPedido.has(open.id)
-                    ? 'Lo fija el pedido de la Calculadora.'
-                    : `Estimado: ${Number(open.precio_total).toFixed(2)} €`
-                }
-              >
-                <input
-                  style={inputStyle}
-                  type="number"
-                  step={0.01}
-                  min={0}
-                  placeholder={Number(open.precio_total).toFixed(2)}
-                  value={precioFinal}
-                  disabled={conPedido.has(open.id)}
-                  onChange={(e) => {
-                    setPrecioFinal(e.target.value);
-                    setDirty(true);
-                  }}
-                />
-              </Field>
-            </div>
 
             <Field label="Cliente">
               <div style={{ fontSize: 14, lineHeight: 1.8 }}>
@@ -634,15 +573,29 @@ export default function AdminPresupuestos() {
               </div>
             </Field>
 
-            {open.entrega === 'envio' && <EnvioPanel quote={open} />}
+            {open.mensaje && (
+              <Field label="Mensaje del cliente">
+                <div
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--r)',
+                    padding: '10px 14px',
+                    fontSize: 13,
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: 1.6
+                  }}
+                >
+                  {open.mensaje}
+                </div>
+              </Field>
+            )}
 
             {open.origen === 'calculadora' && open.descripcion && (
               <Field label="Encargo (pedido de la Calculadora)">
                 <div style={{ fontSize: 13, lineHeight: 1.6 }}>{open.descripcion}</div>
               </Field>
             )}
-
-            <ReciboPanel quote={open} onCambio={() => void releer(open.id)} />
 
             <Field label={`Piezas (${(open.archivos ?? []).length})`}>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -661,7 +614,8 @@ export default function AdminPresupuestos() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                         <strong
-                          style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          title={a.nombre}
+                          style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         >
                           {a.nombre}
                           {a.cantidad > 1 ? ` × ${a.cantidad}` : ''}
@@ -793,7 +747,7 @@ export default function AdminPresupuestos() {
                     >
                       <span style={{ color: 'var(--muted)' }}>{l.concepto}</span>
                       <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-                        {Number(l.importe).toFixed(2)} €
+                        {euros(l.importe)}
                       </span>
                     </div>
                   ))}
@@ -809,31 +763,54 @@ export default function AdminPresupuestos() {
                   >
                     <span>Total estimado</span>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: 'var(--accent)' }}>
-                      {Number(open.precio_total).toFixed(2)} €
+                      {euros(open.precio_total)}
                     </span>
                   </div>
                 </div>
               </Field>
             )}
 
-            {open.mensaje && (
-              <Field label="Mensaje del cliente">
-                <div
-                  style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--r)',
-                    padding: '10px 14px',
-                    fontSize: 13,
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: 1.6
+            <h3 className="pq-seccion">Tu respuesta</h3>
+            <div className="pq-respuesta">
+              <Field label="Estado">
+                <select
+                  style={inputStyle}
+                  value={estado}
+                  onChange={(e) => {
+                    setEstado(e.target.value as QuoteEstado);
+                    setDirty(true);
                   }}
                 >
-                  {open.mensaje}
-                </div>
+                  {ESTADOS.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
-            )}
-
+              <Field
+                label="Precio final (€)"
+                hint={
+                  conPedido.has(open.id)
+                    ? 'Lo fija el pedido de la Calculadora.'
+                    : `Estimado: ${euros(open.precio_total)}`
+                }
+              >
+                <input
+                  style={inputStyle}
+                  type="number"
+                  step={0.01}
+                  min={0}
+                  placeholder={Number(open.precio_total).toFixed(2)}
+                  value={precioFinal}
+                  disabled={conPedido.has(open.id)}
+                  onChange={(e) => {
+                    setPrecioFinal(e.target.value);
+                    setDirty(true);
+                  }}
+                />
+              </Field>
+            </div>
             <Field label="Notas internas">
               <textarea
                 style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }}
@@ -845,6 +822,28 @@ export default function AdminPresupuestos() {
                 placeholder="Anotaciones privadas sobre este presupuesto…"
               />
             </Field>
+            <h3 className="pq-seccion">Cobros</h3>
+            <div className="pq-pago-linea">
+              <Field label="Pago" hint="Sale del libro de cobros: se registra abajo, no se edita a mano.">
+                <div style={{ fontSize: 14, padding: '9px 0' }}>
+                  <PagoBadge pago={open.pago ?? 'pendiente'} />{' '}
+                  {PAGO_LABEL[open.pago ?? 'pendiente']} · {euros(open.importe_pagado)} cobrados
+                </div>
+              </Field>
+            </div>
+            <ReciboPanel quote={open} onCambio={() => void releer(open.id)} />
+
+            {open.entrega === 'envio' && <EnvioPanel quote={open} />}
+
+            <h3 className="pq-seccion">Más acciones</h3>
+            <div className="pq-mas">
+              <button type="button" className="btn-outline" onClick={() => void toggleArchive(open)}>
+                {open.archivado ? 'Desarchivar' : 'Archivar'}
+              </button>
+              <button type="button" className="pq-borrar" onClick={() => void removeQuote(open)}>
+                Borrar presupuesto…
+              </button>
+            </div>
           </>
         )}
       </Drawer>

@@ -7,7 +7,7 @@ import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
-import { RebuildButton } from '../_components/RebuildButton';
+import { AdminCabecera } from '../_components/AdminNav';
 import { useConfirm } from '../_components/useConfirm';
 import './blog-admin.css';
 import { mensajeDeError } from '@/lib/errors';
@@ -163,44 +163,17 @@ export default function AdminBlog() {
   return (
     <div>
       {dialogo}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: 'wrap'
-        }}
-      >
-        <h1 className="section-title" style={{ fontSize: 32 }}>
-          Blog
-        </h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <RebuildButton small />
+      <AdminCabecera
+        titulo="Blog"
+        acciones={
+          <>
           <button type="button" className="btn-primary" onClick={startCreate}>
             + Nuevo post
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      <div
-        style={{
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          borderLeft: '3px solid var(--accent)',
-          borderRadius: 'var(--r)',
-          padding: '10px 14px',
-          marginBottom: 20,
-          fontSize: 12,
-          color: 'var(--muted)',
-          lineHeight: 1.5
-        }}
-      >
-        Los posts nuevos aparecen automáticamente en máximo ~15 min
-        (rebuild programado). Para verlo al instante pulsa{' '}
-        <strong>Republicar sitio</strong> arriba — ~2 min hasta que esté live.
-      </div>
 
       <div
         style={{
@@ -235,34 +208,24 @@ export default function AdminBlog() {
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
       ) : (
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: 13,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--r)',
-            overflow: 'hidden'
-          }}
-        >
+        <table className="adm-tabla">
           <thead>
-            <tr style={{ background: 'var(--surface-2)' }}>
-              <th style={th}>Título</th>
-              <th style={th}>Slug</th>
-              <th style={th}>Estado</th>
-              <th style={th}>Actualizado</th>
-              <th style={th}></th>
+            <tr>
+              <th>Título</th>
+              <th>Slug</th>
+              <th>Estado</th>
+              <th>Actualizado</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {visible.map((p) => (
               <tr
                 key={p.id}
-                style={{ borderTop: '1px solid var(--border)', cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
                 {...activableRow(() => startEdit(p), `Editar ${p.title}`)}
               >
-                <td style={td}>
+                <td className="adm-sin-etiqueta">
                   <strong>{p.title}</strong>
                   {p.excerpt && (
                     <div style={{ color: 'var(--muted)', fontSize: 11, marginTop: 4 }}>
@@ -271,10 +234,10 @@ export default function AdminBlog() {
                     </div>
                   )}
                 </td>
-                <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>
+                <td data-label="Slug" translate="no" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, overflowWrap: 'anywhere' }}>
                   {p.slug}
                 </td>
-                <td style={td}>
+                <td data-label="Estado">
                   <span
                     style={{
                       display: 'inline-block',
@@ -291,10 +254,10 @@ export default function AdminBlog() {
                     {p.published ? 'Publicado' : 'Borrador'}
                   </span>
                 </td>
-                <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--muted)' }}>
+                <td data-label="Actualizado" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--muted)' }}>
                   {new Date(p.updated_at).toLocaleDateString('es-ES')}
                 </td>
-                <td style={{ ...td, textAlign: 'right' }}>
+                <td className="adm-sin-etiqueta" style={{ textAlign: 'right', gap: 16 }}>
                   {p.published && (
                     <a
                       href={`/blog/${p.slug}`}
@@ -321,7 +284,7 @@ export default function AdminBlog() {
             ))}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ ...td, textAlign: 'center', color: 'var(--muted)' }}>
+                <td colSpan={5} className="adm-sin-etiqueta" style={{ color: 'var(--muted)' }}>
                   {posts.length === 0
                     ? 'No hay posts todavía. Crea el primero.'
                     : 'Sin resultados.'}
@@ -335,6 +298,8 @@ export default function AdminBlog() {
       <Drawer
         open={!!draft}
         onClose={() => setDraft(null)}
+        error={error}
+        dirty={dirty}
         title={editingId ? 'Editar post' : 'Nuevo post'}
         footer={
           <>
@@ -460,19 +425,8 @@ export default function AdminBlog() {
   );
 }
 
-const th: React.CSSProperties = {
-  padding: 12,
-  textAlign: 'left',
-  fontFamily: "'IBM Plex Mono', monospace",
-  fontSize: 10,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: 'var(--muted)'
-};
-
-const td: React.CSSProperties = { padding: 12, verticalAlign: 'top' };
-
 const btnLink: React.CSSProperties = {
+  padding: '10px 4px',
   background: 'none',
   border: 'none',
   color: 'var(--accent)',

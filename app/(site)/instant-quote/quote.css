@@ -58,6 +58,11 @@
     font-family: var(--font-mono), monospace;
     font-size: 11px; letter-spacing: 0.1em;
 }
+.qt-drop-aviso {
+    max-width: 340px; margin: 12px auto 0;
+    font-size: 11px; line-height: 1.5; color: var(--muted);
+}
+
 
 .qt-overlay-msg, .qt-overlay-err {
     position: absolute; left: 50%; bottom: 56px;

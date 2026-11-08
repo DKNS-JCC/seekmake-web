@@ -32,6 +32,10 @@ export default function AdminLogin() {
       <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <input
           type="email"
+          name="email"
+          autoComplete="username"
+          spellCheck={false}
+          aria-label="Email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -40,6 +44,9 @@ export default function AdminLogin() {
         />
         <input
           type="password"
+          name="password"
+          autoComplete="current-password"
+          aria-label="Contraseña"
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -47,10 +54,10 @@ export default function AdminLogin() {
           style={fieldStyle}
         />
         {error && (
-          <div style={{ color: '#ef4444', fontSize: 13 }}>{error}</div>
+          <div role="alert" style={{ color: '#ef4444', fontSize: 13 }}>{error}</div>
         )}
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? 'Entrando...' : 'Entrar'}
+          {loading ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
       

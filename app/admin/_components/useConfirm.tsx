@@ -75,13 +75,15 @@ export function useConfirm(): {
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
+      data-confirm-open=""
       onClick={(e) => {
         if (e.target === e.currentTarget) close(false);
       }}
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 200,
+        // Above the drawer (300/301): confirms are often opened from one.
+        zIndex: 400,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

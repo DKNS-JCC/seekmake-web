@@ -7,9 +7,10 @@ import { Field, inputStyle } from '../_components/Field';
 import { ChipInput } from '../_components/ChipInput';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
-import { RebuildButton } from '../_components/RebuildButton';
+import { AdminCabecera } from '../_components/AdminNav';
 import { useConfirm } from '../_components/useConfirm';
 import { mensajeDeError } from '@/lib/errors';
+import { euros } from '@/lib/recibo/types';
 import { activableRow } from '@/lib/a11y';
 import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { ErrorBanner } from '../_components/ErrorBanner';
@@ -150,26 +151,16 @@ export default function AdminProductos() {
   return (
     <div>
       {dialogo}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: 'wrap'
-        }}
-      >
-        <h1 className="section-title" style={{ fontSize: 32 }}>
-          Productos
-        </h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <RebuildButton small />
+      <AdminCabecera
+        titulo="Productos"
+        acciones={
+          <>
           <button type="button" className="btn-primary" onClick={startCreate}>
             + Nuevo
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Search + filter */}
       <div
@@ -217,35 +208,25 @@ export default function AdminProductos() {
       {loading ? (
         <p style={{ color: 'var(--muted)' }}>Cargando…</p>
       ) : (
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: 13,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--r)',
-            overflow: 'hidden'
-          }}
-        >
+        <table className="adm-tabla">
           <thead>
-            <tr style={{ background: 'var(--surface-2)' }}>
-              <th style={th}></th>
-              <th style={th}>Nombre</th>
-              <th style={th}>Categoría</th>
-              <th style={th}>Precio</th>
-              <th style={th}>Destacado</th>
-              <th style={th}></th>
+            <tr>
+              <th></th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Destacado</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {visible.map((p) => (
               <tr
                 key={p.id}
-                style={{ borderTop: '1px solid var(--border)', cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
                 {...activableRow(() => startEdit(p), `Editar ${p.nombre}`)}
               >
-                <td style={{ ...td, width: 64 }}>
+                <td className="adm-sin-etiqueta" style={{ width: 64 }}>
                   {p.imagen ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -272,17 +253,17 @@ export default function AdminProductos() {
                     />
                   )}
                 </td>
-                <td style={td}>
+                <td className="adm-sin-etiqueta">
                   <strong>{p.nombre}</strong>
                   <div style={{ color: 'var(--muted)', fontSize: 11 }}>
                     {p.descripcion.slice(0, 80)}
                     {p.descripcion.length > 80 ? '…' : ''}
                   </div>
                 </td>
-                <td style={td}>{p.categoria}</td>
-                <td style={td}>{p.precio.toFixed(2)}€</td>
-                <td style={td}>{p.destacado ? '★' : ''}</td>
-                <td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <td data-label="Categoría">{p.categoria}</td>
+                <td data-label="Precio" className="adm-num">{p.precio > 0 ? euros(p.precio) : 'A consultar'}</td>
+                <td data-label="Destacado">{p.destacado ? 'Sí' : 'No'}</td>
+                <td className="adm-sin-etiqueta" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -298,7 +279,7 @@ export default function AdminProductos() {
             ))}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--muted)' }}>
+                <td colSpan={6} className="adm-sin-etiqueta" style={{ color: 'var(--muted)' }}>
                   {productos.length === 0
                     ? 'No hay productos todavía.'
                     : 'Sin resultados para esos filtros.'}
@@ -312,6 +293,8 @@ export default function AdminProductos() {
       <Drawer
         open={!!draft}
         onClose={() => setDraft(null)}
+        error={error}
+        dirty={dirty}
         title={editingId ? 'Editar producto' : 'Nuevo producto'}
         footer={
           <>
@@ -446,19 +429,8 @@ export default function AdminProductos() {
   );
 }
 
-const th: React.CSSProperties = {
-  padding: 12,
-  textAlign: 'left',
-  fontFamily: "'IBM Plex Mono', monospace",
-  fontSize: 10,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: 'var(--muted)'
-};
-
-const td: React.CSSProperties = { padding: 12, verticalAlign: 'middle' };
-
 const btnLink: React.CSSProperties = {
+  padding: '10px 4px',
   background: 'none',
   border: 'none',
   color: 'var(--accent)',

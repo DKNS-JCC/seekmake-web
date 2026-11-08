@@ -48,7 +48,7 @@ import {
   buildMaterialUpdate,
   ensureUVs
 } from '@/lib/three/materials';
-import { analyzeObject, looksDegenerate, suggestScales } from '@/lib/quote/geometry';
+import { analyzeObject, looksDegenerate, suggestScales, type MeshMetrics } from '@/lib/quote/geometry';
 import { analizarEnSegundoPlano } from '@/lib/quote/estimador/cliente';
 import { IDENTIDAD, multiplicar, rotarTriangulos } from '@/lib/quote/estimador/orientar';
 import { rotarModelo, transpuesta, triangulosImpresion } from '@/lib/quote/estimador/three';
@@ -63,6 +63,7 @@ import {
 } from '@/lib/quote/pricing';
 import './quote.css';
 import { CONTACTO, ESCRIBENOS, whatsappUrl } from '@/lib/contacto';
+import { euros } from '@/lib/recibo/types';
 
 const MAX_FILE_MB = 50;
 const MAX_FILES = 5;
@@ -81,6 +82,18 @@ const SESSION_ID = (() => {
   }
   return nuevo;
 })();
+
+/**
+ * Short id of a piece's shape: the same file gives the same id in any visit,
+ * so /admin/estadisticas can tell one piece tried many times from many pieces.
+ */
+function huellaDe(m: MeshMetrics): string {
+  const dims = [m.bboxMm.x, m.bboxMm.y, m.bboxMm.z].map((v) => Math.round(v)).sort((a, b) => a - b);
+  const txt = `${Math.round(m.volumenCm3 * 10)}|${m.triangulos}|${dims.join('x')}`;
+  let h = 5381;
+  for (let i = 0; i < txt.length; i++) h = ((h * 33) ^ txt.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
 
 function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);
@@ -401,8 +414,10 @@ export function QuoteClient({
           added = pieza;
           trackEvent('pieza_anadida', {
             ext,
+            huella: huellaDe(metrics),
             volumen_cm3: Math.round(metrics.volumenCm3 * 10) / 10,
-            triangulos: metrics.triangulos
+            triangulos: metrics.triangulos,
+            bbox_mm: [metrics.bboxMm.x, metrics.bboxMm.z, metrics.bboxMm.y].map((v) => Math.round(v))
           });
         } catch (err) {
           console.error(err);
@@ -436,6 +451,45 @@ export function QuoteClient({
   // Show the active pieza in the viewer whenever it changes.
   useEffect(() => {
     if (activeId) showModel(activeId);
+  }, [activeId]);
+
+  // A small picture of each new piece as the viewer shows it (not the file),
+  // for /admin/estadisticas. Deleted after 30 days; see /privacidad.
+  const miniaturas = useRef(new Set<string>());
+  useEffect(() => {
+    if (!activeId) return;
+    const t = setTimeout(() => {
+      const p = piezasRef.current.find((x) => x.id === activeId);
+      const st = stateRef.current;
+      if (!p || !st || shownRef.current !== activeId) return;
+      const huella = huellaDe(p.metrics);
+      if (miniaturas.current.has(huella)) return;
+      miniaturas.current.add(huella);
+      st.renderer.render(st.scene, st.camera); // same task as the read: no preserveDrawingBuffer needed
+      const src = st.renderer.domElement;
+      const w = 320;
+      const h = Math.max(1, Math.round((w * src.height) / Math.max(1, src.width)));
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#e8e2d9';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(src, 0, 0, w, h);
+      c.toBlob(
+        (blob) => {
+          if (!blob) return;
+          void createClient()
+            .storage.from('tasador-miniaturas')
+            .upload(`${SESSION_ID}/${huella}.jpg`, blob, { contentType: 'image/jpeg' })
+            .then(() => undefined, () => undefined);
+        },
+        'image/jpeg',
+        0.72
+      );
+    }, 700);
+    return () => clearTimeout(t);
   }, [activeId]);
 
   function removePieza(id: string) {
@@ -674,14 +728,39 @@ export function QuoteClient({
     : 1;
   const listo = !!quote && analizando.length === 0;
 
-  // First time the price is on screen: the funnel's "saw the price" step.
-  const precioVistoRef = useRef(false);
+  // The price on screen: the funnel's "saw the price" step, then again each
+  // time it settles on a new figure (3 s without changes), so the last one is
+  // what the visitor had when they left. Capped per visit.
+  const precioVisto = useRef({ enviados: 0, firma: '' });
   useEffect(() => {
-    if (!listo || !quote || precioVistoRef.current) return;
-    precioVistoRef.current = true;
-    trackEvent('precio_visto', { total: quote.total, piezas: piezas.length });
+    if (!listo || !quote) return;
+    const datos = {
+      total: quote.total,
+      piezas: piezas.length,
+      entrega,
+      detalle: quote.piezas.map((r, i) => ({
+        h: piezas[i] ? huellaDe(piezas[i].metrics) : '',
+        mat: r.material,
+        n: r.cantidad,
+        g: Math.round(r.pesoG),
+        t: Math.round(r.tiempoH * 10) / 10,
+        eur: r.subtotal
+      }))
+    };
+    const firma = JSON.stringify(datos);
+    const ref = precioVisto.current;
+    if (firma === ref.firma || ref.enviados >= 15) return;
+    const t = setTimeout(
+      () => {
+        ref.firma = firma;
+        ref.enviados++;
+        trackEvent('precio_visto', datos);
+      },
+      ref.enviados === 0 ? 0 : 3000
+    );
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listo]);
+  }, [listo, quote]);
   // Suspiciously tiny model → probably exported in inches/metres.
   const scaleSuggestions = activePieza ? suggestScales(activePieza.metrics) : [];
 
@@ -989,6 +1068,11 @@ export function QuoteClient({
               <div className="qt-drop-title">Arrastra aquí tus archivos 3D</div>
               <div className="qt-drop-sub">
                 STL · 3MF · OBJ — hasta {MAX_FILE_MB} MB · máx. {MAX_FILES} piezas
+              </div>
+              <div className="qt-drop-aviso">
+                Tu archivo no sale de tu navegador hasta que nos pides el presupuesto. Para ajustar
+                precios guardamos 30 días una miniatura de la pieza y el precio calculado, sin datos
+                tuyos (más en la política de privacidad).
               </div>
             </button>
           )}
@@ -1411,13 +1495,13 @@ export function QuoteClient({
                   {quote.lineas.map((l, i) => (
                     <li key={i}>
                       <span>{l.concepto}</span>
-                      <span>{l.importe.toFixed(2)} €</span>
+                      <span>{euros(l.importe)}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="qt-total-row">
                   <span>Total estimado</span>
-                  <strong>{quote.total.toFixed(2)} €</strong>
+                  <strong>{euros(quote.total)}</strong>
                 </div>
                 {quote.minimoAplicado && (
                   <p className="qt-total-note">Se aplica el pedido mínimo.</p>
@@ -1426,13 +1510,13 @@ export function QuoteClient({
                   {cupon ? (
                     <p className={quote.cupon ? 'qt-cupon-ok' : 'qt-cupon-aviso'}>
                       {quote.cupon
-                        ? `Código ${cupon.codigo} aplicado: −${quote.cuponDescuento.toFixed(2)} €` +
+                        ? `Código ${cupon.codigo} aplicado: −${euros(quote.cuponDescuento)}` +
                           (quote.minimoAplicado
-                            ? `, pero el total no baja del pedido mínimo (${settings.precio_minimo.toFixed(2)} €).`
+                            ? `, pero el total no baja del pedido mínimo (${euros(settings.precio_minimo)}).`
                             : '')
                         : quote.descuentoPct > 0
                           ? `El descuento por cantidad es mayor que el código ${cupon.codigo}; aplicamos ese.`
-                          : `El código ${cupon.codigo} es para pedidos desde ${cupon.pedido_minimo.toFixed(2)} € en piezas.`}
+                          : `El código ${cupon.codigo} es para pedidos desde ${euros(cupon.pedido_minimo)} en piezas.`}
                       <button type="button" className="qt-cupon-quitar" onClick={() => setCupon(null)}>
                         Quitar
                       </button>
@@ -1683,7 +1767,7 @@ export function QuoteClient({
           aria-label="Ver desglose del precio"
         >
           <span className="qt-sticky-label">Total estimado</span>
-          <strong>{quote.total.toFixed(2)} €</strong>
+          <strong>{euros(quote.total)}</strong>
           <span className="qt-sticky-days">~{quote.diasEstimados} d</span>
         </button>
       )}
