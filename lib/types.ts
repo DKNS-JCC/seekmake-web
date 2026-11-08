@@ -225,8 +225,24 @@ export type Quote = {
   valido_hasta: string;
   /** SHA-256 of the requester IP — rate limiting only. */
   ip_hash?: string;
+  /** Discount code that took effect on this quote. */
+  cupon?: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/** Discount code of the tasador (admin-only table; see validar_cupon). */
+export type CuponRow = {
+  codigo: string;
+  tipo: 'pct' | 'fijo';
+  valor: number;
+  pedido_minimo: number;
+  max_usos: number | null;
+  /** Last valid day (inclusive), YYYY-MM-DD. */
+  valido_hasta: string | null;
+  activo: boolean;
+  nota: string | null;
+  created_at: string;
 };
 
 export type QuoteEventoTipo =
@@ -500,6 +516,12 @@ export type Database = {
         Update: Partial<Omit<Trabajo, 'fecha_efectiva'>>;
         Relationships: [];
       };
+      cupones: {
+        Row: CuponRow;
+        Insert: Omit<CuponRow, 'created_at'> & { created_at?: string };
+        Update: Partial<CuponRow>;
+        Relationships: [];
+      };
       cobros: {
         Row: Cobro;
         // Solo lectura desde el navegador: se escribe con registrar_cobro /
@@ -574,6 +596,10 @@ export type Database = {
       get_recibos_cliente: {
         Args: { p_codigo: string; p_token: string };
         Returns: ReciboCliente[];
+      };
+      validar_cupon: {
+        Args: { p_codigo: string };
+        Returns: Pick<CuponRow, 'codigo' | 'tipo' | 'valor' | 'pedido_minimo'>[];
       };
       verificar_recibo: {
         Args: { p_codigo: string; p_token: string };

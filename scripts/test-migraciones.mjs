@@ -1061,6 +1061,65 @@ await check('campana_navidad: una fila, anon lee y no escribe, ocupadas <= seman
   }
 });
 
+console.log('\n▸ Códigos de descuento');
+
+const cuponComoAnon = async (sql, params = []) => {
+  await client.query('begin');
+  try {
+    await client.query('set local role anon');
+    await comoAnon();
+    return (await client.query(sql, params)).rows;
+  } finally {
+    await client.query('rollback');
+    await comoAdmin();
+  }
+};
+
+await check('cupones: anon no lee la tabla; validar_cupon solo da los vivos', async () => {
+  await comoAdmin();
+  await client.query(`
+    insert into public.cupones (codigo, tipo, valor, pedido_minimo, max_usos, valido_hasta, activo) values
+      ('VIVO10', 'pct', 10, 0, null, null, true),
+      ('APAGADO', 'pct', 10, 0, null, null, false),
+      ('CADUCADO', 'fijo', 5, 0, null, '2020-01-01', true),
+      ('HOYSI', 'fijo', 5, 15, null, public.en_madrid(now())::date, true),
+      ('UNO', 'pct', 50, 0, 1, null, true)`);
+  const tabla = await cuponComoAnon('select * from public.cupones');
+  assert(tabla.length === 0, `anon ve ${tabla.length} cupones`);
+  const v = async (c) => (await cuponComoAnon('select * from public.validar_cupon($1)', [c]))[0];
+  assert((await v(' vivo10 '))?.codigo === 'VIVO10', 'no normaliza mayúsculas/espacios');
+  assert(!(await v('APAGADO')), 'acepta uno desactivado');
+  assert(!(await v('CADUCADO')), 'acepta uno caducado');
+  const hoy = await v('HOYSI');
+  assert(hoy && Number(hoy.pedido_minimo) === 15 && hoy.tipo === 'fijo', 'el último día no vale');
+  assert(!(await v('NOEXISTE')), 'acepta uno inexistente');
+});
+
+await check('cupones: un uso por solicitud no rechazada, y vuelve si se rechaza', async () => {
+  const v = async (c) => (await cuponComoAnon('select * from public.validar_cupon($1)', [c])).length;
+  assert((await v('UNO')) === 1, 'UNO no vale antes de usarlo');
+  const { rows } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, archivos, cupon, desglose)
+    values ('Con Cupón', 'cc@example.com', '611', 'PLA', 1, 'recogida', 10,
+      '[{"nombre":"pieza.stl","cantidad":1,"metricas":{"peso_g":10,"tiempo_h":1}}]', 'UNO',
+      '{"cupon_descuento": 10}')
+    returning id`);
+  assert((await v('UNO')) === 0, 'UNO sigue valiendo tras su único uso');
+  const o = await ordenDeQuote(rows[0].id);
+  assert(o?.data.cupon === 'UNO' && o.data.notes.includes('Cupón UNO: -10 €'), `notas: ${o?.data.notes}`);
+  assert(o.data.notes.includes('Solicitud web'), 'se perdieron las notas de siempre');
+  await client.query(`update public.quotes set estado = 'rechazado' where id = $1`, [rows[0].id]);
+  assert((await v('UNO')) === 1, 'el uso no vuelve al rechazar');
+  let lanzo = false;
+  try { await client.query(`delete from public.cupones where codigo = 'UNO'`); } catch { lanzo = true; }
+  assert(lanzo, 'se pudo borrar un cupón usado');
+});
+
+await check('cupones: una solicitud sin cupón no lleva nada en el pedido', async () => {
+  const o = await ordenDeQuote(webQuote.id);
+  assert(!('cupon' in o.data) && !o.data.notes.includes('Cupón'), 'cupón fantasma');
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();
