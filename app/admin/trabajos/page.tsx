@@ -7,7 +7,7 @@ import { Field, inputStyle } from '../_components/Field';
 import { ChipInput } from '../_components/ChipInput';
 import { ImageUploadField } from '../_components/ImageUploadField';
 import { SaveButton, SaveState } from '../_components/SaveButton';
-import { RebuildButton } from '../_components/RebuildButton';
+import { AdminCabecera } from '../_components/AdminNav';
 import { useConfirm } from '../_components/useConfirm';
 import { mensajeDeError } from '@/lib/errors';
 import { activable } from '@/lib/a11y';
@@ -141,26 +141,16 @@ export default function AdminTrabajos() {
   return (
     <div>
       {dialogo}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: 'wrap'
-        }}
-      >
-        <h1 className="section-title" style={{ fontSize: 32 }}>
-          Trabajos
-        </h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <RebuildButton small />
+      <AdminCabecera
+        titulo="Trabajos"
+        acciones={
+          <>
           <button type="button" className="btn-primary" onClick={startCreate}>
             + Nuevo
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div
         style={{
@@ -311,6 +301,8 @@ export default function AdminTrabajos() {
       <Drawer
         open={!!draft}
         onClose={() => setDraft(null)}
+        error={error}
+        dirty={dirty}
         title={editingId ? 'Editar trabajo' : 'Nuevo trabajo'}
         footer={
           <>

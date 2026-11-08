@@ -1,127 +1,121 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useCallback, useEffect, useId, useRef } from 'react';
+import { ErrorBanner } from './ErrorBanner';
+import { useConfirm } from './useConfirm';
 
 /**
  * Slide-in drawer anchored to the right edge of the viewport.
- * Closes on ESC and on backdrop click. Locks body scroll while open.
+ *
+ * - `error` shows inside the drawer: the page's own banner sits behind the
+ *   backdrop, where nobody sees it.
+ * - `dirty` asks before closing (Esc, backdrop, ×) and before leaving the page.
+ * - Focus moves in on open, stays inside while open, and returns on close.
  */
 export function Drawer({
   open,
   onClose,
   title,
   children,
-  footer
+  footer,
+  error,
+  dirty = false
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  error?: ReactNode;
+  dirty?: boolean;
 }) {
+  const panel = useRef<HTMLElement>(null);
+  const titleId = useId();
+  const { confirmar, dialogo } = useConfirm();
+
+  const pedirCierre = useCallback(async () => {
+    if (
+      dirty &&
+      !(await confirmar({
+        titulo: '¿Cerrar sin guardar?',
+        mensaje: 'Hay cambios sin guardar en este formulario.',
+        detalle: 'Si cierras, se pierden.',
+        confirmar: 'Cerrar sin guardar',
+        cancelar: 'Seguir editando'
+      }))
+    ) {
+      return;
+    }
+    onClose();
+  }, [dirty, confirmar, onClose]);
+
   useEffect(() => {
     if (!open) return;
+    const antes = document.activeElement as HTMLElement | null;
+    panel.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        // The confirm dialog handles its own Esc.
+        if (!document.querySelector('[data-confirm-open]')) void pedirCierre();
+        return;
+      }
+      if (e.key !== 'Tab' || !panel.current) return;
+      const f = panel.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
+      antes?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open, pedirCierre]);
+
+  // Reloading or leaving the page with unsaved changes.
+  useEffect(() => {
+    if (!open || !dirty) return;
+    const aviso = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', aviso);
+    return () => window.removeEventListener('beforeunload', aviso);
+  }, [open, dirty]);
 
   return (
     <>
+      {dialogo}
       <div
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(2px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'opacity 0.2s',
-          zIndex: 300
-        }}
+        className={'adm-drawer-velo' + (open ? ' abierto' : '')}
+        onClick={() => void pedirCierre()}
+        aria-hidden="true"
       />
       <aside
+        ref={panel}
         role="dialog"
         aria-modal="true"
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          height: '100vh',
-          width: 'min(560px, 100vw)',
-          background: 'var(--bg)',
-          borderLeft: '1px solid var(--border)',
-          boxShadow: '-12px 0 32px rgba(0,0,0,0.25)',
-          transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1)',
-          zIndex: 301,
-          display: 'flex',
-          flexDirection: 'column'
-        }}
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className={'adm-drawer' + (open ? ' abierto' : '')}
+        // Closed drawers stay in the DOM: keep them out of Tab order and screen readers.
+        {...((!open ? { inert: true, 'aria-hidden': true } : {}) as Record<string, unknown>)}
       >
-        <header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '18px 24px',
-            borderBottom: '1px solid var(--border)'
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 26,
-              letterSpacing: '0.02em',
-              color: 'var(--text)'
-            }}
-          >
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--muted)',
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--r)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer'
-            }}
-          >
-            <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <header className="adm-drawer-cab">
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" onClick={() => void pedirCierre()} aria-label="Cerrar" className="adm-drawer-x">
+            <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
         </header>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>{children}</div>
-        {footer && (
-          <footer
-            style={{
-              padding: 16,
-              borderTop: '1px solid var(--border)',
-              background: 'var(--surface)',
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end'
-            }}
-          >
-            {footer}
-          </footer>
-        )}
+        <div className="adm-drawer-cuerpo">
+          {error && <ErrorBanner>{error}</ErrorBanner>}
+          {children}
+        </div>
+        {footer && <footer className="adm-drawer-pie">{footer}</footer>}
       </aside>
     </>
   );

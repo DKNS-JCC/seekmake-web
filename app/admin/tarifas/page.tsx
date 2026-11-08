@@ -18,6 +18,9 @@ import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { mensajeDeError } from '@/lib/errors';
 import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
+import { AdminCabecera } from '../_components/AdminNav';
+import { ErrorBanner } from '../_components/ErrorBanner';
+import { useConfirm } from '../_components/useConfirm';
 
 const ACABADOS = [
   'Metálico',
@@ -112,6 +115,7 @@ export default function AdminTarifas() {
   const [error, setError] = useState<string | null>(null);
 
   const { authed, supabase } = useAdminAuth();
+  const { confirmar, dialogo } = useConfirm();
 
   useEffect(() => {
     Promise.all([
@@ -212,6 +216,14 @@ export default function AdminTarifas() {
     setImportMsg(`Importado${imp ? ` (${imp.name})` : ''}. Revisa y guarda.`);
   }
 
+  // Leaving or reloading with unsaved tariffs.
+  useEffect(() => {
+    if (!dirty) return;
+    const aviso = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', aviso);
+    return () => window.removeEventListener('beforeunload', aviso);
+  }, [dirty]);
+
   async function persist() {
     if (!settings) return;
     setSave('saving');
@@ -235,32 +247,255 @@ export default function AdminTarifas() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: 8
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 36,
-            letterSpacing: '0.02em'
-          }}
+      {dialogo}
+      <AdminCabecera titulo="Tarifas del tasador">
+        Los cambios se aplican al instante en el tasador de la web al guardar. Arriba, lo que se toca a
+        menudo; el ajuste fino del laminador está plegado al final.
+      </AdminCabecera>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+
+      {/* Costes base */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Costes base</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+          {settings.modo_precio === 'tarifa' && (
+            <Field label="€ / hora de máquina">
+              <Num value={settings.precio_hora} onChange={(v) => patch((s) => ({ ...s, precio_hora: v }))} />
+            </Field>
+          )}
+          <Field label="Preparación / diseño (€)" hint="Por pedido. 0 = no se cobra (el cliente trae el archivo)">
+            <Num value={settings.tarifa_preparacion} onChange={(v) => patch((s) => ({ ...s, tarifa_preparacion: v }))} />
+          </Field>
+          <Field label="Pedido mínimo (€)">
+            <Num value={settings.precio_minimo} onChange={(v) => patch((s) => ({ ...s, precio_minimo: v }))} />
+          </Field>
+          <Field label="Redondeo al alza (€)" hint="La Calculadora redondea a 0.05. 0 = sin redondeo">
+            <Num value={settings.redondeo} step={0.05} onChange={(v) => patch((s) => ({ ...s, redondeo: v }))} />
+          </Field>
+          <Field label="Cama máxima (mm)" hint="Eje imprimible más largo — por encima se avisa al cliente">
+            <Num value={settings.max_bed_mm} step={1} onChange={(v) => patch((s) => ({ ...s, max_bed_mm: v }))} />
+          </Field>
+          <Field label="Validez del presupuesto (días)" hint="Ventana para aceptar; pasada la fecha caduca">
+            <Num value={settings.validez_dias} step={1} onChange={(v) => patch((s) => ({ ...s, validez_dias: Math.max(1, Math.round(v)) }))} />
+          </Field>
+          <Field label="Horas de impresión / día" hint="Para el plazo estimado que ve el cliente">
+            <Num value={settings.plazo_horas_dia} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_horas_dia: v }))} />
+          </Field>
+          <Field label="Días de margen" hint="Preparación y cola, se suman a todo plazo">
+            <Num value={settings.plazo_dias_margen} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_dias_margen: v }))} />
+          </Field>
+        </div>
+        <details>
+          <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
+            Estimación de respaldo (solo si una pieza no se puede laminar)
+          </summary>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginTop: 14 }}>
+            <Field label="Caudal de impresión (g/h)">
+              <Num value={settings.caudal_g_h} step={1} onChange={(v) => patch((s) => ({ ...s, caudal_g_h: v }))} />
+            </Field>
+            <Field label="Fracción de pared (0-1)">
+              <Num value={settings.fraccion_pared} step={0.05} onChange={(v) => patch((s) => ({ ...s, fraccion_pared: Math.min(1, v) }))} />
+            </Field>
+            <Field label="Tiempo por capa (s)">
+              <Num value={settings.tiempo_capa_s} step={1} onChange={(v) => patch((s) => ({ ...s, tiempo_capa_s: v }))} />
+            </Field>
+            <Field label="Relleno de soportes (0-1)">
+              <Num value={settings.soporte_relleno} step={0.05} onChange={(v) => patch((s) => ({ ...s, soporte_relleno: Math.min(1, v) }))} />
+            </Field>
+          </div>
+        </details>
+      </section>
+
+      {/* Envío */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Envío nacional (tramos por peso)</h2>
+        {settings.envio_tramos.map((t, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>Hasta</span>
+            <Num
+              value={t.max_g}
+              step={100}
+              width={100}
+              onChange={(v) =>
+                patch((s) => {
+                  s.envio_tramos[i].max_g = Math.max(1, Math.round(v));
+                  return s;
+                })
+              }
+            />
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>g →</span>
+            <Num
+              value={t.precio}
+              step={0.1}
+              width={90}
+              onChange={(v) =>
+                patch((s) => {
+                  s.envio_tramos[i].precio = v;
+                  return s;
+                })
+              }
+            />
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>€</span>
+            <button
+              type="button"
+              onClick={() =>
+                patch((s) => {
+                  s.envio_tramos.splice(i, 1);
+                  return s;
+                })
+              }
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r)',
+                color: 'var(--muted)',
+                width: 28,
+                height: 28
+              }}
+              aria-label="Eliminar tramo de envío"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-outline"
+          style={{ padding: '8px 16px', fontSize: 11 }}
+          onClick={() =>
+            patch((s) => {
+              const last = s.envio_tramos[s.envio_tramos.length - 1];
+              s.envio_tramos.push({
+                max_g: (last?.max_g ?? 500) * 2,
+                precio: (last?.precio ?? 4.5) + 2
+              });
+              return s;
+            })
+          }
         >
-          Tarifas del tasador
-        </h1>
-        <SaveButton onClick={persist} state={save} dirty={dirty} />
-      </div>
-      <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 24 }}>
-        Los cambios se aplican al instante en el tasador de la web — no hace
-        falta reconstruir la web.
-      </p>
-      {error && (
-        <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 16 }}>{error}</p>
-      )}
+          + Añadir tramo
+        </button>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
+          El último tramo hace de tope: cualquier pedido más pesado usa su precio.
+        </p>
+      </section>
+
+      {/* Recargos */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Recargos</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', marginBottom: 18 }}>
+          {ACABADOS.map((a) => (
+            <Field key={a} label={`${a} (+%)`}>
+              <Num
+                value={settings.recargo_acabado_pct[a] ?? 0}
+                step={1}
+                width={80}
+                onChange={(v) =>
+                  patch((s) => {
+                    s.recargo_acabado_pct[a] = v;
+                    return s;
+                  })
+                }
+              />
+            </Field>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+          <Field label="Multicolor: recargo base (+%)">
+            <Num
+              value={settings.recargo_multicolor.base_pct}
+              step={1}
+              onChange={(v) =>
+                patch((s) => {
+                  s.recargo_multicolor.base_pct = v;
+                  return s;
+                })
+              }
+            />
+          </Field>
+          <Field label="Multicolor: € por color extra">
+            <Num
+              value={settings.recargo_multicolor.por_color_extra}
+              step={0.5}
+              onChange={(v) =>
+                patch((s) => {
+                  s.recargo_multicolor.por_color_extra = v;
+                  return s;
+                })
+              }
+            />
+          </Field>
+        </div>
+      </section>
+
+      {/* Descuentos */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Descuentos por cantidad</h2>
+        {settings.descuentos_cantidad.map((t, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>A partir de</span>
+            <Num
+              value={t.min}
+              step={1}
+              min={2}
+              width={80}
+              onChange={(v) =>
+                patch((s) => {
+                  s.descuentos_cantidad[i].min = Math.max(2, Math.round(v));
+                  return s;
+                })
+              }
+            />
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>unidades →</span>
+            <Num
+              value={t.pct}
+              step={1}
+              width={80}
+              onChange={(v) =>
+                patch((s) => {
+                  s.descuentos_cantidad[i].pct = v;
+                  return s;
+                })
+              }
+            />
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>% dto.</span>
+            <button
+              type="button"
+              onClick={() =>
+                patch((s) => {
+                  s.descuentos_cantidad.splice(i, 1);
+                  return s;
+                })
+              }
+              style={{
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r)',
+                color: 'var(--muted)',
+                width: 28,
+                height: 28
+              }}
+              aria-label="Eliminar tramo"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-outline"
+          style={{ padding: '8px 16px', fontSize: 11 }}
+          onClick={() =>
+            patch((s) => {
+              const last = s.descuentos_cantidad[s.descuentos_cantidad.length - 1];
+              s.descuentos_cantidad.push({ min: (last?.min ?? 1) + 10, pct: (last?.pct ?? 0) + 5 });
+              return s;
+            })
+          }
+        >
+          + Añadir tramo
+        </button>
+      </section>
 
       {/* Cómo se calcula */}
       <section style={cardStyle}>
@@ -348,160 +583,10 @@ export default function AdminTarifas() {
         )}
       </section>
 
-      {/* Estimador */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Laminado en el navegador</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-          <Field label="Orientación automática" hint="Coloca la pieza en la cama de la forma más barata, como harías en Orca">
-            <input
-              type="checkbox"
-              checked={settings.orientacion_auto}
-              onChange={(e) => patch((s) => ({ ...s, orientacion_auto: e.target.checked }))}
-            />
-          </Field>
-          <Field label="Respetar la del cliente si cuesta ≤ (+%)">
-            <Num value={settings.orientacion_tolerancia_pct} step={1} width={80} onChange={(v) => patch((s) => ({ ...s, orientacion_tolerancia_pct: v }))} />
-          </Field>
-          <Field label="Tipo de soportes">
-            <select
-              value={settings.soporte_tipo}
-              onChange={(e) => patch((s) => ({ ...s, soporte_tipo: e.target.value === 'arbol' ? 'arbol' : 'normal' }))}
-              style={{ ...inputStyle, width: 150 }}
-            >
-              <option value="normal">Normales</option>
-              <option value="arbol">Árbol</option>
-            </select>
-          </Field>
-          <Field label="Soportes desde (g/ud)" hint="Por debajo no merece la pena activarlos">
-            <Num value={settings.soporte_min_g} step={0.5} width={80} onChange={(v) => patch((s) => ({ ...s, soporte_min_g: v }))} />
-          </Field>
-          <Field label="Corrección peso (%)" hint="Si Orca te da sistemáticamente más/menos gramos">
-            <Num
-              value={Math.round(((settings.calibracion.peso ?? 1) - 1) * 1000) / 10}
-              step={1}
-              min={-50}
-              width={80}
-              onChange={(v) => patch((s) => { s.calibracion.peso = 1 + v / 100; return s; })}
-            />
-          </Field>
-          <Field label="Corrección tiempo (%)" hint="Ídem con las horas (ver docs/estimador-presupuestos.md)">
-            <Num
-              value={Math.round(((settings.calibracion.tiempo ?? 1) - 1) * 1000) / 10}
-              step={1}
-              min={-50}
-              width={80}
-              onChange={(v) => patch((s) => { s.calibracion.tiempo = 1 + v / 100; return s; })}
-            />
-          </Field>
-        </div>
-        <details style={{ marginTop: 8 }}>
-          <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
-            Perfil de impresora (por defecto: Orca «0.20mm Standard @Creality K1 SE»)
-          </summary>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 20px', marginTop: 14 }}>
-            {CAMPOS_PERFIL.map(({ k, label, step }) => (
-              <Field key={k} label={label}>
-                <Num
-                  value={Number(settings.perfil[k] ?? PERFIL_K1SE[k])}
-                  step={step}
-                  width={90}
-                  onChange={(v) => patch((s) => ({ ...s, perfil: { ...s.perfil, [k]: v } }))}
-                />
-              </Field>
-            ))}
-          </div>
-          <button
-            type="button"
-            className="btn-outline"
-            style={{ padding: '6px 14px', fontSize: 11 }}
-            onClick={() => patch((s) => ({ ...s, perfil: {} }))}
-          >
-            Restablecer perfil K1 SE
-          </button>
-        </details>
-      </section>
-
-      {/* Precisión */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Precisión del tasador (pedidos reales)</h2>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12, maxWidth: 760 }}>
-          Cada presupuesto web que conviertes en pedido desde la Calculadora guarda los gramos
-          y horas reales de Orca. Aquí se comparan con lo que estimó la web.
-        </p>
-        {calibErr && <p style={{ fontSize: 13, color: '#ef4444' }}>{calibErr}</p>}
-        {calib && (
-          <>
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, marginBottom: 10 }}>
-              <input type="checkbox" checked={todasImpresoras} onChange={(e) => setTodasImpresoras(e.target.checked)} />
-              Incluir pedidos de otras impresoras (la web simula la K1 SE)
-            </label>
-            {precision.n === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-                Aún no hay pedidos enlazados con estimación por capas. Aparecerán en cuanto conviertas
-                presupuestos web nuevos en la Calculadora.
-              </p>
-            ) : (
-              <>
-                <p style={{ fontSize: 13 }}>
-                  {precision.n} pedido{precision.n !== 1 ? 's' : ''}: Orca da de mediana{' '}
-                  <strong>{((precision.peso - 1) * 100).toFixed(1)} %</strong> de gramos y{' '}
-                  <strong>{((precision.tiempo - 1) * 100).toFixed(1)} %</strong> de horas respecto a la web.
-                </p>
-                <button
-                  type="button"
-                  className="btn-outline"
-                  style={{ padding: '8px 16px', fontSize: 11, marginTop: 8 }}
-                  disabled={precision.n < 3}
-                  title={precision.n < 3 ? 'Con menos de 3 pedidos no es fiable' : ''}
-                  onClick={() =>
-                    patch((s) => {
-                      s.calibracion.peso = (s.calibracion.peso ?? 1) * precision.peso;
-                      s.calibracion.tiempo = (s.calibracion.tiempo ?? 1) * precision.tiempo;
-                      return s;
-                    })
-                  }
-                >
-                  Aplicar corrección
-                </button>
-              </>
-            )}
-            {calib.length > 0 && (
-              <details style={{ marginTop: 12 }}>
-                <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
-                  Ver pedidos ({calib.length})
-                </summary>
-                <table style={{ borderCollapse: 'collapse', fontSize: 12, marginTop: 10 }}>
-                  <thead>
-                    <tr style={{ color: 'var(--muted)', textAlign: 'left' }}>
-                      {['Código', 'Impresora', 'Web g', 'Real g', 'Web h', 'Real h', 'Web €', 'Real €'].map((h) => (
-                        <th key={h} style={{ padding: '4px 14px 4px 0' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {calib.slice(0, 40).map((r) => (
-                      <tr key={r.codigo}>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.codigo}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.impresora ?? '—'}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.web_peso_g != null ? Number(r.web_peso_g).toFixed(0) : '—'}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.real_peso_g ?? '—'}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.web_tiempo_h != null ? Number(r.web_tiempo_h).toFixed(1) : '—'}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.real_horas ?? '—'}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.web_precio != null ? Number(r.web_precio).toFixed(2) : '—'}</td>
-                        <td style={{ padding: '3px 14px 3px 0' }}>{r.real_precio != null ? Number(r.real_precio).toFixed(2) : '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </details>
-            )}
-          </>
-        )}
-      </section>
-
       {/* Materiales */}
       <section style={cardStyle}>
         <h2 style={h2Style}>Materiales</h2>
+        <div className="adm-scroll">
         <table style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'left' }}>
@@ -607,105 +692,6 @@ export default function AdminTarifas() {
             })}
           </tbody>
         </table>
-      </section>
-
-      {/* Costes base */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Costes base</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-          {settings.modo_precio === 'tarifa' && (
-            <Field label="€ / hora de máquina">
-              <Num value={settings.precio_hora} onChange={(v) => patch((s) => ({ ...s, precio_hora: v }))} />
-            </Field>
-          )}
-          <Field label="Preparación / diseño (€)" hint="Por pedido. 0 = no se cobra (el cliente trae el archivo)">
-            <Num value={settings.tarifa_preparacion} onChange={(v) => patch((s) => ({ ...s, tarifa_preparacion: v }))} />
-          </Field>
-          <Field label="Pedido mínimo (€)">
-            <Num value={settings.precio_minimo} onChange={(v) => patch((s) => ({ ...s, precio_minimo: v }))} />
-          </Field>
-          <Field label="Redondeo al alza (€)" hint="La Calculadora redondea a 0.05. 0 = sin redondeo">
-            <Num value={settings.redondeo} step={0.05} onChange={(v) => patch((s) => ({ ...s, redondeo: v }))} />
-          </Field>
-          <Field label="Cama máxima (mm)" hint="Eje imprimible más largo — por encima se avisa al cliente">
-            <Num value={settings.max_bed_mm} step={1} onChange={(v) => patch((s) => ({ ...s, max_bed_mm: v }))} />
-          </Field>
-          <Field label="Validez del presupuesto (días)" hint="Ventana para aceptar; pasada la fecha caduca">
-            <Num value={settings.validez_dias} step={1} onChange={(v) => patch((s) => ({ ...s, validez_dias: Math.max(1, Math.round(v)) }))} />
-          </Field>
-          <Field label="Horas de impresión / día" hint="Para el plazo estimado que ve el cliente">
-            <Num value={settings.plazo_horas_dia} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_horas_dia: v }))} />
-          </Field>
-          <Field label="Días de margen" hint="Preparación y cola, se suman a todo plazo">
-            <Num value={settings.plazo_dias_margen} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_dias_margen: v }))} />
-          </Field>
-        </div>
-        <details>
-          <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
-            Estimación de respaldo (solo si una pieza no se puede laminar)
-          </summary>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginTop: 14 }}>
-            <Field label="Caudal de impresión (g/h)">
-              <Num value={settings.caudal_g_h} step={1} onChange={(v) => patch((s) => ({ ...s, caudal_g_h: v }))} />
-            </Field>
-            <Field label="Fracción de pared (0-1)">
-              <Num value={settings.fraccion_pared} step={0.05} onChange={(v) => patch((s) => ({ ...s, fraccion_pared: Math.min(1, v) }))} />
-            </Field>
-            <Field label="Tiempo por capa (s)">
-              <Num value={settings.tiempo_capa_s} step={1} onChange={(v) => patch((s) => ({ ...s, tiempo_capa_s: v }))} />
-            </Field>
-            <Field label="Relleno de soportes (0-1)">
-              <Num value={settings.soporte_relleno} step={0.05} onChange={(v) => patch((s) => ({ ...s, soporte_relleno: Math.min(1, v) }))} />
-            </Field>
-          </div>
-        </details>
-      </section>
-
-      {/* Recargos */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Recargos</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', marginBottom: 18 }}>
-          {ACABADOS.map((a) => (
-            <Field key={a} label={`${a} (+%)`}>
-              <Num
-                value={settings.recargo_acabado_pct[a] ?? 0}
-                step={1}
-                width={80}
-                onChange={(v) =>
-                  patch((s) => {
-                    s.recargo_acabado_pct[a] = v;
-                    return s;
-                  })
-                }
-              />
-            </Field>
-          ))}
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-          <Field label="Multicolor: recargo base (+%)">
-            <Num
-              value={settings.recargo_multicolor.base_pct}
-              step={1}
-              onChange={(v) =>
-                patch((s) => {
-                  s.recargo_multicolor.base_pct = v;
-                  return s;
-                })
-              }
-            />
-          </Field>
-          <Field label="Multicolor: € por color extra">
-            <Num
-              value={settings.recargo_multicolor.por_color_extra}
-              step={0.5}
-              onChange={(v) =>
-                patch((s) => {
-                  s.recargo_multicolor.por_color_extra = v;
-                  return s;
-                })
-              }
-            />
-          </Field>
         </div>
       </section>
 
@@ -815,151 +801,170 @@ export default function AdminTarifas() {
         ))}
       </section>
 
-      {/* Envío */}
+      {/* Avanzado: lo que solo se toca al calibrar el laminador */}
+      <details className="tar-avanzado">
+        <summary>Avanzado: laminador y precisión del tasador</summary>
+      {/* Estimador */}
       <section style={cardStyle}>
-        <h2 style={h2Style}>Envío nacional (tramos por peso)</h2>
-        {settings.envio_tramos.map((t, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>Hasta</span>
-            <Num
-              value={t.max_g}
-              step={100}
-              width={100}
-              onChange={(v) =>
-                patch((s) => {
-                  s.envio_tramos[i].max_g = Math.max(1, Math.round(v));
-                  return s;
-                })
-              }
+        <h2 style={h2Style}>Laminado en el navegador</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+          <Field label="Orientación automática" hint="Coloca la pieza en la cama de la forma más barata, como harías en Orca">
+            <input
+              type="checkbox"
+              checked={settings.orientacion_auto}
+              onChange={(e) => patch((s) => ({ ...s, orientacion_auto: e.target.checked }))}
             />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>g →</span>
-            <Num
-              value={t.precio}
-              step={0.1}
-              width={90}
-              onChange={(v) =>
-                patch((s) => {
-                  s.envio_tramos[i].precio = v;
-                  return s;
-                })
-              }
-            />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>€</span>
-            <button
-              type="button"
-              onClick={() =>
-                patch((s) => {
-                  s.envio_tramos.splice(i, 1);
-                  return s;
-                })
-              }
-              style={{
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r)',
-                color: 'var(--muted)',
-                width: 28,
-                height: 28
-              }}
-              aria-label="Eliminar tramo de envío"
+          </Field>
+          <Field label="Respetar la del cliente si cuesta ≤ (+%)">
+            <Num value={settings.orientacion_tolerancia_pct} step={1} width={80} onChange={(v) => patch((s) => ({ ...s, orientacion_tolerancia_pct: v }))} />
+          </Field>
+          <Field label="Tipo de soportes">
+            <select
+              value={settings.soporte_tipo}
+              onChange={(e) => patch((s) => ({ ...s, soporte_tipo: e.target.value === 'arbol' ? 'arbol' : 'normal' }))}
+              style={{ ...inputStyle, width: 150 }}
             >
-              ×
-            </button>
+              <option value="normal">Normales</option>
+              <option value="arbol">Árbol</option>
+            </select>
+          </Field>
+          <Field label="Soportes desde (g/ud)" hint="Por debajo no merece la pena activarlos">
+            <Num value={settings.soporte_min_g} step={0.5} width={80} onChange={(v) => patch((s) => ({ ...s, soporte_min_g: v }))} />
+          </Field>
+          <Field label="Corrección peso (%)" hint="Si Orca te da sistemáticamente más/menos gramos">
+            <Num
+              value={Math.round(((settings.calibracion.peso ?? 1) - 1) * 1000) / 10}
+              step={1}
+              min={-50}
+              width={80}
+              onChange={(v) => patch((s) => { s.calibracion.peso = 1 + v / 100; return s; })}
+            />
+          </Field>
+          <Field label="Corrección tiempo (%)" hint="Ídem con las horas (ver docs/estimador-presupuestos.md)">
+            <Num
+              value={Math.round(((settings.calibracion.tiempo ?? 1) - 1) * 1000) / 10}
+              step={1}
+              min={-50}
+              width={80}
+              onChange={(v) => patch((s) => { s.calibracion.tiempo = 1 + v / 100; return s; })}
+            />
+          </Field>
+        </div>
+        <details style={{ marginTop: 8 }}>
+          <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
+            Perfil de impresora (por defecto: Orca «0.20mm Standard @Creality K1 SE»)
+          </summary>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 20px', marginTop: 14 }}>
+            {CAMPOS_PERFIL.map(({ k, label, step }) => (
+              <Field key={k} label={label}>
+                <Num
+                  value={Number(settings.perfil[k] ?? PERFIL_K1SE[k])}
+                  step={step}
+                  width={90}
+                  onChange={(v) => patch((s) => ({ ...s, perfil: { ...s.perfil, [k]: v } }))}
+                />
+              </Field>
+            ))}
           </div>
-        ))}
-        <button
-          type="button"
-          className="btn-outline"
-          style={{ padding: '8px 16px', fontSize: 11 }}
-          onClick={() =>
-            patch((s) => {
-              const last = s.envio_tramos[s.envio_tramos.length - 1];
-              s.envio_tramos.push({
-                max_g: (last?.max_g ?? 500) * 2,
-                precio: (last?.precio ?? 4.5) + 2
-              });
-              return s;
-            })
-          }
-        >
-          + Añadir tramo
-        </button>
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
-          El último tramo hace de tope: cualquier pedido más pesado usa su precio.
+          <button
+            type="button"
+            className="btn-outline"
+            style={{ padding: '6px 14px', fontSize: 11 }}
+            onClick={async () => {
+              if (await confirmar({ mensaje: '¿Restablecer el perfil de impresora al de la K1 SE?', detalle: 'Se pierden los ajustes que hayas cambiado en el perfil (hasta que guardes, puedes recargar la página).', confirmar: 'Restablecer' })) {
+                patch((s) => ({ ...s, perfil: {} }));
+              }
+            }}
+          >
+            Restablecer perfil K1 SE
+          </button>
+        </details>
+      </section>
+
+      {/* Precisión */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>Precisión del tasador (pedidos reales)</h2>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12, maxWidth: 760 }}>
+          Cada presupuesto web que conviertes en pedido desde la Calculadora guarda los gramos
+          y horas reales de Orca. Aquí se comparan con lo que estimó la web.
         </p>
+        {calibErr && <p style={{ fontSize: 13, color: '#ef4444' }}>{calibErr}</p>}
+        {calib && (
+          <>
+            <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, marginBottom: 10 }}>
+              <input type="checkbox" checked={todasImpresoras} onChange={(e) => setTodasImpresoras(e.target.checked)} />
+              Incluir pedidos de otras impresoras (la web simula la K1 SE)
+            </label>
+            {precision.n === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+                Aún no hay pedidos enlazados con estimación por capas. Aparecerán en cuanto conviertas
+                presupuestos web nuevos en la Calculadora.
+              </p>
+            ) : (
+              <>
+                <p style={{ fontSize: 13 }}>
+                  {precision.n} pedido{precision.n !== 1 ? 's' : ''}: Orca da de mediana{' '}
+                  <strong>{((precision.peso - 1) * 100).toFixed(1)} %</strong> de gramos y{' '}
+                  <strong>{((precision.tiempo - 1) * 100).toFixed(1)} %</strong> de horas respecto a la web.
+                </p>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  style={{ padding: '8px 16px', fontSize: 11, marginTop: 8 }}
+                  disabled={precision.n < 3}
+                  title={precision.n < 3 ? 'Con menos de 3 pedidos no es fiable' : ''}
+                  onClick={() =>
+                    patch((s) => {
+                      s.calibracion.peso = (s.calibracion.peso ?? 1) * precision.peso;
+                      s.calibracion.tiempo = (s.calibracion.tiempo ?? 1) * precision.tiempo;
+                      return s;
+                    })
+                  }
+                >
+                  Aplicar corrección
+                </button>
+              </>
+            )}
+            {calib.length > 0 && (
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
+                  Ver pedidos ({calib.length})
+                </summary>
+                <div className="adm-scroll">
+                <table style={{ borderCollapse: 'collapse', fontSize: 12, marginTop: 10 }}>
+                  <thead>
+                    <tr style={{ color: 'var(--muted)', textAlign: 'left' }}>
+                      {['Código', 'Impresora', 'Web g', 'Real g', 'Web h', 'Real h', 'Web €', 'Real €'].map((h) => (
+                        <th key={h} style={{ padding: '4px 14px 4px 0' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calib.slice(0, 40).map((r) => (
+                      <tr key={r.codigo}>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.codigo}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.impresora ?? '—'}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.web_peso_g != null ? Number(r.web_peso_g).toFixed(0) : '—'}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.real_peso_g ?? '—'}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.web_tiempo_h != null ? Number(r.web_tiempo_h).toFixed(1) : '—'}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.real_horas ?? '—'}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.web_precio != null ? Number(r.web_precio).toFixed(2) : '—'}</td>
+                        <td style={{ padding: '3px 14px 3px 0' }}>{r.real_precio != null ? Number(r.real_precio).toFixed(2) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+              </details>
+            )}
+          </>
+        )}
       </section>
 
-      {/* Descuentos */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Descuentos por cantidad</h2>
-        {settings.descuentos_cantidad.map((t, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>A partir de</span>
-            <Num
-              value={t.min}
-              step={1}
-              min={2}
-              width={80}
-              onChange={(v) =>
-                patch((s) => {
-                  s.descuentos_cantidad[i].min = Math.max(2, Math.round(v));
-                  return s;
-                })
-              }
-            />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>unidades →</span>
-            <Num
-              value={t.pct}
-              step={1}
-              width={80}
-              onChange={(v) =>
-                patch((s) => {
-                  s.descuentos_cantidad[i].pct = v;
-                  return s;
-                })
-              }
-            />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>% dto.</span>
-            <button
-              type="button"
-              onClick={() =>
-                patch((s) => {
-                  s.descuentos_cantidad.splice(i, 1);
-                  return s;
-                })
-              }
-              style={{
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r)',
-                color: 'var(--muted)',
-                width: 28,
-                height: 28
-              }}
-              aria-label="Eliminar tramo"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="btn-outline"
-          style={{ padding: '8px 16px', fontSize: 11 }}
-          onClick={() =>
-            patch((s) => {
-              const last = s.descuentos_cantidad[s.descuentos_cantidad.length - 1];
-              s.descuentos_cantidad.push({ min: (last?.min ?? 1) + 10, pct: (last?.pct ?? 0) + 5 });
-              return s;
-            })
-          }
-        >
-          + Añadir tramo
-        </button>
-      </section>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <SaveButton onClick={persist} state={save} dirty={dirty} />
+      </details>
+      <div className={'tar-guardar' + (dirty || save !== 'idle' ? ' visible' : '')} role="region" aria-label="Guardar tarifas">
+        <span>{dirty ? 'Tienes cambios sin guardar.' : save === 'saved' ? 'Tarifas guardadas.' : ''}</span>
+        <SaveButton onClick={persist} state={save} dirty={dirty} label="Guardar tarifas" />
       </div>
     </div>
   );

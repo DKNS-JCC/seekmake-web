@@ -12,6 +12,7 @@ import './presupuesto.css';
 import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
 import { EnvioCard } from './EnvioCard';
 import { RecibosCard } from './RecibosCard';
+import { euros } from '@/lib/recibo/types';
 
 interface StatusRow {
   codigo: string;
@@ -243,7 +244,7 @@ export function PresupuestoClient() {
                 <p style={{ marginBottom: 10 }}>
                   Hemos revisado tu pieza y el precio está confirmado
                   {result.precio_final != null
-                    ? `: ${Number(result.precio_final).toFixed(2)} €`
+                    ? `: ${euros(Number(result.precio_final))}`
                     : ''}
                   . ¿Seguimos adelante?
                 </p>
@@ -274,8 +275,8 @@ export function PresupuestoClient() {
               <span>× {result.cantidad}</span>
               <span>
                 {result.precio_final != null
-                  ? `${Number(result.precio_final).toFixed(2)} € confirmados`
-                  : `${Number(result.precio_total).toFixed(2)} € estimados`}
+                  ? `${euros(Number(result.precio_final))} confirmados`
+                  : `${euros(Number(result.precio_total))} estimados`}
               </span>
               <span>{result.entrega === 'envio' ? 'Envío nacional' : 'Recogida'}</span>
               <span className={'pr-pago pr-pago--' + result.pago}>

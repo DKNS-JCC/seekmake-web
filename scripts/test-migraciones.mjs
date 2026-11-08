@@ -1120,6 +1120,32 @@ await check('cupones: una solicitud sin cupón no lleva nada en el pedido', asyn
   assert(!('cupon' in o.data) && !o.data.notes.includes('Cupón'), 'cupón fantasma');
 });
 
+console.log('\n▸ Miniaturas del tasador');
+
+await check('tasador-miniaturas: privado, solo JPEG pequeño; anon sube con ruta válida y no lee', async () => {
+  const { rows: [b] } = await client.query(`select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'tasador-miniaturas'`);
+  assert(b && b.public === false && Number(b.file_size_limit) <= 153600 && b.allowed_mime_types.join() === 'image/jpeg', JSON.stringify(b));
+  // Supabase grants these to anon; RLS is what limits it.
+  await client.query('grant usage on schema storage to anon; grant select, insert on storage.objects to anon');
+  await client.query('begin');
+  try {
+    await client.query('set local role anon');
+    await comoAnon();
+    await client.query(`insert into storage.objects (bucket_id, name) values ('tasador-miniaturas', 'abc123sesion/1x9z.jpg')`);
+    let lanzo = false;
+    try {
+      await client.query('savepoint s');
+      await client.query(`insert into storage.objects (bucket_id, name) values ('tasador-miniaturas', '../otra/cosa.php')`);
+    } catch { lanzo = true; await client.query('rollback to savepoint s'); }
+    assert(lanzo, 'anon subió una ruta que no es <sesión>/<huella>.jpg');
+    const { rows } = await client.query(`select name from storage.objects where bucket_id = 'tasador-miniaturas'`);
+    assert(rows.length === 0, `anon ve ${rows.length} miniaturas`);
+  } finally {
+    await client.query('rollback');
+    await comoAdmin();
+  }
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();

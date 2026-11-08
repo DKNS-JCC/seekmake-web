@@ -20,25 +20,5 @@ export function NuevosBadge() {
   }, []);
 
   if (!count) return null;
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 18,
-        height: 18,
-        padding: '0 5px',
-        marginLeft: 6,
-        background: 'var(--accent)',
-        color: '#fff',
-        borderRadius: 9,
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 10,
-        fontWeight: 600
-      }}
-    >
-      {count}
-    </span>
-  );
+  return <span className="adm-badge" aria-label={`${count} nuevos`}>{count}</span>;
 }

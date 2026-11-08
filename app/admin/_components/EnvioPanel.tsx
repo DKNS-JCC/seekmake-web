@@ -19,6 +19,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Envio, EnvioEstado, PuntoRecogida, Quote } from '@/lib/types';
 import { CARRIER_OPCIONES, carrierInfo } from '@/lib/envio/carriers';
 import { Field, inputStyle } from './Field';
+import { euros } from '@/lib/recibo/types';
 
 const supabase = createClient;
 
@@ -485,7 +486,7 @@ export function EnvioPanel({ quote }: { quote: Quote }) {
                   style={{ ...inputStyle, width: 'auto', flex: 1, minWidth: 200 }}>
             {metodos.map((m, i) => (
               <option key={`m-${i}`} value={m.code}>
-                {m.name}{m.price != null ? ` — ${m.price.toFixed(2)} €` : ''}{m.id == null ? ' (sin etiqueta)' : ''}
+                {m.name}{m.price != null ? ` — ${euros(m.price)}` : ''}{m.id == null ? ' (sin etiqueta)' : ''}
               </option>
             ))}
           </select>
@@ -501,7 +502,7 @@ export function EnvioPanel({ quote }: { quote: Quote }) {
         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
           {sel.id == null
             ? `${sel.name}: solo estimación (este producto no permite crear etiqueta desde aquí).`
-            : <>Se anunciará el envío con <strong>{sel.name}</strong>{sel.price != null ? ` (~${sel.price.toFixed(2)} €)` : ''} y se facturará en tu cuenta Sendcloud.</>}
+            : <>Se anunciará el envío con <strong>{sel.name}</strong>{sel.price != null ? ` (~${euros(sel.price)})` : ''} y se facturará en tu cuenta Sendcloud.</>}
         </div>
       )}
       {err && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>⚠ {err}</div>}

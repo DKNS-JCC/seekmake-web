@@ -7,6 +7,8 @@ import { useConfirm } from '../_components/useConfirm';
 import { mensajeDeError } from '@/lib/errors';
 import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { ErrorBanner } from '../_components/ErrorBanner';
+import { AdminCabecera } from '../_components/AdminNav';
+import { euros } from '@/lib/recibo/types';
 
 // Códigos de descuento del tasador. Un uso = una solicitud con el código que
 // no esté rechazada (validar_cupon). Un código usado no se borra: se apaga.
@@ -119,11 +121,10 @@ export default function AdminCupones() {
   return (
     <div style={{ maxWidth: 720 }}>
       {dialogo}
-      <h1 className="section-title" style={{ fontSize: 32, marginBottom: 8 }}>Códigos de descuento</h1>
-      <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 24px' }}>
+      <AdminCabecera titulo="Códigos de descuento">
         Se aplican en el tasador sobre las piezas, antes del pedido mínimo y sin tocar el envío.
         No se suman al descuento por cantidad: gana el mayor.
-      </p>
+      </AdminCabecera>
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
 
@@ -140,11 +141,13 @@ export default function AdminCupones() {
             </select>
           </Field>
           <Field label={draft.tipo === 'pct' ? 'Descuento (%)' : 'Descuento (€)'}>
-            <input type="number" min={0.01} step={draft.tipo === 'pct' ? 1 : 0.05} value={draft.valor}
+            {/* El navegador solo acepta min + n·step: min tiene que ser múltiplo del step. */}
+            <input type="number" min={draft.tipo === 'pct' ? 1 : 0.05} max={draft.tipo === 'pct' ? 100 : undefined}
+              step={draft.tipo === 'pct' ? 1 : 0.05} value={draft.valor}
               onChange={(e) => patch('valor', Number(e.target.value))} style={inputStyle} />
           </Field>
           <Field label="Desde (€ en piezas)" hint="0 = cualquier pedido">
-            <input type="number" min={0} step={0.5} value={draft.pedido_minimo}
+            <input type="number" min={0} step={0.01} value={draft.pedido_minimo}
               onChange={(e) => patch('pedido_minimo', Number(e.target.value) || 0)} style={inputStyle} />
           </Field>
           <Field label="Usos máximos" hint="Vacío = sin límite">
@@ -176,16 +179,16 @@ export default function AdminCupones() {
             <li key={c.codigo} style={{ padding: 14, border: '1px solid var(--border)', borderRadius: 'var(--r)', opacity: vivo ? 1 : 0.6 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 12px' }}>
                 <strong style={{ fontFamily: 'monospace', fontSize: 16 }}>{c.codigo}</strong>
-                <span>{c.tipo === 'pct' ? `-${c.valor}%` : `-${Number(c.valor).toFixed(2)} €`}</span>
-                {c.pedido_minimo > 0 && <span style={{ color: 'var(--muted)', fontSize: 12 }}>desde {Number(c.pedido_minimo).toFixed(2)} €</span>}
+                <span>{c.tipo === 'pct' ? `-${c.valor}%` : `-${euros(Number(c.valor))}`}</span>
+                {c.pedido_minimo > 0 && <span style={{ color: 'var(--muted)', fontSize: 12 }}>desde {euros(Number(c.pedido_minimo))}</span>}
                 <span style={{ color: 'var(--muted)', fontSize: 12 }}>
                   {!c.activo ? 'desactivado' : caducado ? 'caducado' : agotado ? 'agotado' : 'activo'}
                   {c.valido_hasta && ` · hasta el ${new Date(c.valido_hasta + 'T12:00').toLocaleDateString('es-ES')}`}
                 </span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-                {u.usos}{c.max_usos ? ` / ${c.max_usos}` : ''} usos · −{u.descontado.toFixed(2)} € descontados ·{' '}
-                {u.facturado.toFixed(2)} € en presupuestos
+                {u.usos}{c.max_usos ? ` / ${c.max_usos}` : ''} usos · −{euros(u.descontado)} descontados ·{' '}
+                {euros(u.facturado)} en presupuestos
                 {c.nota && <> · {c.nota}</>}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>

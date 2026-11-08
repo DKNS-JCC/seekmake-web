@@ -5,7 +5,7 @@ import type { Resena, ResenasResumen } from '@/lib/types';
 import { Drawer } from '../_components/Drawer';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
-import { RebuildButton } from '../_components/RebuildButton';
+import { AdminCabecera } from '../_components/AdminNav';
 import { useConfirm } from '../_components/useConfirm';
 import { mensajeDeError } from '@/lib/errors';
 import { activable } from '@/lib/a11y';
@@ -112,10 +112,10 @@ export default function AdminResenas() {
   return (
     <div>
       {dialogo}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
-        <h1 className="section-title" style={{ fontSize: 32 }}>Reseñas</h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <RebuildButton small />
+      <AdminCabecera
+        titulo="Reseñas"
+        acciones={
+          <>
           <button
             type="button"
             className="btn-primary"
@@ -128,8 +128,9 @@ export default function AdminResenas() {
           >
             + Nueva
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
 
@@ -215,6 +216,8 @@ export default function AdminResenas() {
       <Drawer
         open={!!draft}
         onClose={() => setDraft(null)}
+        error={error}
+        dirty={dirty}
         title={editingId ? 'Editar reseña' : 'Nueva reseña'}
         footer={
           <>

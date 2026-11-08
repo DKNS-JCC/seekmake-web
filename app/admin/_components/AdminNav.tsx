@@ -1,0 +1,138 @@
+'use client';
+
+import { ReactNode, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { NuevosBadge } from './NuevosBadge';
+import { RebuildButton } from './RebuildButton';
+
+// Grouped by how often each thing is touched: orders daily, the public web
+// now and then, settings rarely.
+const GRUPOS: { titulo: string; links: { href: string; label: string; badge?: ReactNode }[] }[] = [
+  { titulo: '', links: [{ href: '/admin', label: 'Hoy' }] },
+  {
+    titulo: 'Pedidos',
+    links: [
+      { href: '/admin/presupuestos', label: 'Presupuestos', badge: <NuevosBadge /> },
+      { href: '/admin/cupones', label: 'Códigos de descuento' },
+      { href: '/admin/estadisticas', label: 'Estadísticas' }
+    ]
+  },
+  {
+    titulo: 'Web',
+    links: [
+      { href: '/admin/productos', label: 'Productos' },
+      { href: '/admin/filamentos', label: 'Filamentos y colores' },
+      { href: '/admin/trabajos', label: 'Trabajos' },
+      { href: '/admin/resenas', label: 'Reseñas' },
+      { href: '/admin/blog', label: 'Blog' },
+      { href: '/admin/navidad', label: 'Navidad' }
+    ]
+  },
+  { titulo: 'Ajustes', links: [{ href: '/admin/tarifas', label: 'Tarifas del tasador' }] }
+];
+
+const sinBarra = (p: string) => (p.length > 1 ? p.replace(/\/$/, '') : p);
+
+export function AdminShell({ children }: { children: ReactNode }) {
+  const ruta = sinBarra(usePathname() ?? '/admin');
+  const router = useRouter();
+  const [abierto, setAbierto] = useState(false);
+  const actual = GRUPOS.flatMap((g) => g.links).find((l) => l.href === ruta);
+
+  // The mobile sheet closes when a link is followed and with Esc.
+  useEffect(() => {
+    if (!abierto) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setAbierto(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [abierto]);
+
+  async function salir() {
+    await createClient().auth.signOut();
+    router.push('/admin/login');
+  }
+
+  return (
+    <div className={'adm' + (abierto ? ' adm-abierto' : '')}>
+      <header className="adm-top">
+        <span className="adm-top-titulo">3DCC · {actual?.label ?? 'Admin'}</span>
+        <button
+          type="button"
+          className="adm-menu-btn"
+          aria-expanded={abierto}
+          aria-controls="adm-nav"
+          onClick={() => setAbierto((v) => !v)}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          Menú
+        </button>
+      </header>
+
+      <div className="adm-velo" onClick={() => setAbierto(false)} aria-hidden="true" />
+
+      <nav id="adm-nav" className="adm-side" aria-label="Admin">
+        <Link href="/admin" className="nav-logo">
+          <img src="/icons/android-chrome-192x192.png" alt="" width={38} height={38} />
+          <div>
+            <span className="nav-logo-name">3DCC</span>
+            <span className="nav-logo-sub">Admin</span>
+          </div>
+        </Link>
+        {GRUPOS.map((g) => (
+          <div key={g.titulo || 'inicio'} className="adm-grupo">
+            {g.titulo && <p className="adm-grupo-titulo">{g.titulo}</p>}
+            {g.links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="adm-link"
+                aria-current={l.href === ruta ? 'page' : undefined}
+                onClick={() => setAbierto(false)}
+              >
+                {l.label}
+                {l.badge}
+              </Link>
+            ))}
+          </div>
+        ))}
+        <div className="adm-side-pie">
+          <p className="adm-publica">
+            Los cambios de catálogo, trabajos, reseñas y blog salen solos en la web en unos 15&nbsp;min.
+          </p>
+          <div style={{ margin: '0 10px 8px' }}>
+            <RebuildButton small />
+          </div>
+          <Link href="/" className="adm-link">Ver la web</Link>
+          <button type="button" className="adm-salir" onClick={salir}>Cerrar sesión</button>
+        </div>
+      </nav>
+
+      <main className="adm-main">{children}</main>
+    </div>
+  );
+}
+
+/** Same header on every page: title, optional actions, optional intro line. */
+export function AdminCabecera({
+  titulo,
+  acciones,
+  children
+}: {
+  titulo: ReactNode;
+  acciones?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <>
+      <div className="adm-cab">
+        <h1>{titulo}</h1>
+        {acciones && <div className="adm-cab-acciones">{acciones}</div>}
+      </div>
+      {children && <p className="adm-intro">{children}</p>}
+    </>
+  );
+}

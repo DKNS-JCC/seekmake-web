@@ -42,7 +42,7 @@ export default function PrivacidadPage() {
               letterSpacing: '0.1em'
             }}
           >
-            Última actualización: 3 de noviembre de 2026
+            Última actualización: 9 de noviembre de 2026
           </p>
 
           <div className="terms-card">
@@ -88,7 +88,12 @@ export default function PrivacidadPage() {
               <li>
                 <strong>Uso de la calculadora:</strong> eventos anónimos (por ejemplo,
                 «archivo analizado» o «presupuesto enviado») con un identificador
-                aleatorio que no te identifica, para saber qué pasos fallan.
+                aleatorio que no te identifica, para saber qué pasos fallan. Con ellos
+                guardamos las medidas de cada pieza, el material y el precio que te
+                calculamos, y una miniatura de cómo se ve la pieza en el visor (una
+                imagen pequeña, no el archivo 3D). Nos sirven para ajustar nuestros
+                precios. Tu archivo 3D no sale de tu navegador hasta que nos envías el
+                presupuesto.
               </li>
             </ul>
             <p>
@@ -177,6 +182,10 @@ export default function PrivacidadPage() {
 
             <h2>6. Plazo de conservación</h2>
             <ul>
+              <li>
+                <strong>Miniaturas de la calculadora:</strong> se borran solas a los 30
+                días.
+              </li>
               <li>
                 <strong>Archivos 3D del presupuesto:</strong> se borran solos a las 48 h
                 si no llegas a enviar el presupuesto, 30 días después de entregar o

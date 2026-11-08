@@ -7,7 +7,7 @@ import { Field, inputStyle } from '../_components/Field';
 import { ColorEditor } from '../_components/ColorEditor';
 import { colorPreviewStyle, esMulticolor, paleta } from '@/lib/color-preview';
 import { SaveButton, SaveState } from '../_components/SaveButton';
-import { RebuildButton } from '../_components/RebuildButton';
+import { AdminCabecera } from '../_components/AdminNav';
 import { useConfirm } from '../_components/useConfirm';
 import './filamentos.css';
 import { mensajeDeError } from '@/lib/errors';
@@ -237,26 +237,16 @@ export default function AdminFilamentos() {
   return (
     <div>
       {dialogo}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: 'wrap'
-        }}
-      >
-        <h1 className="section-title" style={{ fontSize: 32 }}>
-          Filamentos
-        </h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <RebuildButton small />
+      <AdminCabecera
+        titulo="Filamentos y colores"
+        acciones={
+          <>
           <button type="button" className="btn-primary" onClick={startMatCreate}>
             + Material
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
 
@@ -445,6 +435,8 @@ export default function AdminFilamentos() {
       <Drawer
         open={!!matDraft}
         onClose={() => setMatDraft(null)}
+        error={error}
+        dirty={matDirty}
         title={editingMatId ? 'Editar material' : 'Nuevo material'}
         footer={
           <>
@@ -502,6 +494,8 @@ export default function AdminFilamentos() {
       <Drawer
         open={!!colorDraft}
         onClose={() => setColorDraft(null)}
+        error={error}
+        dirty={colorDirty}
         title={editingColorId ? 'Editar color' : 'Nuevo color'}
         footer={
           <>
