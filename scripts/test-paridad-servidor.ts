@@ -142,9 +142,34 @@ section('códigos de descuento');
   const pierde = computeQuote(pieza(12), s, 'recogida', pct(2));
   check('si el de cantidad es mayor, gana ese', pierde.cupon === null && pierde.descuentoPct === 5);
   eq('un fijo mayor que las piezas las deja a 0', computeQuote(pieza(1), s, 'recogida', fijo(999)).total, 0, 0.001);
+
+  // Minimum order: spread over the pieces (never a visible line) and the code
+  // applies after it, so a percentage can take the price below the minimum.
   const conMinimo = normalizeSettings(null);
-  eq('el pedido mínimo sigue mandando', computeQuote(pieza(1), conMinimo, 'recogida', fijo(999)).total,
-    conMinimo.precio_minimo, 0.001);
+  const ssMin = servidor.normalizeServerSettings(null);
+  const suma = (q: ReturnType<typeof computeQuote>) => Math.round(q.lineas.reduce((t, l) => t + l.importe, 0) * 100) / 100;
+  const pequena = computeQuote(pieza(1), conMinimo, 'recogida');
+  check('sin código, una pieza pequeña paga el mínimo', pequena.minimoAplicado && pequena.total === conMinimo.precio_minimo);
+  eq('las líneas suman el total (mínimo repartido en la pieza)', suma(pequena), pequena.total, 0.001);
+  check('ninguna línea habla del mínimo', !pequena.lineas.some((l) => /mínimo/i.test(l.concepto)));
+  const bajo = computeQuote(pieza(1), conMinimo, 'envio', pct(10));
+  eq('-10 % baja del pedido mínimo', bajo.total - bajo.envio, conMinimo.precio_minimo * 0.9, 0.001);
+  eq('con código y envío, las líneas suman el total', suma(bajo), bajo.total, 0.001);
+  const dos: PiezaInput[] = [...pieza(1), { ...pieza(1)[0], nombre: 'otra', material: 'PETG' }];
+  const reparto = computeQuote(dos, conMinimo, 'recogida');
+  eq('con dos piezas el mínimo se reparte y cuadra', suma(reparto), conMinimo.precio_minimo, 0.001);
+  for (const [nombre, piezas, cupon, entrega] of [
+    ['mínimo sin código', pieza(1), null, 'recogida'],
+    ['mínimo con -10 %', pieza(1), pct(10), 'envio'],
+    ['mínimo con dos piezas', dos, null, 'envio'],
+    ['mínimo con -3 € fijo', pieza(1), fijo(3), 'recogida']
+  ] as [string, PiezaInput[], Cupon | null, 'recogida' | 'envio'][]) {
+    const cli = computeQuote(piezas, conMinimo, entrega, cupon);
+    const srv = servidor.computeServerQuote(archivos(piezas, cli), entrega, ssMin, cupon && { ...cupon, valor: String(cupon.valor) });
+    eq(`${nombre}: total servidor = cliente (${cli.total} €)`, srv.total, cli.total, 0.001);
+    check(`${nombre}: mismas líneas`, JSON.stringify(srv.lineas) === JSON.stringify(cli.lineas),
+      JSON.stringify(srv.lineas) + ' vs ' + JSON.stringify(cli.lineas));
+  }
 }
 
 done();

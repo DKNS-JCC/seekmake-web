@@ -49,7 +49,7 @@ function corsHeaders(origin: string): Record<string, string> {
 // Pricing version of this function. The Pages build refuses to publish a
 // web whose tasador expects a newer server (see deploy-pages.yml): otherwise
 // the customer would see one price and get another one by email.
-const TASADOR_VERSION = '5';
+const TASADOR_VERSION = '6';
 
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
@@ -364,7 +364,7 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
     unidades += cantidad;
   }
 
-  let subtotal = base;
+  const subtotal = base;
   let descuentoPct = 0;
   for (const tier of settings.descuentos_cantidad) {
     if (unidades >= tier.min) descuentoPct = tier.pct;
@@ -372,15 +372,46 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
   const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
   const aPaso = (n: number) => r2(Math.floor(r2(n) / paso + 1e-9) * paso);
   const dtoCantidad = descuentoPct > 0 ? aPaso(subtotal * (descuentoPct / 100)) : 0;
+  const prep = settings.tarifa_preparacion > 0 ? r2(settings.tarifa_preparacion) : 0;
+  const minimo = settings.precio_minimo;
 
-  // Discount code: same rules as the web (bigger discount wins, before the minimum).
+  // Discount code: same rules as the web — after the minimum (it can go below
+  // it), never stacked with the quantity discount (less to pay wins).
+  const sinCupon = Math.max(minimo, subtotal + prep);
   let dtoCupon = 0;
   if (cupon && subtotal >= Number(cupon.pedido_minimo)) {
     const valor = Number(cupon.valor);
-    dtoCupon = aPaso(Math.min(subtotal, cupon.tipo === 'pct' ? subtotal * (valor / 100) : valor));
+    dtoCupon = aPaso(Math.min(sinCupon, cupon.tipo === 'pct' ? sinCupon * (valor / 100) : valor));
   }
-  if (dtoCupon > 0 && dtoCupon >= dtoCantidad) {
-    descuentoPct = 0;
+  const conCantidad = Math.max(minimo, subtotal - dtoCantidad + prep);
+  if (dtoCupon > 0 && sinCupon - dtoCupon <= conCantidad) descuentoPct = 0;
+  else dtoCupon = 0;
+  const dtoAntes = dtoCupon > 0 ? 0 : dtoCantidad;
+
+  // Minimum order spread over the piece lines (never shown as such).
+  const previo = r2(subtotal - dtoAntes + prep);
+  const nPiezas = piezas.length;
+  const minimoAplicado = previo < minimo && nPiezas > 0;
+  if (minimoAplicado) {
+    const falta = r2(minimo - previo);
+    let repartido = 0;
+    for (let i = 0; i < nPiezas; i++) {
+      const actual = lineas[i].importe;
+      const extra =
+        i === nPiezas - 1
+          ? r2(falta - repartido)
+          : aPaso(subtotal > 0 ? falta * (actual / subtotal) : 0);
+      repartido = r2(repartido + extra);
+      lineas[i].importe = r2(actual + extra);
+    }
+  }
+
+  if (dtoAntes > 0) {
+    lineas.push({ concepto: `Descuento por cantidad (-${descuentoPct}%)`, importe: -dtoAntes });
+  }
+  if (prep > 0) lineas.push({ concepto: 'Preparación y laminado', importe: prep });
+  let total = Math.max(minimo, previo);
+  if (dtoCupon > 0) {
     const valor = Number(cupon.valor);
     lineas.push({
       concepto:
@@ -389,26 +420,8 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
         ')',
       importe: -dtoCupon
     });
-    subtotal -= dtoCupon;
-  } else {
-    dtoCupon = 0;
-    if (dtoCantidad > 0) {
-      lineas.push({
-        concepto: `Descuento por cantidad (-${descuentoPct}%)`,
-        importe: -dtoCantidad
-      });
-      subtotal -= dtoCantidad;
-    }
+    total -= dtoCupon;
   }
-
-  let total = subtotal;
-  if (settings.tarifa_preparacion > 0) {
-    lineas.push({ concepto: 'Preparación y laminado', importe: r2(settings.tarifa_preparacion) });
-    total += settings.tarifa_preparacion;
-  }
-
-  const minimoAplicado = total < settings.precio_minimo;
-  if (minimoAplicado) total = settings.precio_minimo;
 
   let envio = 0;
   if (entrega === 'envio') {

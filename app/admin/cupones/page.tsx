@@ -122,8 +122,9 @@ export default function AdminCupones() {
     <div style={{ maxWidth: 720 }}>
       {dialogo}
       <AdminCabecera titulo="Códigos de descuento">
-        Se aplican en el tasador sobre las piezas, antes del pedido mínimo y sin tocar el envío.
-        No se suman al descuento por cantidad: gana el mayor.
+        Se aplican en el tasador sobre el pedido ya con el mínimo, así que pueden dejarlo por debajo
+        de él; el envío no se descuenta. No se suman al descuento por cantidad: gana el que deja
+        menos que pagar. Para un importe fijo, pon un «Desde» para no regalar pedidos pequeños.
       </AdminCabecera>
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
