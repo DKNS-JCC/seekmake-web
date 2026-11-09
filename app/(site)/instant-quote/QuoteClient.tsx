@@ -54,6 +54,7 @@ import { IDENTIDAD, multiplicar, rotarTriangulos } from '@/lib/quote/estimador/o
 import { rotarModelo, transpuesta, triangulosImpresion } from '@/lib/quote/estimador/three';
 import type { EstimacionEstado } from '@/lib/quote/types';
 import { gzipFile, shouldCompress } from '@/lib/quote/compress';
+import { colorParecido, leer3mf, zonificar, type Meta3mf } from '@/lib/quote/tresmf';
 import {
   computeQuote,
   normalizeSettings,
@@ -259,8 +260,38 @@ export function QuoteClient({
     if (!studio) return;
     stateRef.current = studio;
 
+    // A tap (not an orbit drag) on the model picks the zone under the finger.
+    const canvas = studio.renderer.domElement;
+    let down: { x: number; y: number; t: number } | null = null;
+    const onDown = (e: PointerEvent) => {
+      down = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+    };
+    const onUp = (e: PointerEvent) => {
+      const d = down;
+      down = null;
+      const model = shownRef.current ? modelsRef.current.get(shownRef.current) : null;
+      if (!d || !model || model.zonas.length < 2) return;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || e.timeStamp - d.t > 500) return;
+      const r = canvas.getBoundingClientRect();
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(
+        new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1),
+        studio.camera
+      );
+      const hit = ray.intersectObject(model.root, true)[0];
+      if (!hit) return;
+      const m = (hit.object as THREE.Mesh).material;
+      const mat = Array.isArray(m) ? m[hit.face?.materialIndex ?? 0] : m;
+      const i = model.zonas.findIndex((z) => z.mat === mat);
+      if (i !== -1) setActivePart(i);
+    };
+    canvas.addEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointerup', onUp);
+
     const models = modelsRef.current;
     return () => {
+      canvas.removeEventListener('pointerdown', onDown);
+      canvas.removeEventListener('pointerup', onUp);
       studio.dispose();
       models.forEach(disposeModel);
       models.clear();
@@ -270,32 +301,34 @@ export function QuoteClient({
   // ─── file parsing ───────────────────────────────────────────────────────
   async function parseModel(f: File, ext: string): Promise<ParsedModel> {
     const root = new THREE.Group();
+    let meta: Meta3mf | null = null;
     if (ext === 'stl') {
       const geometry = new STLLoader().parse(await f.arrayBuffer());
       geometry.computeVertexNormals();
       root.add(new THREE.Mesh(geometry));
     } else if (ext === '3mf') {
-      root.add(new ThreeMFLoader().parse(await f.arrayBuffer()));
+      const buf = await f.arrayBuffer();
+      root.add(new ThreeMFLoader().parse(buf));
+      meta = leer3mf(buf);
     } else {
       root.add(new OBJLoader().parse(await f.text()));
     }
     // STL/3MF are Z-up by convention; rotate into three.js Y-up.
     if (ext !== 'obj') root.rotation.x = -Math.PI / 2;
 
-    const meshes: THREE.Mesh[] = [];
+    const todas: THREE.Mesh[] = [];
     root.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
-      if (mesh.isMesh && mesh.geometry) meshes.push(mesh);
+      if (mesh.isMesh && mesh.geometry) todas.push(mesh);
     });
-    for (const mesh of meshes) {
+    for (const mesh of todas) {
       const old = mesh.material;
       if (Array.isArray(old)) old.forEach((m) => m.dispose());
       else if (old) (old as THREE.Material).dispose();
       ensureUVs(mesh.geometry);
-      mesh.material = new THREE.MeshPhysicalMaterial(
-        acabadoMaterialProps('#cccccc', null)
-      );
     }
+    // One material per zone (part, or filament of a multicolor 3MF).
+    const { meshes, zonas } = zonificar(todas, meta);
 
     // Center on the plate: x/z centered, base resting on y=0.
     root.updateMatrixWorld(true);
@@ -307,7 +340,7 @@ export function QuoteClient({
     root.position.y -= box.min.y;
     root.updateMatrixWorld(true);
 
-    return { root, meshes };
+    return { root, meshes, zonas };
   }
 
   function showModel(id: string): void {
@@ -337,18 +370,31 @@ export function QuoteClient({
     if (ground) ground.scale.setScalar(Math.max(1, radius / 60));
   }
 
-  function defaultConfig(partCount: number): PiezaConfig {
+  // Zone colors taken from the customer's project, matched to our catalog.
+  function sugerirColores(sugeridos: (string | null)[], filamentoId: string): (Color | null)[] {
+    const disponibles = colores.filter((c) => c.filamento_id === filamentoId && !c.agotado);
+    // A plain grey in the file is a plain color here, not glitter or silk.
+    const lisos = disponibles.filter(
+      (c) => c.muestra_tipo === 'solido' && (!c.acabado || c.acabado === 'Mate' || c.acabado === 'Brillante')
+    );
+    const base = lisos.length ? lisos : disponibles;
+    return sugeridos.map((h) => (h ? colorParecido(h, base) : null));
+  }
+
+  function defaultConfig(sugeridos: (string | null)[]): PiezaConfig {
     // New pieces inherit the active piece's config so a same-settings
     // multi-piece order needs no extra clicks.
     const base = activePieza?.config;
+    const filamentoId = base?.filamentoId ?? filamentos[0]?.id ?? '';
     return {
-      filamentoId: base?.filamentoId ?? filamentos[0]?.id ?? '',
+      filamentoId,
       mainColor: base?.mainColor ?? null,
       multicolor: false,
       extraColors: [],
-      partColors: new Array(partCount).fill(
-        partCount > 1 ? null : (base?.mainColor ?? null)
-      ),
+      partColors:
+        sugeridos.length > 1
+          ? sugerirColores(sugeridos, filamentoId)
+          : [base?.mainColor ?? null],
       resistenciaId: base?.resistenciaId ?? 'estandar',
       detalleId: base?.detalleId ?? 'estandar'
     };
@@ -397,10 +443,9 @@ export function QuoteClient({
             ext,
             metrics,
             cantidad: 1,
-            partNames: model.meshes.map(
-              (m, i) => m.name?.trim() || `Parte ${i + 1}`
-            ),
-            config: defaultConfig(model.meshes.length),
+            partNames: model.zonas.map((z) => z.nombre),
+            sugeridos: model.zonas.map((z) => z.sugerido),
+            config: defaultConfig(model.zonas.map((z) => z.sugerido)),
             estimacion: {
               estado: 'pendiente',
               progreso: 0,
@@ -655,8 +700,7 @@ export function QuoteClient({
     const model = modelsRef.current.get(activePieza.id);
     if (!model) return;
 
-    model.meshes.forEach((mesh, i) => {
-      const mat = mesh.material as THREE.MeshPhysicalMaterial;
+    model.zonas.forEach(({ mat }, i) => {
       const c = partsMode ? activePieza.config.partColors[i] : activePieza.config.mainColor;
       if (c) {
         const { props, map } = buildMaterialUpdate(
@@ -669,6 +713,25 @@ export function QuoteClient({
       }
     });
   }, [activePieza, activeFilamento, partsMode]);
+
+  // The zone being colored blinks in the viewer, so "Base" or "Código" is
+  // something you see, not a name you have to guess.
+  useEffect(() => {
+    if (!partsMode || !activePieza) return;
+    const mat = modelsRef.current.get(activePieza.id)?.zonas[activePart]?.mat;
+    if (!mat) return;
+    let n = 0;
+    const t = setInterval(() => {
+      mat.visible = n % 2 === 1;
+      if (++n === 4) clearInterval(t);
+    }, 160);
+    return () => {
+      clearInterval(t);
+      mat.visible = true;
+    };
+    // Only a change of zone or piece blinks, not every config edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePart, activePieza?.id, partsMode]);
 
   useEffect(() => {
     const cache = textureCacheRef.current;
@@ -771,7 +834,7 @@ export function QuoteClient({
       filamentoId: f.id,
       mainColor: null,
       extraColors: [],
-      partColors: activePieza.partNames.map(() => null)
+      partColors: sugerirColores(activePieza.sugeridos, f.id)
     });
   }
 
@@ -1290,32 +1353,44 @@ export function QuoteClient({
                 </div>
 
                 {partsMode && (
-                  <div className="qt-parts">
-                    {activePieza.partNames.map((name, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className={'qt-part' + (activePart === i ? ' active' : '')}
-                        onClick={() => setActivePart(i)}
-                      >
-                        <span
-                          className="qt-part-swatch"
-                          style={{
-                            backgroundColor:
-                              activePieza.config.partColors[i]?.hex ?? 'transparent'
-                          }}
-                        />
-                        {name}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <p className="qt-step-hint">
+                      Elige una parte (o tócala en el visor) y después su color.
+                      {activePieza.sugeridos.some(Boolean) &&
+                        ' Hemos puesto los colores más parecidos a los de tu archivo; cámbialos si quieres.'}
+                    </p>
+                    <div className="qt-parts" role="group" aria-label="Partes de la pieza">
+                      {activePieza.partNames.map((name, i) => {
+                        const c = activePieza.config.partColors[i];
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            className={'qt-part' + (activePart === i ? ' active' : '')}
+                            aria-pressed={activePart === i}
+                            onClick={() => setActivePart(i)}
+                          >
+                            <span
+                              className={'qt-part-swatch' + (c ? '' : ' vacio')}
+                              style={c ? colorPreviewStyle(c) : undefined}
+                            />
+                            <span className="qt-part-txt">
+                              <strong>{name}</strong>
+                              <small>{c?.nombre ?? 'Sin color'}</small>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
 
                 <div className="qt-swatches">
                   {materialColors.map((c) => {
                     const cfg = activePieza.config;
+                    // In parts mode only the selected part's color is marked.
                     const isMain = partsMode
-                      ? cfg.partColors.some((x) => x?.id === c.id)
+                      ? cfg.partColors[activePart]?.id === c.id
                       : cfg.mainColor?.id === c.id;
                     const isExtra =
                       !partsMode && cfg.multicolor && cfg.extraColors.some((x) => x.id === c.id);
@@ -1330,6 +1405,8 @@ export function QuoteClient({
                         }
                         style={colorPreviewStyle(c)}
                         disabled={c.agotado}
+                        aria-pressed={isMain || isExtra}
+                        aria-label={c.nombre + (c.agotado ? ' (agotado)' : '')}
                         title={
                           c.nombre +
                           (c.acabado ? ` · ${acabadoLabel(c.acabado)}` : '') +
@@ -1362,8 +1439,9 @@ export function QuoteClient({
                       <div className="qt-extra">
                         <p className="qt-step-hint">
                           Marca hasta 3 colores adicionales y cuéntanos en el mensaje
-                          cómo repartirlos. Si tu archivo es un 3MF por piezas, los
-                          colores se asignan automáticamente a cada parte.
+                          cómo repartirlos. Si nos subes un 3MF con cada color como
+                          parte (o pintado en Bambu Studio u Orca), podrás elegir el
+                          color de cada parte aquí mismo.
                         </p>
                         <div className="qt-swatches">
                           {materialColors

@@ -4,6 +4,7 @@ import type * as THREE from 'three';
 import type { Color } from '@/lib/types';
 import type { MeshMetrics } from './geometry';
 import type { Analisis } from './estimador/analizar';
+import type { Zona } from './tresmf';
 import type { Matriz3 } from './estimador/orientar';
 
 export interface PiezaConfig {
@@ -11,7 +12,7 @@ export interface PiezaConfig {
   mainColor: Color | null;
   multicolor: boolean;
   extraColors: Color[];
-  /** Per-part colors — only meaningful for multi-part 3MF pieces. */
+  /** Per-zone colors — only meaningful when the piece has several zones. */
   partColors: (Color | null)[];
   resistenciaId: string;
   detalleId: string;
@@ -39,7 +40,10 @@ export interface Pieza {
   ext: string;
   metrics: MeshMetrics;
   cantidad: number;
+  /** Zones the customer colors: parts, or filaments of a multicolor 3MF. */
   partNames: string[];
+  /** Each zone's color in the customer's project, to preselect the closest. */
+  sugeridos: (string | null)[];
   config: PiezaConfig;
   estimacion: EstimacionEstado;
 }
@@ -47,6 +51,7 @@ export interface Pieza {
 export interface ParsedModel {
   root: THREE.Group;
   meshes: THREE.Mesh[];
+  zonas: Zona[];
 }
 
 export type QuoteStatus =

@@ -240,21 +240,26 @@
 .qt-pill:hover { border-color: var(--border-h); color: var(--text); }
 .qt-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-.qt-parts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.qt-parts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .qt-part {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 6px 12px;
+    display: inline-flex; align-items: center; gap: 8px;
+    min-height: 44px; max-width: 100%;
+    padding: 6px 12px 6px 8px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--r);
-    font-size: 12px; color: var(--muted);
-    transition: all 0.2s;
+    color: var(--muted); text-align: left;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
-.qt-part.active { border-color: var(--accent); color: var(--text); }
+.qt-part.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); color: var(--text); }
 .qt-part-swatch {
-    width: 14px; height: 14px; border-radius: 2px;
+    flex: none; width: 22px; height: 22px; border-radius: 4px;
     border: 1px solid var(--border-h);
 }
+.qt-part-swatch.vacio { border-style: dashed; }
+.qt-part-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.qt-part-txt strong { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qt-part-txt small { font-size: 12px; color: var(--muted); }
 
 .qt-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .qt-swatch {
@@ -267,6 +272,10 @@
 .qt-swatch.active {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-dim);
+}
+@media (pointer: coarse) {
+    .qt-swatches { gap: 8px; }
+    .qt-swatch { width: 40px; height: 40px; }
 }
 /* Out of stock: still listed so the range is visible, but not orderable. */
 .qt-swatch.agotado {
