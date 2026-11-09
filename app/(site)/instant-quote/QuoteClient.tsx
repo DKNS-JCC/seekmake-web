@@ -30,7 +30,8 @@ import {
   type Color,
   type Filamento,
   type QuoteEntrega,
-  type QuoteEventoTipo
+  type QuoteEventoTipo,
+  type ResenasResumen
 } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import { useCatalogoColores } from '@/lib/useCatalogoColores';
@@ -61,8 +62,12 @@ import {
   normalizeSettings,
   DEFAULT_QUOTE_SETTINGS,
   type Cupon,
+  type PiezaInput,
   type QuoteSettings
 } from '@/lib/quote/pricing';
+import { plazoRespuesta } from '@/lib/quote/respuesta';
+import { noRastrear, origenVisita } from '@/lib/tracking';
+import { WhatsAppIcon } from '@/components/WhatsAppFAB';
 import './quote.css';
 import { CONTACTO, ESCRIBENOS, whatsappUrl } from '@/lib/contacto';
 import { euros } from '@/lib/recibo/types';
@@ -97,6 +102,13 @@ function huellaDe(m: MeshMetrics): string {
   return h.toString(36);
 }
 
+/** The one contact field: an email if it has an @, else a phone of 9+ digits. */
+function leerContacto(txt: string): { email: string; telefono: string } | null {
+  const t = txt.trim();
+  if (t.includes('@')) return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? { email: t, telefono: '' } : null;
+  return t.replace(/\D/g, '').length >= 9 ? { email: '', telefono: t } : null;
+}
+
 function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);
   return `quotes/${safe}.${ext}`;
@@ -116,10 +128,12 @@ function disposeModel(model: ParsedModel): void {
 
 export function QuoteClient({
   filamentos: filamentosIniciales,
-  colores: coloresIniciales
+  colores: coloresIniciales,
+  resenas
 }: {
   filamentos: Filamento[];
   colores: Color[];
+  resenas: ResenasResumen | null;
 }) {
   // Build-time snapshot first, live data as soon as it arrives — otherwise a
   // colour marked agotado stays orderable until the next rebuild.
@@ -160,18 +174,23 @@ export function QuoteClient({
   const [cuponCargando, setCuponCargando] = useState(false);
 
   // ─── request form ───────────────────────────────────────────────────────
+  // Only a way to reach the customer: name, address and colours are asked
+  // when we answer (the long form was where people gave up).
   const [showForm, setShowForm] = useState(false);
+  const [contacto, setContacto] = useState('');
   const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefono, setTelefono] = useState('');
   const [mensaje, setMensaje] = useState('');
-  const [calle, setCalle] = useState('');
-  const [ciudad, setCiudad] = useState('');
-  const [cp, setCp] = useState('');
-  const [provincia, setProvincia] = useState('');
-  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [cp, setCp] = useState(''); // optional, envío only: local vs national traffic
   const [website, setWebsite] = useState(''); // honeypot
   const [status, setStatus] = useState<QuoteStatus>({ kind: 'idle' });
+  const successRef = useRef<HTMLDivElement>(null);
+
+  // "Envíame el presupuesto por email" for whoever is not ready to ask yet.
+  const [guardarAbierto, setGuardarAbierto] = useState(false);
+  const [guardarEmail, setGuardarEmail] = useState('');
+  const [guardado, setGuardado] = useState<
+    { kind: 'idle' } | { kind: 'sending' } | { kind: 'ok'; email: string } | { kind: 'err'; message: string }
+  >({ kind: 'idle' });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -249,11 +268,23 @@ export function QuoteClient({
 
   // Fire-and-forget funnel event (errors are irrelevant to the customer).
   function trackEvent(evento: Exclude<QuoteEventoTipo, 'aceptado'>, payload: Record<string, unknown> = {}) {
+    if (noRastrear()) return;
     void createClient()
       .from('quote_events')
       .insert({ session_id: SESSION_ID, evento, payload })
       .then(() => undefined, () => undefined);
   }
+
+  // One 'visita' per visit, with where it came from and the kind of device.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('qt-visita')) return;
+      sessionStorage.setItem('qt-visita', '1');
+    } catch {
+      // storage blocked: one per page load
+    }
+    trackEvent('visita', origenVisita());
+  }, []);
 
   // ─── scene setup (same studio as the muestrario visualizer) ─────────────
   useEffect(() => {
@@ -491,7 +522,8 @@ export function QuoteClient({
     if (added) {
       setActiveId(added.id);
       setActivePart(0);
-      setStatus({ kind: 'idle' });
+      // A sent request stays on screen; "Calcular otra pieza" starts over.
+      setStatus((s) => (s.kind === 'ok' ? s : { kind: 'idle' }));
     }
   }
 
@@ -520,7 +552,7 @@ export function QuoteClient({
     const t = setTimeout(() => {
       const p = piezasRef.current.find((x) => x.id === activeId);
       const st = stateRef.current;
-      if (!p || !st || shownRef.current !== activeId) return;
+      if (!p || !st || shownRef.current !== activeId || noRastrear()) return;
       const huella = huellaDe(p.metrics);
       if (miniaturas.current.has(huella)) return;
       miniaturas.current.add(huella);
@@ -737,9 +769,8 @@ export function QuoteClient({
 
   const activeColors = activePieza ? piezaColors(activePieza) : [];
 
-  const quote = useMemo(() => {
-    if (!piezas.length || !settingsLoaded) return null;
-    return computeQuote(
+  const entradas = useMemo<PiezaInput[]>(
+    () =>
       piezas.map((p) => {
         const fil = filamentos.find((f) => f.id === p.config.filamentoId);
         return {
@@ -757,11 +788,28 @@ export function QuoteClient({
           detalleId: p.config.detalleId
         };
       }),
+    [piezas, filamentos]
+  );
+
+  const quote = useMemo(() => {
+    if (!entradas.length || !settingsLoaded) return null;
+    return computeQuote(entradas, settings, entrega, cupon);
+  }, [entradas, settings, settingsLoaded, entrega, cupon]);
+
+  // Small orders pay the minimum: what one more unit of the active piece
+  // would add, so the customer can see the order has room left.
+  const masUnaUnidad = useMemo(() => {
+    if (!quote?.minimoAplicado || !activeId) return null;
+    const i = piezas.findIndex((p) => p.id === activeId);
+    if (i < 0) return null;
+    const otra = computeQuote(
+      entradas.map((e, j) => (j === i ? { ...e, cantidad: e.cantidad + 1 } : e)),
       settings,
       entrega,
       cupon
     );
-  }, [piezas, filamentos, settings, settingsLoaded, entrega, cupon]);
+    return { pieza: piezas[i], extra: Math.max(0, Math.round((otra.total - quote.total) * 100) / 100) };
+  }, [quote, activeId, piezas, entradas, settings, entrega, cupon]);
 
   const maxBedMm = settings.max_bed_mm;
   const tooBig = piezas.some(
@@ -775,6 +823,10 @@ export function QuoteClient({
     ? analizando.reduce((a, p) => a + p.estimacion.progreso, 0) / analizando.length
     : 1;
   const listo = !!quote && analizando.length === 0;
+  // "Final" only when nothing on screen says we still have to look at it.
+  const precioFinal =
+    !!quote && !tooBig && !degenerate && quote.piezas.every((p) => p.metodo === 'capas');
+  const cpValido = entrega === 'envio' && /^\d{5}$/.test(cp) ? cp : undefined;
 
   // The price on screen: the funnel's "saw the price" step, then again each
   // time it settles on a new figure (3 s without changes), so the last one is
@@ -786,6 +838,7 @@ export function QuoteClient({
       total: quote.total,
       piezas: piezas.length,
       entrega,
+      cp: cpValido,
       detalle: quote.piezas.map((r, i) => ({
         h: piezas[i] ? huellaDe(piezas[i].metrics) : '',
         mat: r.material,
@@ -862,14 +915,124 @@ export function QuoteClient({
   }
 
   // ─── submit ─────────────────────────────────────────────────────────────
+  /** What the server needs to price one piece (no file: see submit). */
+  function fichaPieza(p: Pieza, i: number): Record<string, unknown> {
+    const fil = filamentos.find((f) => f.id === p.config.filamentoId);
+    const coloresPieza =
+      p.partNames.length > 1
+        ? p.config.partColors
+            .map((c, j) =>
+              c
+                ? {
+                    nombre: c.nombre,
+                    hex: c.hex,
+                    muestra_colores: c.muestra_colores,
+                    muestra_tipo: c.muestra_tipo,
+                    acabado: c.acabado,
+                    parte: p.partNames[j]
+                  }
+                : null
+            )
+            .filter(Boolean)
+        : piezaColors(p).map((c) => ({
+            nombre: c.nombre,
+            hex: c.hex,
+            muestra_colores: c.muestra_colores,
+            muestra_tipo: c.muestra_tipo,
+            acabado: c.acabado,
+            parte: ''
+          }));
+    const pr = quote?.piezas[i];
+    return {
+      nombre: p.name,
+      cantidad: p.cantidad,
+      material: fil?.material ?? 'PLA',
+      colores: coloresPieza,
+      resistencia: p.config.resistenciaId,
+      detalle: p.config.detalleId,
+      metricas: {
+        volumen_cm3: Math.round(p.metrics.volumenCm3 * 100) / 100,
+        area_cm2: Math.round(p.metrics.areaCm2 * 10) / 10,
+        soporte_cm3: Math.round(p.metrics.soporteCm3 * 10) / 10,
+        overhang_cm2: Math.round(p.metrics.overhangCm2 * 10) / 10,
+        bbox_mm: p.metrics.bboxMm,
+        triangulos: p.metrics.triangulos,
+        mallas: p.metrics.mallas,
+        peso_g: pr?.pesoG ?? null,
+        soporte_g: pr?.soporteG ?? null,
+        tiempo_h: pr?.tiempoH ?? null,
+        relleno_pct: pr?.rellenoPct ?? null,
+        // Layer-analysis figures the server prices from (see submit-quote).
+        estimador: pr?.metodo === 'capas' ? 'capas-v1' : 'aproximado',
+        por_cama: pr?.porCama ?? 1,
+        camas: pr?.camas ?? 1,
+        con_soportes: pr?.conSoportes ?? false,
+        orientacion: p.estimacion.original ? 'original' : 'auto',
+        rotacion: p.estimacion.R.map((x) => Math.round(x * 1e4) / 1e4)
+      }
+    };
+  }
+
+  /** The order-level fields both the request and "envíame el presupuesto" send. */
+  function cuerpoPedido(archivos: Record<string, unknown>[]) {
+    if (!quote) return null;
+    const materiales = [...new Set(archivos.map((a) => a.material as string))];
+    const resistencias = [...new Set(piezas.map((p) => p.config.resistenciaId))];
+    const detalles = [...new Set(piezas.map((p) => p.config.detalleId))];
+    const coloresGlobal = archivos.flatMap((a, i) =>
+      (a.colores as any[]).map((c) => ({
+        ...c,
+        parte: piezas.length > 1 ? `${piezas[i].name}${c.parte ? ` · ${c.parte}` : ''}` : c.parte
+      }))
+    );
+    return {
+      website,
+      archivos,
+      material: materiales.join(', '),
+      colores: coloresGlobal,
+      resistencia: resistencias.length === 1 ? resistencias[0] : 'mixto',
+      detalle: detalles.length === 1 ? detalles[0] : 'mixto',
+      cantidad: quote.unidades,
+      entrega,
+      direccion: cpValido ? { cp: cpValido } : {},
+      metricas: {
+        peso_g: quote.pesoG,
+        tiempo_h: quote.tiempoH,
+        dias_estimados: quote.diasEstimados,
+        piezas: quote.piezas.length
+      },
+      desglose: {
+        lineas: quote.lineas,
+        descuento_pct: quote.descuentoPct,
+        minimo_aplicado: quote.minimoAplicado,
+        envio: quote.envio
+      },
+      precio_total: quote.total,
+      cupon: quote.cupon ?? undefined
+    };
+  }
+
+  /** The function's own message for a non-2xx answer, if it sent one. */
+  async function cuerpoError(error: unknown): Promise<{ error?: string; cupon_invalido?: boolean } | null> {
+    return (await (error as { context?: Response }).context?.json().catch(() => null)) ?? null;
+  }
+
+  function fallo(message: string, motivo: string) {
+    setStatus({ kind: 'err', message });
+    trackEvent('formulario_error', { motivo: motivo.slice(0, 80) });
+  }
+
+  function abrirFormulario() {
+    setShowForm(true);
+    trackEvent('formulario_abierto', { total: quote?.total, entrega });
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!piezas.length || !quote || !listo) return;
-    if (piezasSinColor.length) {
-      setStatus({
-        kind: 'err',
-        message: `Falta elegir color en: ${piezasSinColor.map((p) => p.name).join(', ')}.`
-      });
+    if (!piezas.length || !quote || !listo || status.kind === 'sending') return;
+    const datos = leerContacto(contacto);
+    if (!datos) {
+      fallo('Escribe un email (tu@email.com) o un móvil de 9 cifras.', 'contacto');
       return;
     }
 
@@ -912,152 +1075,79 @@ export function QuoteClient({
         }
         const { data: pub } = supabase.storage.from('quote-uploads').getPublicUrl(path);
 
-        const fil = filamentos.find((f) => f.id === p.config.filamentoId);
-        const coloresPieza =
-          p.partNames.length > 1
-            ? p.config.partColors
-                .map((c, j) =>
-                  c
-                      ? {
-                          nombre: c.nombre,
-                          hex: c.hex,
-                          muestra_colores: c.muestra_colores,
-                          muestra_tipo: c.muestra_tipo,
-                          acabado: c.acabado,
-                          parte: p.partNames[j]
-                        }
-                    : null
-                )
-                .filter(Boolean)
-            : piezaColors(p).map((c) => ({
-                nombre: c.nombre,
-                hex: c.hex,
-                muestra_colores: c.muestra_colores,
-                muestra_tipo: c.muestra_tipo,
-                acabado: c.acabado,
-                parte: ''
-              }));
-
-        const pr = quote.piezas[i];
         archivos.push({
-          nombre: p.name,
+          ...fichaPieza(p, i),
           url: pub.publicUrl,
           path,
           tamano: blob.size,
           tamano_original: p.size,
-          comprimido,
-          cantidad: p.cantidad,
-          material: fil?.material ?? 'PLA',
-          colores: coloresPieza,
-          resistencia: p.config.resistenciaId,
-          detalle: p.config.detalleId,
-          metricas: {
-            volumen_cm3: Math.round(p.metrics.volumenCm3 * 100) / 100,
-            area_cm2: Math.round(p.metrics.areaCm2 * 10) / 10,
-            soporte_cm3: Math.round(p.metrics.soporteCm3 * 10) / 10,
-            overhang_cm2: Math.round(p.metrics.overhangCm2 * 10) / 10,
-            bbox_mm: p.metrics.bboxMm,
-            triangulos: p.metrics.triangulos,
-            mallas: p.metrics.mallas,
-            peso_g: pr?.pesoG ?? null,
-            soporte_g: pr?.soporteG ?? null,
-            tiempo_h: pr?.tiempoH ?? null,
-            relleno_pct: pr?.rellenoPct ?? null,
-            // Layer-analysis figures the server prices from (see submit-quote).
-            estimador: pr?.metodo === 'capas' ? 'capas-v1' : 'aproximado',
-            por_cama: pr?.porCama ?? 1,
-            camas: pr?.camas ?? 1,
-            con_soportes: pr?.conSoportes ?? false,
-            orientacion: p.estimacion.original ? 'original' : 'auto',
-            rotacion: p.estimacion.R.map((x) => Math.round(x * 1e4) / 1e4)
-          }
+          comprimido
         });
       }
 
       setStatus({ kind: 'sending', progress: 'Registrando solicitud…' });
 
-      // Top-level summary fields (the per-piece detail lives in archivos).
-      const materiales = [...new Set(archivos.map((a) => a.material as string))];
-      const resistencias = [...new Set(piezas.map((p) => p.config.resistenciaId))];
-      const detalles = [...new Set(piezas.map((p) => p.config.detalleId))];
-      const coloresGlobal = archivos.flatMap((a, i) =>
-        (a.colores as any[]).map((c) => ({
-          ...c,
-          parte: piezas.length > 1 ? `${piezas[i].name}${c.parte ? ` · ${c.parte}` : ''}` : c.parte
-        }))
-      );
-
       // 2. Quote request → Edge Function (inserts row + emails).
       const { data, error } = await supabase.functions.invoke('submit-quote', {
-        body: {
-          nombre,
-          email,
-          telefono,
-          mensaje,
-          website,
-          archivos,
-          material: materiales.join(', '),
-          colores: coloresGlobal,
-          resistencia: resistencias.length === 1 ? resistencias[0] : 'mixto',
-          detalle: detalles.length === 1 ? detalles[0] : 'mixto',
-          cantidad: quote.unidades,
-          entrega,
-          direccion:
-            entrega === 'envio' ? { calle, ciudad, cp, provincia } : {},
-          metricas: {
-            peso_g: quote.pesoG,
-            tiempo_h: quote.tiempoH,
-            dias_estimados: quote.diasEstimados,
-            piezas: quote.piezas.length
-          },
-          desglose: {
-            lineas: quote.lineas,
-            descuento_pct: quote.descuentoPct,
-            minimo_aplicado: quote.minimoAplicado,
-            envio: quote.envio
-          },
-          precio_total: quote.total,
-          cupon: quote.cupon ?? undefined
-        }
+        body: { ...cuerpoPedido(archivos), ...datos, nombre, mensaje }
       });
 
       if (error) {
-        // Non-2xx: the function's own message is in the response body.
-        const cuerpo = await (error as { context?: Response }).context
-          ?.json()
-          .catch(() => null);
+        const cuerpo = await cuerpoError(error);
         if (cuerpo?.cupon_invalido) {
           // Expired or ran out since the price was shown: drop it and let the
           // customer see the new total before sending again.
           setCupon(null);
-          setCuponError(cuerpo.error);
-          setStatus({
-            kind: 'err',
-            message: `${cuerpo.error} Hemos recalculado el precio sin él: revísalo y vuelve a enviar.`
-          });
+          setCuponError(cuerpo.error ?? null);
+          fallo(`${cuerpo.error} Hemos recalculado el precio sin él: revísalo y vuelve a enviar.`, 'cupon');
           return;
         }
-        setStatus({
-          kind: 'err',
-          message: cuerpo?.error ?? error.message ?? 'No se pudo enviar la solicitud.'
-        });
+        const msg = cuerpo?.error ?? error.message ?? 'No se pudo enviar la solicitud.';
+        fallo(msg, msg);
         return;
       }
       if (data?.error) {
-        setStatus({ kind: 'err', message: data.error });
+        fallo(data.error, data.error);
         return;
       }
-      trackEvent('solicitud_enviada', {
-        codigo: data?.codigo,
-        piezas: piezas.length,
-        total: quote.total
-      });
-      setStatus({ kind: 'ok', codigo: data?.codigo ?? '' });
+      if (!data?.duplicado) {
+        trackEvent('solicitud_enviada', {
+          codigo: data?.codigo,
+          piezas: piezas.length,
+          total: quote.total,
+          entrega,
+          cp: cpValido,
+          via: datos.email ? 'email' : 'whatsapp'
+        });
+      }
+      setStatus({ kind: 'ok', codigo: data?.codigo ?? '', duplicado: !!data?.duplicado, porEmail: !!datos.email });
     } catch {
-      setStatus({
-        kind: 'err',
-        message: `Error de red. Inténtalo de nuevo o ${ESCRIBENOS}.`
+      fallo(`Error de red. Inténtalo de nuevo o ${ESCRIBENOS}.`, 'red');
+    }
+  }
+
+  // Move focus to the confirmation so screen readers and keyboards land on it.
+  useEffect(() => {
+    if (status.kind === 'ok') successRef.current?.focus();
+  }, [status.kind]);
+
+  async function enviarPorEmail(e: FormEvent) {
+    e.preventDefault();
+    const email = guardarEmail.trim();
+    if (!quote || guardado.kind === 'sending') return;
+    if (!leerContacto(email)?.email) {
+      setGuardado({ kind: 'err', message: 'Revisa el email: parece que le falta algo.' });
+      return;
+    }
+    setGuardado({ kind: 'sending' });
+    try {
+      const { data, error } = await createClient().functions.invoke('submit-quote', {
+        body: { ...cuerpoPedido(piezas.map(fichaPieza)), accion: 'guardar', email }
       });
+      const msg = error ? (await cuerpoError(error))?.error ?? 'No hemos podido enviarlo.' : data?.error;
+      setGuardado(msg ? { kind: 'err', message: msg } : { kind: 'ok', email });
+    } catch {
+      setGuardado({ kind: 'err', message: 'Error de red. Inténtalo de nuevo.' });
     }
   }
 
@@ -1069,9 +1159,18 @@ export function QuoteClient({
     trackEvent('pdf_descargado', { total: quote.total, piezas: piezas.length });
   }
 
-  const waMensaje = `Hola, soy ${nombre}. Acabo de solicitar el presupuesto ${
-    status.kind === 'ok' ? status.codigo : ''
-  } desde la web.`;
+  // Night visitors would rather type than fill a form: the whole order, ready to send.
+  const waPedido = quote
+    ? [
+        'Hola, quiero pedir este presupuesto de la web:',
+        ...quote.lineas.map((l) => `• ${l.concepto}: ${euros(l.importe)}`),
+        `Total: ${euros(quote.total)} · ${entrega === 'envio' ? `envío${cpValido ? ` a ${cpValido}` : ''}` : 'recogida en Salamanca'}`,
+        `Colores: ${piezas
+          .map((p) => `${piezas.length > 1 ? `${p.name} → ` : ''}${piezaColors(p).map((c) => c.nombre).join(', ') || 'me ayudáis a elegir'}`)
+          .join('; ')}`,
+        'Os mando el archivo por aquí.'
+      ].join('\n')
+    : '';
 
   // ─── render ─────────────────────────────────────────────────────────────
   return (
@@ -1496,6 +1595,7 @@ export function QuoteClient({
                 <button
                   type="button"
                   className={'qt-card' + (entrega === 'recogida' ? ' active' : '')}
+                  aria-pressed={entrega === 'recogida'}
                   onClick={() => setEntrega('recogida')}
                 >
                   <strong>Recogida en Salamanca</strong>
@@ -1504,12 +1604,31 @@ export function QuoteClient({
                 <button
                   type="button"
                   className={'qt-card' + (entrega === 'envio' ? ' active' : '')}
+                  aria-pressed={entrega === 'envio'}
                   onClick={() => setEntrega('envio')}
                 >
                   <strong>Envío nacional</strong>
-                  <span>Coste estimado por peso, incluido en el total</span>
+                  <span>
+                    {settings.envio_gratis_desde > 0
+                      ? `Gratis desde ${euros(settings.envio_gratis_desde)} · si no, por peso`
+                      : 'Coste por peso, incluido en el total'}
+                  </span>
                 </button>
               </div>
+              {entrega === 'envio' && (
+                <label className="qt-cp">
+                  <span>Código postal <small>(opcional)</small></span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    maxLength={5}
+                    placeholder="37001"
+                    value={cp}
+                    onChange={(e) => setCp(e.target.value.replace(/\D/g, ''))}
+                  />
+                </label>
+              )}
             </div>
           )}
 
@@ -1538,14 +1657,79 @@ export function QuoteClient({
                   {quote.lineas.map((l, i) => (
                     <li key={i}>
                       <span>{l.concepto}</span>
-                      <span>{euros(l.importe)}</span>
+                      <span>{l.importe === 0 ? 'Gratis' : euros(l.importe)}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="qt-total-row">
-                  <span>Total estimado</span>
+                  <span>{precioFinal ? 'Total' : 'Total estimado'}</span>
                   <strong>{euros(quote.total)}</strong>
                 </div>
+
+                {/* Trust, right where the number is read */}
+                <ul className="qt-trust">
+                  <li>
+                    <Tick />
+                    {precioFinal
+                      ? 'Precio final, sin sorpresas'
+                      : 'Precio orientativo: lo cerramos al revisar la pieza'}
+                  </li>
+                  <li>
+                    <Tick />
+                    Listo en ~{quote.diasEstimados} día{quote.diasEstimados !== 1 ? 's' : ''} laborables
+                    {entrega === 'envio' ? ' + envío' : ''}
+                  </li>
+                  {resenas && resenas.total > 0 && (
+                    <li>
+                      <Tick />
+                      {resenas.total} reseñas ·{' '}
+                      {Number(resenas.media).toLocaleString('es-ES', { maximumFractionDigits: 1 })}★
+                    </li>
+                  )}
+                  <li>
+                    <Tick />
+                    Recogida en Salamanca o envío a toda España
+                  </li>
+                </ul>
+
+                {/* Small orders: show the room left inside the same price */}
+                {masUnaUnidad && (
+                  <div className="qt-upsell">
+                    <p>
+                      {masUnaUnidad.extra === 0 ? (
+                        <>Una unidad más de <strong>{masUnaUnidad.pieza.name}</strong> te sale <strong>gratis</strong>.</>
+                      ) : (
+                        <>
+                          2 unidades de <strong>{masUnaUnidad.pieza.name}</strong> por solo{' '}
+                          <strong>+{euros(masUnaUnidad.extra)}</strong>.
+                        </>
+                      )}
+                      {quote.margenMinimo >= 1 && piezas.length < MAX_FILES && (
+                        <> O añade otra pieza: hasta {euros(quote.margenMinimo)} entran en el mismo precio.</>
+                      )}
+                    </p>
+                    <div className="qt-upsell-acciones">
+                      <button
+                        type="button"
+                        className="btn-outline"
+                        onClick={() => setCantidad(masUnaUnidad.pieza.id, masUnaUnidad.pieza.cantidad + 1)}
+                      >
+                        + 1 unidad
+                      </button>
+                      {piezas.length < MAX_FILES && (
+                        <button type="button" className="btn-outline" onClick={() => fileInputRef.current?.click()}>
+                          + Otra pieza
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {entrega === 'envio' && quote.faltaEnvioGratis > 0 && (
+                  <p className="qt-total-note qt-envio-gratis">
+                    Te faltan {euros(quote.faltaEnvioGratis)} para el envío gratis.
+                  </p>
+                )}
+
                 <div className="qt-cupon">
                   {cupon ? (
                     <p className={quote.cupon ? 'qt-cupon-ok' : 'qt-cupon-aviso'}>
@@ -1588,25 +1772,11 @@ export function QuoteClient({
                     <p className="qt-cupon-error" role="alert">{cuponError}</p>
                   )}
                 </div>
-                <p className="qt-total-plazo">
-                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 3" />
-                  </svg>
-                  Listo en ~{quote.diasEstimados} día{quote.diasEstimados !== 1 ? 's' : ''} laborables
-                  {entrega === 'envio' ? ' + envío' : ''}
-                </p>
-                {entrega === 'envio' && quote.envio > 0 && (
-                  <p className="qt-total-note">
-                    Envío estimado por peso incluido en el total — lo confirmamos
-                    junto al presupuesto (recogida en Salamanca gratis).
-                  </p>
-                )}
                 <p className="qt-total-note">
                   Calculado laminando tus piezas como en nuestra impresora
                   (~{Math.round(quote.pesoG)} g, ~{quote.tiempoH.toFixed(1)} h de impresión
-                  en total), válido {settings.validez_dias} días. Te confirmamos el
-                  precio final al revisar las piezas.
+                  en total), válido {settings.validez_dias} días.
+                  {!precioFinal && ' Alguna pieza necesita que la revisemos; te confirmamos el precio antes de imprimir.'}
                 </p>
                 {quote.piezas.some((p) => p.metodo === 'aproximado') && (
                   <p className="qt-total-note">
@@ -1614,178 +1784,190 @@ export function QuoteClient({
                     aproximación por volumen.
                   </p>
                 )}
-                <button
-                  type="button"
-                  className="btn-outline qt-pdf"
-                  style={{ marginTop: 10, padding: '8px 16px', fontSize: 11 }}
-                  onClick={downloadPdf}
-                >
-                  Descargar resumen (PDF)
-                </button>
               </>
             )}
           </div>
 
-          {/* request */}
-          {piezas.length > 0 && listo && status.kind !== 'ok' && !showForm && (
-            <>
-              <button
-                type="button"
-                className="btn-primary qt-cta"
-                disabled={piezasSinColor.length > 0}
-                onClick={() => setShowForm(true)}
-              >
-                Solicitar este presupuesto
-              </button>
-              {piezasSinColor.length > 0 && (
+          {/* request: form, WhatsApp, or keep it for later */}
+          {piezas.length > 0 && listo && quote && status.kind !== 'ok' && (
+            <div className="qt-pedir">
+              {!showForm && (
+                <div className="qt-ctas">
+                  <button type="button" className="btn-primary qt-cta" onClick={abrirFormulario}>
+                    Solicitar presupuesto
+                  </button>
+                  <a
+                    className="btn-outline qt-cta qt-cta-wa"
+                    href={whatsappUrl(waPedido)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <WhatsAppIcon />
+                    Pedir por WhatsApp
+                  </a>
+                </div>
+              )}
+              {!showForm && (
                 <p className="qt-step-hint">
-                  Falta elegir color en:{' '}
-                  {piezasSinColor.map((p) => p.name).join(', ')}.
+                  {piezasSinColor.length > 0
+                    ? `¿Sin color para ${piezasSinColor.map((p) => p.name).join(', ')}? Pídelo igual: te ayudamos a elegirlo.`
+                    : 'Sin registro: solo un email o tu WhatsApp.'}
                 </p>
               )}
-            </>
-          )}
 
-          {showForm && status.kind !== 'ok' && (
-            <form className="qt-form" onSubmit={submit}>
-              <input
-                type="text"
-                placeholder="Tu nombre"
-                required
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                autoComplete="name"
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-              />
-              <input
-                type="tel"
-                placeholder="Teléfono"
-                required
-                minLength={9}
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-                autoComplete="tel"
-              />
-              {entrega === 'envio' && (
-                <>
+              {showForm && (
+                <form className="qt-form" onSubmit={submit} noValidate>
+                  <label className="qt-form-label" htmlFor="qt-contacto">
+                    ¿Dónde te enviamos el presupuesto?
+                  </label>
                   <input
+                    id="qt-contacto"
                     type="text"
-                    placeholder="Dirección (calle y número)"
-                    required
-                    value={calle}
-                    onChange={(e) => setCalle(e.target.value)}
-                    autoComplete="street-address"
+                    inputMode="email"
+                    autoComplete="email"
+                    placeholder="Email o WhatsApp"
+                    autoFocus
+                    value={contacto}
+                    onChange={(e) => setContacto(e.target.value)}
+                    aria-invalid={status.kind === 'err' && !leerContacto(contacto)}
+                    aria-describedby="qt-contacto-ayuda"
                   />
-                  <div className="qt-form-row">
+                  <p id="qt-contacto-ayuda" className="qt-form-hint">
+                    Nada más. Nombre{entrega === 'envio' ? ', dirección' : ''} y colores te los
+                    preguntamos al contestarte.
+                  </p>
+                  <details className="qt-form-mas">
+                    <summary>Añadir nombre o notas (opcional)</summary>
                     <input
                       type="text"
-                      placeholder="Ciudad"
-                      required
-                      value={ciudad}
-                      onChange={(e) => setCiudad(e.target.value)}
-                      autoComplete="address-level2"
+                      placeholder="Tu nombre"
+                      aria-label="Tu nombre"
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      autoComplete="name"
                     />
-                    <input
-                      type="text"
-                      placeholder="C.P."
-                      required
-                      pattern="[0-9]{5}"
-                      title="Código postal de 5 dígitos"
-                      value={cp}
-                      onChange={(e) => setCp(e.target.value)}
-                      autoComplete="postal-code"
+                    <textarea
+                      placeholder="Reparto de colores, plazo, lo que necesites…"
+                      aria-label="Notas"
+                      value={mensaje}
+                      onChange={(e) => setMensaje(e.target.value)}
                     />
+                  </details>
+                  {/* honeypot */}
+                  <div className="qt-honeypot" aria-hidden="true">
                     <input
                       type="text"
-                      placeholder="Provincia"
-                      required
-                      value={provincia}
-                      onChange={(e) => setProvincia(e.target.value)}
-                      autoComplete="address-level1"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
                     />
                   </div>
-                </>
+
+                  {status.kind === 'err' && (
+                    <div className="qt-msg err" role="alert">{status.message}</div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="btn-primary qt-cta"
+                    disabled={status.kind === 'sending'}
+                    aria-busy={status.kind === 'sending'}
+                  >
+                    {status.kind === 'sending' ? status.progress : `Enviar solicitud · ${euros(quote.total)}`}
+                  </button>
+                  <p className="qt-form-legal">
+                    Al enviar aceptas los{' '}
+                    <a href="/terminos/" target="_blank" rel="noopener noreferrer">Términos</a>. Usamos
+                    tus datos y archivos para preparar y gestionar este presupuesto y los borramos
+                    periódicamente. También podremos enviarte alguna oferta o aviso a tu email; cada
+                    correo trae un enlace para darte de baja. Puedes ejercer tus derechos en{' '}
+                    {CONTACTO.email}. Más en la{' '}
+                    <a href="/privacidad/">Política de Privacidad</a>.
+                  </p>
+                </form>
               )}
-              <textarea
-                placeholder="Notas: reparto de colores, plazo, lo que necesites…"
-                value={mensaje}
-                onChange={(e) => setMensaje(e.target.value)}
-              />
-              <label className="qt-toggle qt-terms">
-                <input
-                  type="checkbox"
-                  required
-                  checked={aceptaTerminos}
-                  onChange={(e) => setAceptaTerminos(e.target.checked)}
-                />
-                <span>
-                  He leído y acepto los{' '}
-                  <a href="/terminos/" target="_blank" rel="noopener noreferrer">
-                    Términos y Condiciones
-                  </a>
-                </span>
-              </label>
-              {/* honeypot */}
-              <div className="qt-honeypot" aria-hidden="true">
-                <input
-                  type="text"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                />
+
+              {/* Not ready yet: keep it (and a reminder tomorrow) */}
+              <div className="qt-guardar">
+                {guardado.kind === 'ok' ? (
+                  <p className="qt-guardar-ok" role="status">
+                    <Tick /> Enviado a {guardado.email}. Mira tu bandeja (o spam).
+                  </p>
+                ) : guardarAbierto ? (
+                  <form className="qt-cupon-form" onSubmit={enviarPorEmail} noValidate>
+                    <input
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="tu@email.com"
+                      aria-label="Tu email"
+                      autoFocus
+                      value={guardarEmail}
+                      onChange={(e) => setGuardarEmail(e.target.value)}
+                    />
+                    <button type="submit" className="btn-outline" disabled={guardado.kind === 'sending'}>
+                      {guardado.kind === 'sending' ? 'Enviando…' : 'Enviar'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="qt-guardar-opciones">
+                    <button type="button" className="qt-cupon-abrir" onClick={() => setGuardarAbierto(true)}>
+                      Envíame el presupuesto por email
+                    </button>
+                    <span aria-hidden="true">·</span>
+                    <button type="button" className="qt-cupon-abrir" onClick={downloadPdf}>
+                      Descargar PDF
+                    </button>
+                  </div>
+                )}
+                {guardarAbierto && guardado.kind !== 'ok' && (
+                  <p className="qt-form-hint">
+                    Te llega ahora, y mañana un único recordatorio con un pequeño descuento. Nada más.
+                  </p>
+                )}
+                {guardado.kind === 'err' && (
+                  <p className="qt-cupon-error" role="alert">{guardado.message}</p>
+                )}
               </div>
-
-              {status.kind === 'err' && (
-                <div className="qt-msg err" role="alert">{status.message}</div>
-              )}
-
-              <button
-                type="submit"
-                className="btn-primary qt-cta"
-                disabled={status.kind === 'sending'}
-              >
-                {status.kind === 'sending' ? status.progress : 'Enviar solicitud'}
-              </button>
-              <p className="qt-form-legal">
-                Tus datos y tus archivos se usan únicamente para preparar y gestionar
-                este presupuesto, y se eliminan periódicamente. Puedes ejercer tus
-                derechos escribiendo a {CONTACTO.email}. Más información en
-                nuestra <a href="/privacidad/">Política de Privacidad</a>.
-              </p>
-            </form>
+            </div>
           )}
 
           {status.kind === 'ok' && (
-            <div className="qt-success" role="status">
+            <div className="qt-success" role="status" tabIndex={-1} ref={successRef}>
+              <svg className="qt-success-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="m8 12 3 3 5-6" />
+              </svg>
+              <h2 className="qt-success-title">Recibido</h2>
+              <p className="qt-success-lead">
+                Te contestamos <strong>{plazoRespuesta()}</strong>{' '}
+                {status.porEmail ? 'por email' : 'por WhatsApp'}.
+              </p>
               <div className="qt-success-code">{status.codigo}</div>
               <p>
-                ¡Solicitud recibida! Te hemos enviado un email de confirmación con
-                el resumen y un enlace personal para aceptar el presupuesto cuando
-                lo revisemos. Puedes consultar el estado cuando quieras en{' '}
-                <a
-                  href={`/presupuesto?codigo=${encodeURIComponent(status.codigo)}`}
-                  style={{ color: 'var(--accent)' }}
-                >
-                  {CONTACTO.dominio}/presupuesto
-                </a>
-                .
+                {status.duplicado
+                  ? 'Ya teníamos esta misma solicitud: es la de arriba, no hace falta enviarla otra vez.'
+                  : status.porEmail
+                    ? 'Es tu código. Te hemos mandado un email con el resumen.'
+                    : 'Es tu código: guárdalo por si nos escribes.'}
               </p>
-              <a
-                className="btn-outline"
-                href={whatsappUrl(waMensaje)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Continuar por WhatsApp
-              </a>
+              <div className="qt-success-acciones">
+                <a className="btn-outline" href={`/presupuesto?codigo=${encodeURIComponent(status.codigo)}`}>
+                  Ver estado
+                </a>
+                <a
+                  className="btn-outline"
+                  href={whatsappUrl(`Hola, quiero cambiar algo del presupuesto ${status.codigo}: `)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <WhatsAppIcon /> Cambiar algo
+                </a>
+              </div>
+              <button type="button" className="qt-cupon-abrir" onClick={() => location.reload()}>
+                Calcular otra pieza
+              </button>
             </div>
           )}
         </aside>
@@ -1803,11 +1985,19 @@ export function QuoteClient({
           }
           aria-label="Ver desglose del precio"
         >
-          <span className="qt-sticky-label">Total estimado</span>
+          <span className="qt-sticky-label">{precioFinal ? 'Total' : 'Total estimado'}</span>
           <strong>{euros(quote.total)}</strong>
           <span className="qt-sticky-days">~{quote.diasEstimados} d</span>
         </button>
       )}
     </div>
+  );
+}
+
+function Tick() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+      <path d="m5 12 5 5 9-10" />
+    </svg>
   );
 }

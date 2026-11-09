@@ -1,0 +1,29 @@
+name: Recordatorios del tasador
+
+# Each hour, submit-quote emails ONE reminder (with the VUELVE5 code) to
+# whoever used "envíame el presupuesto" 24 h ago and has not asked for it.
+#
+# Required secrets:
+#   GitHub (Settings → Secrets → Actions): CRON_SECRET, plus the existing
+#     NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+#   Supabase (supabase secrets set CRON_SECRET=...): the same CRON_SECRET.
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+jobs:
+  recordar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar recordatorios
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -m 60 -X POST "$SUPABASE_URL/functions/v1/submit-quote" \
+            -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
+            -H "x-cron-secret: $CRON_SECRET" -H "Content-Type: application/json" \
+            -d '{"accion":"recordatorios"}'

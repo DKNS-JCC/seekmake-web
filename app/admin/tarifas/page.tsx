@@ -378,6 +378,13 @@ export default function AdminTarifas() {
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
           El último tramo hace de tope: cualquier pedido más pesado usa su precio.
         </p>
+        <Field label="Envío gratis desde (€, 0 = nunca)">
+          <Num
+            value={settings.envio_gratis_desde}
+            step={1}
+            onChange={(v) => patch((s) => ({ ...s, envio_gratis_desde: Math.max(0, v) }))}
+          />
+        </Field>
       </section>
 
       {/* Recargos */}

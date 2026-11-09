@@ -141,6 +141,16 @@ export default function PrivacidadPage() {
                 calculadora con datos anónimos.</strong> Base: interés legítimo
                 (art. 6.1.f RGPD).
               </li>
+              <li>
+                <strong>Enviarte de vez en cuando ofertas, códigos de descuento y
+                avisos</strong> (por ejemplo, plazos de Navidad) sobre nuestros
+                servicios de impresión 3D, al email con el que nos pediste un
+                presupuesto o un encargo. Base: interés legítimo y art. 21.2 de la
+                LSSI. Cada correo trae un enlace para darte de baja con un clic; al
+                hacerlo, tu email sale de la lista y no vuelves a recibir ninguno.
+                También puedes pedirlo respondiendo a cualquier correo con
+                «baja».
+              </li>
             </ul>
             <p>
               Las fotos que nos mandas solo las usamos para preparar e imprimir tu
@@ -205,6 +215,11 @@ export default function PrivacidadPage() {
               <li>
                 <strong>Consultas de contacto:</strong> el tiempo necesario para
                 atenderlas.
+              </li>
+              <li>
+                <strong>Lista de ofertas por email:</strong> mientras conservemos tu
+                presupuesto o encargo. Si te das de baja, guardamos solo tu email en
+                una lista de exclusión, para no volver a escribirte.
               </li>
               <li>
                 <strong>Encargos y justificantes de pago:</strong> mientras dure la

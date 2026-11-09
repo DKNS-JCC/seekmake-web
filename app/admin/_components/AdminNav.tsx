@@ -16,6 +16,7 @@ const GRUPOS: { titulo: string; links: { href: string; label: string; badge?: Re
     links: [
       { href: '/admin/presupuestos', label: 'Presupuestos', badge: <NuevosBadge /> },
       { href: '/admin/cupones', label: 'Códigos de descuento' },
+      { href: '/admin/campanas', label: 'Campañas por email' },
       { href: '/admin/estadisticas', label: 'Estadísticas' }
     ]
   },

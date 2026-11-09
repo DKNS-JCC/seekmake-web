@@ -231,6 +231,20 @@ export type Quote = {
   updated_at: string;
 };
 
+/** Email campaign (/admin/campanas). cuerpo is Markdown; html, its render. */
+export type CampanaRow = {
+  id: string;
+  asunto: string;
+  cuerpo: string;
+  html: string;
+  cupon: string | null;
+  estado: 'borrador' | 'enviando' | 'enviada';
+  created_at: string;
+  enviada_at: string | null;
+};
+export type CampanaEnvio = { campana_id: string; email: string; ok: boolean; error: string | null; created_at: string };
+export type EmailBaja = { email: string; created_at: string };
+
 /** Discount code of the tasador (admin-only table; see validar_cupon). */
 export type CuponRow = {
   codigo: string;
@@ -251,7 +265,10 @@ export type QuoteEventoTipo =
   | 'precio_visto'
   | 'solicitud_enviada'
   | 'pdf_descargado'
-  | 'aceptado';
+  | 'aceptado'
+  | 'visita'
+  | 'formulario_abierto'
+  | 'formulario_error';
 
 export type QuoteEvento = {
   id: number;
@@ -522,6 +539,15 @@ export type Database = {
         Update: Partial<CuponRow>;
         Relationships: [];
       };
+      campanas: {
+        Row: CampanaRow;
+        Insert: Pick<CampanaRow, 'asunto' | 'cuerpo' | 'html' | 'cupon'> & Partial<CampanaRow>;
+        Update: Partial<CampanaRow>;
+        Relationships: [];
+      };
+      // Read-only from the browser: campana-enviar / campana-baja write them.
+      campana_envios: { Row: CampanaEnvio; Insert: never; Update: never; Relationships: [] };
+      email_bajas: { Row: EmailBaja; Insert: never; Update: never; Relationships: [] };
       cobros: {
         Row: Cobro;
         // Solo lectura desde el navegador: se escribe con registrar_cobro /
@@ -596,6 +622,10 @@ export type Database = {
       get_recibos_cliente: {
         Args: { p_codigo: string; p_token: string };
         Returns: ReciboCliente[];
+      };
+      campana_audiencia: {
+        Args: Record<string, never>;
+        Returns: { email: string; nombre: string | null }[];
       };
       validar_cupon: {
         Args: { p_codigo: string };

@@ -51,6 +51,7 @@ function archivos(piezas: PiezaInput[], q: ReturnType<typeof computeQuote>) {
 const casos: [string, unknown][] = [
   ['por defecto (Calculadora)', null],
   ['markup alto + postpro', { calculadora: { markup: 3, error: 0.5, postpro_soportes_eur: 4 } }],
+  ['envío gratis desde 5 €', { envio_gratis_desde: 5 }],
   ['tarifa manual con descuentos', {
     modo_precio: 'tarifa', precio_hora: 1.1, tarifa_preparacion: 1.5, redondeo: 0,
     descuentos_cantidad: [{ min: 2, pct: 5 }, { min: 6, pct: 12 }]

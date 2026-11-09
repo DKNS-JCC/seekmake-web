@@ -16,6 +16,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { marcarNoRastrear } from '@/lib/tracking';
 
 export function useAdminAuth() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -35,6 +36,11 @@ export function useAdminAuth() {
       sub.subscription.unsubscribe();
     };
   }, [client]);
+
+  // The admin's browser stays out of the tasador stats from now on.
+  useEffect(() => {
+    if (authed) marcarNoRastrear();
+  }, [authed]);
 
   return { authed, supabase: () => client, client };
 }

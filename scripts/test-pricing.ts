@@ -165,7 +165,8 @@ const SIMPLE: QuoteSettings = normalizeSettings({
   materiales: { PLA: { precio_g: 0.01, densidad: 1, factor_velocidad: 1 } },
   fraccion_pared: 1,
   precio_minimo: 0,
-  tarifa_preparacion: 0
+  tarifa_preparacion: 0,
+  envio_gratis_desde: 0
 });
 for (const [gramos, esperado] of [[499, 4.5], [500, 4.5], [501, 6.9], [2000, 6.9], [2001, 9.9]] as const) {
   const r = computeQuote(
@@ -182,6 +183,18 @@ eq('recogida no cobra envío', recogida.envio, 0);
 // minimum swallow it.
 const minMasEnvio = computeQuote([pieza({ metrics: metrics(10, 20) })], S, 'envio');
 eq('el mínimo no absorbe el envío', minMasEnvio.total, S.precio_minimo + 4.5);
+eq('falta para envío gratis', minMasEnvio.faltaEnvioGratis, S.envio_gratis_desde - S.precio_minimo);
+eq('margen libre = mínimo − precio real de la pieza', minMasEnvio.margenMinimo,
+  S.precio_minimo - computeQuote([pieza({ metrics: metrics(10, 20) })], normalizeSettings({ ...S, precio_minimo: 0 })).total, 0.001);
+{
+  const gratis = normalizeSettings({ ...S, envio_gratis_desde: S.precio_minimo });
+  const r = computeQuote([pieza({ metrics: metrics(10, 20) })], gratis, 'envio');
+  eq('desde el umbral el envío es gratis', r.envio, 0);
+  eq('y el total no lo incluye', r.total, S.precio_minimo);
+  check('la línea dice gratis', r.lineas.some((l) => l.concepto.endsWith('— gratis') && l.importe === 0));
+  const off = computeQuote([pieza({ metrics: metrics(10, 20) })], normalizeSettings({ ...S, envio_gratis_desde: 0 }), 'envio');
+  check('umbral 0 = nunca gratis', off.envio === 4.5 && off.faltaEnvioGratis === 0);
+}
 
 section('varias piezas');
 const multi = computeQuote([

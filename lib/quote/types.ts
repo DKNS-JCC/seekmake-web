@@ -55,7 +55,8 @@ export interface ParsedModel {
 export type QuoteStatus =
   | { kind: 'idle' }
   | { kind: 'sending'; progress: string }
-  | { kind: 'ok'; codigo: string }
+  /** duplicado: the server already had this same request and returned its code. */
+  | { kind: 'ok'; codigo: string; duplicado: boolean; porEmail: boolean }
   | { kind: 'err'; message: string };
 
 /** Distinct colors a piece will print with, per its config. */

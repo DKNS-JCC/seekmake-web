@@ -137,6 +137,8 @@ export interface QuoteSettings {
   validez_dias: number;
   /** Shipping tiers by total order weight, sorted ascending by max_g. */
   envio_tramos: EnvioTramo[];
+  /** Shipping is free once the order (before shipping) reaches this, €. 0 = never. */
+  envio_gratis_desde: number;
   /** Printing hours available per working day (for the lead-time estimate). */
   plazo_horas_dia: number;
   /** Extra working days for preparation/queue added to every estimate. */
@@ -192,6 +194,7 @@ const BASE_SETTINGS: QuoteSettings = {
     { max_g: 2000, precio: 6.9 },
     { max_g: 999999, precio: 9.9 }
   ],
+  envio_gratis_desde: 30,
   fraccion_pared: 0.35,
   plazo_horas_dia: 8,
   plazo_dias_margen: 1,
@@ -388,8 +391,12 @@ export interface QuoteResult {
   minimoAplicado: boolean;
   /** Estimated working days until the order is ready for pickup/shipping. */
   diasEstimados: number;
-  /** Shipping line included in the total (0 for pickup). */
+  /** Shipping line included in the total (0 for pickup or free shipping). */
   envio: number;
+  /** € more in pieces before shipping is free (0: already free, or no threshold). */
+  faltaEnvioGratis: number;
+  /** € of pieces that still fit in the minimum order at no extra cost. */
+  margenMinimo: number;
 }
 
 /** Round a price up to the configured multiple (the Calculadora's 5 cents). */
@@ -567,8 +574,9 @@ export function computeQuote(
   // add up to the total.
   const previo = round2(subtotal - dtoAntes + prep);
   const minimoAplicado = previo < minimo && piezasOut.length > 0;
+  const margenMinimo = minimoAplicado ? round2(minimo - previo) : 0;
   if (minimoAplicado) {
-    const falta = round2(minimo - previo);
+    const falta = margenMinimo;
     let repartido = 0;
     piezasOut.forEach((p, i) => {
       const extra =
@@ -600,14 +608,19 @@ export function computeQuote(
   // Shipping estimate by total weight — applied after the minimum so pickup
   // and shipping orders share the same base price.
   let envio = 0;
+  let faltaEnvioGratis = 0;
   if (entrega === 'envio') {
     const tramo =
       settings.envio_tramos.find((t) => pesoTotal <= t.max_g) ??
       settings.envio_tramos[settings.envio_tramos.length - 1];
     envio = tramo?.precio ?? 0;
-    if (envio > 0) {
+    const gratisDesde = settings.envio_gratis_desde;
+    const gratis = gratisDesde > 0 && round2(total) >= gratisDesde;
+    if (gratis) envio = 0;
+    else if (gratisDesde > 0) faltaEnvioGratis = round2(gratisDesde - total);
+    if (envio > 0 || gratis) {
       lineas.push({
-        concepto: `Envío nacional (≈${Math.round(pesoTotal)} g)`,
+        concepto: `Envío nacional (≈${Math.round(pesoTotal)} g)${gratis ? ' — gratis' : ''}`,
         importe: round2(envio)
       });
       total += envio;
@@ -630,6 +643,8 @@ export function computeQuote(
     total: round2(total),
     minimoAplicado,
     diasEstimados,
-    envio: round2(envio)
+    envio: round2(envio),
+    faltaEnvioGratis,
+    margenMinimo
   };
 }
