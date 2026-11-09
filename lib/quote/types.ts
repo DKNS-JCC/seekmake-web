@@ -24,12 +24,10 @@ export interface EstimacionEstado {
   /** 0-1 while pendiente. */
   progreso: number;
   analisis?: Analisis;
-  /** Rotation shown in the viewer, relative to the uploaded file (print frame). */
+  /** Print orientation picked for our slicer, relative to the uploaded file (the viewer never turns). */
   R: Matriz3;
   /** The quoted orientation is the uploaded one. */
   original: boolean;
-  /** The customer asked to keep their own orientation. */
-  mantenerOriginal: boolean;
 }
 
 export interface Pieza {
