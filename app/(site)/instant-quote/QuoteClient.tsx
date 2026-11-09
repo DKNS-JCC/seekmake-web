@@ -23,6 +23,7 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createClient } from '@/lib/supabase/client';
 import {
   acabadoLabel,
@@ -50,8 +51,8 @@ import {
 } from '@/lib/three/materials';
 import { analyzeObject, looksDegenerate, suggestScales, type MeshMetrics } from '@/lib/quote/geometry';
 import { analizarEnSegundoPlano } from '@/lib/quote/estimador/cliente';
-import { IDENTIDAD, multiplicar, rotarTriangulos } from '@/lib/quote/estimador/orientar';
-import { rotarModelo, transpuesta, triangulosImpresion } from '@/lib/quote/estimador/three';
+import { IDENTIDAD } from '@/lib/quote/estimador/orientar';
+import { triangulosImpresion } from '@/lib/quote/estimador/three';
 import type { EstimacionEstado } from '@/lib/quote/types';
 import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import { colorParecido, leer3mf, zonificar, type Meta3mf } from '@/lib/quote/tresmf';
@@ -325,10 +326,24 @@ export function QuoteClient({
       const old = mesh.material;
       if (Array.isArray(old)) old.forEach((m) => m.dispose());
       else if (old) (old as THREE.Material).dispose();
-      ensureUVs(mesh.geometry);
     }
     // One material per zone (part, or filament of a multicolor 3MF).
     const { meshes, zonas } = zonificar(todas, meta);
+
+    // Normals averaged across sharp edges paint gradients and glints on flat
+    // faces; split them at 30° so flats stay flat and curves stay smooth.
+    // ponytail: ~0.8 s per 400k triangles on upload; a worker if it bites.
+    const lisas = new Map<THREE.BufferGeometry, THREE.BufferGeometry>();
+    for (const mesh of meshes) {
+      let g = lisas.get(mesh.geometry);
+      if (!g) {
+        g = toCreasedNormals(mesh.geometry, Math.PI / 6);
+        if (g !== mesh.geometry) mesh.geometry.dispose();
+        ensureUVs(g);
+        lisas.set(mesh.geometry, g);
+      }
+      mesh.geometry = g;
+    }
 
     // Center on the plate: x/z centered, base resting on y=0.
     root.updateMatrixWorld(true);
@@ -450,8 +465,7 @@ export function QuoteClient({
               estado: 'pendiente',
               progreso: 0,
               R: [...IDENTIDAD] as EstimacionEstado['R'],
-              original: true,
-              mantenerOriginal: false
+              original: true
             }
           };
           setPiezas((prev) => [...prev, pieza]);
@@ -488,7 +502,7 @@ export function QuoteClient({
     for (const p of piezas) {
       if (analisisIniciados.current.has(p.id)) continue;
       analisisIniciados.current.add(p.id);
-      lanzarAnalisis(p.id, false);
+      lanzarAnalisis(p.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piezas, settingsLoaded]);
@@ -576,8 +590,7 @@ export function QuoteClient({
     const metrics = analyzeObject(model.root);
     setPiezas((prev) => prev.map((p) => (p.id === id ? { ...p, metrics } : p)));
     if (shownRef.current === id) showModel(id); // refit the camera
-    const pieza = piezasRef.current.find((p) => p.id === id);
-    lanzarAnalisis(id, pieza?.estimacion.mantenerOriginal ?? false);
+    lanzarAnalisis(id);
   }
 
   function patchEstimacion(id: string, patch: Partial<EstimacionEstado>) {
@@ -586,10 +599,10 @@ export function QuoteClient({
     );
   }
 
-  // Slice-like analysis in the worker. With `mantenerOriginal` false the
-  // worker also picks the cheapest orientation on the bed, and the viewer
-  // is turned to show the part exactly as it will be printed.
-  function lanzarAnalisis(id: string, mantenerOriginal: boolean) {
+  // Slice-like analysis in the worker, which also picks the cheapest
+  // orientation on the bed. That orientation is for our slicer and the
+  // price only: the viewer keeps the part as the customer uploaded it.
+  function lanzarAnalisis(id: string) {
     const model = modelsRef.current.get(id);
     const pieza = piezasRef.current.find((p) => p.id === id);
     if (!model || !pieza) return;
@@ -597,13 +610,9 @@ export function QuoteClient({
     versionAnalisis.current.set(id, version);
     const vigente = () => versionAnalisis.current.get(id) === version;
 
-    // Mesh as uploaded: undo whatever orientation the viewer shows now.
-    const tri = rotarTriangulos(
-      triangulosImpresion(model.root),
-      transpuesta(pieza.estimacion.R)
-    );
+    const tri = triangulosImpresion(model.root); // the viewer shows the file as uploaded
     const fil = filamentos.find((f) => f.id === pieza.config.filamentoId);
-    patchEstimacion(id, { estado: 'pendiente', progreso: 0, mantenerOriginal });
+    patchEstimacion(id, { estado: 'pendiente', progreso: 0 });
 
     analizarEnSegundoPlano(
       {
@@ -615,7 +624,7 @@ export function QuoteClient({
           resistenciaId: pieza.config.resistenciaId,
           detalleId: pieza.config.detalleId
         },
-        auto: settings.orientacion_auto && !mantenerOriginal,
+        auto: settings.orientacion_auto,
         tolerancia: settings.orientacion_tolerancia_pct / 100
       },
       (f) => {
@@ -624,17 +633,13 @@ export function QuoteClient({
     )
       .then((res) => {
         if (!vigente()) return;
-        const m = modelsRef.current.get(id);
-        const actual = piezasRef.current.find((p) => p.id === id);
-        if (!m || !actual) return;
-        rotarModelo(m.root, multiplicar(res.R, transpuesta(actual.estimacion.R)));
-        const metrics = analyzeObject(m.root);
+        // Metrics stay those of the file as uploaded, matching what the
+        // viewer shows; the layer analysis carries the print orientation.
         setPiezas((prev) =>
           prev.map((p) =>
             p.id === id
               ? {
                   ...p,
-                  metrics,
                   estimacion: {
                     ...p.estimacion,
                     estado: 'ok',
@@ -647,7 +652,6 @@ export function QuoteClient({
               : p
           )
         );
-        if (shownRef.current === id) showModel(id);
       })
       .catch((err) => {
         console.error(err);
@@ -713,25 +717,6 @@ export function QuoteClient({
       }
     });
   }, [activePieza, activeFilamento, partsMode]);
-
-  // The zone being colored blinks in the viewer, so "Base" or "Código" is
-  // something you see, not a name you have to guess.
-  useEffect(() => {
-    if (!partsMode || !activePieza) return;
-    const mat = modelsRef.current.get(activePieza.id)?.zonas[activePart]?.mat;
-    if (!mat) return;
-    let n = 0;
-    const t = setInterval(() => {
-      mat.visible = n % 2 === 1;
-      if (++n === 4) clearInterval(t);
-    }, 160);
-    return () => {
-      clearInterval(t);
-      mat.visible = true;
-    };
-    // Only a change of zone or piece blinks, not every config edit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePart, activePieza?.id, partsMode]);
 
   useEffect(() => {
     const cache = textureCacheRef.current;
@@ -1152,26 +1137,6 @@ export function QuoteClient({
                 {activePieza.metrics.bboxMm.y} mm
               </span>
               <span>{activePieza.metrics.volumenCm3.toFixed(1)} cm³</span>
-              {activePieza.estimacion.estado === 'ok' && settings.orientacion_auto && (
-                <button
-                  type="button"
-                  className="qt-meta-orient"
-                  onClick={() =>
-                    lanzarAnalisis(activePieza.id, !activePieza.estimacion.mantenerOriginal)
-                  }
-                  title={
-                    activePieza.estimacion.original
-                      ? 'Buscar la colocación más económica en la cama'
-                      : 'Presupuestar la pieza tal y como está en tu archivo'
-                  }
-                >
-                  {activePieza.estimacion.mantenerOriginal
-                    ? 'Tu orientación · optimizar'
-                    : activePieza.estimacion.original
-                      ? 'Orientación óptima'
-                      : 'Colocada para imprimir · usar la mía'}
-                </button>
-              )}
             </div>
           )}
 
