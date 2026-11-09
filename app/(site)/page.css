@@ -30,6 +30,7 @@ section#inicio {
    chain and collapse the image. `display: contents` removes the box while
    keeping the children. */
 .hero-right picture { display: contents; }
+/* 80%: si la columna es estrecha, recorta cielo por la izquierda y no la torre. */
 .hero-img { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; display: block; }
 .hero-img-mask { position: absolute; inset: 0; z-index: 3; background: linear-gradient(to right, var(--bg) 0%, transparent 35%); }
 .scroll-hint { position: absolute; bottom: 36px; left: 80px; display: flex; align-items: center; gap: 12px; font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); z-index: 5; }
@@ -43,8 +44,7 @@ section#inicio {
     .hero-desc { font-size: 15px; margin-bottom: 32px; }
     /* En móvil la catedral va arriba, como cabecera, y se funde con el fondo. */
     .hero-right { height: 300px; order: -1; }
-    .hero-img-mask { background: linear-gradient(to top, var(--bg) 0%, transparent 30%); }
-    .hero-actions { flex-direction: row; }
+    .hero-img-mask { background: linear-gradient(to top, var(--bg) 0%, transparent 30%); }    .hero-actions { flex-direction: row; }
     .hero-stats { gap: 16px; margin-top: 36px; padding-top: 28px; }
     .hero-stats > div { flex: 1; }
     .stat-num { font-size: 30px; }
