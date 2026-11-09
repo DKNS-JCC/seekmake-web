@@ -454,14 +454,57 @@
     }
 }
 
-.qt-total-plazo {
-    display: flex; align-items: center; gap: 7px;
-    margin-top: 10px;
-    font-family: var(--font-mono), monospace;
-    font-size: 12px; color: var(--accent);
+/* ── Trust next to the price ─────────────────────────── */
+.qt-trust {
+    list-style: none;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px;
+    margin-top: 12px;
+    font-size: 12px; color: var(--text); line-height: 1.35;
 }
+.qt-trust li { display: flex; gap: 6px; align-items: flex-start; }
+.qt-trust svg { flex: none; margin-top: 2px; color: var(--accent); }
+@media (max-width: 400px) { .qt-trust { grid-template-columns: 1fr; } }
 
+/* ── Small-order nudge ───────────────────────────────── */
+.qt-upsell {
+    margin-top: 12px; padding: 12px 14px;
+    background: var(--bg);
+    border: 1px dashed var(--accent);
+    border-radius: var(--r);
+    font-size: 13px; color: var(--text); line-height: 1.5;
+}
+.qt-upsell-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.qt-upsell-acciones .btn-outline { padding: 7px 14px; font-size: 11px; }
+.qt-envio-gratis { color: var(--accent); font-size: 12px; }
+
+.qt-cp {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 10px;
+    font-size: 13px; color: var(--text);
+}
+.qt-cp small { color: var(--muted); }
+.qt-cp input {
+    width: 96px;
+    padding: 8px 12px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r);
+    font-family: var(--font-mono), monospace; font-size: 16px; /* iOS: no zoom */
+    outline: none;
+}
+.qt-cp input:focus { border-color: var(--accent); }
+
+/* ── Ask for it ──────────────────────────────────────── */
+.qt-pedir { display: flex; flex-direction: column; gap: 10px; }
+.qt-ctas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 400px) { .qt-ctas { grid-template-columns: 1fr; } }
 .qt-cta { width: 100%; justify-content: center; }
+.qt-cta-wa { display: inline-flex; align-items: center; gap: 8px; }
+.qt-cta-wa svg { color: #15803d; }
+
+.qt-guardar { font-size: 12px; text-align: center; }
+.qt-guardar-opciones { display: flex; justify-content: center; gap: 8px; color: var(--muted); }
+.qt-guardar .qt-form-hint { margin-top: 6px; }
+.qt-guardar-ok { display: inline-flex; gap: 6px; align-items: center; color: var(--accent); }
 
 /* ── request form ───────────────────────────────────── */
 .qt-form { display: flex; flex-direction: column; gap: 10px; }
@@ -477,14 +520,16 @@
     transition: border-color 0.2s;
 }
 .qt-form input:focus, .qt-form textarea:focus { border-color: var(--accent); }
+.qt-form input { font-size: 16px; } /* iOS: no zoom on focus */
+.qt-form input[aria-invalid="true"] { border-color: #e0524d; }
 .qt-form textarea { min-height: 84px; resize: vertical; }
-.qt-form-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr;
-    gap: 10px;
+.qt-form-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.qt-form-hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: -4px; }
+.qt-form-mas summary {
+    cursor: pointer; font-size: 12px; color: var(--accent);
+    padding: 4px 0;
 }
-.qt-terms { margin-top: 2px; font-size: 12px; }
-.qt-terms a { color: var(--accent); }
+.qt-form-mas[open] { display: flex; flex-direction: column; gap: 10px; }
 .qt-form-legal { font-size: 11px; color: var(--muted); line-height: 1.5; }
 .qt-form-legal a { color: var(--accent); }
 .qt-honeypot {
@@ -508,6 +553,15 @@
     text-align: center;
     display: flex; flex-direction: column; gap: 12px; align-items: center;
 }
+.qt-success:focus { outline: none; }
+.qt-success-icon { color: var(--accent); }
+.qt-success-title {
+    font-family: var(--font-display), sans-serif;
+    font-size: 26px; letter-spacing: 0.02em; color: var(--text);
+}
+.qt-success .qt-success-lead { font-size: 15px; color: var(--text); }
+.qt-success-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.qt-success-acciones .btn-outline { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 11px; }
 .qt-success-code {
     font-family: var(--font-display), sans-serif;
     font-size: 32px; letter-spacing: 0.06em; color: var(--accent);

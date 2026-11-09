@@ -8,6 +8,14 @@
 //   GMAIL_USER, GMAIL_APP_PASSWORD, CONTACT_RECIPIENT, ALLOWED_ORIGIN
 // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are injected automatically.
 //
+// Two more actions share the pricing and the mail setup:
+//   accion 'guardar'       "envíame el presupuesto": the breakdown by email,
+//                          no files, row in presupuestos_guardados.
+//   accion 'recordatorios' hourly (recordatorios-tasador.yml, header
+//                          x-cron-secret = CRON_SECRET): 24 h reminder with
+//                          the VUELVE5 code to whoever saved one and did not
+//                          ask for it.
+//
 // ── Deploy ──
 //   supabase functions deploy submit-quote
 
@@ -49,7 +57,7 @@ function corsHeaders(origin: string): Record<string, string> {
 // Pricing version of this function. The Pages build refuses to publish a
 // web whose tasador expects a newer server (see deploy-pages.yml): otherwise
 // the customer would see one price and get another one by email.
-const TASADOR_VERSION = '6';
+const TASADOR_VERSION = '7';
 
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
@@ -157,6 +165,7 @@ const DEFAULT_SETTINGS: any = {
     { max_g: 2000, precio: 6.9 },
     { max_g: 999999, precio: 9.9 }
   ],
+  envio_gratis_desde: 30,
   fraccion_pared: 0.35,
   plazo_horas_dia: 8,
   plazo_dias_margen: 1,
@@ -429,9 +438,12 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
       settings.envio_tramos.find((t: any) => pesoTotal <= t.max_g) ??
       settings.envio_tramos[settings.envio_tramos.length - 1];
     envio = tramo?.precio ?? 0;
-    if (envio > 0) {
+    const gratisDesde = Number(settings.envio_gratis_desde) || 0;
+    const gratis = gratisDesde > 0 && r2(total) >= gratisDesde;
+    if (gratis) envio = 0;
+    if (envio > 0 || gratis) {
       lineas.push({
-        concepto: `Envío nacional (≈${Math.round(pesoTotal)} g)`,
+        concepto: `Envío nacional (≈${Math.round(pesoTotal)} g)${gratis ? ' — gratis' : ''}`,
         importe: r2(envio)
       });
       total += envio;
@@ -458,6 +470,105 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
   };
 }
 
+const SITIO = 'https://www.impresion3dcc.com';
+const CUPON_RECORDATORIO = 'VUELVE5';
+
+function gmail() {
+  const user = Deno.env.get('GMAIL_USER')?.trim();
+  const pass = Deno.env.get('GMAIL_APP_PASSWORD')?.replace(/\s+/g, '');
+  const admin = Deno.env.get('CONTACT_RECIPIENT')?.trim() ?? user;
+  return user && pass && admin ? { user, pass, admin } : null;
+}
+
+/** One email to the customer; false when it could not be sent. */
+async function correoCliente(to: string, subject: string, text: string, html: string): Promise<boolean> {
+  const g = gmail();
+  if (!g) return false;
+  const client = new SMTPClient({
+    connection: { hostname: 'smtp.gmail.com', port: 465, tls: true, auth: { username: g.user, password: g.pass } }
+  });
+  try {
+    await client.send({
+      from: `3DCC Salamanca <${g.user}>`, to, replyTo: g.admin,
+      subject: asciiHeader(subject), content: text, html
+    });
+    return true;
+  } catch (err) {
+    console.error('SMTP send failed to customer', err);
+    return false;
+  } finally {
+    try { await client.close(); } catch { /* ignore */ }
+  }
+}
+
+/** The breakdown as email rows (piece names come from the customer: escaped). */
+function desgloseHtml(lineas: Array<{ concepto: string; importe: number }>, total: number): string {
+  return `<table style="width:100%;border-collapse:collapse;font-size:13px;background:#f5f5f5;border-radius:6px;">
+    ${lineas.map((l) => `<tr><td style="padding:6px 14px;color:#444;">${escapeHtml(l.concepto)}</td><td style="padding:6px 14px;text-align:right;font-family:monospace;">${Number(l.importe).toFixed(2)} €</td></tr>`).join('')}
+    <tr><td style="padding:10px 14px;font-weight:700;border-top:1px solid #ddd;">Total</td><td style="padding:10px 14px;text-align:right;font-family:monospace;font-weight:700;border-top:1px solid #ddd;color:#0EA5E9;">${total.toFixed(2)} €</td></tr>
+  </table>`;
+}
+
+const boton = (href: string, txt: string) =>
+  `<a href="${href}" style="display:inline-block;margin:4px;padding:12px 24px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">${txt}</a>`;
+
+/** 24 h after "envíame el presupuesto", one reminder unless they already asked. */
+async function enviarRecordatorios(supabase: any): Promise<{ enviados: number; omitidos: number }> {
+  const ahora = Date.now();
+  const { data: filas, error } = await supabase
+    .from('presupuestos_guardados')
+    .select('id, email, total, lineas, created_at')
+    .is('recordado_at', null)
+    .lte('created_at', new Date(ahora - 24 * 3600e3).toISOString())
+    .gte('created_at', new Date(ahora - 72 * 3600e3).toISOString())
+    .limit(50);
+  if (error) throw error;
+  const { data: cup } = await supabase.rpc('validar_cupon', { p_codigo: CUPON_RECORDATORIO });
+  const cupon = cup?.[0] ?? null;
+  let enviados = 0, omitidos = 0;
+  for (const f of filas ?? []) {
+    const { count } = await supabase
+      .from('quotes')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', f.email)
+      .gte('created_at', f.created_at);
+    if ((count ?? 0) === 0) {
+      const total = Number(f.total);
+      const enlace = `${SITIO}/instant-quote/${cupon ? `?cupon=${cupon.codigo}` : ''}`;
+      const oferta = cupon
+        ? `Si lo pides ahora, con el código ${cupon.codigo} tienes un ${Number(cupon.valor)} % menos.`
+        : '';
+      const text = `Hola,
+
+Ayer calculaste el precio de tu pieza en nuestra web: ${total.toFixed(2)} €.
+${oferta}
+
+Para pedirlo, responde a este correo con tu archivo 3D o vuelve al tasador:
+${enlace}
+
+Si tienes alguna duda (material, color, plazo), contesta a este correo y te
+ayudamos. No te escribiremos más por este presupuesto.
+
+— 3DCC Salamanca · impresion3dcc.com`;
+      const html = `<div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <h2 style="margin:0 0 8px 0;color:#0EA5E9;font-family:Arial,sans-serif;">¿Seguimos con tu pieza?</h2>
+  <p style="margin:0 0 16px 0;color:#444;line-height:1.6;">Ayer calculaste el precio en nuestra web. Te lo dejamos aquí.</p>
+  ${desgloseHtml(f.lineas ?? [], total)}
+  ${cupon ? `<p style="margin:20px 0 0 0;color:#111;line-height:1.6;">Si lo pides ahora, con el código <strong style="font-family:monospace;color:#0EA5E9;">${escapeHtml(cupon.codigo)}</strong> tienes un ${Number(cupon.valor)} % menos.</p>` : ''}
+  <div style="text-align:center;margin:20px 0;">${boton(enlace, 'Volver al tasador')}</div>
+  <p style="margin:0;color:#444;font-size:13px;line-height:1.6;">También puedes responder a este correo con tu archivo 3D y lo preparamos. No te escribiremos más por este presupuesto.</p>
+  <p style="margin:24px 0 0 0;font-size:11px;color:#999;">— 3DCC Salamanca · <a href="${SITIO}" style="color:#999;">impresion3dcc.com</a></p>
+</div>`;
+      if (!(await correoCliente(f.email, `¿Seguimos con tu pieza? ${total.toFixed(2)} € - 3DCC`, text, html))) continue;
+      enviados++;
+    } else {
+      omitidos++;
+    }
+    await supabase.from('presupuestos_guardados').update({ recordado_at: new Date().toISOString() }).eq('id', f.id);
+  }
+  return { enviados, omitidos };
+}
+
 Deno.serve(async (req: Request) => {
   const allowedOrigin = pickOrigin(req.headers.get('origin'));
 
@@ -474,6 +585,22 @@ Deno.serve(async (req: Request) => {
   } catch (err) {
     return json({ error: 'Invalid JSON: ' + String(err) }, 400, allowedOrigin);
   }
+
+  if (body?.accion === 'recordatorios') {
+    const secreto = Deno.env.get('CRON_SECRET') ?? '';
+    if (!secreto || req.headers.get('x-cron-secret') !== secreto) {
+      return json({ error: 'No autorizado.' }, 401, allowedOrigin);
+    }
+    const sb = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+    try {
+      return json({ ok: true, ...(await enviarRecordatorios(sb)) }, 200, allowedOrigin);
+    } catch (err) {
+      console.error('recordatorios failed:', err);
+      return json({ error: 'No se pudieron enviar los recordatorios.' }, 500, allowedOrigin);
+    }
+  }
+  // "Envíame el presupuesto": priced and emailed like a request, without files.
+  const guardar = body?.accion === 'guardar';
 
   // ── Extract & sanitize ──
   const nombre   = String(body?.nombre   ?? '').trim().slice(0, 200);
@@ -541,6 +668,7 @@ Deno.serve(async (req: Request) => {
       metricas:        typeof a?.metricas === 'object' && a.metricas ? a.metricas : {}
     }))
     .filter((a: any) => {
+      if (guardar) return true;
       try {
         const u = new URL(a.url);
         return supabaseHost && u.host === supabaseHost && u.pathname.includes('/quote-uploads/');
@@ -548,20 +676,18 @@ Deno.serve(async (req: Request) => {
     });
 
   // ── Validate ──
+  // Only a way to reach the customer is required: name, address and colours
+  // are asked afterwards (the form was where people gave up).
   if (hp) return json({ ok: true, codigo: 'Q-0000-0000' }, 200, allowedOrigin); // bot
-  if (!nombre || nombre.length < 2) return json({ error: 'Nombre requerido.' }, 400, allowedOrigin);
-  if (!isValidEmail(email))         return json({ error: 'Email inválido.' }, 400, allowedOrigin);
-  if (telefono.replace(/[^\d]/g, '').length < 9) {
-    return json({ error: 'Teléfono requerido (mínimo 9 dígitos).' }, 400, allowedOrigin);
+  const tieneEmail = isValidEmail(email);
+  const tieneTelefono = telefono.replace(/[^\d]/g, '').length >= 9;
+  if (email && !tieneEmail)         return json({ error: 'Revisa el email: parece que le falta algo.' }, 400, allowedOrigin);
+  if (guardar && !tieneEmail)       return json({ error: 'Necesitamos un email para enviártelo.' }, 400, allowedOrigin);
+  if (!tieneEmail && !tieneTelefono) {
+    return json({ error: 'Déjanos un email o un WhatsApp para enviarte el presupuesto.' }, 400, allowedOrigin);
   }
   if (!material)                    return json({ error: 'Material requerido.' }, 400, allowedOrigin);
   if (!archivos.length)             return json({ error: 'Ningún archivo de modelo válido.' }, 400, allowedOrigin);
-  if (archivos.some((a: any) => !a.colores.length)) {
-    return json({ error: 'Cada pieza necesita al menos un color.' }, 400, allowedOrigin);
-  }
-  if (entrega === 'envio' && (!direccion.calle || !direccion.ciudad || !direccion.cp)) {
-    return json({ error: 'Para envío necesitamos la dirección completa.' }, 400, allowedOrigin);
-  }
 
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
@@ -585,11 +711,12 @@ Deno.serve(async (req: Request) => {
   // DB-backed rate limit (the in-memory map resets on cold starts).
   const ipHash = await sha256Hex(ip);
   const { count: recentCount } = await supabase
-    .from('quotes')
+    .from(guardar ? 'presupuestos_guardados' : 'quotes')
     .select('id', { count: 'exact', head: true })
     .eq('ip_hash', ipHash)
     .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString());
-  if ((recentCount ?? 0) >= 5) {
+  // Saving emails a third party's inbox on request: tighter than requests.
+  if ((recentCount ?? 0) >= (guardar ? 3 : 5)) {
     return json(
       { error: 'Demasiadas solicitudes. Inténtalo de nuevo en una hora.' },
       429,
@@ -663,6 +790,70 @@ Deno.serve(async (req: Request) => {
 
   const validezDias = Math.max(1, Math.round(settings.validez_dias ?? 15));
   const validoHasta = new Date(Date.now() + validezDias * 24 * 60 * 60 * 1000);
+  const validezTxt = validoHasta.toLocaleDateString('es-ES', {
+    day: '2-digit', month: 'long', year: 'numeric'
+  });
+
+  if (guardar) {
+    const { error: gErr } = await supabase.from('presupuestos_guardados').insert({
+      email, total: precioServidor, lineas: sq.lineas, entrega, ip_hash: ipHash
+    });
+    if (gErr) {
+      console.error('presupuestos_guardados insert failed:', gErr);
+      return json({ error: 'No hemos podido guardarlo. Inténtalo de nuevo.' }, 500, allowedOrigin);
+    }
+    const wa = `https://wa.me/34923793123?text=${encodeURIComponent(
+      `Hola, quiero pedir este presupuesto de la web (${precioServidor.toFixed(2)} €). Os mando el archivo por aquí.`
+    )}`;
+    const text = `Hola,
+
+Este es el presupuesto que has calculado en impresion3dcc.com:
+
+${sq.lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
+
+  TOTAL: ${precioServidor.toFixed(2)} € · listo en ~${sq.diasEstimados} días laborables
+  Válido hasta el ${validezTxt}.
+
+Para pedirlo, responde a este correo con tu archivo 3D o escríbenos por
+WhatsApp: ${wa}
+
+Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
+
+— 3DCC Salamanca · impresion3dcc.com`;
+    const html = `<div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#111;">
+  <h2 style="margin:0 0 8px 0;color:#0EA5E9;font-family:Arial,sans-serif;">Tu presupuesto</h2>
+  <p style="margin:0 0 16px 0;color:#444;line-height:1.6;">Esto es lo que has calculado en nuestra web. Listo en ~${sq.diasEstimados} días laborables; precio válido hasta el ${validezTxt}.</p>
+  ${desgloseHtml(sq.lineas, precioServidor)}
+  <div style="text-align:center;margin:20px 0;">${boton(wa, 'Pedirlo por WhatsApp')}</div>
+  <p style="margin:0;color:#444;font-size:13px;line-height:1.6;">O responde a este correo con tu archivo 3D y lo preparamos. Mañana te mandaremos un único recordatorio.</p>
+  <p style="margin:24px 0 0 0;font-size:11px;color:#999;">— 3DCC Salamanca · <a href="${SITIO}" style="color:#999;">impresion3dcc.com</a></p>
+</div>`;
+    const enviado = await correoCliente(email, `Tu presupuesto de impresion 3D: ${precioServidor.toFixed(2)} EUR`, text, html);
+    if (!enviado) return json({ error: 'No hemos podido enviar el email. Inténtalo de nuevo.' }, 502, allowedOrigin);
+    return json({ ok: true, precio_total: precioServidor }, 200, allowedOrigin);
+  }
+
+  // Same contact, same pieces, same price within a day: a double click, a
+  // reload or a second device. Hand back the first code instead of a copy.
+  const firma = (xs: any[]) =>
+    xs.map((a) => `${a.nombre}×${a.cantidad}|${a.material}|${(a.colores ?? []).map((c: any) => c.nombre).join('+')}`)
+      .sort().join(';');
+  const { data: previas } = await supabase
+    .from('quotes')
+    .select('codigo, archivos, valido_hasta')
+    .eq(tieneEmail ? 'email' : 'telefono', tieneEmail ? email : telefono)
+    .eq('precio_total', precioServidor)
+    .neq('estado', 'rechazado')
+    .gte('created_at', new Date(Date.now() - 24 * 3600e3).toISOString())
+    .limit(10);
+  const repetida = (previas ?? []).find((q: any) => firma(q.archivos ?? []) === firma(archivos));
+  if (repetida) {
+    return json(
+      { ok: true, codigo: repetida.codigo, duplicado: true, precio_total: precioServidor, valido_hasta: repetida.valido_hasta },
+      200,
+      allowedOrigin
+    );
+  }
 
   const { data: inserted, error: insErr } = await supabase
     .from('quotes')
@@ -707,13 +898,11 @@ Deno.serve(async (req: Request) => {
     const m: any = metricasServidor;
     const statusUrl = `https://www.impresion3dcc.com/presupuesto?codigo=${encodeURIComponent(codigo)}`;
     const acceptUrl = `${statusUrl}&token=${encodeURIComponent(aceptaToken)}`;
-    const validezTxt = validoHasta.toLocaleDateString('es-ES', {
-      day: '2-digit', month: 'long', year: 'numeric'
-    });
     const coloresDe = (a: any) =>
       (a.colores ?? [])
         .map((c: any) => c.nombre + (c.parte ? ` (${c.parte})` : ''))
-        .join(', ');
+        .join(', ') || 'color por elegir';
+    const quien = nombre || email || telefono;
     const piezasTxt = archivos
       .map((a: any) => {
         const am = a.metricas ?? {};
@@ -747,16 +936,21 @@ Deno.serve(async (req: Request) => {
       })
       .join('');
     const entregaTxt =
-      entrega === 'envio'
-        ? `Envío a: ${direccion.calle}, ${direccion.cp} ${direccion.ciudad} (${direccion.provincia})`
-        : 'Recogida en Salamanca';
+      entrega !== 'envio'
+        ? 'Recogida en Salamanca'
+        : direccion.calle
+          ? `Envío a: ${direccion.calle}, ${direccion.cp} ${direccion.ciudad} (${direccion.provincia})`
+          : `Envío nacional (dirección por pedir${direccion.cp ? `, CP ${direccion.cp}` : ''})`;
+    const waCliente = tieneTelefono
+      ? `https://wa.me/${telefono.replace(/[^\d]/g, '').replace(/^(?=[67]\d{8}$)/, '34')}`
+      : '';
     const text = `
 Nuevo presupuesto ${codigo} — impresion3dcc.com
 ──────────────────────────────────────
 
-Cliente:    ${nombre}
-Email:      ${email}
-Teléfono:   ${telefono || '(no facilitado)'}
+Cliente:    ${nombre || '(sin nombre)'}
+Email:      ${email || '(no facilitado)'}
+Teléfono:   ${telefono || '(no facilitado)'}${waCliente ? ` · ${waCliente}` : ''}
 
 Piezas (${archivos.length}):
 ${piezasTxt}
@@ -786,9 +980,9 @@ IP ${ip} · ${new Date().toISOString()}
   <h2 style="margin:0 0 4px 0;color:#0EA5E9;font-family:Arial,sans-serif;">Presupuesto ${escapeHtml(codigo)}</h2>
   <p style="margin:0 0 16px 0;color:#666;font-size:13px;">Nueva solicitud desde el tasador de impresion3dcc.com</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px;">
-    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Cliente</td><td><strong>${escapeHtml(nombre)}</strong></td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Email</td><td><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Teléfono</td><td>${telefono ? escapeHtml(telefono) : '<em style="color:#999">no facilitado</em>'}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Cliente</td><td><strong>${nombre ? escapeHtml(nombre) : '<em style="color:#999">sin nombre</em>'}</strong></td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Email</td><td>${email ? `<a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>` : '<em style="color:#999">no facilitado</em>'}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Teléfono</td><td>${telefono ? escapeHtml(telefono) : '<em style="color:#999">no facilitado</em>'}${waCliente ? ` · <a href="${waCliente}">WhatsApp</a>` : ''}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Total</td><td>~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Unidades</td><td>× ${cantidad}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${escapeHtml(entregaTxt)}</td></tr>
@@ -818,7 +1012,7 @@ IP ${ip} · ${new Date().toISOString()}
 
     // Confirmation email for the customer.
     const clienteText = `
-Hola ${nombre},
+${nombre ? `Hola ${nombre},` : 'Hola,'}
 
 Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
 
@@ -826,13 +1020,13 @@ Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
 
 Resumen:
 ${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${a.material} (${coloresDe(a)})`).join('\n')}
-  Entrega:      ${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}
+  Entrega:      ${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}
   Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
 
   TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' (envío incluido)' : ''}
 
-Es una estimación orientativa, válida hasta el ${validezTxt}: revisaremos tu
-pieza y te confirmaremos el precio final en breve.
+Es el precio final, válido hasta el ${validezTxt}. Si al revisar tu pieza
+viésemos algo que lo cambie, te avisamos antes de imprimir.
 
 Consulta el estado de tu presupuesto:
 ${statusUrl}
@@ -849,20 +1043,20 @@ ${acceptUrl}
     const clienteHtml = `
 <div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#111;">
   <h2 style="margin:0 0 4px 0;color:#0EA5E9;font-family:Arial,sans-serif;">¡Solicitud recibida!</h2>
-  <p style="margin:0 0 20px 0;color:#444;">Hola ${escapeHtml(nombre)}, hemos recibido tu solicitud de presupuesto. Tu código de referencia:</p>
+  <p style="margin:0 0 20px 0;color:#444;">${nombre ? `Hola ${escapeHtml(nombre)}, h` : 'H'}emos recibido tu solicitud de presupuesto. Tu código de referencia:</p>
   <div style="text-align:center;margin:0 0 24px 0;">
     <span style="display:inline-block;padding:10px 28px;background:#f0f9ff;border:1px solid #0EA5E9;border-radius:6px;font-family:monospace;font-size:22px;font-weight:700;color:#0EA5E9;letter-spacing:0.06em;">${escapeHtml(codigo)}</span>
   </div>
   <table style="width:100%;border-collapse:collapse;font-size:14px;">
     <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${escapeHtml(a.material)} (${escapeHtml(coloresDe(a))})`).join('<br/>')}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? 'Envío nacional (coste a confirmar)' : 'Recogida en Salamanca (gratis)'}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}</td></tr>
     ${sq.cupon ? `<tr><td style="padding:6px 12px 6px 0;color:#666;">Código</td><td>${escapeHtml(sq.cupon)} (−${sq.cuponDescuento.toFixed(2)} €)</td></tr>` : ''}
     <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' <span style="font-size:11px;color:#999;font-weight:400;">(envío incluido)</span>' : ''}</td></tr>
   </table>
   <p style="margin:20px 0;color:#444;line-height:1.6;font-size:13px;">
-    Es una estimación orientativa, <strong>válida hasta el ${validezTxt}</strong>:
-    revisaremos tu pieza y te confirmaremos el precio final en breve.
+    Es el precio final, <strong>válido hasta el ${validezTxt}</strong>. Si al revisar
+    tu pieza viésemos algo que lo cambie, te avisamos antes de imprimir.
   </p>
   <div style="text-align:center;margin:0 0 20px 0;">
     <a href="${acceptUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">Ver estado y aceptar presupuesto</a>
@@ -882,8 +1076,8 @@ ${acceptUrl}
       await client.send({
         from: `3DCC Tasador <${gmailUser}>`,
         to: recipient,
-        replyTo: `${asciiHeader(nombre)} <${email}>`,
-        subject: asciiHeader(`[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} €${sq.cupon ? ` (${sq.cupon})` : ''} — ${nombre}`),
+        ...(tieneEmail ? { replyTo: `${asciiHeader(nombre || email)} <${email}>` } : {}),
+        subject: asciiHeader(`[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} €${sq.cupon ? ` (${sq.cupon})` : ''} — ${quien}`),
         content: text,
         html
       });
@@ -894,14 +1088,17 @@ ${acceptUrl}
     }
 
     try {
-      await client.send({
-        from: `3DCC Salamanca <${gmailUser}>`,
-        to: email,
-        replyTo: recipient,
-        subject: asciiHeader(`Tu presupuesto ${codigo} — 3DCC Salamanca`),
-        content: clienteText,
-        html: clienteHtml
-      });
+      // WhatsApp-only customers get no email: we answer them there.
+      if (tieneEmail) {
+        await client.send({
+          from: `3DCC Salamanca <${gmailUser}>`,
+          to: email,
+          replyTo: recipient,
+          subject: asciiHeader(`Tu presupuesto ${codigo} — 3DCC Salamanca`),
+          content: clienteText,
+          html: clienteHtml
+        });
+      }
     } catch (err) {
       console.error('SMTP customer send failed for', codigo, err);
     } finally {

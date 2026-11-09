@@ -11,6 +11,21 @@ import { AccesoDenegado, useAdminAuth } from '../_components/useAdminAuth';
 import { AdminCabecera } from '../_components/AdminNav';
 import { Abandonos } from './Abandonos';
 import { euros } from '@/lib/recibo/types';
+import { etiquetaOrigen } from '@/lib/tracking';
+
+type Fila = [string, { visitas: number; solicitudes: number }];
+
+/** Sessions per key, and how many of them sent a request. */
+function porClave(claves: Map<string, string>, solicitaron: Set<string>): Fila[] {
+  const m = new Map<string, { visitas: number; solicitudes: number }>();
+  for (const [sesion, k] of claves) {
+    const r = m.get(k) ?? { visitas: 0, solicitudes: 0 };
+    r.visitas++;
+    if (solicitaron.has(sesion)) r.solicitudes++;
+    m.set(k, r);
+  }
+  return [...m].sort((a, b) => b[1].visitas - a[1].visitas);
+}
 
 const ESTADO_LABEL: Record<QuoteEstado, string> = {
   nuevo: 'Nuevo',
@@ -202,6 +217,33 @@ export default function AdminEstadisticas() {
     const conPrecio = sesiones('precio_visto');
     const conSolicitud = sesiones('solicitud_enviada');
     const conPdf = sesiones('pdf_descargado');
+    const conVisita = sesiones('visita');
+    const conFormulario = sesiones('formulario_abierto');
+    const conError = sesiones('formulario_error');
+
+    // Where visits come from and on what device (one 'visita' per session).
+    const origen = new Map<string, string>();
+    const dispositivo = new Map<string, string>();
+    // Postcode chosen for shipping, last one per session: local or national.
+    const zona = new Map<string, string>();
+    const errores = new Map<string, number>();
+    for (const e of [...ev].reverse()) {
+      const p = (e.payload ?? {}) as Record<string, unknown>;
+      if (!e.session_id) continue;
+      if (e.evento === 'visita') {
+        origen.set(e.session_id, etiquetaOrigen(p));
+        dispositivo.set(e.session_id, p.dispositivo === 'movil' ? 'Móvil' : 'Escritorio');
+      } else if (e.evento === 'precio_visto' || e.evento === 'solicitud_enviada') {
+        const cp = typeof p.cp === 'string' ? p.cp : '';
+        zona.set(
+          e.session_id,
+          p.entrega !== 'envio' ? 'Recogida (local)' : !cp ? 'Envío, sin CP' : cp.startsWith('37') ? 'Envío a Salamanca' : `Envío CP ${cp.slice(0, 2)}…`
+        );
+      } else if (e.evento === 'formulario_error') {
+        const m = String(p.motivo ?? '?');
+        errores.set(m, (errores.get(m) ?? 0) + 1);
+      }
+    }
     // Vieron el precio y se fueron sin solicitar ni descargar el PDF.
     const abandonos = [...conPrecio].filter((s) => !conSolicitud.has(s) && !conPdf.has(s)).length;
     // Se fueron mientras se laminaba (o el archivo no se pudo tasar). Solo
@@ -249,7 +291,14 @@ export default function AdminEstadisticas() {
       porMaterial: [...porMaterial.entries()].sort((a, b) => b[1] - a[1]),
       semanas,
       whatsapp,
+      porOrigen: porClave(origen, conSolicitud),
+      porDispositivo: porClave(dispositivo, conSolicitud),
+      porZona: porClave(zona, conSolicitud),
+      errores: [...errores].sort((a, b) => b[1] - a[1]),
       funnel: {
+        visitas: conVisita.size,
+        formularios: conFormulario.size,
+        conError: conError.size,
         sesionesConPieza: conPieza.size,
         precioVisto: conPrecio.size,
         antesDelPrecio,
@@ -270,6 +319,7 @@ export default function AdminEstadisticas() {
   const f = stats.funnel;
   const convSolicitud = f.sesionesConPieza > 0 ? (f.solicitudes / f.sesionesConPieza) * 100 : 0;
   const convAceptado = f.solicitudes > 0 ? (f.aceptados / f.solicitudes) * 100 : 0;
+  const topEmbudo = Math.max(1, f.visitas, f.sesionesConPieza);
   const pctAbandono = f.precioVisto > 0 ? (f.abandonos / f.precioVisto) * 100 : 0;
 
   return (
@@ -313,13 +363,16 @@ export default function AdminEstadisticas() {
       {/* Funnel */}
       <section style={cardStyle}>
         <h2 style={h2Style}>Embudo ({dias} días)</h2>
-        <Bar label="Subieron pieza" value={f.sesionesConPieza} max={Math.max(1, f.sesionesConPieza)} color="#0EA5E9" />
-        <Bar label="Antes del precio" value={f.antesDelPrecio} max={Math.max(1, f.sesionesConPieza)} color="#6b7280" />
-        <Bar label="Vieron el precio" value={f.precioVisto} max={Math.max(1, f.sesionesConPieza)} color="#0EA5E9" />
-        <Bar label="Se fueron sin más" value={f.abandonos} max={Math.max(1, f.sesionesConPieza)} color="#ef4444" />
-        <Bar label="Descargaron PDF" value={f.pdfs} max={Math.max(1, f.sesionesConPieza)} color="#eab308" />
-        <Bar label="Solicitaron" value={f.solicitudes} max={Math.max(1, f.sesionesConPieza)} color="#a855f7" />
-        <Bar label="Aceptaron" value={f.aceptados} max={Math.max(1, f.sesionesConPieza)} color="#10b981" />
+        <Bar label="Visitaron" value={f.visitas} max={topEmbudo} color="#6b7280" />
+        <Bar label="Subieron pieza" value={f.sesionesConPieza} max={topEmbudo} color="#0EA5E9" />
+        <Bar label="Antes del precio" value={f.antesDelPrecio} max={topEmbudo} color="#6b7280" />
+        <Bar label="Vieron el precio" value={f.precioVisto} max={topEmbudo} color="#0EA5E9" />
+        <Bar label="Se fueron sin más" value={f.abandonos} max={topEmbudo} color="#ef4444" />
+        <Bar label="Descargaron PDF" value={f.pdfs} max={topEmbudo} color="#eab308" />
+        <Bar label="Abrieron formulario" value={f.formularios} max={topEmbudo} color="#a855f7" />
+        <Bar label="Error en formulario" value={f.conError} max={topEmbudo} color="#ef4444" />
+        <Bar label="Solicitaron" value={f.solicitudes} max={topEmbudo} color="#a855f7" />
+        <Bar label="Aceptaron" value={f.aceptados} max={topEmbudo} color="#10b981" />
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
           Conversión a solicitud: <strong>{convSolicitud.toFixed(0)}%</strong> ·
           solicitud → aceptado: <strong>{convAceptado.toFixed(0)}%</strong> ·
@@ -336,6 +389,36 @@ export default function AdminEstadisticas() {
           otra persona. Las miniaturas se borran a los 30 días.
         </p>
         <Abandonos eventos={eventos} desde={desde} />
+      </section>
+
+      {/* Traffic */}
+      <section style={cardStyle}>
+        <h2 style={h2Style}>De dónde vienen ({dias} días)</h2>
+        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
+          Visitas al tasador y, al lado, cuántas acabaron en solicitud. Sin tus sesiones: el
+          navegador que entra al admin (o abre la web con ?no-rastrear=1) no cuenta.
+        </p>
+        {[
+          ['Origen', stats.porOrigen],
+          ['Dispositivo', stats.porDispositivo],
+          ['Entrega', stats.porZona]
+        ].map(([titulo, filas]) => (
+          <div key={titulo as string} style={{ marginBottom: 14 }}>
+            <h3 style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 6px' }}>{titulo as string}</h3>
+            {(filas as Fila[]).slice(0, 8).map(([k, r]) => (
+              <Bar key={k} label={k} value={r.visitas} max={Math.max(1, (filas as Fila[])[0][1].visitas)} color="#0EA5E9" suffix={` · ${r.solicitudes} sol.`} />
+            ))}
+            {!(filas as Fila[]).length && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Sin datos aún.</p>}
+          </div>
+        ))}
+        {stats.errores.length > 0 && (
+          <>
+            <h3 style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 6px' }}>Errores del formulario</h3>
+            {stats.errores.slice(0, 6).map(([m, c]) => (
+              <Bar key={m} label={m} value={c} max={stats.errores[0][1]} color="#ef4444" />
+            ))}
+          </>
+        )}
       </section>
 
       {/* WhatsApp */}

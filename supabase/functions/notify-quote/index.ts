@@ -246,6 +246,11 @@ Deno.serve(async (req: Request) => {
     .single();
   if (qErr || !q) return json({ error: 'Presupuesto no encontrado.' }, 404, allowedOrigin);
 
+  // Since tasador v7 a request may come with only a WhatsApp number.
+  if (!q.email) {
+    return json({ error: 'Este cliente no dejó email: avísale por WhatsApp.' }, 400, allowedOrigin);
+  }
+
   const plantilla = PLANTILLAS[q.estado];
   if (!plantilla) {
     return json(

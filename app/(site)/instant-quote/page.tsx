@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import type { Database } from '@/lib/types';
 import { buildSafe } from '@/lib/supabase/buildSafe';
 import { siteUrl } from '@/lib/contacto';
+import { loadResenas } from '@/lib/resenas';
 import { QuoteClient } from './QuoteClient';
 
 export const metadata: Metadata = {
@@ -34,6 +35,6 @@ async function loadData() {
 }
 
 export default async function InstantQuotePage() {
-  const { filamentos, colores } = await loadData();
-  return <QuoteClient filamentos={filamentos} colores={colores} />;
+  const [{ filamentos, colores }, { resumen }] = await Promise.all([loadData(), loadResenas()]);
+  return <QuoteClient filamentos={filamentos} colores={colores} resenas={resumen} />;
 }
