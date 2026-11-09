@@ -1581,17 +1581,11 @@ export function QuoteClient({
                   <span>Total estimado</span>
                   <strong>{euros(quote.total)}</strong>
                 </div>
-                {quote.minimoAplicado && (
-                  <p className="qt-total-note">Se aplica el pedido mínimo.</p>
-                )}
                 <div className="qt-cupon">
                   {cupon ? (
                     <p className={quote.cupon ? 'qt-cupon-ok' : 'qt-cupon-aviso'}>
                       {quote.cupon
-                        ? `Código ${cupon.codigo} aplicado: −${euros(quote.cuponDescuento)}` +
-                          (quote.minimoAplicado
-                            ? `, pero el total no baja del pedido mínimo (${euros(settings.precio_minimo)}).`
-                            : '')
+                        ? `Código ${cupon.codigo} aplicado: −${euros(quote.cuponDescuento)}`
                         : quote.descuentoPct > 0
                           ? `El descuento por cantidad es mayor que el código ${cupon.codigo}; aplicamos ese.`
                           : `El código ${cupon.codigo} es para pedidos desde ${euros(cupon.pedido_minimo)} en piezas.`}
