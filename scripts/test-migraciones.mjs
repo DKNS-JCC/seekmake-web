@@ -1364,12 +1364,14 @@ await check('limpieza_pedidos: descarta a los 15 días, archiva entregados cobra
     await client.query('alter table public.quotes enable trigger touch_quotes');
   };
   const sinRespuesta = await nueva('Limp sin respuesta', 'revisado');
+  const conAdelanto = await nueva('Limp con adelanto', 'revisado');
+  await client.query(`select public.registrar_cobro(p_importe => 5, p_metodo => 'Bizum', p_quote_id => $1)`, [conAdelanto]);
   const reciente = await nueva('Limp reciente', 'revisado');
   const aceptado = await nueva('Limp aceptado viejo', 'aceptado');
   const cobrado = await nueva('Limp entregado cobrado', 'entregado', true);
   const debe = await nueva('Limp entregado sin cobrar', 'entregado');
   const entregadoReciente = await nueva('Limp entregado reciente', 'entregado', true);
-  await viejo(sinRespuesta, 16); await viejo(reciente, 10); await viejo(aceptado, 40);
+  await viejo(sinRespuesta, 16); await viejo(conAdelanto, 20); await viejo(reciente, 10); await viejo(aceptado, 40);
   await viejo(cobrado, 8); await viejo(debe, 30); await viejo(entregadoReciente, 2);
 
   const { rows: [r] } = await client.query('select * from public.limpieza_pedidos()');
@@ -1377,6 +1379,7 @@ await check('limpieza_pedidos: descarta a los 15 días, archiva entregados cobra
   const q = async (id) => quoteDe(id);
   assert((await q(sinRespuesta)).estado === 'rechazado', 'no descartó el presupuesto sin respuesta');
   assert((await q(reciente)).estado === 'revisado', 'descartó uno reciente');
+  assert((await q(conAdelanto)).estado === 'revisado', 'descartó uno con adelanto');
   assert((await q(aceptado)).estado === 'aceptado', 'tocó un aceptado');
   const c = await q(cobrado);
   assert(c.archivado, 'no archivó el entregado y cobrado');

@@ -30,6 +30,7 @@ begin
      set estado = 'rechazado'
    where estado = 'revisado'
      and not archivado
+     and importe_pagado = 0   -- con adelanto está vivo (como isStaleQuote de la 7.2)
      and updated_at < now() - interval '15 days';
   get diagnostics v_desc = row_count;
 
