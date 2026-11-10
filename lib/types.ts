@@ -321,6 +321,18 @@ export type EmpresaDocRow = {
   updated_at: string;
 };
 
+/** Pedido de la Calculadora: el pedido entero (forma de normalizeOrder) va en `data`. */
+export type OrderRow = {
+  empresa: string;
+  id: string;
+  quote_id: string | null;
+  data: Record<string, unknown>;
+  estado: string | null;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type EnvioEstado =
   | 'pendiente'
   | 'etiqueta'
@@ -481,6 +493,19 @@ export type Database = {
         Insert: Omit<EmpresaDocRow, 'updated_at'> & { updated_at?: string };
         Update: Partial<EmpresaDocRow>;
         Relationships: [];
+      };
+      orders: {
+        Row: OrderRow;
+        Insert: Pick<OrderRow, 'empresa' | 'id' | 'data'> & { quote_id?: string | null };
+        Update: Partial<Pick<OrderRow, 'data' | 'quote_id'>>;
+        Relationships: [
+          {
+            foreignKeyName: 'orders_quote_id_fkey';
+            columns: ['quote_id'];
+            referencedRelation: 'quotes';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       envios: {
         Row: Envio;

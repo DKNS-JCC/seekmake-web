@@ -40,7 +40,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const ruta = sinBarra(usePathname() ?? '/admin');
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const actual = GRUPOS.flatMap((g) => g.links).find((l) => l.href === ruta);
+  const actual =
+    ruta === '/admin/encargo' ? { label: 'Nuevo encargo' } : GRUPOS.flatMap((g) => g.links).find((l) => l.href === ruta);
+
+  // Alt+N: «Nuevo encargo» desde cualquier pantalla del admin.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        router.push('/admin/encargo');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [router]);
 
   // The mobile sheet closes when a link is followed and with Esc.
   useEffect(() => {
@@ -59,6 +72,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <div className={'adm' + (abierto ? ' adm-abierto' : '')}>
       <header className="adm-top">
         <span className="adm-top-titulo">3DCC · {actual?.label ?? 'Admin'}</span>
+        <div className="adm-top-acciones">
+        <Link href="/admin/encargo" className="adm-menu-btn" title="Alt+N">+ Encargo</Link>
         <button
           type="button"
           className="adm-menu-btn"
@@ -71,6 +86,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </svg>
           Menú
         </button>
+        </div>
       </header>
 
       <div className="adm-velo" onClick={() => setAbierto(false)} aria-hidden="true" />
@@ -98,6 +114,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 {l.badge}
               </Link>
             ))}
+            {!g.titulo && (
+              <Link
+                href="/admin/encargo"
+                className="btn-primary adm-nuevo"
+                title="Alt+N"
+                aria-current={ruta === '/admin/encargo' ? 'page' : undefined}
+                onClick={() => setAbierto(false)}
+              >
+                Nuevo encargo
+              </Link>
+            )}
           </div>
         ))}
         <div className="adm-side-pie">

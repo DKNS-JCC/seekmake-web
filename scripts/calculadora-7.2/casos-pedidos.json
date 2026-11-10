@@ -1,0 +1,1501 @@
+{
+ "origen": "pedidos reales de 3DCC (exportación del 24 sep. 2026), sin datos personales",
+ "config": {
+  "printers": [
+   {
+    "name": "Creality K1SE Combo",
+    "price_eur": 738,
+    "depreciation_time_h": 3000,
+    "material_diameter_mm": 1.75,
+    "energy_consumption_kwh": 0.15,
+    "service_costs_life_eur": 100
+   },
+   {
+    "name": "Kobra X",
+    "price_eur": 730,
+    "depreciation_time_h": 5000,
+    "material_diameter_mm": 1.75,
+    "energy_consumption_kwh": 0.2,
+    "service_costs_life_eur": 100
+   }
+  ],
+  "filament_types": [
+   {
+    "name": "PLA",
+    "price_per_kg": 20
+   },
+   {
+    "name": "PETG",
+    "price_per_kg": 18
+   },
+   {
+    "name": "PLA SILK/MARBLE",
+    "price_per_kg": 23
+   },
+   {
+    "name": "ASA",
+    "price_per_kg": 24
+   },
+   {
+    "name": "TPU",
+    "price_per_kg": 21
+   },
+   {
+    "name": "PETG CF",
+    "price_per_kg": 23
+   },
+   {
+    "name": "Nylon",
+    "price_per_kg": 38
+   }
+  ],
+  "global_config": {
+   "labor_cost_h": 15,
+   "precio_minimo": 7,
+   "energy_cost_kwh": 0.24
+  }
+ },
+ "casos": [
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Oro",
+     "gramos": 270
+    }
+   ],
+   "horas": 5.7,
+   "cantidad": 1,
+   "diseno": "Alta (Fusion >1h / Artístico)",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 7
+    },
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 128
+    },
+    {
+     "material": "PLA",
+     "color": "Azul Marino",
+     "gramos": 43
+    },
+    {
+     "material": "PLA",
+     "color": "Amarillo",
+     "gramos": 18
+    }
+   ],
+   "horas": 24.3,
+   "cantidad": 50,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 5
+    }
+   ],
+   "horas": 0.1,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 734
+    }
+   ],
+   "horas": 23,
+   "cantidad": 6,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Beige",
+     "gramos": 8
+    },
+    {
+     "material": "PLA",
+     "color": "Verde Prusa",
+     "gramos": 40
+    }
+   ],
+   "horas": 1,
+   "cantidad": 7,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 12.4
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "ASA",
+     "color": "Negro",
+     "gramos": 50
+    }
+   ],
+   "horas": 2,
+   "cantidad": 2,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "ASA",
+     "color": "Negro",
+     "gramos": 5
+    }
+   ],
+   "horas": 0.1,
+   "cantidad": 1,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 875
+    }
+   ],
+   "horas": 32,
+   "cantidad": 4,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 54
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 2,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 1
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 96
+    },
+    {
+     "material": "PLA",
+     "color": "Rojo",
+     "gramos": 71
+    }
+   ],
+   "horas": 10,
+   "cantidad": 24,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 75
+    },
+    {
+     "material": "PLA",
+     "color": "Rojo",
+     "gramos": 75
+    }
+   ],
+   "horas": 8,
+   "cantidad": 50,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 97
+    }
+   ],
+   "horas": 2.5,
+   "cantidad": 50,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 470
+    },
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Oro",
+     "gramos": 80
+    },
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 15
+    }
+   ],
+   "horas": 14,
+   "cantidad": 10,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 560
+    }
+   ],
+   "horas": 14,
+   "cantidad": 7,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 2
+    },
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Cobre",
+     "gramos": 44
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": true,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 1000
+    }
+   ],
+   "horas": 45,
+   "cantidad": 50,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 15
+    },
+    {
+     "material": "TPU",
+     "color": "Negro",
+     "gramos": 33
+    }
+   ],
+   "horas": 5.7,
+   "cantidad": 20,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Media (50%)",
+   "urgente": true,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 206
+    },
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 75
+    },
+    {
+     "material": "PLA",
+     "color": "Gris",
+     "gramos": 118
+    },
+    {
+     "material": "PLA",
+     "color": "Rojo",
+     "gramos": 145
+    }
+   ],
+   "horas": 29,
+   "cantidad": 4,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Rosa",
+     "gramos": 63
+    },
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 5
+    }
+   ],
+   "horas": 1.78,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Marmol",
+     "gramos": 140
+    }
+   ],
+   "horas": 2,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 48
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 6,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG CF",
+     "color": "Negro",
+     "gramos": 5
+    }
+   ],
+   "horas": 0.5,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Alta (100%)",
+   "urgente": true,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Verde Prusa",
+     "gramos": 20
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 46
+    }
+   ],
+   "horas": 3.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 270
+    }
+   ],
+   "horas": 9,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 176
+    }
+   ],
+   "horas": 5.4,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Azul Marino",
+     "gramos": 1292
+    },
+    {
+     "material": "PLA",
+     "color": "Rojo",
+     "gramos": 266
+    }
+   ],
+   "horas": 66.5,
+   "cantidad": 150,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Beige",
+     "gramos": 8
+    },
+    {
+     "material": "PLA",
+     "color": "Verde Prusa",
+     "gramos": 40
+    }
+   ],
+   "horas": 1,
+   "cantidad": 7,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 5
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG CF",
+     "color": "Negro",
+     "gramos": 50
+    }
+   ],
+   "horas": 5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 78
+    }
+   ],
+   "horas": 0.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "ASA",
+     "color": "Negro",
+     "gramos": 101
+    }
+   ],
+   "horas": 4.7,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 148
+    }
+   ],
+   "horas": 5.15,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Azul Marino",
+     "gramos": 114
+    },
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 66
+    }
+   ],
+   "horas": 5.6,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 878
+    }
+   ],
+   "horas": 31,
+   "cantidad": 42,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 113
+    },
+    {
+     "material": "PLA",
+     "color": "Rojo",
+     "gramos": 80
+    }
+   ],
+   "horas": 10,
+   "cantidad": 50,
+   "diseno": "Alta (Fusion >1h / Artístico)",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Bronze",
+     "gramos": 10
+    },
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Marmol",
+     "gramos": 26
+    }
+   ],
+   "horas": 1,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Mínima (10%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Negro",
+     "gramos": 24
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 4,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 1205
+    }
+   ],
+   "horas": 37.5,
+   "cantidad": 156,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": true,
+   "gastoExtra": 7
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 56
+    }
+   ],
+   "horas": 2.5,
+   "cantidad": 1,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 5.85
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 132
+    }
+   ],
+   "horas": 4,
+   "cantidad": 3,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 53
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 5,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 1
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 7
+    },
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 128
+    },
+    {
+     "material": "PLA",
+     "color": "Azul Marino",
+     "gramos": 43
+    },
+    {
+     "material": "PLA",
+     "color": "Amarillo",
+     "gramos": 18
+    }
+   ],
+   "horas": 24.3,
+   "cantidad": 50,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 209
+    },
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 177
+    }
+   ],
+   "horas": 15.5,
+   "cantidad": 2,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Negro",
+     "gramos": 41
+    }
+   ],
+   "horas": 1.78,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Azul Marino",
+     "gramos": 135
+    },
+    {
+     "material": "PLA",
+     "color": "Rojo",
+     "gramos": 135
+    }
+   ],
+   "horas": 12.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 600
+    }
+   ],
+   "horas": 12,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 3.4
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 620
+    }
+   ],
+   "horas": 15,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Alta (100%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 15
+    }
+   ],
+   "horas": 0.5,
+   "cantidad": 1,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Marmol",
+     "gramos": 34
+    },
+    {
+     "material": "PETG",
+     "color": "Negro",
+     "gramos": 75
+    }
+   ],
+   "horas": 0.5,
+   "cantidad": 1,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro",
+     "gramos": 60
+    }
+   ],
+   "horas": 2.2,
+   "cantidad": 5,
+   "diseno": "Básica (slicer)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 4.6
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Negro Azabache",
+     "gramos": 35
+    }
+   ],
+   "horas": 3.3,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 2
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 550
+    }
+   ],
+   "horas": 19,
+   "cantidad": 3,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Rosa",
+     "gramos": 90
+    }
+   ],
+   "horas": 4.25,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "TPU",
+     "color": "Negro",
+     "gramos": 40
+    }
+   ],
+   "horas": 1.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0.6
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG CF",
+     "color": "Negro",
+     "gramos": 83
+    }
+   ],
+   "horas": 6,
+   "cantidad": 3,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0.6
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 36
+    }
+   ],
+   "horas": 3.7,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0.77
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Negro Azabache",
+     "gramos": 4
+    }
+   ],
+   "horas": 0.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Gris",
+     "gramos": 71
+    }
+   ],
+   "horas": 3,
+   "cantidad": 2,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 5.35
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA SILK/MARBLE",
+     "color": "Bronze",
+     "gramos": 36
+    }
+   ],
+   "horas": 1.7,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 3752
+    }
+   ],
+   "horas": 114,
+   "cantidad": 19,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Negro",
+     "gramos": 5
+    }
+   ],
+   "horas": 0.2,
+   "cantidad": 2,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 1.3
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 50
+    }
+   ],
+   "horas": 1.7,
+   "cantidad": 1,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Negro",
+     "gramos": 30
+    }
+   ],
+   "horas": 1,
+   "cantidad": 1,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "Nylon",
+     "color": "Natural",
+     "gramos": 25
+    },
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 5
+    }
+   ],
+   "horas": 2,
+   "cantidad": 1,
+   "diseno": "Media (Fusion <1h)",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Media (50%)",
+   "urgente": true,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 148
+    }
+   ],
+   "horas": 9.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 314
+    }
+   ],
+   "horas": 13.5,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Medio (lijado + ensamblado)",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 6
+    },
+    {
+     "material": "PLA",
+     "color": "Amarillo",
+     "gramos": 13
+    },
+    {
+     "material": "PLA",
+     "color": "Verde Prusa",
+     "gramos": 13
+    },
+    {
+     "material": "PLA",
+     "color": "Azul Marino",
+     "gramos": 6
+    }
+   ],
+   "horas": 4,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "Nylon",
+     "color": "Natural",
+     "gramos": 40
+    }
+   ],
+   "horas": 2,
+   "cantidad": 1,
+   "diseno": "Alta (Fusion >1h / Artístico)",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 1200
+    }
+   ],
+   "horas": 54,
+   "cantidad": 4,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Sencillo (lijado)",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 40.4
+  },
+  {
+   "impresora": "Kobra X",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 600
+    }
+   ],
+   "horas": 8,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PLA",
+     "color": "Blanco",
+     "gramos": 335
+    }
+   ],
+   "horas": 8,
+   "cantidad": 1,
+   "diseno": "No necesario",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Media (50%)",
+   "urgente": false,
+   "gastoExtra": 0
+  },
+  {
+   "impresora": "Creality K1SE Combo",
+   "lineas": [
+    {
+     "material": "PETG",
+     "color": "Blanco",
+     "gramos": 1000
+    }
+   ],
+   "horas": 34,
+   "cantidad": 42,
+   "diseno": "Búsqueda de modelos",
+   "disenoHoras": 0,
+   "postprocesado": "Limpio",
+   "riesgo": "Baja (25%)",
+   "urgente": false,
+   "gastoExtra": 0
+  }
+ ]
+}

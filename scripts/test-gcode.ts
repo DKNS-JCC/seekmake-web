@@ -3,7 +3,9 @@
 //   npx tsx scripts/test-gcode.ts
 
 import { strToU8, zipSync } from 'three/examples/jsm/libs/fflate.module.js';
-import { duracionH, leerLaminado } from '../lib/quote/gcode';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { duracionH, leerDatosLaminado, leerLaminado } from '../lib/quote/gcode';
 import { percentil } from '../lib/quote/estadistica';
 import { check, done, eq, section } from './_assert';
 
@@ -38,6 +40,24 @@ const z = zipSync({ 'Metadata/plate_1.gcode': strToU8(gcode.replace(';TYPE:Suppo
 const l3 = leerLaminado(z);
 eq('gramos desde el zip', l3.pesoG, 14.41);
 check('sin extrusión de soportes', !l3.conSoportes);
+
+section('laminados reales del taller (scripts/laminados)');
+const real = (f: string) => leerDatosLaminado(readFileSync(join(__dirname, 'laminados', f)));
+const k1 = real('k1c-calicat.gcode');
+check('K1C: impresora', k1.impresora === 'Creality K1C');
+eq('K1C: 1 h 31 min 14 s', k1.tiempoH, 1 + 31 / 60 + 14 / 3600, 1e-9);
+check('K1C: 5 ranuras con su posición, también las de 0 g', k1.ranuras.length === 5 && k1.ranuras[3].gramos === 1.61);
+check('K1C: dos colores usados, blanco y gris oscuro',
+  k1.ranuras.filter((r) => r.gramos > 0).map((r) => `${r.tipo} ${r.colorHex}`).join() === 'PLA #FFFFFF,PLA #383838');
+check('K1C: ajustes de filamento', k1.ranuras[0].ajustes === 'SUNLU PLA+ - Tuned' && k1.ranuras[0].densidad === 1.23);
+check('K1C: 25 cambios', k1.cambios === 25);
+// Ranuras 0 y 3: (210 + 536) / 2 × 0,8.
+eq('K1C: purga media por cambio', k1.purgaMm3PorCambio!, ((210 + 536) / 2) * 0.8, 1e-9);
+const kx = real('kobrax-calicat.gcode');
+check('Kobra X: impresora', kx.impresora === 'Anycubic Kobra X');
+eq('Kobra X: la última línea de tiempo (1 h 6 min 32 s), no una de progreso', kx.tiempoH, 1 + 6 / 60 + 32 / 3600, 1e-9);
+eq('Kobra X: gramos con purga incluida', kx.pesoG, 22.98);
+check('sin gcode de gramos u horas: leerDatosLaminado no lanza', leerDatosLaminado(strToU8('; printer_model = X')).tiempoH === 0);
 
 section('percentil');
 eq('mediana', percentil([1, 2, 3, 10], 0.5), 2.5);

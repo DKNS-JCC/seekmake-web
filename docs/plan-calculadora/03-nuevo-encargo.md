@@ -1,6 +1,6 @@
 # Fase 3 — «Nuevo encargo» en /admin
 
-**Estado:** pendiente · **Tamaño:** grande
+**Estado:** hecha en local (10 nov. 2026; sin PR ni despliegue) — falta probar en el navegador la entrada «?solicitud=» y la vista móvil 375 px; la entrada «Últimos laminados» no se construye (pendiente de verificar en el taller) · **Tamaño:** grande
 **Modelo:** Opus (motor y paridad), Sonnet (pantalla e importador)
 **Depende de:** fases 0 y 2 · **Índice:** [plan](../plan-calculadora-en-web.md)
 
@@ -113,3 +113,13 @@ suben los datos → se añaden diseño, error y extras → se pasa el precio.
 - No tocar el tasador público.
 - No dar cifra antes de tener datos del laminador: la pantalla no calcula
   sin gramos y horas.
+
+## Cambios respecto al plan
+
+- Configuración: el motor usa la de la Calculadora (`empresa_docs` 3dcc/config: impresoras, €/kg, €/h, mínimo), no campos nuevos en `quote_settings`, para que web y 7.2 no puedan divergir. De `quote_settings` solo salen la urgencia (`urgencia_recargo_pct`), el riesgo por defecto (`calculadora.error`) y el plazo. Sin migración nueva.
+- Mínimo del encargo = `global_config.precio_minimo` de la Calculadora. **Ojo:** en la exportación del 24 sep. valía 7 €, no 3 €.
+- Paridad: `scripts/test-paridad-calculadora.ts` contra una copia literal de `backend.mjs` 7.2.0 (`scripts/calculadora-7.2/`): 72 pedidos reales (sin datos personales) × 3 configuraciones + 864 combinaciones sintéticas, dinero y campos guardados idénticos.
+- Tiempo: un entero suelto son minutos («91»), con decimales horas («1,5»), por decisión del taller (la 7.2 leía «91» como horas).
+- El bloque «Laminado» va el primero y con el foco (gramos → Tab → tiempo), por el apartado 0.1 de la guía.
+- Purga K1: media de `flush_volumes_matrix` entre las ranuras usadas × `flush_multiplier` × densidad × cambios; sin gcode, 298,4 mm³ por cambio. Se guarda como línea `color: 'Purga'` del desglose multicolor.
+- Teléfono: en `quotes.telefono` y en `orders.data.cliente_telefono` (la 7.2 lo ignora).
