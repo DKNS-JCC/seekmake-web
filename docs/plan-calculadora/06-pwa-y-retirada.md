@@ -1,6 +1,6 @@
 # Fase 6 — PWA y retirada de la Calculadora
 
-**Estado:** pendiente · **Tamaño:** pequeña · **Modelo:** Haiku
+**Estado:** pasos 1 y 2 hechos en local (11 nov. 2026; sin desplegar ni probar la instalación); pasos 3 a 6 pendientes, son del taller · **Tamaño:** pequeña · **Modelo:** Haiku
 **Depende de:** fases 3, 4 y 5 · **Índice:** [plan](../plan-calculadora-en-web.md)
 
 ## Objetivo
