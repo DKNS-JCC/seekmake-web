@@ -21,8 +21,10 @@ herramienta que lo creó.
 
 1. **Menú** según el apartado 7 del índice: Hoy · Pedidos · Nuevo encargo ·
    Taller · Dinero · Web · Ajustes.
-2. **Pedidos:** tablero por estado (columnas en escritorio, lista con
-   filtro por estado en móvil), con los dos orígenes marcados.
+2. **Pedidos:** lista con filtro por estado, en escritorio y en móvil, con
+   los dos orígenes marcados. Sin tablero por columnas (decisión del
+   10 nov. 2026, ver `ux-nuevo-encargo.md`, apartado 0): «Hoy» hace de
+   tablero.
 3. **Ficha del pedido** en pestañas: Resumen (estado, fecha tope, precio,
    señal) · Piezas · Cobros · Envío. Partir el cajón actual en componentes;
    `ReciboPanel` y `EnvioPanel` ya existen.

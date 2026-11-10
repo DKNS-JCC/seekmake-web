@@ -17,6 +17,61 @@ en el móvil (sin el archivo laminado a mano: allí se teclea).
 
 ---
 
+## 0. Decisiones del usuario (10 nov. 2026) — mandan sobre el resto
+
+Este apartado corrige al resto del documento donde se contradigan.
+
+### 0.1 El taller no exporta el gcode
+
+Al laminar, el usuario **envía a la impresora por wifi y nunca exporta el
+`.gcode`**. Arrastrar el archivo le ahorra un paso en la calculadora pero le
+añade otro en el laminador, así que **el arrastre no puede ser el camino
+principal**. «Nuevo encargo» ofrece tres entradas para gramos y horas, y las
+tres rellenan los mismos campos:
+
+1. **Entrada rápida a mano (camino por defecto, siempre visible, también en
+   móvil).** Un único bloque «Laminado» con el foco puesto al abrir la
+   pantalla: gramos → Tab → tiempo. El tiempo admite `1h31`, `1:31`, `91`
+   (minutos) y `1,5` (horas). Impresora y material arrancan con los del
+   último encargo. Multicolor: «+ color» añade otra línea de gramos; en la
+   K1 la purga se estima sola con el número de cambios (un campo). Objetivo:
+   dos datos tecleados y ningún clic para un encargo de un color.
+2. **«Últimos laminados» (cero pasos en el laminador; solo PC con
+   Chrome/Edge).** Un script de post-procesado en el perfil de OrcaSlicer
+   (`post_process`) guarda una copia de cada laminado en una carpeta fija
+   del PC al enviarlo a la impresora. El usuario autoriza esa carpeta una
+   vez (File System Access API, el permiso se recuerda) y la pantalla
+   enseña los tres últimos laminados con nombre, hora, gramos y tiempo: un
+   clic rellena todo como si se hubiera arrastrado. **Por verificar en el
+   taller antes de construirlo:** que Orca y AnycubicSlicerNext ejecutan el
+   script también al enviar por wifi, no solo al exportar. Si no lo hacen,
+   esta entrada se descarta sin tocar las otras dos. El script y sus
+   instrucciones van en `scripts/orca-guardar-laminado/`.
+3. **Arrastrar el `.gcode` o `.gcode.3mf`** sigue funcionando en toda la
+   página, para quien sí lo exporte. Sin protagonismo visual: una línea de
+   ayuda, no una zona grande.
+
+Orden de construcción en la fase 3: 1 y 3 primero (comparten lector y
+campos); la 2 después, y solo si pasa la verificación.
+
+### 0.2 Dudas del apartado 9, resueltas
+
+| # | Decisión |
+|---|---|
+| 1 | Se admite `.gcode.3mf` además de `.gcode` |
+| 2 | Dos botones, «Guardar y avisar» y «Guardar sin avisar», sin diálogo |
+| 3 | Pedidos es una **lista con filtros**, no un tablero por columnas; «Hoy» hace de tablero |
+| 4 | Mínimos distintos como hoy: 3 € encargo, 7 € tasador |
+| 5 | El borrador es local a cada dispositivo; no se sincroniza |
+| 6 | Sin fecha en el alta: siempre hoy |
+| 7 | Cinco niveles de riesgo, los de la Calculadora |
+| 8 | Cambiar el precio de un encargo ya aceptado exige motivo |
+| 9 | Se incluye «el laminado es de 1 unidad → × N» |
+| 10 | Sin botón de WhatsApp por ahora |
+| 11 | Sin abrir `.gcode` con doble clic desde la PWA por ahora |
+
+---
+
 ## 1. Cómo es hoy la Calculadora
 
 ### 1.1 Mapa de pantallas
