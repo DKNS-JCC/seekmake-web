@@ -2,7 +2,7 @@
 // a static-export site needs no PDF library.
 
 import { CONTACTO } from '@/lib/contacto';
-import type { QuoteResult, QuoteSettings } from './pricing';
+import { fechaLarga as fechaPlazo, fechaTope, type QuoteResult, type QuoteSettings } from './pricing';
 import { euros } from '@/lib/recibo/types';
 
 function esc(s: string): string {
@@ -17,7 +17,7 @@ function fechaLarga(ms: number): string {
   });
 }
 
-export function buildQuotePdfHtml(quote: QuoteResult, settings: QuoteSettings): string {
+export function buildQuotePdfHtml(quote: QuoteResult, settings: QuoteSettings, colaH = 0): string {
   const fecha = fechaLarga(Date.now());
   const validez = fechaLarga(Date.now() + settings.validez_dias * 24 * 60 * 60 * 1000);
   const filas = quote.lineas
@@ -43,7 +43,7 @@ export function buildQuotePdfHtml(quote: QuoteResult, settings: QuoteSettings): 
 <table>${filas}<tr class="total"><td>TOTAL ESTIMADO</td><td style="text-align:right;">${euros(quote.total)}</td></tr></table>
 <p class="nota">
   ~${Math.round(quote.pesoG)} g de material · ~${quote.tiempoH.toFixed(1)} h de impresión ·
-  listo en ~${quote.diasEstimados} día${quote.diasEstimados !== 1 ? 's' : ''} laborables.<br>
+  listo antes del ${fechaPlazo(fechaTope(quote.tiempoH, settings, colaH))} si lo pides hoy.<br>
   El precio final se confirma tras revisar las piezas. Contacto: ${CONTACTO.email} · WhatsApp ${CONTACTO.telefono}.
 </p>
 <script>window.onload=function(){window.print();}</script>
@@ -51,10 +51,10 @@ export function buildQuotePdfHtml(quote: QuoteResult, settings: QuoteSettings): 
 }
 
 /** Opens the summary in a new window and triggers the print dialog. */
-export function openQuotePdf(quote: QuoteResult, settings: QuoteSettings): boolean {
+export function openQuotePdf(quote: QuoteResult, settings: QuoteSettings, colaH = 0): boolean {
   const w = window.open('', '_blank', 'width=760,height=900');
   if (!w) return false;
-  w.document.write(buildQuotePdfHtml(quote, settings));
+  w.document.write(buildQuotePdfHtml(quote, settings, colaH));
   w.document.close();
   return true;
 }

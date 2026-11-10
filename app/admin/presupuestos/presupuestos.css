@@ -159,3 +159,20 @@
     background: none; border: 0; padding: 8px 0; cursor: pointer;
     color: #dc2626; font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 2px;
 }
+
+/* Fase 2: avisos de la ficha (precio firme, señal) y notas de una línea */
+.pq-aviso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid #eab308;
+  border-radius: var(--r);
+  font-size: 13px;
+}
+.pq-aviso .btn-outline { padding: 5px 12px; font-size: 11px; }
+.pq-nota { margin: 0 0 14px; color: var(--muted); font-size: 12px; }

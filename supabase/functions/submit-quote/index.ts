@@ -57,7 +57,7 @@ function corsHeaders(origin: string): Record<string, string> {
 // Pricing version of this function. The Pages build refuses to publish a
 // web whose tasador expects a newer server (see deploy-pages.yml): otherwise
 // the customer would see one price and get another one by email.
-const TASADOR_VERSION = '7';
+const TASADOR_VERSION = '8';
 
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
@@ -167,8 +167,10 @@ const DEFAULT_SETTINGS: any = {
   ],
   envio_gratis_desde: 30,
   fraccion_pared: 0.35,
-  plazo_horas_dia: 8,
-  plazo_dias_margen: 1,
+  plazo_horas_dia: 4,
+  plazo_holgura_dias: 2,
+  max_bed_mm: 220,
+  tipos_precio_firme: [],
   recargo_acabado_pct: {
     'Metálico': 10, 'Fluorescente': 10, 'Translucido': 5, 'Textura': 10,
     'Brillante': 5, 'Purpurina': 10, 'Mate': 0, 'Flexible': 15
@@ -228,7 +230,8 @@ function normalizeServerSettings(raw: any): any {
       : DEFAULT_SETTINGS.descuentos_cantidad,
     envio_tramos: r.envio_tramos?.length
       ? [...r.envio_tramos].sort((a: any, b: any) => a.max_g - b.max_g)
-      : DEFAULT_SETTINGS.envio_tramos
+      : DEFAULT_SETTINGS.envio_tramos,
+    tipos_precio_firme: Array.isArray(r.tipos_precio_firme) ? [...r.tipos_precio_firme] : []
   };
   if (s.modo_precio !== 'tarifa') s.modo_precio = 'calculadora';
   if (s.modo_precio === 'calculadora') {
@@ -247,6 +250,53 @@ function normalizeServerSettings(raw: any): any {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+// Plazo: same count as diasPlazo/sumarLaborables in lib/quote/pricing.ts and
+// public.fecha_tope() in SQL. Keep the three in step.
+function diasPlazo(horas: number, settings: any, colaH = 0, diasExtra = 0): number {
+  return (
+    Math.ceil(Math.max(0, colaH + horas) / Math.max(Number(settings.plazo_horas_dia) || 0, 1)) +
+    Math.max(0, Math.round(diasExtra)) +
+    Math.max(0, Math.round(Number(settings.plazo_holgura_dias) || 0))
+  );
+}
+
+function sumarLaborables(desde: string, n: number): string {
+  const d = new Date(`${desde}T00:00:00Z`);
+  const laborable = () => d.getUTCDay() % 6 !== 0;
+  while (!laborable()) d.setUTCDate(d.getUTCDate() + 1);
+  for (let i = Math.max(0, Math.round(n)); i > 0; ) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    if (laborable()) i--;
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+function hoyMadrid(ahora: Date = new Date()): string {
+  return ahora.toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' });
+}
+
+function fechaLarga(iso: string): string {
+  return new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'
+  });
+}
+
+// Precio firme: same rule as tipoPieza/esPrecioFirme in lib/quote/pricing.ts.
+function tipoPieza(numColores: number, cantidad: number, conSoportes: boolean): string {
+  if (numColores > 1) return 'multicolor';
+  if (cantidad > 1) return 'lote';
+  return conSoportes ? 'con soportes' : 'sin soportes';
+}
+
+function esPrecioFirme(piezas: Array<{ tipo: string; metodo: string; cabe: boolean }>, settings: any): boolean {
+  const validos: string[] = settings.tipos_precio_firme ?? [];
+  return (
+    validos.length > 0 &&
+    piezas.length > 0 &&
+    piezas.every((p) => p.metodo === 'capas' && p.cabe && p.tipo !== 'multicolor' && validos.includes(p.tipo))
+  );
+}
 
 function redondear(n: number, paso: number): number {
   if (!(paso > 0)) return r2(n);
@@ -351,12 +401,15 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
     }
 
     const subtotal = redondear(unidad * cantidad, settings.redondeo);
+    const bb = am.bbox_mm;
     piezas.push({
       peso_g: pesoG,
       soporte_g: soporteG,
       tiempo_h: tiempoH,
       relleno_pct: res.relleno_pct,
-      metodo
+      metodo,
+      tipo: tipoPieza(numColores, cantidad, conSoportes),
+      cabe: !!bb && Math.max(Number(bb.x) || 0, Number(bb.y) || 0, Number(bb.z) || 0) <= Number(settings.max_bed_mm)
     });
     lineas.push({
       concepto:
@@ -450,9 +503,7 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
     }
   }
 
-  const diasEstimados =
-    Math.ceil(tiempoTotal / Math.max(settings.plazo_horas_dia, 1)) +
-    Math.max(0, Math.round(settings.plazo_dias_margen));
+  const diasEstimados = diasPlazo(tiempoTotal, settings);
 
   return {
     total: r2(total),
@@ -466,6 +517,7 @@ function computeServerQuote(archivos: any[], entrega: string, settings: any, cup
     tiempoH: r2(tiempoTotal),
     unidades,
     diasEstimados,
+    precioFirme: esPrecioFirme(piezas, settings),
     piezas
   };
 }
@@ -752,6 +804,13 @@ Deno.serve(async (req: Request) => {
   }
 
   const sq = computeServerQuote(archivos, entrega, settings, cupon);
+  // Deadline with the current queue (orientative until accepted, when the
+  // database fixes fecha_prometida with fecha_tope()).
+  const { data: colaH } = await supabase.rpc('plazo_cola_horas');
+  const fechaOrientativa = sumarLaborables(hoyMadrid(), diasPlazo(sq.tiempoH, settings, Number(colaH) || 0));
+  const listoAntes = `listo antes del ${fechaLarga(fechaOrientativa)}`;
+  // With validated types, a non-firm request shows no closed figure.
+  const sinCifraCerrada = (settings.tipos_precio_firme ?? []).length > 0 && !sq.precioFirme;
   const clienteTotal = precioTotal;
   const precioServidor = sq.total;
   const desvio = Math.abs(precioServidor - clienteTotal) > 0.01;
@@ -777,6 +836,7 @@ Deno.serve(async (req: Request) => {
     peso_g: sq.pesoG,
     tiempo_h: sq.tiempoH,
     dias_estimados: sq.diasEstimados,
+    fecha_orientativa: fechaOrientativa,
     piezas: archivos.length
   };
   const desgloseServidor = {
@@ -811,7 +871,7 @@ Este es el presupuesto que has calculado en impresion3dcc.com:
 
 ${sq.lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
 
-  TOTAL: ${precioServidor.toFixed(2)} € · listo en ~${sq.diasEstimados} días laborables
+  TOTAL: ${precioServidor.toFixed(2)} € · ${listoAntes}
   Válido hasta el ${validezTxt}.
 
 Para pedirlo, responde a este correo con tu archivo 3D o escríbenos por
@@ -822,7 +882,7 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
 — 3DCC Salamanca · impresion3dcc.com`;
     const html = `<div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#111;">
   <h2 style="margin:0 0 8px 0;color:#0EA5E9;font-family:Arial,sans-serif;">Tu presupuesto</h2>
-  <p style="margin:0 0 16px 0;color:#444;line-height:1.6;">Esto es lo que has calculado en nuestra web. Listo en ~${sq.diasEstimados} días laborables; precio válido hasta el ${validezTxt}.</p>
+  <p style="margin:0 0 16px 0;color:#444;line-height:1.6;">Esto es lo que has calculado en nuestra web. ${listoAntes[0].toUpperCase() + listoAntes.slice(1)}; precio válido hasta el ${validezTxt}.</p>
   ${desgloseHtml(sq.lineas, precioServidor)}
   <div style="text-align:center;margin:20px 0;">${boton(wa, 'Pedirlo por WhatsApp')}</div>
   <p style="margin:0;color:#444;font-size:13px;line-height:1.6;">O responde a este correo con tu archivo 3D y lo preparamos. Mañana te mandaremos un único recordatorio.</p>
@@ -873,6 +933,7 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
       metricas: metricasServidor,
       desglose: desgloseServidor,
       precio_total: precioServidor,
+      precio_firme: sq.precioFirme,
       cupon: sq.cupon,
       valido_hasta: validoHasta.toISOString(),
       ip_hash: ipHash
@@ -959,7 +1020,7 @@ Total:      ~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión
 
 Unidades:   ${cantidad}
 Entrega:    ${entregaTxt}
-Plazo est.: ~${m?.dias_estimados ?? '—'} días laborables
+Plazo est.: ${listoAntes}${sq.precioFirme ? '\nPrecio:     FIRME (no se puede cambiar sin rehacer el presupuesto)' : ''}
 
 Desglose:
 ${lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
@@ -986,7 +1047,8 @@ IP ${ip} · ${new Date().toISOString()}
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Total</td><td>~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Unidades</td><td>× ${cantidad}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${escapeHtml(entregaTxt)}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>${listoAntes}</td></tr>
+    ${sq.precioFirme ? '<tr><td style="padding:6px 12px 6px 0;color:#666;">Precio</td><td><strong>Firme</strong></td></tr>' : ''}
   </table>
   <h3 style="margin:24px 0 8px 0;font-size:14px;color:#666;text-transform:uppercase;letter-spacing:0.1em;">Piezas (${archivos.length})</h3>
   <ul style="list-style:none;padding:0;margin:0;">${piezasHtml}</ul>
@@ -1021,12 +1083,14 @@ Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
 Resumen:
 ${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${a.material} (${coloresDe(a)})`).join('\n')}
   Entrega:      ${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}
-  Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
+  Plazo:        ${listoAntes}${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
 
   TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' (envío incluido)' : ''}
 
-Es el precio final, válido hasta el ${validezTxt}. Si al revisar tu pieza
-viésemos algo que lo cambie, te avisamos antes de imprimir.
+${sinCifraCerrada
+  ? 'Te confirmamos el precio en menos de 24 h, después de revisar tu pieza.'
+  : `Es el precio final, válido hasta el ${validezTxt}. Si al revisar tu pieza
+viésemos algo que lo cambie, te avisamos antes de imprimir.`}
 
 Consulta el estado de tu presupuesto:
 ${statusUrl}
@@ -1050,13 +1114,15 @@ ${acceptUrl}
   <table style="width:100%;border-collapse:collapse;font-size:14px;">
     <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${escapeHtml(a.material)} (${escapeHtml(coloresDe(a))})`).join('<br/>')}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo</td><td>${listoAntes}${entrega === 'envio' ? ' + envío' : ''}</td></tr>
     ${sq.cupon ? `<tr><td style="padding:6px 12px 6px 0;color:#666;">Código</td><td>${escapeHtml(sq.cupon)} (−${sq.cuponDescuento.toFixed(2)} €)</td></tr>` : ''}
     <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' <span style="font-size:11px;color:#999;font-weight:400;">(envío incluido)</span>' : ''}</td></tr>
   </table>
   <p style="margin:20px 0;color:#444;line-height:1.6;font-size:13px;">
-    Es el precio final, <strong>válido hasta el ${validezTxt}</strong>. Si al revisar
-    tu pieza viésemos algo que lo cambie, te avisamos antes de imprimir.
+    ${sinCifraCerrada
+      ? 'Te confirmamos el precio en <strong>menos de 24 h</strong>, después de revisar tu pieza.'
+      : `Es el precio final, <strong>válido hasta el ${validezTxt}</strong>. Si al revisar
+    tu pieza viésemos algo que lo cambie, te avisamos antes de imprimir.`}
   </p>
   <div style="text-align:center;margin:0 0 20px 0;">
     <a href="${acceptUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">Ver estado y aceptar presupuesto</a>

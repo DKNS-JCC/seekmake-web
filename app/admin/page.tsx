@@ -8,12 +8,13 @@ import { mensajeDeError } from '@/lib/errors';
 import { useAdminAuth, AccesoDenegado } from './_components/useAdminAuth';
 import { AdminCabecera } from './_components/AdminNav';
 import { ErrorBanner } from './_components/ErrorBanner';
+import { hoyMadrid, senalPendiente } from '@/lib/quote/pricing';
 
 // "Hoy": what needs doing, oldest first. Each row opens the quote.
 type Fila = Pick<
   Quote,
   'id' | 'codigo' | 'nombre' | 'estado' | 'pago' | 'entrega' | 'precio_total' | 'precio_final' |
-  'importe_pagado' | 'created_at' | 'updated_at' | 'valido_hasta'
+  'importe_pagado' | 'created_at' | 'updated_at' | 'valido_hasta' | 'fecha_prometida' | 'urgente'
 >;
 
 const DIA = 24 * 60 * 60 * 1000;
@@ -80,7 +81,7 @@ export default function AdminHoy() {
     if (!authed) return;
     supabase()
       .from('quotes')
-      .select('id, codigo, nombre, estado, pago, entrega, precio_total, precio_final, importe_pagado, created_at, updated_at, valido_hasta')
+      .select('id, codigo, nombre, estado, pago, entrega, precio_total, precio_final, importe_pagado, created_at, updated_at, valido_hasta, fecha_prometida, urgente')
       .eq('archivado', false)
       .in('estado', ['nuevo', 'revisado', 'aceptado', 'imprimiendo', 'listo'])
       .order('created_at', { ascending: true })
@@ -96,7 +97,20 @@ export default function AdminHoy() {
   const de = (...e: Fila['estado'][]) => (filas ?? []).filter((q) => e.includes(q.estado));
   const nuevos = de('nuevo');
   const esperando = de('revisado').sort((a, b) => a.valido_hasta.localeCompare(b.valido_hasta));
-  const enMarcha = de('aceptado', 'imprimiendo');
+  // Por imprimir: lo que antes vence primero (sin fecha, al final).
+  const enMarcha = de('aceptado', 'imprimiendo').sort((a, b) =>
+    (a.fecha_prometida ?? '9999').localeCompare(b.fecha_prometida ?? '9999')
+  );
+  const hoy = hoyMadrid();
+  const plazoDe = (q: Fila): string => {
+    if (!q.fecha_prometida) return 'sin fecha';
+    const d = Math.round((Date.parse(q.fecha_prometida) - Date.parse(hoy)) / DIA);
+    const f = new Date(`${q.fecha_prometida}T12:00:00Z`).toLocaleDateString('es-ES', {
+      weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'
+    });
+    // ponytail: «en riesgo» = vence en ≤ 1 día natural; afinar con la puntualidad medida.
+    return d < 0 ? `fuera de plazo (${f})` : d <= 1 ? `en riesgo · antes del ${f}` : `antes del ${f}`;
+  };
   const listos = de('listo');
   const sinCobrar = de('aceptado', 'imprimiendo', 'listo').filter((q) => q.pago !== 'pagado');
   const pendiente = sinCobrar.reduce(
@@ -107,7 +121,7 @@ export default function AdminHoy() {
   return (
     <div>
       <AdminCabecera titulo="Hoy">
-        Lo que tienes pendiente, lo más antiguo primero. Toca un pedido para abrirlo.
+        Lo que tienes pendiente: lo por imprimir, por fecha prometida; el resto, lo más antiguo primero. Toca un pedido para abrirlo.
       </AdminCabecera>
       {error && <ErrorBanner>{error}</ErrorBanner>}
       {filas === null && !error ? (
@@ -127,6 +141,18 @@ export default function AdminHoy() {
               filas={nuevos}
               detalle={(q) => `llegó ${hace(q.created_at)}`}
               verTodos="/admin/presupuestos?estado=nuevo"
+            />
+            <Grupo
+              titulo="Por imprimir"
+              vacio="Nada aceptado pendiente de imprimir."
+              filas={enMarcha}
+              detalle={(q) =>
+                plazoDe(q) +
+                (q.urgente ? ' · urgente' : '') +
+                (q.estado === 'imprimiendo' ? ' · en la impresora' : '') +
+                (senalPendiente(Number(q.precio_final ?? q.precio_total), Number(q.importe_pagado)) ? ' · señal pendiente' : '')
+              }
+              verTodos="/admin/presupuestos?estado=aceptado"
             />
             <Grupo
               titulo="Para entregar"

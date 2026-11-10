@@ -1187,6 +1187,161 @@ await check('admin lee y escribe orders de 3DCC; anon y usuario sin claim no ven
   assert((await sesion({ sub: SIN_CLAIM }, `update public.orders set data = '{}' returning id`)).length === 0, 'un usuario sin claim actualiza orders');
 });
 
+// ── Pedido estándar: fecha prometida y precio firme (20261110170000) ───────
+console.log('\n▸ Pedido estándar (fase 2)');
+await comoAdmin();
+const val1 = async (sql, params = []) => Object.values((await client.query(sql, params)).rows[0])[0];
+const iso = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+// pg convierte date a Date en hora local: se pide como texto.
+const fechaSql = async (sql, params = []) => iso(await val1(`select (${sql})::text`, params));
+
+await check('ajustes: 4 h/día, 2 días de holgura, lista de tipos firmes vacía', async () => {
+  const c = await val1('select config from public.quote_settings where id = 1');
+  assert(Number(c.plazo_horas_dia) === 4, `plazo_horas_dia ${c.plazo_horas_dia}`);
+  assert(Number(c.plazo_holgura_dias) === 2, `holgura ${c.plazo_holgura_dias}`);
+  assert(Array.isArray(c.tipos_precio_firme) && c.tipos_precio_firme.length === 0, JSON.stringify(c.tipos_precio_firme));
+  assert(!('plazo_dias_margen' in c), 'sigue plazo_dias_margen');
+});
+
+await check('sumar_laborables: salta fines de semana (mismos casos que test-pricing)', async () => {
+  // Mismos casos que scripts/test-pricing.ts (sumarLaborables).
+  for (const [desde, n, esperado] of [
+    ['2026-11-10', 2, '2026-11-12'], // martes + 2 → jueves
+    ['2026-11-13', 1, '2026-11-16'], // viernes + 1 → lunes
+    ['2026-11-12', 3, '2026-11-17'], // jueves + 3 → martes
+    ['2026-11-14', 0, '2026-11-16'], // sábado + 0 → lunes
+    ['2026-11-15', 2, '2026-11-18']  // domingo + 2 → miércoles
+  ]) {
+    const r = await fechaSql('public.sumar_laborables($1::date, $2)', [desde, n]);
+    assert(r === esperado, `${desde} + ${n} = ${r}, esperaba ${esperado}`);
+  }
+});
+
+await check('fecha_tope: cola + horas entre 4 h/día + extra + holgura; urgente ignora la cola', async () => {
+  const cola = Number(await val1('select public.plazo_cola_horas()'));
+  const esperada = (dias) => fechaSql('public.sumar_laborables(public.en_madrid(now())::date, $1)', [dias]);
+  const caso = async (args, dias) => {
+    const r = await fechaSql(`public.fecha_tope(${args})`);
+    const e = await esperada(dias);
+    assert(r === e, `fecha_tope(${args}) = ${r}, esperaba ${e} (${dias} días, cola ${cola} h)`);
+  };
+  await caso('6', Math.ceil((cola + 6) / 4) + 2);
+  await caso('6, 3', Math.ceil((cola + 6) / 4) + 3 + 2);
+  await caso('6, 0, true', Math.ceil(6 / 4) + 2);
+  await caso('0, 0, true', 2);
+  // Un pedido aceptado más alarga la cola de los siguientes.
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, estado, metricas, archivos)
+    values ('Cola', 'cola@example.com', '6', 'PLA', 1, 'recogida', 10, 'aceptado', '{"tiempo_h": 40}', '[]')
+    returning id`);
+  const cola2 = Number(await val1('select public.plazo_cola_horas()'));
+  assert(Math.abs(cola2 - cola - 40) < 0.01, `cola ${cola} → ${cola2}`);
+  assert(Math.abs(Number(await val1('select public.plazo_cola_horas($1)', [q.id])) - cola) < 0.01, 'p_excluir no excluye');
+  await client.query('delete from public.quotes where id = $1', [q.id]);
+});
+
+let plazoQuote;
+await check('al aceptar se fija la fecha prometida; el pedido de la Calculadora sigue a la par', async () => {
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, estado, archivos, metricas)
+    values ('Plazo', 'plazo@example.com', '6', 'PLA', 1, 'recogida', 12, 'revisado',
+      '[{"nombre":"pieza.stl","cantidad":2,"metricas":{"peso_g":20,"tiempo_h":3}}]', '{"tiempo_h": 6}')
+    returning *`);
+  plazoQuote = q;
+  assert(q.fecha_prometida === null, 'fecha antes de aceptar');
+  const o = await ordenDeQuote(q.id);
+  assert(Number(o.data.horas) === 6, `horas del pedido ${o.data.horas}`);
+  const cola = Number(await val1('select public.plazo_cola_horas($1)', [q.id]));
+  const e = await fechaSql('public.sumar_laborables(public.en_madrid(now())::date, $1)', [Math.ceil((cola + 6) / 4) + 2]);
+  await client.query(`update public.quotes set estado = 'aceptado', aceptado_at = now() where id = $1`, [q.id]);
+  const f = await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]);
+  assert(f === e, `fecha_prometida ${f}, esperaba ${e}`);
+  const o2 = await ordenDeQuote(q.id);
+  assert(o2.data.estado === 'Aceptado' && o2.data.accepted_at, `pedido en ${o2.data.estado}`);
+  // La fecha no se mueve al imprimir y el admin puede corregirla a mano.
+  await client.query(`update public.quotes set estado = 'imprimiendo' where id = $1`, [q.id]);
+  assert(await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]) === f, 'la fecha cambió al imprimir');
+  await client.query(`update public.quotes set fecha_prometida = '2030-01-15' where id = $1`, [q.id]);
+  assert(await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]) === '2030-01-15', 'no se pudo corregir a mano');
+  // Urgente en marcha: recalcula sin cola.
+  await client.query(`update public.quotes set urgente = true where id = $1`, [q.id]);
+  const u = await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]);
+  const eu = await fechaSql('public.sumar_laborables(public.en_madrid(now())::date, $1)', [Math.ceil(6 / 4) + 2]);
+  assert(u === eu, `urgente ${u}, esperaba ${eu}`);
+});
+
+await check('listo_at al pasar a listo; get_quote_plazo para anon', async () => {
+  await client.query(`update public.quotes set estado = 'listo' where id = $1`, [plazoQuote.id]);
+  const { rows: [r] } = await client.query('select listo_at from public.quotes where id = $1', [plazoQuote.id]);
+  assert(r.listo_at, 'sin listo_at');
+  const plazo = await cuponComoAnon('select fecha_prometida::text as f, fecha_orientativa::text as o, listo_at from public.get_quote_plazo($1)', [plazoQuote.codigo]);
+  assert(plazo[0]?.f && !plazo[0].o && plazo[0].listo_at, JSON.stringify(plazo));
+  // Sin aceptar: fecha orientativa, sin fecha prometida.
+  const { rows: [n] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, metricas, archivos)
+    values ('Orientativa', 'or@example.com', '6', 'PLA', 1, 'recogida', 9, '{"tiempo_h": 2}', '[]') returning codigo`);
+  const p2 = await cuponComoAnon('select fecha_prometida, fecha_orientativa::text as o from public.get_quote_plazo($1)', [n.codigo]);
+  assert(!p2[0].fecha_prometida && /^\d{4}-\d{2}-\d{2}$/.test(p2[0].o), JSON.stringify(p2));
+  const cola = await cuponComoAnon('select public.plazo_cola_horas() as h');
+  assert(Number(cola[0].h) >= 0, 'anon no lee la cola');
+});
+
+await check('precio firme: el admin no cambia el precio; la Calculadora no lo pisa; rehacer pide motivo', async () => {
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, precio_firme, archivos)
+    values ('Firme', 'firme@example.com', '6', 'PLA', 1, 'recogida', 20, true,
+      '[{"nombre":"f.stl","cantidad":1,"metricas":{"peso_g":30,"tiempo_h":2}}]')
+    returning *`);
+  let lanzo = false;
+  try { await client.query('update public.quotes set precio_final = 25 where id = $1', [q.id]); } catch { lanzo = true; }
+  assert(lanzo, 'el admin subió un precio firme');
+  await client.query('update public.quotes set precio_final = 20 where id = $1', [q.id]);
+  // Guardado de la Calculadora con otro precio: se guarda el pedido, no el precio.
+  const o = await ordenDeQuote(q.id);
+  await guardarPedido('3dcc', o.id, { ...o.data, precio_final: 30, last_status_update: new Date().toISOString() });
+  const { rows: [tras] } = await client.query('select precio_final from public.quotes where id = $1', [q.id]);
+  assert(Number(tras.precio_final) === 20, `precio tras guardar en la Calculadora: ${tras.precio_final}`);
+  assert(Number((await ordenDeQuote(q.id)).data.precio_final) === 30, 'el guardado del pedido se perdió');
+  // Quitar el precio firme a mano sin motivo: no.
+  lanzo = false;
+  try { await client.query('update public.quotes set precio_firme = false where id = $1', [q.id]); } catch { lanzo = true; }
+  assert(lanzo, 'se quitó el precio firme sin motivo');
+  lanzo = false;
+  try { await client.query(`select public.rehacer_presupuesto($1, '  ')`, [q.id]); } catch { lanzo = true; }
+  assert(lanzo, 'rehacer sin motivo');
+  await client.query(`update public.quotes set estado = 'aceptado' where id = $1`, [q.id]);
+  const token = (await client.query('select acepta_token from public.quotes where id = $1', [q.id])).rows[0].acepta_token;
+  await client.query(`select public.rehacer_presupuesto($1, 'Pide 2 unidades')`, [q.id]);
+  const { rows: [r] } = await client.query('select * from public.quotes where id = $1', [q.id]);
+  assert(!r.precio_firme && r.rehecho_motivo === 'Pide 2 unidades' && r.rehecho_at, 'no quedó rehecho');
+  assert(r.estado === 'revisado' && !r.aceptado_at && !r.fecha_prometida && r.acepta_token !== token, 'no reinició la aceptación');
+  await client.query('update public.quotes set precio_final = 35 where id = $1', [q.id]);
+  // Un anónimo no puede rehacer.
+  lanzo = false;
+  await client.query('begin');
+  try {
+    await client.query('set local role anon');
+    await comoAnon();
+    await client.query(`select public.rehacer_presupuesto($1, 'x')`, [q.id]);
+  } catch { lanzo = true; } finally { await client.query('rollback'); await comoAdmin(); }
+  assert(lanzo, 'anon rehízo un presupuesto');
+});
+
+await check('desvío: coste real − coste estimado del pedido del tasador', async () => {
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, archivos)
+    values ('Desvío', 'desvio@example.com', '6', 'PLA', 1, 'recogida', 15,
+      '[{"nombre":"d.stl","cantidad":1,"metricas":{"peso_g":50,"tiempo_h":2}}]')
+    returning id`);
+  const o = await ordenDeQuote(q.id);
+  const est = Number(o.data.coste_bruto);
+  let { rows: [r] } = await client.query('select coste_estimado, coste_real, desvio_coste from public.quotes where id = $1', [q.id]);
+  assert(Number(r.coste_estimado) === est && Number(r.desvio_coste) === 0, JSON.stringify(r));
+  await guardarPedido('3dcc', o.id, { ...o.data, coste_bruto: est + 1.5 });
+  ({ rows: [r] } = await client.query('select coste_estimado, coste_real, desvio_coste from public.quotes where id = $1', [q.id]));
+  assert(Number(r.coste_estimado) === est && Math.abs(Number(r.desvio_coste) - 1.5) < 0.001, JSON.stringify(r));
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();

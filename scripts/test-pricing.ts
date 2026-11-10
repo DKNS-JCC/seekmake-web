@@ -10,6 +10,15 @@ import {
   costeHoraMaquina,
   normalizeSettings,
   precioKgDe,
+  diasPlazo,
+  sumarLaborables,
+  fechaTope,
+  hoyMadrid,
+  fechaLarga,
+  esPrecioFirme,
+  tipoPieza,
+  cabeEnCama,
+  senalPendiente,
   type PiezaInput,
   type QuoteSettings
 } from '../lib/quote/pricing';
@@ -18,6 +27,9 @@ import { analizarPieza } from '../lib/quote/estimador/analizar';
 import { configAnalisis } from '../lib/quote/estimador';
 import { caja, malla } from './_mallas';
 import { check, done, eq, section } from './_assert';
+
+const igual = (label: string, got: unknown, expected: unknown) =>
+  check(label, got === expected, `got ${got}, expected ${expected}`);
 
 function metrics(volumenCm3: number, alturaMm = 100, soporteCm3 = 0): MeshMetrics {
   return {
@@ -215,10 +227,45 @@ for (const [nombre, r] of [
 }
 
 section('plazo');
-check('incluye el margen de días', base.diasEstimados >= S.plazo_dias_margen + 1,
+check('incluye la holgura', base.diasEstimados >= S.plazo_holgura_dias + 1,
   `${base.diasEstimados} días`);
 const grande = computeQuote([pieza({ cantidad: 10 })], S);
 check('más unidades, más plazo', grande.diasEstimados > base.diasEstimados);
+igual('por defecto: 4 h/día y 2 días de holgura', [S.plazo_horas_dia, S.plazo_holgura_dias].join(), '4,2');
+// Mismos casos que la prueba de public.sumar_laborables (test-migraciones.mjs).
+for (const [desde, n, esperado] of [
+  ['2026-11-10', 2, '2026-11-12'],
+  ['2026-11-13', 1, '2026-11-16'],
+  ['2026-11-12', 3, '2026-11-17'],
+  ['2026-11-14', 0, '2026-11-16'],
+  ['2026-11-15', 2, '2026-11-18']
+] as const) {
+  igual(`sumarLaborables(${desde}, ${n})`, sumarLaborables(desde, n), esperado);
+}
+// Mismos casos que public.fecha_tope: ceil((cola + h) / 4) + extra + 2.
+eq('6 h sin cola: 2 + 2 días', diasPlazo(6, S), 4);
+eq('6 h con 13 h de cola: 5 + 2', diasPlazo(6, S, 13), 7);
+eq('6 h + 3 días de diseño', diasPlazo(6, S, 0, 3), 7);
+eq('0 h: solo la holgura', diasPlazo(0, S), 2);
+igual('fechaTope = hoy + diasPlazo laborables', fechaTope(6, S, 13, '2026-11-13'), '2026-11-24');
+igual('hoy en Madrid, no en UTC', hoyMadrid(new Date('2026-11-10T23:30:00Z')), '2026-11-11');
+igual('fecha larga', fechaLarga('2026-11-14'), 'sábado, 14 de noviembre');
+
+section('precio firme');
+check('con la lista vacía nunca es firme', !base.precioFirme && S.tipos_precio_firme.length === 0);
+const firmeS = normalizeSettings({ tipos_precio_firme: ['sin soportes', 'lote'] });
+const p1 = { tipo: 'sin soportes' as const, metodo: 'capas' as const, cabe: true };
+check('tipo validado, por capas y cabe: firme', esPrecioFirme([p1], firmeS));
+check('aproximada: no', !esPrecioFirme([{ ...p1, metodo: 'aproximado' }], firmeS));
+check('no cabe en la cama: no', !esPrecioFirme([{ ...p1, cabe: false }], firmeS));
+check('tipo sin validar: no', !esPrecioFirme([{ ...p1, tipo: 'con soportes' }], firmeS));
+check('multicolor nunca, aunque esté en la lista',
+  !esPrecioFirme([{ ...p1, tipo: 'multicolor' }], normalizeSettings({ tipos_precio_firme: ['multicolor'] })));
+check('una pieza no firme tumba el pedido', !esPrecioFirme([p1, { ...p1, tipo: 'con soportes' }], firmeS));
+igual('tipos', [tipoPieza(2, 1, false), tipoPieza(1, 3, true), tipoPieza(1, 1, true), tipoPieza(1, 1, false)].join(),
+  'multicolor,lote,con soportes,sin soportes');
+check('cabe en la cama', cabeEnCama({ x: 220, y: 10, z: 10 }, S) && !cabeEnCama({ x: 221, y: 10, z: 10 }, S));
+check('señal: pendiente bajo la mitad', senalPendiente(30, 14.99) && !senalPendiente(30, 15));
 
 section('soportes (aproximación)');
 const conSoporte = computeQuote([pieza({ metrics: metrics(200, 100, 100) })], S);
