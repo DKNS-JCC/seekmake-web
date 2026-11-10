@@ -14,6 +14,7 @@ import {
   type QuoteSettings
 } from '@/lib/quote/pricing';
 import { PERFIL_K1SE, MATERIALES_K1SE, type PerfilImpresora } from '@/lib/quote/estimador';
+import { percentil } from '@/lib/quote/estadistica';
 import { Field, inputStyle } from '../_components/Field';
 import { SaveButton, SaveState } from '../_components/SaveButton';
 import { mensajeDeError } from '@/lib/errors';
@@ -137,6 +138,7 @@ export default function AdminTarifas() {
 
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [calib, setCalib] = useState<CalibracionTasadorRow[] | null>(null);
+  const [tipos, setTipos] = useState<Record<string, string>>({});
   const [calibErr, setCalibErr] = useState<string | null>(null);
   const [todasImpresoras, setTodasImpresoras] = useState(false);
 
@@ -148,29 +150,51 @@ export default function AdminTarifas() {
         if (err) setCalibErr(mensajeDeError(err, 'Falta aplicar la migración 0024'));
         else setCalib(data ?? []);
       });
+    supabase()
+      .rpc('tasador_tipos')
+      .then(({ data }) => setTipos(Object.fromEntries((data ?? []).map((r) => [r.codigo, r.tipo]))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const filasCalib = useMemo(
+    () =>
+      (calib ?? []).filter(
+        (r) =>
+          (r.estimador ?? '').includes('capas') &&
+          (todasImpresoras || /k1/i.test(r.impresora ?? '')) &&
+          Number(r.web_peso_g) > 0 && Number(r.real_peso_g) > 0 &&
+          Number(r.web_tiempo_h) > 0 && Number(r.real_horas) > 0
+      ),
+    [calib, todasImpresoras]
+  );
+  const mediana = (xs: number[]) => percentil(xs, 0.5);
   const precision = useMemo(() => {
-    const filas = (calib ?? []).filter(
-      (r) =>
-        (r.estimador ?? '').includes('capas') &&
-        (todasImpresoras || /k1/i.test(r.impresora ?? '')) &&
-        Number(r.web_peso_g) > 0 && Number(r.real_peso_g) > 0 &&
-        Number(r.web_tiempo_h) > 0 && Number(r.real_horas) > 0
-    );
-    const mediana = (xs: number[]) => {
-      const o = [...xs].sort((a, b) => a - b);
-      const m = Math.floor(o.length / 2);
-      return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
-    };
-    if (!filas.length) return { n: 0, peso: 1, tiempo: 1 };
+    if (!filasCalib.length) return { n: 0, peso: 1, tiempo: 1 };
     return {
-      n: filas.length,
-      peso: mediana(filas.map((r) => Number(r.real_peso_g) / Number(r.web_peso_g))),
-      tiempo: mediana(filas.map((r) => Number(r.real_horas) / Number(r.web_tiempo_h)))
+      n: filasCalib.length,
+      peso: mediana(filasCalib.map((r) => Number(r.real_peso_g) / Number(r.web_peso_g))),
+      tiempo: mediana(filasCalib.map((r) => Number(r.real_horas) / Number(r.web_tiempo_h)))
     };
-  }, [calib, todasImpresoras]);
+  }, [filasCalib]);
+  // Real ÷ web por tipo de pieza: mediana y percentil 90, nunca una media global.
+  const porTipo = useMemo(
+    () =>
+      ['sin soportes', 'con soportes', 'multicolor', 'lote'].map((tipo) => {
+        const f = filasCalib.filter((r) => (tipos[r.codigo] ?? 'sin soportes') === tipo);
+        const col = (num: (r: CalibracionTasadorRow) => number) => {
+          const xs = f.map(num).filter((x) => Number.isFinite(x) && x > 0);
+          return xs.length ? { med: percentil(xs, 0.5), p90: percentil(xs, 0.9) } : null;
+        };
+        return {
+          tipo,
+          n: f.length,
+          peso: col((r) => Number(r.real_peso_g) / Number(r.web_peso_g)),
+          tiempo: col((r) => Number(r.real_horas) / Number(r.web_tiempo_h)),
+          precio: col((r) => Number(r.real_precio) / Number(r.web_precio))
+        };
+      }),
+    [filasCalib, tipos]
+  );
 
   // Re-normalise on every edit so the derived €/g and €/h stay current.
   function patch(updater: (s: QuoteSettings) => QuoteSettings) {
@@ -913,6 +937,35 @@ export default function AdminTarifas() {
                   {precision.n} pedido{precision.n !== 1 ? 's' : ''}: Orca da de mediana{' '}
                   <strong>{((precision.peso - 1) * 100).toFixed(1)} %</strong> de gramos y{' '}
                   <strong>{((precision.tiempo - 1) * 100).toFixed(1)} %</strong> de horas respecto a la web.
+                </p>
+                <div className="adm-scroll">
+                  <table style={{ borderCollapse: 'collapse', fontSize: 12, marginTop: 10 }}>
+                    <thead>
+                      <tr style={{ color: 'var(--muted)', textAlign: 'left' }}>
+                        {['Tipo de pieza', 'Pedidos', 'Gramos (med · p90)', 'Horas (med · p90)', 'Precio (med · p90)'].map((h) => (
+                          <th key={h} style={{ padding: '4px 14px 4px 0' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {porTipo.map((t) => {
+                        const c = (x: { med: number; p90: number } | null) => (x ? `${x.med.toFixed(2)} · ${x.p90.toFixed(2)}` : '—');
+                        return (
+                          <tr key={t.tipo} style={t.n > 0 && t.n < 5 ? { color: 'var(--muted)' } : undefined} title={t.n > 0 && t.n < 5 ? 'Menos de 5 pedidos: aún no es fiable' : ''}>
+                            <td style={{ padding: '3px 14px 3px 0' }}>{t.tipo}</td>
+                            <td style={{ padding: '3px 14px 3px 0' }}>{t.n}</td>
+                            <td style={{ padding: '3px 14px 3px 0' }}>{c(t.peso)}</td>
+                            <td style={{ padding: '3px 14px 3px 0' }}>{c(t.tiempo)}</td>
+                            <td style={{ padding: '3px 14px 3px 0' }}>{c(t.precio)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                  Real ÷ web: 1,00 acierta; más de 1, la web se queda corta. El percentil 90 es el caso malo habitual.
+                  La corrección global de abajo no debe usarse para arreglar un solo tipo de pieza.
                 </p>
                 <button
                   type="button"
