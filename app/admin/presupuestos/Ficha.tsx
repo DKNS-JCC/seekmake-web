@@ -53,6 +53,17 @@ const num = (s: string) => {
   return n === null || Number.isNaN(n) ? 0 : n;
 };
 
+/** One piece as quote_a_order_data keeps it (20261112100000); figures per unit. */
+type PiezaPedido = {
+  nombre: string;
+  cantidad: number;
+  material: string;
+  colores: { nombre: string; hex?: string; parte?: string }[];
+  peso_g: number | null;
+  horas: number | null;
+};
+const coma = (n: number) => String(Math.round(Number(n) * 100) / 100).replace('.', ',');
+
 export function Ficha({
   q,
   pedido,
@@ -446,6 +457,35 @@ export function Ficha({
                   {d.probabilidad_error_label && <div><dt>Riesgo</dt><dd>{d.probabilidad_error_label}</dd></div>}
                   {d.markup_label && <div><dt>Margen</dt><dd>{d.markup_label}</dd></div>}
                 </dl>
+              </Field>
+            )}
+
+            {Array.isArray(d?.piezas) && d.piezas.length > 1 && (
+              <Field label={`Piezas del pedido (${d.piezas.length})`}>
+                <ul className="fi-lista">
+                  {(d.piezas as PiezaPedido[]).map((p, i) => (
+                    <li key={i} className="fi-caja">
+                      <div className="fi-fila" style={{ justifyContent: 'space-between' }}>
+                        <strong title={p.nombre} className="fi-nombre">
+                          {p.nombre}{p.cantidad > 1 ? ` × ${p.cantidad}` : ''}
+                        </strong>
+                        <span>{p.material}</span>
+                      </div>
+                      <div className="fi-colores">
+                        {(p.colores ?? []).map((c, j) => (
+                          <span key={j} className="fi-color" title={c.nombre + (c.parte ? ` → ${c.parte}` : '')}>
+                            <i style={{ background: c.hex ?? '#ccc' }} />
+                            {c.nombre}
+                          </span>
+                        ))}
+                        <span style={{ color: 'var(--muted)' }}>
+                          · {p.peso_g != null ? `${coma(p.peso_g)} g` : '— g'} · {p.horas != null ? `${coma(p.horas)} h` : '— h'}
+                          {p.cantidad > 1 ? ' por unidad' : ''}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </Field>
             )}
 

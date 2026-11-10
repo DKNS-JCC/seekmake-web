@@ -341,6 +341,30 @@ await check('Ficha: cabecera con el siguiente paso, cuatro pestañas y señal pe
   assert(nuevo.includes('Creality K1C') && nuevo.includes('12,8 g'), 'la pestaña Piezas no enseña los datos del taller');
 });
 
+await check('Ficha: un pedido web de varias piezas enseña cada una (fase 8)', async () => {
+  const q = {
+    id: 'q2', codigo: 'Q-2026-0150', estado: 'nuevo', nombre: 'Luis', email: 'l@example.com', telefono: '', mensaje: '',
+    archivos: [], material: 'PLA, PETG', colores: [], resistencia: 'estandar', detalle: 'estandar', cantidad: 4, entrega: 'recogida',
+    direccion: {}, metricas: {}, desglose: {}, precio_total: 25, precio_final: null, pago: 'pendiente', importe_pagado: 0, archivado: false,
+    notas_admin: '', origen: 'web', descripcion: '', fecha_prometida: null, urgente: false, precio_firme: false,
+    created_at: '2026-11-10T10:00:00Z', updated_at: '2026-11-10T10:00:00Z'
+  };
+  const piezas = [
+    { nombre: 'tapa.stl', cantidad: 3, material: 'PLA', colores: [{ nombre: 'Negro', hex: '#000000', parte: '' }], peso_g: 12.5, horas: 0.75 },
+    { nombre: 'qr.3mf', cantidad: 1, material: 'PETG', colores: [{ nombre: 'Blanco', hex: '#ffffff', parte: 'Base' }, { nombre: 'Negro', hex: '#000000', parte: 'Código' }], peso_g: 30, horas: 2 }
+  ];
+  const acciones = { mover: async () => {}, archivar: async () => {}, eliminar: async () => {}, duplicar: async () => {}, releer: async () => {}, avisar: () => {} };
+  const props = { q, conPedido: true, ajustes: normalizeSettings(null), pestana: 'piezas', onPestana: () => {}, onCerrar: () => {}, acciones };
+  const html = render(Ficha, { ...props, pedido: { id: 'P2', quote_id: 'q2', data: { peso_g: '68', horas: '4.25', filamento: 'PLA, PETG', piezas } } });
+  assert(html.includes('Piezas del pedido (2)'), 'no enseña la lista de piezas');
+  assert(html.includes('tapa.stl × 3') && html.includes('12,5 g') && html.includes('0,75 h') && html.includes('por unidad'), 'primera pieza');
+  assert(html.includes('qr.3mf') && html.includes('PETG') && html.includes('Blanco → Base') && html.includes('30 g · 2 h'), 'segunda pieza');
+  const una = render(Ficha, { ...props, pedido: { id: 'P3', quote_id: 'q2', data: { piezas: piezas.slice(0, 1) } } });
+  assert(!una.includes('Piezas del pedido'), 'con una sola pieza basta con los datos del taller');
+  const vieja = render(Ficha, { ...props, pedido: { id: 'P4', quote_id: 'q2', data: {} } });
+  assert(!vieja.includes('Piezas del pedido'), 'un pedido antiguo sin detalle no debe romper');
+});
+
 // ── Dinero (fase 5) ─────────────────────────────────────────────────────────
 const { Dinero } = await cargar('app/admin/estadisticas/Dinero.tsx', 'dinero');
 const { spanDe } = await cargar('lib/quote/dinero.ts', 'dinero-lib');

@@ -1124,6 +1124,36 @@ await check('cupones: una solicitud sin cupón no lleva nada en el pedido', asyn
   assert(!('cupon' in o.data) && !o.data.notes.includes('Cupón'), 'cupón fantasma');
 });
 
+// ── Detalle por pieza en el pedido (20261112100000) ─────────────────────────
+await check('pedido web: conserva cada pieza (material, colores, gramos y horas) y los totales', async () => {
+  const archivos = [
+    { nombre: 'tapa.stl', cantidad: 3, material: 'PLA', resistencia: 'estandar', detalle: 'estandar',
+      colores: [{ nombre: 'Negro', hex: '#000000', parte: '' }],
+      metricas: { peso_g: 12.5, tiempo_h: 0.75, estimador: 'capas-v1' } },
+    { nombre: 'qr.3mf', cantidad: 1, material: 'PETG', resistencia: 'resistente', detalle: 'fino',
+      colores: [{ nombre: 'Blanco', hex: '#ffffff', parte: 'Base' }, { nombre: 'Negro', hex: '#000000', parte: 'Código' }],
+      metricas: { peso_g: 30, tiempo_h: 2, estimador: 'aproximado' } }
+  ];
+  const { rows } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, archivos, colores)
+    values ('Dos Piezas', 'dos@example.com', '612', 'PLA, PETG', 4, 'recogida', 25, $1,
+            '[{"nombre":"Negro"},{"nombre":"Blanco"}]')
+    returning id`, [JSON.stringify(archivos)]);
+  const o = await ordenDeQuote(rows[0].id);
+  const p = o?.data.piezas;
+  assert(Array.isArray(p) && p.length === 2, `piezas: ${JSON.stringify(p)}`);
+  assert(p[0].nombre === 'tapa.stl' && p[0].cantidad === 3 && p[0].material === 'PLA' && Number(p[0].peso_g) === 12.5 &&
+    Number(p[0].horas) === 0.75 && p[0].metodo === 'capas-v1', `primera: ${JSON.stringify(p[0])}`);
+  assert(p[1].material === 'PETG' && p[1].colores.length === 2 && p[1].colores[1].parte === 'Código' &&
+    p[1].colores[0].hex === '#ffffff', `segunda: ${JSON.stringify(p[1])}`);
+  // Los totales aplanados que lee la 7.2 siguen igual: 3 × 12,5 + 30 g y 3 × 0,75 + 2 h.
+  assert(o.data.peso_g === '68' && o.data.horas === '4.25' && o.data.cantidad === 4, `totales: ${o.data.peso_g} g, ${o.data.horas} h, ${o.data.cantidad}`);
+  assert(o.data.notes.includes('Solicitud web') && o.data.filamento === 'PLA, PETG', 'se perdió lo de siempre');
+  // Sin archivos: lista vacía, no null.
+  const v = await ordenDeQuote(webQuote.id);
+  assert(Array.isArray(v.data.piezas), 'sin lista de piezas');
+});
+
 console.log('\n▸ Miniaturas del tasador');
 
 await check('tasador-miniaturas: privado, solo JPEG pequeño; anon sube con ruta válida y no lee', async () => {
