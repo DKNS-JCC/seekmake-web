@@ -94,6 +94,9 @@ await client.query(`
   create or replace function auth.uid() returns uuid language sql stable as $fn$
     select nullif(auth.jwt() ->> 'sub', '')::uuid;
   $fn$;
+  create or replace function auth.role() returns text language sql stable as $fn$
+    select auth.jwt() ->> 'role';
+  $fn$;
 
   create table storage.buckets (
     id text primary key, name text, public boolean default false,
@@ -108,6 +111,7 @@ await client.query(`
   -- Idempotente: el directorio de datos sobrevive entre ejecuciones.
   do $r$ begin create role anon; exception when duplicate_object then null; end $r$;
   do $r$ begin create role authenticated; exception when duplicate_object then null; end $r$;
+  do $r$ begin create role service_role; exception when duplicate_object then null; end $r$;
   grant usage on schema public to anon, authenticated;
 `);
 
@@ -1144,6 +1148,43 @@ await check('tasador-miniaturas: privado, solo JPEG pequeño; anon sube con ruta
     await client.query('rollback');
     await comoAdmin();
   }
+});
+
+// ── Acceso del admin a orders y empresa_docs (20261110150000) ──────────────
+console.log('\n▸ Admin sobre orders y empresa_docs');
+await check('admin lee y escribe orders de 3DCC; anon y usuario sin claim no ven nada', async () => {
+  await comoAdmin();
+  const { rows: [{ n: total }] } = await client.query(`select count(*)::int as n from public.orders where empresa = '3dcc'`);
+  assert(total > 0, 'sin pedidos de 3DCC en el banco de pruebas');
+  const sesion = async (claims, sql, params = []) => {
+    await client.query('begin');
+    try {
+      await client.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claims)]);
+      await client.query('set local role authenticated');
+      return (await client.query(sql, params)).rows;
+    } finally {
+      await client.query('rollback');
+    }
+  };
+  const SIN_CLAIM = '00000000-0000-0000-0000-0000000000ff'; // autenticado, sin empresa ni is_admin
+  for (const t of ['orders', 'empresa_docs']) {
+    const q = `select count(*)::int as n from public.${t} where empresa = '3dcc'`;
+    const admin = (await sesion({ app_metadata: { is_admin: true } }, q))[0].n;
+    assert(admin > 0, `admin ve ${admin} filas de ${t}`);
+    for (const [quien, claims] of [['anon', {}], ['usuario sin claim', { sub: SIN_CLAIM }]]) {
+      const n = (await sesion(claims, q))[0].n;
+      assert(n === 0, `${quien} ve ${n} filas de ${t}`);
+    }
+  }
+  // Escritura del admin (y solo del admin) en orders.
+  const admin = { app_metadata: { is_admin: true } };
+  const ins = `insert into public.orders (empresa, id, data) values ('3dcc', 'ADM00001', '{}')`;
+  assert((await sesion(admin, ins + ' returning id')).length === 1, 'admin no inserta');
+  assert((await sesion(admin, `update public.orders set data = '{"x":1}' where empresa = '3dcc' returning id`)).length === total, 'admin no actualiza todos');
+  let bloqueado = false;
+  try { await sesion({ sub: SIN_CLAIM }, ins); } catch { bloqueado = true; }
+  assert(bloqueado, 'un usuario sin claim inserta en orders');
+  assert((await sesion({ sub: SIN_CLAIM }, `update public.orders set data = '{}' returning id`)).length === 0, 'un usuario sin claim actualiza orders');
 });
 
 // ── Cierre ─────────────────────────────────────────────────────────────────
