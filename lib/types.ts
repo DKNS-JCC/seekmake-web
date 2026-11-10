@@ -596,7 +596,22 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: { [_ in never]: never };
+    Views: {
+      /** Gasto de filamento por color (20261111110000): pedidos contabilizados + ajuste manual. */
+      gasto_filamento: {
+        Row: {
+          material: string;
+          color: string;
+          en_pedidos_g: number;
+          pedidos: number;
+          ajuste_g: number;
+          total_g: number;
+          precio_kg: number;
+          equivale_eur: number;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       registrar_cobro: {
         Args: {

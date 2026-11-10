@@ -13,7 +13,13 @@ type Enlace = { href: string; label: string; badge?: ReactNode };
 const GRUPOS: { titulo: string; plegado?: boolean; links: Enlace[] }[] = [
   { titulo: '', links: [{ href: '/admin', label: 'Hoy' }] },
   { titulo: 'Pedidos', links: [{ href: '/admin/presupuestos', label: 'Pedidos', badge: <NuevosBadge /> }] },
-  { titulo: 'Taller', links: [{ href: '/admin/taller', label: 'Cola de impresión' }] },
+  {
+    titulo: 'Taller',
+    links: [
+      { href: '/admin/taller', label: 'Cola de impresión' },
+      { href: '/admin/filamento', label: 'Filamento gastado' }
+    ]
+  },
   { titulo: 'Dinero', links: [{ href: '/admin/estadisticas', label: 'Estadísticas' }] },
   {
     titulo: 'Web',

@@ -1405,6 +1405,82 @@ await check('limpieza_pedidos: ni anon ni un usuario normal pueden ejecutarla', 
   }
 });
 
+// ── Gasto de filamento (20261111110000) ─────────────────────────────────────
+console.log('\n▸ Gasto de filamento');
+
+await check('gasto_filamento: igual que filamentUsageByColor/filamentSpendG/Eur de la 7.2', async () => {
+  const { filamentUsageByColor, filamentSpendG, filamentSpendEur } = await import('./calculadora-7.2/backend.mjs');
+  await comoAdmin();
+  const previoCfg = (await client.query(`select data from public.empresa_docs where empresa = '3dcc' and doc = 'config'`)).rows[0]?.data;
+  const previoInv = (await client.query(`select data from public.empresa_docs where empresa = '3dcc' and doc = 'inventory'`)).rows[0]?.data;
+  const tipos = [{ name: 'PLA', price_per_kg: 20 }, { name: 'PETG', price_per_kg: 25 }];
+  const upsert = (doc, data) =>
+    client.query(
+      `insert into public.empresa_docs (empresa, doc, data) values ('3dcc', $1, $2)
+       on conflict (empresa, doc) do update set data = excluded.data`,
+      [doc, JSON.stringify(data)]
+    );
+  await upsert('config', { ...(previoCfg ?? {}), filament_types: tipos });
+  const stock = [
+    { material: 'PLA', color: 'Negro', ajuste_g: 40 },
+    { material: 'PETG', color: 'Verde', ajuste_g: 15.5 }, // solo ajuste, sin pedidos
+    { material: 'PLA', color: 'Rojo', ajuste_g: 0 }
+  ];
+  await upsert('inventory', { filament_stock: stock });
+  await client.query(`insert into public.filamentos (material, nombre, orden) values ('PLA', 'PLA', 1) on conflict (material) do nothing`);
+  await client.query(`insert into public.colores (filamento_id, nombre, hex) select id, 'Azul', '#0000ff' from public.filamentos where material = 'PLA' on conflict do nothing`);
+
+  // Es el último test: se parte de cero para que los pedidos de los anteriores no cuenten.
+  await client.query("delete from public.orders where empresa in ('3dcc', 'silab3d')");
+  const base = { estado: 'Aceptado', precio_final: 10, horas: '1', cantidad: 1, notes: '', payment_history: [], notif_history: [], importe_pagado: 0 };
+  const pedidos = [
+    { id: 'GF000001', filamento: 'PLA', filamento_color: 'Negro', peso_g: '100.5', material_contabilizado: true },
+    { id: 'GF000002', filamento: 'PLA', filamento_color: ' negro ', peso_g: '20', material_contabilizado: true },
+    { id: 'GF000003', filamento: 'PLA', filamento_color: 'Negro', peso_g: '999', material_contabilizado: false },
+    { id: 'GF000004', filamento: 'PLA + PETG', filamento_color: 'Multicolor', peso_g: '60', is_multimaterial: true, material_contabilizado: true,
+      material_breakdown: [{ material: 'PLA', color: 'Azul', grams: 35 }, { material: 'PETG', color: 'Verde', grams: 25 }] },
+    { id: 'GF000005', filamento: 'PETG', filamento_color: '', peso_g: '12.25', material_contabilizado: true, estado: 'Descartado' },
+    { id: 'GF000006', filamento: 'PLA', filamento_color: 'Blanco', peso_g: '0', material_contabilizado: true }
+  ].map((p) => ({ ...base, cliente: 'GF', fecha: '2026-11-01', empresa: '3DCC', ...p }));
+  for (const p of pedidos) await guardarPedido('3dcc', p.id, p);
+  // Otra empresa: no cuenta.
+  await guardarPedido('silab3d', 'GF000009', { ...base, id: 'GF000009', filamento: 'PLA', filamento_color: 'Negro', peso_g: '5000', material_contabilizado: true });
+
+  const { rows } = await client.query(`select * from public.gasto_filamento order by material, color`);
+  const usage = filamentUsageByColor({ orders: pedidos });
+  const esp = (material, color) => {
+    const item = stock.find((s) => s.material === material && s.color.toLowerCase() === color.toLowerCase()) ?? { material, color, ajuste_g: 0 };
+    return { g: filamentSpendG(item, usage), eur: filamentSpendEur(item, tipos, usage) };
+  };
+  const fila = (m, c) => rows.find((r) => r.material === m && r.color.toLowerCase() === c.toLowerCase());
+  for (const [m, c] of [['PLA', 'Negro'], ['PLA', 'Azul'], ['PETG', 'Verde'], ['PETG', 'Negro'], ['PLA', 'Rojo']]) {
+    const r = fila(m, c);
+    const e = esp(m, c);
+    assert(r, `falta la fila ${m} ${c}`);
+    assert(Math.abs(Number(r.total_g) - e.g) < 0.01 && Math.abs(Number(r.equivale_eur) - e.eur) < 0.01,
+      `${m} ${c}: vista ${r.total_g} g / ${r.equivale_eur} €, 7.2 ${e.g} g / ${e.eur} €`);
+  }
+  // Valores concretos: 100,5 + 20 + ajuste 40 = 160,5 g de PLA negro; el no contabilizado y el de SILAB no cuentan.
+  assert(Number(fila('PLA', 'Negro').total_g) === 160.5 && fila('PLA', 'Negro').pedidos === 2, JSON.stringify(fila('PLA', 'Negro')));
+  assert(Number(fila('PETG', 'Verde').total_g) === 40.5, 'PETG verde: multimaterial 25 + ajuste 15,5');
+  assert(fila('PLA', 'Azul'), 'el color del catálogo sin gasto debe salir con 0 g');
+  // Anónimo y usuario sin claim: nada (ni siquiera la vista).
+  for (const rol of ['anon', 'authenticated']) {
+    await client.query('begin');
+    let n = -1;
+    try {
+      await client.query(`set local role ${rol}`);
+      await comoAnon();
+      n = (await client.query(`select * from public.gasto_filamento where en_pedidos_g > 0`)).rows.length;
+    } catch { n = 0; } finally { await client.query('rollback'); await comoAdmin(); }
+    assert(n === 0, `${rol} lee el gasto de filamento (${n} filas)`);
+  }
+  // Limpieza: se restaura lo que había.
+  await client.query(`delete from public.orders where id like 'GF0000%'`);
+  if (previoCfg) await upsert('config', previoCfg);
+  if (previoInv) await upsert('inventory', previoInv); else await client.query(`delete from public.empresa_docs where empresa = '3dcc' and doc = 'inventory'`);
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();

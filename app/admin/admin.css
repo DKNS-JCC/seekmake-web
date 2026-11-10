@@ -413,3 +413,50 @@ details[open] > .adm-grupo-plegable::after { content: '▾'; }
 .adm-top-titulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adm-menu-btn { white-space: nowrap; }
 .adm-top-acciones { flex-shrink: 0; }
+
+/* Taller → Filamento gastado */
+.fil-color { font-weight: 600; }
+.fil-n { color: var(--muted); font-size: 11px; }
+.fil-ajuste { display: inline-flex; align-items: center; gap: 6px; }
+.fil-ajuste .campo { width: 130px; }
+.fil-ok { width: 14px; color: #15803d; font-weight: 700; }
+.dark .fil-ok { color: #4ade80; }
+@media (max-width: 760px) {
+    .adm-tabla td.fil-color { justify-content: flex-start; font-size: 15px; }
+    .fil-ajuste .campo { width: 150px; }
+}
+
+/* Dinero → Estadísticas */
+.est-lista { list-style: none; display: flex; flex-direction: column; margin: 0; padding: 0; }
+.est-fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; padding: 6px 8px; margin: 0 -8px; border-radius: var(--r); color: var(--text); text-decoration: none; }
+a.est-fila:hover { background: var(--bg); }
+.est-fila small { display: block; font-size: 12px; color: var(--muted); }
+.est-sub { margin: 16px 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.est-nota { margin: 10px 0 0; font-size: 12px; color: var(--muted); max-width: 760px; }
+.est-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 18px; }
+.est-periodo input[type="month"] {
+    min-height: 44px; padding: 6px 10px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border-h); border-radius: var(--r); font: inherit; font-size: 14px;
+}
+.est-titulo { margin: 28px 0 12px; font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.02em; }
+
+/* Píldoras de filtro (Pedidos, periodo de Estadísticas) */
+.pq-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.pq-filter {
+    min-height: 40px; padding: 6px 12px;
+    border-radius: var(--r); border: 1px solid var(--border-h);
+    background: transparent; color: var(--text);
+    font-family: var(--font-mono), monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+}
+.pq-filter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pq-filter span { opacity: 0.75; margin-left: 5px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+    .pq-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .pq-filter { flex-shrink: 0; min-height: 44px; }
+}
+
+@media (max-width: 760px) {
+    .adm-tabla td a { display: inline-flex; align-items: center; min-height: 44px; }
+}

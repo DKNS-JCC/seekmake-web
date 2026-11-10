@@ -1,16 +1,22 @@
 'use client';
 
-// Tasador analytics: request pipeline, funnel (quote_events), revenue and
-// material mix. Read-only — everything is computed client-side from two
-// queries, fine for a hobby-scale volume.
+// Dinero → Estadísticas: arriba el dinero del taller (Dinero.tsx: facturado,
+// cobrado, beneficio, quién debe, aceptación, plazos, riesgo, tasador); debajo,
+// lo del tasador web (embudo, abandonos, tráfico, WhatsApp, materiales). Un
+// solo periodo para todo. Solo lectura, calculado en el navegador: el volumen
+// es el de un taller pequeño.
 
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { Quote, QuoteEstado, QuoteEvento } from '@/lib/types';
+import type { Cobro, Quote, QuoteEstado, QuoteEvento, Recibo } from '@/lib/types';
 import { AccesoDenegado, useAdminAuth } from '../_components/useAdminAuth';
 import { AdminCabecera } from '../_components/AdminNav';
+import { ErrorBanner } from '../_components/ErrorBanner';
+import { mensajeDeError } from '@/lib/errors';
 import { Abandonos } from './Abandonos';
-import { euros } from '@/lib/recibo/types';
+import { Dinero, type FilaPedido } from './Dinero';
+import { Bar } from './Bar';
+import { PERIODOS, spanDe, type PeriodoId } from '@/lib/quote/dinero';
 import { etiquetaOrigen } from '@/lib/tracking';
 
 type Fila = [string, { visitas: number; solicitudes: number }];
@@ -27,114 +33,18 @@ function porClave(claves: Map<string, string>, solicitaron: Set<string>): Fila[]
   return [...m].sort((a, b) => b[1].visitas - a[1].visitas);
 }
 
-const ESTADO_LABEL: Record<QuoteEstado, string> = {
-  nuevo: 'Nuevo',
-  revisado: 'Revisado',
-  aceptado: 'Aceptado',
-  imprimiendo: 'Imprimiendo',
-  listo: 'Listo',
-  entregado: 'Entregado',
-  rechazado: 'Rechazado'
-};
-
-const ESTADO_COLOR: Record<QuoteEstado, string> = {
-  nuevo: '#0EA5E9',
-  revisado: '#a855f7',
-  aceptado: '#eab308',
-  imprimiendo: '#f97316',
-  listo: '#10b981',
-  entregado: '#6b7280',
-  rechazado: '#ef4444'
-};
-
-const ORDEN_ESTADOS: QuoteEstado[] = [
-  'nuevo', 'revisado', 'aceptado', 'imprimiendo', 'listo', 'entregado', 'rechazado'
-];
-
 const ESTADOS_EN_FIRME: QuoteEstado[] = ['aceptado', 'imprimiendo', 'listo', 'entregado'];
-
-const cardStyle: React.CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--r)',
-  padding: 20,
-  marginBottom: 20
-};
-
-const h2Style: React.CSSProperties = {
-  fontFamily: "'IBM Plex Mono', monospace",
-  fontSize: 11,
-  letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  color: 'var(--accent)',
-  marginBottom: 14
-};
-
-function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--r)',
-        padding: '16px 20px',
-        minWidth: 150,
-        flex: '1 1 150px'
-      }}
-    >
-      <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 26, fontWeight: 700, marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{sub}</div>}
-    </div>
-  );
-}
-
-function Bar({
-  label,
-  value,
-  max,
-  color,
-  suffix
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-  suffix?: string;
-}) {
-  const pct = max > 0 ? (value / max) * 100 : 0;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-      <span style={{ width: 110, fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 4, height: 18, overflow: 'hidden' }}>
-        <div
-          style={{
-            width: `${pct}%`,
-            minWidth: value > 0 ? 4 : 0,
-            height: '100%',
-            background: color,
-            borderRadius: 4,
-            transition: 'width 0.4s'
-          }}
-        />
-      </div>
-      <span style={{ width: 70, fontSize: 12, fontWeight: 600, textAlign: 'right', flexShrink: 0 }}>
-        {value}
-        {suffix ?? ''}
-      </span>
-    </div>
-  );
-}
-
-const num = (v: unknown): number => (typeof v === 'number' && isFinite(v) ? v : 0);
 
 export default function AdminEstadisticas() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [eventos, setEventos] = useState<QuoteEvento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dias, setDias] = useState(30);
+  const [filas, setFilas] = useState<FilaPedido[]>([]);
+  const [cobros, setCobros] = useState<Cobro[]>([]);
+  const [recibos, setRecibos] = useState<Recibo[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState<PeriodoId>('30');
+  const [mes, setMes] = useState('');
   const { authed } = useAdminAuth();
 
   useEffect(() => {
@@ -146,15 +56,28 @@ export default function AdminEstadisticas() {
         .select('*')
         .gte('created_at', new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString())
         .order('created_at', { ascending: false })
-        .limit(5000)
-    ]).then(([qres, eres]) => {
+        .limit(5000),
+      supabase.from('orders').select('id, quote_id, data').eq('empresa', '3dcc'),
+      supabase.from('cobros').select('*').eq('empresa', '3dcc'),
+      supabase.from('recibos').select('id, codigo, cobro_id, anulado_at')
+    ]).then(([qres, eres, ores, cres, rres]) => {
+      const fallo = [qres, ores, cres].find((r) => r.error)?.error;
+      if (fallo) setError(mensajeDeError(fallo, 'No se pudieron cargar todos los datos'));
       setQuotes((qres.data as Quote[]) ?? []);
       setEventos((eres.data as QuoteEvento[]) ?? []);
+      setFilas((ores.data as unknown as FilaPedido[]) ?? []);
+      setCobros((cres.data as unknown as Cobro[]) ?? []);
+      setRecibos((rres.data as unknown as Recibo[]) ?? []);
       setLoading(false);
     });
   }, []);
 
-  const desde = useMemo(() => Date.now() - dias * 24 * 3600 * 1000, [dias]);
+  // Un mes concreto tiene prioridad sobre las píldoras mientras esté puesto.
+  const span = useMemo(() => spanDe(mes ? 'concreto' : periodo, mes), [periodo, mes]);
+  const desde = span.from;
+  const etiqueta = mes
+    ? new Date(span.from).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    : (PERIODOS.find((x) => x.id === periodo)?.label ?? '').toLowerCase();
 
   const stats = useMemo(() => {
     // Archivar un pedido terminado (0027) no lo borra de la historia; el resto
@@ -165,24 +88,7 @@ export default function AdminEstadisticas() {
     // Lo del tasador: los pedidos hechos a mano en la Calculadora (origen
     // 'calculadora', 0027) no pasaron por el embudo web. Dinero y pipeline sí.
     const web = visibles.filter((q) => q.origen !== 'calculadora');
-    const periodo = web.filter((q) => new Date(q.created_at).getTime() >= desde);
-
-    const porEstado = new Map<QuoteEstado, number>();
-    for (const e of ORDEN_ESTADOS) porEstado.set(e, 0);
-    for (const q of visibles) porEstado.set(q.estado, (porEstado.get(q.estado) ?? 0) + 1);
-
-    const avanzados = visibles.filter((q) => ESTADOS_EN_FIRME.includes(q.estado));
-    const entregados = visibles.filter((q) => q.estado === 'entregado');
-
-    const ingresos = visibles.reduce((s, q) => s + num(q.importe_pagado), 0);
-    const confirmado = avanzados.reduce(
-      (s, q) => s + (q.precio_final != null ? num(q.precio_final) : num(q.precio_total)),
-      0
-    );
-    const ticketMedio = avanzados.length ? confirmado / avanzados.length : 0;
-
-    const pesoG = avanzados.reduce((s, q) => s + num((q.metricas as any)?.peso_g), 0);
-    const horas = avanzados.reduce((s, q) => s + num((q.metricas as any)?.tiempo_h), 0);
+    const periodo = web.filter((q) => new Date(q.created_at).getTime() >= desde && new Date(q.created_at).getTime() <= span.to);
 
     // Material mix (top-level material can be "PLA, PETG" for mixed orders).
     const porMaterial = new Map<string, number>();
@@ -278,16 +184,6 @@ export default function AdminEstadisticas() {
     ).length;
 
     return {
-      total: web.length,
-      periodo: periodo.length,
-      porEstado,
-      avanzados: avanzados.length,
-      entregados: entregados.length,
-      ingresos,
-      confirmado,
-      ticketMedio,
-      pesoG,
-      horas,
       porMaterial: [...porMaterial.entries()].sort((a, b) => b[1] - a[1]),
       semanas,
       whatsapp,
@@ -308,12 +204,11 @@ export default function AdminEstadisticas() {
         aceptados
       }
     };
-  }, [quotes, eventos, desde]);
+  }, [quotes, eventos, desde, span.to]);
 
   if (authed === false) return <AccesoDenegado />;
   if (loading) return <p style={{ color: 'var(--muted)' }}>Cargando…</p>;
 
-  const maxEstado = Math.max(1, ...[...stats.porEstado.values()]);
   const maxMaterial = Math.max(1, ...stats.porMaterial.map(([, c]) => c));
   const maxSemana = Math.max(1, ...stats.semanas.map((s) => s.count));
   const f = stats.funnel;
@@ -324,45 +219,33 @@ export default function AdminEstadisticas() {
 
   return (
     <div>
-      <AdminCabecera
-        titulo="Estadísticas del tasador"
-        acciones={
-        <div style={{ display: 'flex', gap: 8 }}>
-          {[7, 30, 90].map((d) => (
-            <button
-              key={d}
-              type="button"
-              className={d === dias ? 'btn-primary' : 'btn-outline'}
-              style={{ padding: '6px 14px', fontSize: 11 }}
-              onClick={() => setDias(d)}
-            >
-              {d} días
-            </button>
-          ))}
-        </div>
-        }
-      >
-        El embudo, las solicitudes y los materiales son solo del tasador web y
-        usan el periodo seleccionado; pipeline e importes son históricos e
-        incluyen los pedidos de la Calculadora.
+      <AdminCabecera titulo="Estadísticas">
+        El dinero sale de los pedidos y del libro de cobros; el embudo, las visitas y los materiales son solo
+        del tasador web. Todo usa el mismo periodo.
       </AdminCabecera>
-
-      {/* KPIs */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-        <Kpi label="Solicitudes" value={String(stats.total)} sub={`${stats.periodo} en ${dias} días`} />
-        <Kpi label="Pedidos en firme" value={String(stats.avanzados)} sub={`${stats.entregados} entregados`} />
-        <Kpi label="Cobrado" value={`${euros(stats.ingresos)}`} sub={`${euros(stats.confirmado)} confirmados`} />
-        <Kpi label="Ticket medio" value={`${euros(stats.ticketMedio)}`} sub="pedidos aceptados o más" />
-        <Kpi
-          label="Material impreso"
-          value={stats.pesoG >= 1000 ? `${(stats.pesoG / 1000).toFixed(1)} kg` : `${Math.round(stats.pesoG)} g`}
-          sub={`~${Math.round(stats.horas)} h de impresión`}
-        />
+      <div className="est-periodo" role="group" aria-label="Periodo">
+        {PERIODOS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            aria-pressed={!mes && periodo === p.id}
+            className={'pq-filter' + (!mes && periodo === p.id ? ' active' : '')}
+            onClick={() => { setMes(''); setPeriodo(p.id); }}
+          >
+            {p.label}
+          </button>
+        ))}
+        <input type="month" aria-label="Un mes concreto" value={mes} onChange={(e) => setMes(e.target.value)} />
       </div>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+
+      <Dinero filas={filas} quotes={quotes} cobros={cobros} recibos={recibos} span={span} />
+
+      <h2 className="est-titulo">Tasador web</h2>
 
       {/* Funnel */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Embudo ({dias} días)</h2>
+      <section className="adm-card">
+        <h2 className="adm-card-titulo">Embudo ({etiqueta})</h2>
         <Bar label="Visitaron" value={f.visitas} max={topEmbudo} color="#6b7280" />
         <Bar label="Subieron pieza" value={f.sesionesConPieza} max={topEmbudo} color="#0EA5E9" />
         <Bar label="Antes del precio" value={f.antesDelPrecio} max={topEmbudo} color="#6b7280" />
@@ -381,8 +264,8 @@ export default function AdminEstadisticas() {
       </section>
 
       {/* Who left without asking */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Se fueron sin pedir ({dias} días)</h2>
+      <section className="adm-card">
+        <h2 className="adm-card-titulo">Se fueron sin pedir ({etiqueta})</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
           Cada visita anónima que subió algo y no envió la solicitud: qué subió, cuántas veces y el
           último precio que vio. «También en otras visitas» es la misma pieza subida otro día o por
@@ -392,8 +275,8 @@ export default function AdminEstadisticas() {
       </section>
 
       {/* Traffic */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>De dónde vienen ({dias} días)</h2>
+      <section className="adm-card">
+        <h2 className="adm-card-titulo">De dónde vienen ({etiqueta})</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
           Visitas al tasador y, al lado, cuántas acabaron en solicitud. Sin tus sesiones: el
           navegador que entra al admin (o abre la web con ?no-rastrear=1) no cuenta.
@@ -422,32 +305,18 @@ export default function AdminEstadisticas() {
       </section>
 
       {/* WhatsApp */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>
-          Clics en WhatsApp ({dias} días): {stats.whatsapp.reduce((n, [, c]) => n + c, 0)}
+      <section className="adm-card">
+        <h2 className="adm-card-titulo">
+          Clics en WhatsApp ({etiqueta}): {stats.whatsapp.reduce((n, [, c]) => n + c, 0)}
         </h2>
         {stats.whatsapp.slice(0, 8).map(([pagina, c]) => (
           <Bar key={pagina} label={pagina} value={c} max={Math.max(1, stats.whatsapp[0][1])} color="#15803d" />
         ))}
       </section>
 
-      {/* Pipeline */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Pipeline (histórico)</h2>
-        {ORDEN_ESTADOS.map((e) => (
-          <Bar
-            key={e}
-            label={ESTADO_LABEL[e]}
-            value={stats.porEstado.get(e) ?? 0}
-            max={maxEstado}
-            color={ESTADO_COLOR[e]}
-          />
-        ))}
-      </section>
-
       {/* Weekly volume */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Solicitudes por semana (8 semanas)</h2>
+      <section className="adm-card">
+        <h2 className="adm-card-titulo">Solicitudes por semana (8 semanas)</h2>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}>
           {stats.semanas.map((s, i) => (
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -469,8 +338,8 @@ export default function AdminEstadisticas() {
       </section>
 
       {/* Materials */}
-      <section style={cardStyle}>
-        <h2 style={h2Style}>Materiales solicitados ({dias} días)</h2>
+      <section className="adm-card">
+        <h2 className="adm-card-titulo">Materiales solicitados ({etiqueta})</h2>
         {stats.porMaterial.length === 0 && (
           <p style={{ fontSize: 13, color: 'var(--muted)' }}>Sin solicitudes en el periodo.</p>
         )}

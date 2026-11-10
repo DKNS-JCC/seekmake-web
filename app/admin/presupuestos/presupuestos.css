@@ -14,17 +14,6 @@
     color: var(--text); font-size: 13px; font-family: inherit;
 }
 
-.pq-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-.pq-filter {
-    min-height: 40px; padding: 6px 12px;
-    border-radius: var(--r); border: 1px solid var(--border-h);
-    background: transparent; color: var(--text);
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
-}
-.pq-filter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.pq-filter span { opacity: 0.75; margin-left: 5px; font-variant-numeric: tabular-nums; }
-
 /* Lista: una fila = un clic. */
 .pq-lista tbody tr { cursor: pointer; }
 .pq-lista tbody tr:hover { background: var(--bg); }
@@ -76,9 +65,6 @@
     .pq-search, .pq-orden select { font-size: 16px; }
     .pq-orden { width: 100%; }
     .pq-orden select { flex: 1; }
-    /* Píldoras en una sola fila que se desliza. */
-    .pq-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-    .pq-filter { flex-shrink: 0; min-height: 44px; }
     .pq-lista tbody tr { padding: 14px; }
     .pq-lista td.pq-codigo { justify-content: flex-start; font-size: 14px; }
     .pq-lista td.pq-cliente { margin-bottom: 4px; }

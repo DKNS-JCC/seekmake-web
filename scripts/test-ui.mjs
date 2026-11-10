@@ -326,6 +326,41 @@ await check('Ficha: cabecera con el siguiente paso, cuatro pestañas y señal pe
   assert(nuevo.includes('Creality K1C') && nuevo.includes('12,8 g'), 'la pestaña Piezas no enseña los datos del taller');
 });
 
+// ── Dinero (fase 5) ─────────────────────────────────────────────────────────
+const { Dinero } = await cargar('app/admin/estadisticas/Dinero.tsx', 'dinero');
+const { spanDe } = await cargar('lib/quote/dinero.ts', 'dinero-lib');
+
+await check('Dinero: cifras del periodo, cobros por método y bloques con su pregunta', async () => {
+  const ped = (id, estado, o = {}) => ({
+    id: 'P' + id, quote_id: 'q' + id,
+    data: { id: 'P' + id, estado, fecha: '2026-11-05', cliente: 'Ana', precio_final: 40, coste_bruto: 10, gasto_misc: 0,
+      repeticiones_error: 1, horas: '2', peso_g: '50', error_rate: 0.25, importe_pagado: 20, payment_history: [], ...o }
+  });
+  const quote = (id, o = {}) => ({ id: 'q' + id, codigo: 'Q-2026-010' + id, nombre: 'Ana', origen: 'calculadora', estado: 'aceptado', archivado: false,
+    created_at: '2026-11-05T10:00:00Z', fecha_prometida: '2026-11-12', listo_at: null, coste_estimado: null, coste_real: null, ...o });
+  const html = render(Dinero, {
+    filas: [ped(1, 'Entregado'), ped(2, 'Aceptado'), ped(3, 'Descartado')],
+    quotes: [quote(1, { estado: 'entregado', listo_at: '2026-11-10T09:00:00Z' }), quote(2), quote(3, { origen: 'web', estado: 'rechazado', coste_estimado: 10, coste_real: 12, desvio_coste: 2 })],
+    cobros: [
+      { id: 'c1', quote_id: 'q1', importe: 20, metodo: 'Bizum', cobrado_at: '2026-11-06T10:00:00Z', tipo: 'cobro', anulado_at: null },
+      { id: 'c2', quote_id: 'q2', importe: 99, metodo: 'Efectivo', cobrado_at: '2026-11-06T10:00:00Z', tipo: 'cobro', anulado_at: '2026-11-07T10:00:00Z' }
+    ],
+    recibos: [{ id: 'r1', codigo: 'R-2026-0001', cobro_id: 'c1', anulado_at: null }],
+    span: spanDe('concreto', '2026-11')
+  });
+  // Dos pedidos comprometidos de 40 € y 10 € de coste × 2 pasadas: 80 € facturados.
+  assert(html.includes('80,00 €') && html.includes('facturado'), 'no enseña lo facturado');
+  assert(html.includes('20,00 €') && !html.includes('99,00 €'), 'el cobro anulado cuenta o falta el cobrado');
+  assert(html.includes('Bizum') && html.includes('R-2026-0001'), 'cobros por método o justificante');
+  for (const t of ['¿Cuánto entra y por dónde?', '¿Quién debe?', '¿Se aceptan los presupuestos?', '¿Se cumplen los plazos?', '¿Acierta el riesgo?', '¿Acierta el tasador?']) {
+    assert(html.includes(t), `falta el bloque «${t}»`);
+  }
+  assert(html.includes('/admin/presupuestos?abrir=Q-2026-0102&amp;pestana=cobros'), 'quien debe no enlaza a la ficha');
+  // Sin datos no revienta y lo dice.
+  const vacio = render(Dinero, { filas: [], quotes: [], cobros: [], recibos: [], span: spanDe('concreto', '2026-11') });
+  assert(vacio.includes('Sin datos en este periodo') && !vacio.includes('NaN'), 'el periodo vacío rompe o enseña NaN');
+});
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log(
