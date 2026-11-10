@@ -590,6 +590,10 @@ export type Database = {
         Args: { p_codigo: string };
         Returns: { codigo: string; origen: QuoteOrigen; descripcion: string }[];
       };
+      tasador_tipos: {
+        Args: Record<string, never>;
+        Returns: { codigo: string; tipo: string }[];
+      };
       tasador_calibracion: {
         Args: Record<string, never>;
         Returns: CalibracionTasadorRow[];

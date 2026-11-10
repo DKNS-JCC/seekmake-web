@@ -124,8 +124,11 @@ puntos. Dos formas de eliminarlo:
    `tasador_calibracion()` (migración 0024) los cruza y el panel «Precisión del
    tasador» de /admin/tarifas propone la corrección; con ≥ 3 pedidos, un clic
    en «Aplicar corrección» y Guardar.
-2. **Manual**: lamina unas cuantas piezas en Orca, anota gramos y minutos en
-   `orca.csv` y ejecuta `npx tsx scripts/benchmark-estimador.ts <carpeta>`.
+2. **Manual**: carpeta con cada `nombre.stl` y su laminado exportado de Orca
+   (`nombre.gcode` o `nombre.gcode.3mf`; el `.3mf` de proyecto no sirve) y, si
+   hay lotes, un `piezas.csv`. `npx tsx scripts/benchmark-estimador.ts <carpeta>`
+   da mediana y percentil 90 de real ÷ estimado por tipo de pieza. Carpeta de
+   muestra (cifras inventadas): `scripts/ejemplo-benchmark`.
 
 ## 6. Puesta en marcha
 
