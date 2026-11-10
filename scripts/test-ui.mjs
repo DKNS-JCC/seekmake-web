@@ -39,6 +39,18 @@ const cssVacio = {
   }
 };
 
+/** next/link se sustituye por un <a>: aquí se comprueba el marcado, no el enrutado. */
+const linkSimple = {
+  name: 'link-simple',
+  setup(b) {
+    b.onResolve({ filter: /^next\/link$/ }, () => ({ path: 'next-link', namespace: 'link-simple' }));
+    b.onLoad({ filter: /.*/, namespace: 'link-simple' }, () => ({
+      contents: "import { createElement } from 'react'; export default ({ href, children, ...p }) => createElement('a', { href, ...p }, children);",
+      loader: 'js'
+    }));
+  }
+};
+
 /** Empaqueta un módulo del proyecto y lo importa ya ejecutable. */
 async function cargar(entrada, nombre) {
   const salida = join(dir, `${nombre}.mjs`);
@@ -53,7 +65,7 @@ async function cargar(entrada, nombre) {
     // React y el cliente de Supabase se resuelven desde node_modules en
     // tiempo de ejecución, no se empaquetan.
     external: ['react', 'react-dom', 'react/jsx-runtime', '@supabase/supabase-js'],
-    plugins: [cssVacio],
+    plugins: [cssVacio, linkSimple],
     alias: { '@': process.cwd() },
     logLevel: 'silent'
   });
@@ -255,6 +267,63 @@ await check('urlSeguimiento() prefiere la URL de Sendcloud', async () => {
   // Una URL basura en base de datos no debe colarse como enlace.
   const basura = urlSeguimiento('inpost', 'javascript:alert(1)');
   assert(!basura.url.startsWith('javascript:'), 'ACEPTA UN ENLACE javascript:');
+});
+
+// ── Pedidos (fase 4): pestañas, estados y ficha ────────────────────────────
+const { Pestanas } = await cargar('app/admin/_components/Pestanas.tsx', 'pestanas');
+const est = await cargar('app/admin/presupuestos/estados.ts', 'estados');
+const { Ficha } = await cargar('app/admin/presupuestos/Ficha.tsx', 'ficha');
+const { normalizeSettings } = await cargar('lib/quote/pricing.ts', 'pricing-ui');
+
+await check('Pestanas: tablist con una sola pestaña en el orden de tabulación', async () => {
+  const html = render(Pestanas, {
+    id: 'fi', etiqueta: 'Secciones', value: 'cobros', onChange: () => {},
+    pestanas: [{ value: 'resumen', label: 'Resumen' }, { value: 'cobros', label: 'Cobros' }]
+  });
+  assert(html.includes('role="tablist"') && html.includes('role="tab"'), 'sin roles');
+  assert(/aria-selected="true"[^>]*tabindex="0"|tabindex="0"[^>]*aria-selected="true"/.test(html) || html.split('tabindex="-1"').length === 2, 'la pestaña activa no es la parada de tabulación');
+  assert(html.split('tabindex="0"').length === 2, 'más de una parada de tabulación');
+});
+
+await check('estados: filtros, siguiente paso y plazo escrito (no solo color)', async () => {
+  const q = (estado, extra = {}) => ({ estado, archivado: false, ...extra });
+  assert(est.coincideFiltro(q('listo'), 'activos') && !est.coincideFiltro(q('entregado'), 'activos'), 'activos');
+  assert(est.coincideFiltro(q('entregado', { archivado: true }), 'archivados'), 'archivados');
+  assert(!est.coincideFiltro(q('listo', { archivado: true }), 'listo'), 'un archivado sigue en su estado');
+  assert(est.SIGUIENTE.imprimiendo.a === 'listo' && !est.SIGUIENTE.entregado && !est.SIGUIENTE.nuevo, 'siguiente paso');
+  const hoy = '2026-11-10';
+  assert(est.plazoDe(q('imprimiendo', { fecha_prometida: '2026-11-08' }), hoy).texto === '2 días tarde', 'tarde');
+  assert(est.plazoDe(q('aceptado', { fecha_prometida: '2026-11-10' }), hoy).texto === 'vence hoy', 'hoy');
+  assert(est.plazoDe(q('aceptado', { fecha_prometida: '2026-11-11' }), hoy).riesgo === true, 'mañana es riesgo');
+  assert(est.plazoDe(q('aceptado', { fecha_prometida: '2026-11-20' }), hoy).riesgo === false, 'lejos');
+  assert(est.plazoDe(q('listo', { fecha_prometida: '2026-11-01' }), hoy).riesgo === false, 'listo no está en riesgo');
+  assert(est.plazoDe(q('aceptado', {}), hoy).texto === '—', 'sin fecha');
+});
+
+await check('Ficha: cabecera con el siguiente paso, cuatro pestañas y señal pendiente', async () => {
+  const quote = {
+    id: 'q1', codigo: 'Q-2026-0142', estado: 'imprimiendo', nombre: 'Ana García', email: 'ana@example.com',
+    telefono: '600111222', mensaje: '', archivos: [], material: 'PLA', colores: [], resistencia: 'Normal',
+    detalle: 'Estándar', cantidad: 1, entrega: 'recogida', direccion: {}, metricas: {}, desglose: {},
+    precio_total: 34.5, precio_final: 34.5, pago: 'pendiente', importe_pagado: 0, archivado: false,
+    notas_admin: '', origen: 'calculadora', descripcion: 'Tapa caja fusibles', fecha_prometida: '2026-11-14',
+    urgente: false, precio_firme: false, created_at: '2026-11-01T10:00:00Z', updated_at: '2026-11-01T10:00:00Z'
+  };
+  const pedido = { id: 'AB12CD34', quote_id: 'q1', data: { coste_bruto: 4.2, repeticiones_error: 1, peso_g: '12.8', horas: '1.5', filamento: 'PLA', filamento_color: 'Negro', impresora: 'Creality K1C' } };
+  const acciones = { mover: async () => {}, archivar: async () => {}, eliminar: async () => {}, duplicar: async () => {}, releer: async () => {}, avisar: () => {} };
+  const html = render(Ficha, { q: quote, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'resumen', onPestana: () => {}, onCerrar: () => {}, acciones });
+  assert(html.includes('Marcar listo y avisar') && html.includes('sin avisar'), 'no ofrece el siguiente paso con aviso');
+  for (const p of ['Resumen', 'Piezas', 'Cobros', 'Envío']) assert(html.includes(`>${p}<`), `falta la pestaña ${p}`);
+  assert(html.includes('Señal del 50 % pendiente'), 'no avisa de la señal');
+  assert(html.includes('Editar y recalcular') && html.includes('Duplicar') && html.includes('Archivar') && html.includes('Eliminar pedido'), 'faltan acciones');
+  assert(html.includes('Reimpresiones por fallo'), 'faltan las reimpresiones');
+  // Sin email no se ofrece avisar.
+  const sin = render(Ficha, { q: { ...quote, email: '' }, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'resumen', onPestana: () => {}, onCerrar: () => {}, acciones });
+  assert(sin.includes('Marcar listo') && !sin.includes('y avisar'), 'ofrece avisar sin email');
+  // Una solicitud nueva se presupuesta en «Nuevo encargo».
+  const nuevo = render(Ficha, { q: { ...quote, estado: 'nuevo', origen: 'web' }, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'piezas', onPestana: () => {}, onCerrar: () => {}, acciones });
+  assert(nuevo.includes('/admin/encargo?solicitud=Q-2026-0142'), 'no enlaza a presupuestar');
+  assert(nuevo.includes('Creality K1C') && nuevo.includes('12,8 g'), 'la pestaña Piezas no enseña los datos del taller');
 });
 
 rmSync(dir, { recursive: true, force: true });

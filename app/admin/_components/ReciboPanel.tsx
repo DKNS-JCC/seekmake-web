@@ -428,6 +428,21 @@ export function ReciboPanel({ quote, onCambio }: { quote: Quote; onCambio?: () =
             >
               <input style={inputStyle} type="number" step={0.01} min={0.01} value={importe}
                 onChange={(e) => setImporte(e.target.value)} />
+              {/* Atajos: la señal (mitad del total, menos lo ya cobrado) y el resto. */}
+              <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                {Math.max(0, round2(total / 2 - cobrado)) > 0.004 && (
+                  <button type="button" className="btn-outline" style={btnXs}
+                    onClick={() => setImporte(round2(total / 2 - cobrado).toFixed(2))}>
+                    Señal 50 % ({euros(round2(total / 2 - cobrado))})
+                  </button>
+                )}
+                {pendiente > 0.004 && (
+                  <button type="button" className="btn-outline" style={btnXs}
+                    onClick={() => setImporte(pendiente.toFixed(2))}>
+                    Resto ({euros(pendiente)})
+                  </button>
+                )}
+              </span>
             </Field>
             <Field label="Forma de pago">
               <select style={inputStyle} value={metodo}

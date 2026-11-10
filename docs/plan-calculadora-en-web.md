@@ -151,7 +151,7 @@ cliente no enseña ninguna fecha.
 | Sección | Contenido |
 |---|---|
 | Hoy | Por contestar, esperando al cliente, por imprimir (por fecha prometida), por entregar, por cobrar |
-| Pedidos | Tablero por estado con los dos orígenes; ficha en pestañas (resumen, piezas, cobros, envío) |
+| Pedidos | Lista con filtros por estado y los dos orígenes marcados (sin tablero: «Hoy» hace de tablero); ficha en pestañas (resumen, piezas, cobros, envío) |
 | Nuevo encargo | La calculadora de taller |
 | Taller | Cola de impresión; gasto de filamento |
 | Dinero | Estadísticas y cobros |

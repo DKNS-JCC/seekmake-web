@@ -1342,6 +1342,66 @@ await check('desvío: coste real − coste estimado del pedido del tasador', asy
   assert(Number(r.coste_estimado) === est && Math.abs(Number(r.desvio_coste) - 1.5) < 0.001, JSON.stringify(r));
 });
 
+// ── Limpieza automática de pedidos (20261111100000) ────────────────────────
+console.log('\n▸ Limpieza de pedidos');
+
+await check('limpieza_pedidos: descarta a los 15 días, archiva entregados cobrados, respeta lo demás', async () => {
+  // El pago sale del libro de cobros: para estar «pagado» hay que cobrar de verdad.
+  const nueva = async (nombre, estado, cobrado = false) => {
+    const { rows: [q] } = await client.query(
+      `insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, precio_final, estado)
+       values ($1, 'l@example.com', '6', 'PLA', 1, 'recogida', 20, 20, $2) returning id`,
+      [nombre, estado]
+    );
+    if (cobrado) {
+      await client.query(`select public.registrar_cobro(p_importe => 20, p_metodo => 'Bizum', p_quote_id => $1)`, [q.id]);
+    }
+    return q.id;
+  };
+  const viejo = async (id, dias) => {
+    await client.query('alter table public.quotes disable trigger touch_quotes');
+    await client.query(`update public.quotes set updated_at = now() - ($2 || ' days')::interval where id = $1`, [id, String(dias)]);
+    await client.query('alter table public.quotes enable trigger touch_quotes');
+  };
+  const sinRespuesta = await nueva('Limp sin respuesta', 'revisado');
+  const reciente = await nueva('Limp reciente', 'revisado');
+  const aceptado = await nueva('Limp aceptado viejo', 'aceptado');
+  const cobrado = await nueva('Limp entregado cobrado', 'entregado', true);
+  const debe = await nueva('Limp entregado sin cobrar', 'entregado');
+  const entregadoReciente = await nueva('Limp entregado reciente', 'entregado', true);
+  await viejo(sinRespuesta, 16); await viejo(reciente, 10); await viejo(aceptado, 40);
+  await viejo(cobrado, 8); await viejo(debe, 30); await viejo(entregadoReciente, 2);
+
+  const { rows: [r] } = await client.query('select * from public.limpieza_pedidos()');
+  assert(r.descartados >= 1 && r.archivados >= 1, JSON.stringify(r));
+  const q = async (id) => quoteDe(id);
+  assert((await q(sinRespuesta)).estado === 'rechazado', 'no descartó el presupuesto sin respuesta');
+  assert((await q(reciente)).estado === 'revisado', 'descartó uno reciente');
+  assert((await q(aceptado)).estado === 'aceptado', 'tocó un aceptado');
+  const c = await q(cobrado);
+  assert(c.archivado, 'no archivó el entregado y cobrado');
+  assert((await ordenDeQuote(cobrado)).data.archived === true, 'no archivó el pedido de taller');
+  assert(!(await q(debe)).archivado, 'archivó uno sin cobrar');
+  assert(!(await q(entregadoReciente)).archivado, 'archivó uno reciente');
+  // El descarte baja al pedido de taller (0026).
+  assert((await ordenDeQuote(sinRespuesta)).data.estado === 'Descartado', 'el pedido no quedó «Descartado»');
+  // Idempotente.
+  const { rows: [r2] } = await client.query('select * from public.limpieza_pedidos()');
+  assert(r2.descartados === 0 && r2.archivados === 0, 'la segunda pasada volvió a tocar cosas ' + JSON.stringify(r2));
+});
+
+await check('limpieza_pedidos: ni anon ni un usuario normal pueden ejecutarla', async () => {
+  for (const rol of ['anon', 'authenticated']) {
+    let lanzo = false;
+    await client.query('begin');
+    try {
+      await client.query(`set local role ${rol}`);
+      await client.query('select * from public.limpieza_pedidos()');
+    } catch { lanzo = true; } finally { await client.query('rollback'); }
+    assert(lanzo, `${rol} ejecutó la limpieza`);
+  }
+});
+
 // ── Cierre ─────────────────────────────────────────────────────────────────
 await client.end();
 pararServidor();

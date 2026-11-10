@@ -9,6 +9,7 @@ import { useAdminAuth, AccesoDenegado } from './_components/useAdminAuth';
 import { AdminCabecera } from './_components/AdminNav';
 import { ErrorBanner } from './_components/ErrorBanner';
 import { hoyMadrid, senalPendiente } from '@/lib/quote/pricing';
+import { plazoDe } from './presupuestos/estados';
 
 // "Hoy": what needs doing, oldest first. Each row opens the quote.
 type Fila = Pick<
@@ -32,13 +33,16 @@ function Grupo({
   vacio,
   filas,
   detalle,
-  verTodos
+  verTodos,
+  enlace
 }: {
   titulo: string;
   vacio: string;
   filas: Fila[];
   detalle: (q: Fila) => string;
   verTodos?: string;
+  /** Dónde abre cada fila (por defecto, la ficha). */
+  enlace?: (q: Fila) => string;
 }) {
   return (
     <section className="hoy-grupo" aria-labelledby={`hoy-${titulo}`}>
@@ -56,7 +60,7 @@ function Grupo({
         <ul>
           {filas.slice(0, 8).map((q) => (
             <li key={q.id}>
-              <Link href={`/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}`} className="hoy-fila">
+              <Link href={enlace ? enlace(q) : `/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}`} className="hoy-fila">
                 <span className="hoy-fila-txt">
                   <strong>{q.nombre}</strong>
                   <span>{q.codigo} · {detalle(q)}</span>
@@ -102,15 +106,15 @@ export default function AdminHoy() {
     (a.fecha_prometida ?? '9999').localeCompare(b.fecha_prometida ?? '9999')
   );
   const hoy = hoyMadrid();
-  const plazoDe = (q: Fila): string => {
+  const plazoTxt = (q: Fila): string => {
     if (!q.fecha_prometida) return 'sin fecha';
-    const d = Math.round((Date.parse(q.fecha_prometida) - Date.parse(hoy)) / DIA);
-    const f = new Date(`${q.fecha_prometida}T12:00:00Z`).toLocaleDateString('es-ES', {
-      weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'
-    });
-    // ponytail: «en riesgo» = vence en ≤ 1 día natural; afinar con la puntualidad medida.
-    return d < 0 ? `fuera de plazo (${f})` : d <= 1 ? `en riesgo · antes del ${f}` : `antes del ${f}`;
+    const p = plazoDe(q, hoy);
+    return p.riesgo ? `en riesgo · ${p.texto}` : `antes del ${p.texto}`;
   };
+  const enRiesgo = enMarcha.filter((q) => plazoDe(q, hoy).riesgo).length;
+  const sinSenal = enMarcha.filter((q) =>
+    senalPendiente(Number(q.precio_final ?? q.precio_total), Number(q.importe_pagado))
+  ).length;
   const listos = de('listo');
   const sinCobrar = de('aceptado', 'imprimiendo', 'listo').filter((q) => q.pago !== 'pagado');
   const pendiente = sinCobrar.reduce(
@@ -121,7 +125,7 @@ export default function AdminHoy() {
   return (
     <div>
       <AdminCabecera titulo="Hoy">
-        Lo que tienes pendiente: lo por imprimir, por fecha prometida; el resto, lo más antiguo primero. Toca un pedido para abrirlo.
+        Lo que tienes pendiente: lo por imprimir, por fecha tope; el resto, lo más antiguo primero. Toca un pedido para abrirlo.
       </AdminCabecera>
       {error && <ErrorBanner>{error}</ErrorBanner>}
       {filas === null && !error ? (
@@ -133,6 +137,8 @@ export default function AdminHoy() {
             <div><span>{enMarcha.length}</span>en producción</div>
             <div><span>{listos.length}</span>para entregar</div>
             <div><span>{euros(pendiente)}</span>por cobrar</div>
+            {enRiesgo > 0 && <div className="hoy-alerta"><span>{enRiesgo}</span>en riesgo de llegar tarde</div>}
+            {sinSenal > 0 && <div className="hoy-alerta"><span>{sinSenal}</span>con la señal pendiente</div>}
           </div>
           <div className="hoy-grid">
             <Grupo
@@ -147,7 +153,7 @@ export default function AdminHoy() {
               vacio="Nada aceptado pendiente de imprimir."
               filas={enMarcha}
               detalle={(q) =>
-                plazoDe(q) +
+                plazoTxt(q) +
                 (q.urgente ? ' · urgente' : '') +
                 (q.estado === 'imprimiendo' ? ' · en la impresora' : '') +
                 (senalPendiente(Number(q.precio_final ?? q.precio_total), Number(q.importe_pagado)) ? ' · señal pendiente' : '')
@@ -167,7 +173,10 @@ export default function AdminHoy() {
               filas={esperando}
               detalle={(q) => {
                 const d = Math.ceil((new Date(q.valido_hasta).getTime() - Date.now()) / DIA);
-                return d < 0 ? 'caducado' : d === 0 ? 'caduca hoy' : `caduca en ${d} día${d === 1 ? '' : 's'}`;
+                // Recordatorio al taller a los 3 y 7 días sin respuesta; a los 15 se descarta solo (limpieza_pedidos).
+                const sin = Math.floor((Date.now() - new Date(q.updated_at).getTime()) / DIA);
+                const aviso = sin >= 7 ? `recuérdaselo: ${sin} días sin respuesta · ` : sin >= 3 ? `${sin} días sin respuesta · ` : '';
+                return aviso + (d < 0 ? 'caducado' : d === 0 ? 'caduca hoy' : `caduca en ${d} día${d === 1 ? '' : 's'}`);
               }}
               verTodos="/admin/presupuestos?estado=revisado"
             />
@@ -176,6 +185,7 @@ export default function AdminHoy() {
               vacio="Todo lo aceptado está cobrado."
               filas={sinCobrar}
               detalle={(q) => `cobrado ${euros(q.importe_pagado)}`}
+              enlace={(q) => `/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}&pestana=cobros`}
             />
           </div>
         </>
