@@ -51,6 +51,21 @@ const linkSimple = {
   }
 };
 
+/** next/navigation fuera de Next: una ruta fija y un router que no hace nada. */
+const navegacionSimple = {
+  name: 'navegacion-simple',
+  setup(b) {
+    b.onResolve({ filter: /^next\/navigation$/ }, () => ({ path: 'next-navigation', namespace: 'navegacion-simple' }));
+    b.onLoad({ filter: /.*/, namespace: 'navegacion-simple' }, () => ({
+      contents:
+        "export const usePathname = () => '/instant-quote/';" +
+        'export const useRouter = () => ({ push() {}, replace() {}, back() {}, refresh() {}, prefetch() {} });' +
+        'export const useSearchParams = () => new URLSearchParams();',
+      loader: 'js'
+    }));
+  }
+};
+
 /** Empaqueta un módulo del proyecto y lo importa ya ejecutable. */
 async function cargar(entrada, nombre) {
   const salida = join(dir, `${nombre}.mjs`);
@@ -65,7 +80,7 @@ async function cargar(entrada, nombre) {
     // React y el cliente de Supabase se resuelven desde node_modules en
     // tiempo de ejecución, no se empaquetan.
     external: ['react', 'react-dom', 'react/jsx-runtime', '@supabase/supabase-js'],
-    plugins: [cssVacio, linkSimple],
+    plugins: [cssVacio, linkSimple, navegacionSimple],
     alias: { '@': process.cwd() },
     logLevel: 'silent'
   });
@@ -359,6 +374,92 @@ await check('Dinero: cifras del periodo, cobros por método y bloques con su pre
   // Sin datos no revienta y lo dice.
   const vacio = render(Dinero, { filas: [], quotes: [], cobros: [], recibos: [], span: spanDe('concreto', '2026-11') });
   assert(vacio.includes('Sin datos en este periodo') && !vacio.includes('NaN'), 'el periodo vacío rompe o enseña NaN');
+});
+
+// ── Tasador (fase 8): la página pública, antes y después de partirla ───────
+const { QuoteClient } = await cargar('app/(site)/instant-quote/QuoteClient.tsx', 'tasador');
+const filamentos = [
+  { id: 'f1', material: 'PLA', descripcion: 'El de siempre', orden: 1, activo: true },
+  { id: 'f2', material: 'PETG', descripcion: 'Aguanta calor', orden: 2, activo: true }
+];
+const colores = [
+  { id: 'c1', filamento_id: 'f1', nombre: 'Negro', hex: '#000000', acabado: null, agotado: false, muestra_tipo: 'solido', muestra_colores: [], orden: 1 },
+  { id: 'c2', filamento_id: 'f1', nombre: 'Oro', hex: '#d4af37', acabado: 'Metálico', agotado: true, muestra_tipo: 'solido', muestra_colores: [], orden: 2 }
+];
+
+await check('Tasador: sin piezas pide subir una y no enseña precio', async () => {
+  const html = render(QuoteClient, { filamentos, colores, resenas: { total: 12, media: 4.9 } });
+  assert(html.includes('Calcula el precio de tu pieza'), 'falta el título');
+  assert(html.includes('Arrastra aquí tus archivos 3D') && html.includes('STL · 3MF · OBJ'), 'falta la zona de subida');
+  assert(html.includes('accept=".stl,.3mf,.obj"') && html.includes('multiple'), 'el selector de archivos cambió');
+  assert(html.includes('Sube una pieza para ver el precio.'), 'falta el aviso del precio');
+  assert(html.includes('Sube una o varias piezas para configurar'), 'falta la ayuda del panel');
+  assert(!html.includes('Solicitar presupuesto') && !html.includes('€'), 'enseña precio o pedido sin piezas');
+});
+
+// Las partes, con una pieza y un precio de verdad.
+const { computeQuote, fechaLarga } = await cargar('lib/quote/pricing.ts', 'pricing-tasador');
+const { Resumen, Entrega } = await cargar('app/(site)/instant-quote/Resumen.tsx', 'resumen');
+const { Pedir } = await cargar('app/(site)/instant-quote/Pedir.tsx', 'pedir');
+const { Recibido } = await cargar('app/(site)/instant-quote/Recibido.tsx', 'recibido');
+const { ConfigPieza } = await cargar('app/(site)/instant-quote/ConfigPieza.tsx', 'config');
+const { ListaPiezas } = await cargar('app/(site)/instant-quote/ListaPiezas.tsx', 'lista');
+const ajustes = normalizeSettings(null);
+const metrics = { volumenCm3: 12, soporteCm3: 0, areaCm2: 30, bboxMm: { x: 30, y: 25, z: 30 }, triangulos: 1200, mallas: 1, overhangCm2: 0 };
+const pieza = {
+  id: 'p1', file: null, name: 'soporte.stl', size: 1000, ext: 'stl', metrics, cantidad: 1, partNames: ['Parte 1'], sugeridos: [null],
+  config: { filamentoId: 'f1', mainColor: colores[0], multicolor: false, extraColors: [], partColors: [colores[0]], resistenciaId: 'estandar', detalleId: 'estandar' },
+  estimacion: { estado: 'ok', progreso: 1, R: [1, 0, 0, 0, 1, 0, 0, 0, 1], original: true }, cuerpos: []
+};
+const quote = computeQuote([{ nombre: pieza.name, metrics, analisis: null, cantidad: 1, material: 'PLA',
+  colores: [{ nombre: 'Negro', hex: '#000000', acabado: null }], resistenciaId: 'estandar', detalleId: 'estandar' }], ajustes, 'envio');
+const cup = { cupon: null, setCupon() {}, cuponTxt: '', setCuponTxt() {}, cuponAbierto: false, setCuponAbierto() {}, cuponError: null, setCuponError() {}, cuponCargando: false, aplicarCupon: async () => {} };
+const pz = {
+  piezas: [pieza], activeId: 'p1', activePieza: pieza, activeFilamento: filamentos[0], partsMode: false, piezasRef: { current: [pieza] },
+  setActiveId() {}, setCantidad() {}, removePieza() {}, rescalePieza() {}, patchActiveConfig() {}, applyToAll() {},
+  changeMaterial() {}, pickColor() {}, toggleExtraColor() {}, addFiles: async () => {}, loadingFile: false, fileError: null
+};
+const euro = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+await check('Tasador · Resumen: líneas, total estimado, plazo y confianza', async () => {
+  const html = render(Resumen, {
+    totalRef: { current: null }, settings: ajustes, settingsLoaded: true, numPiezas: 1, numAnalizando: 0, progresoAnalisis: 1,
+    listo: true, quote, precioFinal: false, firmeActivo: false, listoAntes: '2026-11-13', entrega: 'envio',
+    resenas: { total: 12, media: 4.9 }, masUnaUnidad: { pieza, extra: 0 }, masUno() {}, otraPieza() {}, cup
+  });
+  assert(html.includes('Total estimado') && html.includes(euro(quote.total)), 'falta el total');
+  for (const l of quote.lineas) assert(html.includes(l.concepto.replace(/&/g, '&amp;')), `falta la línea ${l.concepto}`);
+  assert(html.includes('Precio orientativo: lo cerramos al revisar la pieza'), 'sin precio firme debe decir orientativo');
+  assert(html.includes(`Listo antes del ${fechaLarga('2026-11-13')}`), 'falta la fecha tope');
+  assert(html.includes('¿Lo necesitas antes? Escríbenos') && !/urgen/i.test(html), 'urgencia: solo el enlace, sin selector');
+  assert(html.includes('te sale <strong>gratis</strong>') && html.includes('¿Tienes un código de descuento?'), 'upsell o cupón');
+  const cargando = render(Resumen, { totalRef: { current: null }, settings: ajustes, settingsLoaded: true, numPiezas: 2, numAnalizando: 2, progresoAnalisis: 0.5,
+    listo: false, quote: null, precioFinal: false, firmeActivo: false, listoAntes: null, entrega: 'recogida', resenas: null, masUnaUnidad: null, masUno() {}, otraPieza() {}, cup });
+  assert(cargando.includes('Laminando 2 piezas') && cargando.includes('width:50%'), 'progreso del laminado');
+  const ent = render(Entrega, { settings: ajustes, entrega: 'envio', setEntrega() {}, cp: '', setCp() {} });
+  assert(ent.includes('Gratis desde') && ent.includes('Código postal'), 'entrega con envío');
+});
+
+await check('Tasador · Pedir y Recibido: solicitar, WhatsApp, PDF y el código', async () => {
+  const props = { piezas: [pieza], quote, listo: true, settings: ajustes, colaH: 0, filamentos, entrega: 'recogida', cpValido: undefined, setStatus() {}, cup };
+  const html = render(Pedir, { ...props, status: { kind: 'idle' } });
+  assert(html.includes('Solicitar presupuesto') && html.includes('Pedir por WhatsApp'), 'faltan las llamadas');
+  assert(html.includes(encodeURIComponent(`Total: ${euro(quote.total)}`).replace(/%20/g, '%20')) || html.includes('Total%3A'), 'el WhatsApp no lleva el total');
+  assert(html.includes('Envíame el presupuesto por email') && html.includes('Descargar PDF'), 'guardar o PDF');
+  const ok = render(Pedir, { ...props, status: { kind: 'ok', codigo: 'Q-2026-0001', duplicado: false, porEmail: true } });
+  assert(ok.includes('Q-2026-0001') && ok.includes('por email') && !ok.includes('Solicitar presupuesto'), 'la confirmación');
+  assert(render(Recibido, { status: { kind: 'ok', codigo: 'Q-1', duplicado: true, porEmail: false } }).includes('Ya teníamos esta misma solicitud'), 'duplicado');
+});
+
+await check('Tasador · Piezas y configuración: material, colores, resistencia y detalle', async () => {
+  const lista = render(ListaPiezas, { pz, quote, tooBig: true, degenerate: false, maxBedMm: 220, scaleSuggestions: [{ unidad: 'pulgadas', factor: 25.4 }], setActivePart() {} });
+  assert(lista.includes('soporte.stl') && lista.includes('Quitar soporte.stl'), 'la lista de piezas');
+  assert(lista.includes('supera los 220 mm') && lista.includes('Convertir de pulgadas'), 'los avisos');
+  const cfg = render(ConfigPieza, { pz, settings: ajustes, filamentos, materialColors: colores, activeColors: [colores[0]], activePart: 0, setActivePart() {} });
+  for (const t of ['1 · Material', '2 · Color', '3 · ¿Cómo de resistente', '4 · ¿Cuánto detalle?', 'PETG', 'Alto detalle', 'Maciza'])
+    assert(cfg.includes(t), `falta «${t}»`);
+  assert(cfg.includes('Oro (agotado)') && cfg.includes('Quiero combinar varios colores'), 'colores y agotados');
+  assert(!cfg.includes('Aplicar a todas'), 'con una pieza no ofrece aplicar a todas');
 });
 
 rmSync(dir, { recursive: true, force: true });

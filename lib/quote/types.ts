@@ -4,7 +4,7 @@ import type * as THREE from 'three';
 import type { Color } from '@/lib/types';
 import type { MeshMetrics } from './geometry';
 import type { Analisis } from './estimador/analizar';
-import type { Zona } from './tresmf';
+import type { Cuerpo, Zona } from './tresmf';
 import type { Matriz3 } from './estimador/orientar';
 
 export interface PiezaConfig {
@@ -44,6 +44,8 @@ export interface Pieza {
   sugeridos: (string | null)[];
   config: PiezaConfig;
   estimacion: EstimacionEstado;
+  /** Printed bodies and their zones, to tell separate objects from a multicolor piece. */
+  cuerpos: Cuerpo[];
 }
 
 export interface ParsedModel {

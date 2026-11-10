@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { strToU8, zipSync } from 'three/examples/jsm/libs/fflate.module.js';
-import { colorParecido, estadoPintura, leer3mf, zonificar } from '../lib/quote/tresmf';
+import { colorParecido, estadoPintura, leer3mf, objetosSeparados, zonificar } from '../lib/quote/tresmf';
 import { check, done, section } from './_assert';
 
 section('paint_color');
@@ -102,5 +102,18 @@ const muestrario = [{ hex: '#F5F5F0' }, { hex: '#000000' }, { hex: '#C0392B' }, 
 check('blanco', colorParecido('#FFFFFF', muestrario)?.hex === '#F5F5F0');
 check('negro', colorParecido('#000000', muestrario)?.hex === '#000000');
 check('gris oscuro → negro, no verde oliva', colorParecido('#383838', muestrario)?.hex === '#000000');
+
+section('Objetos separados o pieza de varios colores (fase 1, parte D)');
+{
+  const c = (x0: number, x1: number, zonas: number[]) => ({ min: [x0, 0, 0], max: [x1, 10, 10], zonas });
+  check('dos cuerpos sueltos, un color cada uno: separados', objetosSeparados([c(0, 10, [0]), c(20, 30, [1])], ['negro', 'blanco']));
+  check('se tocan: pieza de varios colores', !objetosSeparados([c(0, 10, [0]), c(10, 30, [1])], ['negro', 'blanco']));
+  check('se solapan: pieza de varios colores', !objetosSeparados([c(0, 15, [0]), c(10, 30, [1])], ['negro', 'blanco']));
+  check('un cuerpo con dos colores: varios colores', !objetosSeparados([c(0, 10, [0, 1]), c(20, 30, [1])], ['negro', 'blanco']));
+  check('mismo color tocándose y otro suelto: separados',
+    objetosSeparados([c(0, 10, [0]), c(10, 20, [1]), c(40, 50, [2])], ['negro', 'negro', 'blanco']));
+  check('una zona sin color: en la duda, varios colores', !objetosSeparados([c(0, 10, [0]), c(20, 30, [1])], ['negro', null]));
+  check('un solo cuerpo nunca es «separados»', !objetosSeparados([c(0, 10, [0])], ['negro']));
+}
 
 done();
