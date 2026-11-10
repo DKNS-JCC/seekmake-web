@@ -4,6 +4,7 @@
 import type { Filamento, QuoteEntrega } from '@/lib/types';
 import type { QuoteResult } from '@/lib/quote/pricing';
 import { piezaColors, type Pieza } from '@/lib/quote/types';
+import { objetosSeparados } from '@/lib/quote/tresmf';
 
 /** The one contact field: an email if it has an @, else a phone of 9+ digits. */
 export function leerContacto(txt: string): { email: string; telefono: string } | null {
@@ -15,6 +16,15 @@ export function leerContacto(txt: string): { email: string; telefono: string } |
 export function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);
   return `quotes/${safe}.${ext}`;
+}
+
+/**
+ * A multi-part file whose bodies each print in one color and do not touch:
+ * separate objects, not a multicolor piece (phase 1, part D). It only sets
+ * the piece type for the firm price; the price itself does not change.
+ */
+export function piezaSeparada(p: Pieza): boolean {
+  return p.partNames.length > 1 && objetosSeparados(p.cuerpos, p.config.partColors.map((c) => c?.id ?? null));
 }
 
 /** What the server needs to price one piece (no file: see submit). */
@@ -74,6 +84,7 @@ export function fichaPieza(
       por_cama: pr?.porCama ?? 1,
       camas: pr?.camas ?? 1,
       con_soportes: pr?.conSoportes ?? false,
+      objetos_separados: piezaSeparada(p),
       orientacion: p.estimacion.original ? 'original' : 'auto',
       rotacion: p.estimacion.R.map((x) => Math.round(x * 1e4) / 1e4)
     }

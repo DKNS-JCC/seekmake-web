@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { strToU8, zipSync } from 'three/examples/jsm/libs/fflate.module.js';
 import { colorParecido, estadoPintura, leer3mf, objetosSeparados, zonificar } from '../lib/quote/tresmf';
+import { cuerposDe } from '../app/(site)/instant-quote/modelo';
 import { check, done, section } from './_assert';
 
 section('paint_color');
@@ -114,6 +115,27 @@ section('Objetos separados o pieza de varios colores (fase 1, parte D)');
     objetosSeparados([c(0, 10, [0]), c(10, 20, [1]), c(40, 50, [2])], ['negro', 'negro', 'blanco']));
   check('una zona sin color: en la duda, varios colores', !objetosSeparados([c(0, 10, [0]), c(20, 30, [1])], ['negro', null]));
   check('un solo cuerpo nunca es «separados»', !objetosSeparados([c(0, 10, [0])], ['negro']));
+}
+
+section('Cuerpos de un archivo con dos partes (cajas de three.js)');
+{
+  const caja = (x: number) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10));
+    m.position.x = x;
+    return m;
+  };
+  const cuerpos = (x2: number) => {
+    const root = new THREE.Group();
+    const ms = [caja(0), caja(x2)];
+    root.add(...ms);
+    const { meshes, zonas } = zonificar(ms, null);
+    root.updateMatrixWorld(true);
+    return cuerposDe({ root, meshes, zonas });
+  };
+  const sueltas = cuerpos(30);
+  check('una zona por cuerpo', sueltas.length === 2 && sueltas[0].zonas.join() === '0' && sueltas[1].zonas.join() === '1');
+  check('separadas 20 mm y de dos colores: objetos separados', objetosSeparados(sueltas, ['a', 'b']));
+  check('pegadas (cara con cara): pieza de varios colores', !objetosSeparados(cuerpos(10), ['a', 'b']));
 }
 
 done();

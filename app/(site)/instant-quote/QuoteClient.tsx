@@ -42,6 +42,7 @@ import { ListaPiezas } from './ListaPiezas';
 import { ConfigPieza } from './ConfigPieza';
 import { Entrega, Resumen } from './Resumen';
 import { Pedir } from './Pedir';
+import { piezaSeparada } from './solicitud';
 
 export function QuoteClient({
   filamentos: filamentosIniciales,
@@ -149,7 +150,8 @@ export function QuoteClient({
             acabado: c.acabado
           })),
           resistenciaId: p.config.resistenciaId,
-          detalleId: p.config.detalleId
+          detalleId: p.config.detalleId,
+          separados: piezaSeparada(p)
         };
       }),
     [piezas, filamentos]

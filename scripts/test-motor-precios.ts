@@ -208,4 +208,30 @@ section('códigos de descuento');
   }
 }
 
+// ── Objetos separados (fase 1, parte D): tipo de pieza, no precio ────────
+section('objetos separados: cambian el tipo de pieza, nunca el precio');
+{
+  const met = { volumenCm3: 8, soporteCm3: 0, areaCm2: 0, bboxMm: { x: 20, y: 20, z: 20 }, triangulos: 12, mallas: 2, overhangCm2: 0 };
+  for (const raw of [null, { tipos_precio_firme: ['sin soportes'] }]) {
+    const s = normalizeSettings(raw);
+    const base: PiezaInput = {
+      nombre: 'qr', metrics: met, analisis: analizarPieza(cubo, configAnalisis(s)), cantidad: 1, material: 'PLA',
+      colores: [{ nombre: 'N', hex: '#000', acabado: null }, { nombre: 'B', hex: '#fff', acabado: null }],
+      resistenciaId: 'estandar', detalleId: 'estandar'
+    };
+    const junta = computeQuote([base], s);
+    const suelta = computeQuote([{ ...base, separados: true }], s);
+    check(`${raw ? 'con' : 'sin'} lista: mismo desglose`, mismo(suelta.lineas, junta.lineas) === '' && suelta.total === junta.total);
+    check(`${raw ? 'con' : 'sin'} lista: precio firme solo si son separados y el tipo está validado`,
+      junta.precioFirme === false && suelta.precioFirme === (raw !== null));
+    const a = archivos([base], junta);
+    const srvJunta = computeServerQuote(a, 'recogida', s);
+    a[0].metricas = { ...a[0].metricas, objetos_separados: true } as typeof a[0]['metricas'];
+    const srvSuelta = computeServerQuote(a, 'recogida', s);
+    check(`${raw ? 'con' : 'sin'} lista: el servidor ve el tipo y no cambia el precio`,
+      srvJunta.piezas[0].tipo === 'multicolor' && srvSuelta.piezas[0].tipo === 'sin soportes' &&
+      mismo(srvSuelta.lineas, srvJunta.lineas) === '' && srvSuelta.precioFirme === suelta.precioFirme);
+  }
+}
+
 done();
