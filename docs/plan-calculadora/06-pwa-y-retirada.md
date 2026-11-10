@@ -34,7 +34,7 @@ la Calculadora hoy.
    cachee nada; si no, no hace falta.
 4. Mantener la sesión iniciada: comprobar que el login del admin no caduca
    al cerrar la app.
-5. Dos semanas usando las dos en paralelo.
+5. ~~Dos semanas usando las dos en paralelo.~~ Decisión del usuario (11 nov. 2026): la Calculadora se da por terminada; no hay periodo en paralelo. La retirada se hace cuando la web esté desplegada.
 6. Retirada: desinstalar la Calculadora, desactivar el workflow
    `release-apk.yml` y archivar el repo `Calculadora`. No hace falta publicar
    una versión de despedida: solo la usa el taller.
@@ -42,7 +42,7 @@ la Calculadora hoy.
 ## Hecho cuando
 
 - El panel abre desde un icono en el móvil y en el PC.
-- Dos semanas sin abrir la Calculadora.
+- La web desplegada y la Calculadora retirada.
 
 ## No hacer
 

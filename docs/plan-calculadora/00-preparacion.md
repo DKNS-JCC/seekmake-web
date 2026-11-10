@@ -1,6 +1,6 @@
 # Fase 0 — Preparación y acceso
 
-**Estado:** hecha (10 nov. 2026; PR sin abrir) — la exportación de SILAB queda por ejecutar con credenciales reales · **Tamaño:** pequeña · **Modelo:** Sonnet
+**Estado:** hecha (10 nov. 2026; PR sin abrir); volcado de SILAB hecho por el usuario (11 nov. 2026) · **Tamaño:** pequeña · **Modelo:** Sonnet
 **Depende de:** nada · **Índice:** [plan](../plan-calculadora-en-web.md)
 
 ## Objetivo
@@ -45,8 +45,8 @@ SILAB antes de tocar nada.
 - Migración: `20261110150000_admin_orders_empresa_docs.sql` (políticas
   «admin all» en `orders` y `empresa_docs`).
 - Exportación: script propio `scripts/export-silab.mjs` (filtra
-  `empresa = 'silab3d'`, rechaza una salida dentro del repo). Pendiente de
-  ejecutar: `node scripts/export-silab.mjs` con la service role en `.env.local`.
+  `empresa = 'silab3d'`, rechaza una salida dentro del repo).
+  El volcado ya está hecho (11 nov. 2026) y el script se ha retirado del repo.
 - `scripts/test-migraciones.mjs`: además del caso nuevo, se añaden al entorno
   simulado `auth.role()` y el rol `service_role`, que `20261109150000_campanas.sql`
   ya necesitaba y hacían fallar `test:db` en `main`.

@@ -50,6 +50,19 @@ Trabajo del taller, sin código:
   `.gcode`). El proyecto `.3mf` no sirve: no trae gramos ni horas.
 - Si se imprime, apuntar peso y tiempo medidos.
 
+**Actualización (11 nov. 2026): no hace falta laminar a mano.** El Orca del
+taller lamina por línea de comandos un proyecto `.3mf` tal cual (lleva su
+perfil dentro) y da las mismas cifras que la ventana: comprobado con
+`calicat.3mf` (14,41 g, 1 h 31 min 14 s, 25 cambios, idéntico al laminado
+del usuario).
+
+    orca-slicer.exe --datadir <carpeta aparte> --slice 0 --outputdir <salida> --export-3mf x.gcode.3mf proyecto.3mf
+
+La colección sale de los proyectos ya hechos en `D:\3DCC\Proyectos` (39
+`.3mf`), laminados así sobre copias. El usuario solo aporta **lo que cobró**
+por cada uno, para comparar también el precio. Los proyectos de la Kobra X
+laminados en AnycubicSlicerNext no entran por esta vía.
+
 ## Parte C — Benchmark por tipo de pieza
 
 1. `scripts/benchmark-estimador.ts` lee la carpeta y compara estimador

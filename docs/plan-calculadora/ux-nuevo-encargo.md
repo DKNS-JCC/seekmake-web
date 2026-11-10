@@ -36,23 +36,15 @@ tres rellenan los mismos campos:
    último encargo. Multicolor: «+ color» añade otra línea de gramos; en la
    K1 la purga se estima sola con el número de cambios (un campo). Objetivo:
    dos datos tecleados y ningún clic para un encargo de un color.
-2. **«Últimos laminados» (cero pasos en el laminador; solo PC con
-   Chrome/Edge).** Un script de post-procesado en el perfil de OrcaSlicer
-   (`post_process`) guarda una copia de cada laminado en una carpeta fija
-   del PC al enviarlo a la impresora. El usuario autoriza esa carpeta una
-   vez (File System Access API, el permiso se recuerda) y la pantalla
-   enseña los tres últimos laminados con nombre, hora, gramos y tiempo: un
-   clic rellena todo como si se hubiera arrastrado. **Por verificar en el
-   taller antes de construirlo:** que Orca y AnycubicSlicerNext ejecutan el
-   script también al enviar por wifi, no solo al exportar. Si no lo hacen,
-   esta entrada se descarta sin tocar las otras dos. El script y sus
-   instrucciones van en `scripts/orca-guardar-laminado/`.
+2. **«Últimos laminados»: DESCARTADA (11 nov. 2026).** La idea era un
+   script de post-procesado de Orca que guardase cada laminado. En Orca es
+   viable, pero AnycubicSlicerNext (Kobra X) es cerrado y no lo permite, así
+   que no cubre las dos impresoras. No se construye.
 3. **Arrastrar el `.gcode` o `.gcode.3mf`** sigue funcionando en toda la
    página, para quien sí lo exporte. Sin protagonismo visual: una línea de
    ayuda, no una zona grande.
 
-Orden de construcción en la fase 3: 1 y 3 primero (comparten lector y
-campos); la 2 después, y solo si pasa la verificación.
+Se construyen la 1 y la 3 (comparten lector y campos).
 
 ### 0.2 Dudas del apartado 9, resueltas
 

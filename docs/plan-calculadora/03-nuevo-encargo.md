@@ -1,6 +1,6 @@
 # Fase 3 — «Nuevo encargo» en /admin
 
-**Estado:** hecha en local (10 nov. 2026; sin PR ni despliegue) — falta probar en el navegador la entrada «?solicitud=» y la vista móvil 375 px; la entrada «Últimos laminados» no se construye (pendiente de verificar en el taller) · **Tamaño:** grande
+**Estado:** hecha en local (10 nov. 2026; sin PR ni despliegue) — falta probar en el navegador la entrada «?solicitud=» y la vista móvil 375 px; la entrada «Últimos laminados» queda descartada (11 nov. 2026: no sirve para AnycubicSlicerNext) · **Tamaño:** grande
 **Modelo:** Opus (motor y paridad), Sonnet (pantalla e importador)
 **Depende de:** fases 0 y 2 · **Índice:** [plan](../plan-calculadora-en-web.md)
 
