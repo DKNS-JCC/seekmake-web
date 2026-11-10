@@ -1,58 +1,73 @@
-// The submit-quote Edge Function re-prices every request with its own port
-// of lib/quote/pricing.ts. This test loads that port straight out of the
-// function's source and checks it agrees with the browser to the cent.
+// The tasador prices with ONE engine: supabase/functions/_shared/precios.ts,
+// imported by the quote page (through lib/quote/pricing.ts) and by the
+// submit-quote function. Until phase 8 the function had its own copy and
+// test-paridad-servidor.ts compared the two; this replaces it.
 //
-//   npx tsx scripts/test-paridad-servidor.ts
+// 1. Fixture: what submit-quote charged BEFORE the merge, for 300 seeded
+//    orders (scripts/_casos-precios.ts → serverCases), photographed from the
+//    old copy (commit ad2fa5a). The engine must give the same, to the cent
+//    and line by line. The cases carry the browser's figures, so the fixture
+//    does not depend on the estimator. If you edit serverCases, the fixture
+//    no longer matches: do not regenerate it to make this pass.
+// 2. Browser = server: computeQuote on the page and computeServerQuote on
+//    what the page sends give the same order (browserCases + the cases below).
+//
+//   npx tsx scripts/test-motor-precios.ts
 
 import { readFileSync } from 'node:fs';
-import { transformSync } from 'esbuild';
-import { computeQuote, diasPlazo, normalizeSettings, sumarLaborables, type Cupon, type PiezaInput } from '../lib/quote/pricing';
+import { deepStrictEqual } from 'node:assert';
+import { computeQuote, normalizeSettings, type Cupon, type PiezaInput } from '../lib/quote/pricing';
+import { computeServerQuote } from '../supabase/functions/_shared/precios';
 import { analizarPieza } from '../lib/quote/estimador/analizar';
 import { configAnalisis } from '../lib/quote/estimador';
+import { archivosDe, browserCases, serverCases } from './_casos-precios';
 import { caja, cilindro, malla } from './_mallas';
 import { check, done, eq, section } from './_assert';
 
-const igual = (label: string, got: unknown, expected: unknown) =>
-  check(label, got === expected, `got ${got}, expected ${expected}`);
+const servidor = { computeServerQuote, normalizeServerSettings: normalizeSettings };
+const archivos = archivosDe;
 
-const src = readFileSync('supabase/functions/submit-quote/index.ts', 'utf8');
-const ini = src.indexOf('const COSTES_CALCULADORA');
-const fin = src.indexOf('Deno.serve(');
-if (ini < 0 || fin < 0) throw new Error('no encuentro el bloque de precios en submit-quote');
-const js = transformSync(src.slice(ini, fin), { loader: 'ts' }).code;
-const servidor = new Function(
-  `${js}; return { normalizeServerSettings, computeServerQuote, sumarLaborables, diasPlazo };`
-)() as {
-  normalizeServerSettings: (raw: unknown) => any;
-  computeServerQuote: (archivos: any[], entrega: string, settings: any, cupon?: any) => any;
-  sumarLaborables: (desde: string, n: number) => string;
-  diasPlazo: (horas: number, settings: any, colaH?: number, diasExtra?: number) => number;
-};
+function mismo(a: unknown, b: unknown): string {
+  try {
+    deepStrictEqual(a, b);
+    return '';
+  } catch (e) {
+    return String((e as Error).message).slice(0, 600);
+  }
+}
 
-/** What the quote page sends for each piece (see QuoteClient submit()). */
-function archivos(piezas: PiezaInput[], q: ReturnType<typeof computeQuote>) {
-  return piezas.map((p, i) => {
-    const pr = q.piezas[i];
-    return {
-      nombre: p.nombre,
-      cantidad: p.cantidad,
-      material: p.material,
-      resistencia: p.resistenciaId,
-      detalle: p.detalleId,
-      colores: p.colores,
-      metricas: {
-        volumen_cm3: p.metrics.volumenCm3,
-        soporte_cm3: p.metrics.soporteCm3,
-        bbox_mm: p.metrics.bboxMm,
-        peso_g: pr.pesoG,
-        soporte_g: pr.soporteG,
-        tiempo_h: pr.tiempoH,
-        estimador: pr.metodo === 'capas' ? 'capas-v1' : 'aproximado',
-        por_cama: pr.porCama,
-        con_soportes: pr.conSoportes
-      }
-    };
-  });
+// ── 1. Lo que cobraba el servidor antes de la fase 8 ─────────────────────
+section('submit-quote: mismo precio que antes de unificar (300 pedidos)');
+{
+  const antes = JSON.parse(readFileSync('scripts/fixtures/precios-servidor-antes-fase8.json', 'utf8')) as
+    { nombre: string; salida: unknown }[];
+  const casos = serverCases();
+  check('mismos casos que en la foto', casos.length === antes.length && casos.every((c, i) => c.nombre === antes[i].nombre));
+  let distintos = 0;
+  for (const [i, c] of casos.entries()) {
+    const ahora = computeServerQuote(c.archivos, c.entrega, normalizeSettings(c.ajustes), c.cupon);
+    const dif = mismo(JSON.parse(JSON.stringify(ahora)), antes[i].salida);
+    if (dif && distintos++ < 5) check(c.nombre, false, dif);
+  }
+  check(`${casos.length} pedidos idénticos (total, líneas, piezas, plazo, cupón)`, distintos === 0, `${distintos} distintos`);
+}
+
+// ── 2. Navegador = servidor ──────────────────────────────────────────────
+section('navegador = servidor (pedidos sembrados)');
+{
+  let distintos = 0;
+  const casos = browserCases();
+  for (const c of casos) {
+    const s = normalizeSettings(c.ajustes);
+    const cli = computeQuote(c.piezas, s, c.entrega, c.cupon);
+    const srv = computeServerQuote(archivos(c.piezas, cli), c.entrega, s, c.cupon && { ...c.cupon, valor: String(c.cupon.valor) });
+    const dif =
+      mismo(srv.lineas, cli.lineas) ||
+      mismo([srv.total, srv.cupon, srv.diasEstimados, srv.precioFirme, srv.minimoAplicado, srv.envio],
+        [cli.total, cli.cupon, cli.diasEstimados, cli.precioFirme, cli.minimoAplicado, cli.envio]);
+    if (dif && distintos++ < 5) check(c.nombre, false, dif);
+  }
+  check(`${casos.length} pedidos con el mismo desglose`, distintos === 0, `${distintos} distintos`);
 }
 
 const casos: [string, unknown][] = [
@@ -115,19 +130,6 @@ for (const [nombre, raw] of casos) {
   trampa[0].metricas.peso_g = 0.001;
   const srv = servidor.computeServerQuote(trampa, 'recogida', servidor.normalizeServerSettings(raw));
   check('rechaza un peso imposible', srv.piezas[0].metodo === 'aproximado');
-}
-
-// ── Plazo: el servidor cuenta los días igual que la web ──────────────────
-section('plazo (fecha tope)');
-{
-  const s = normalizeSettings(null);
-  const ss = servidor.normalizeServerSettings(null);
-  for (const [desde, n] of [['2026-11-10', 2], ['2026-11-13', 1], ['2026-11-14', 0], ['2026-11-15', 2], ['2026-12-31', 7]] as const) {
-    igual(`sumarLaborables(${desde}, ${n})`, servidor.sumarLaborables(desde, n), sumarLaborables(desde, n));
-  }
-  for (const [h, cola, extra] of [[0, 0, 0], [6, 0, 0], [6, 13, 0], [0.5, 40, 2]]) {
-    eq(`diasPlazo(${h} h, cola ${cola} h, +${extra})`, servidor.diasPlazo(h, ss, cola, extra), diasPlazo(h, s, cola, extra));
-  }
 }
 
 // ── Discount codes ──────────────────────────────────────────────────────

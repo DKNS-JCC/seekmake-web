@@ -12,7 +12,7 @@
     "seed": "tsx supabase/seed.ts",
     "seed:productos": "tsx supabase/seed-productos.ts",
     "envio": "tsx scripts/sendcloud.ts",
-    "test": "tsx scripts/test-pricing.ts && tsx scripts/test-respuesta.ts && tsx scripts/test-uv-mapping.ts && tsx scripts/test-3mf.ts && tsx scripts/test-estimador.ts && tsx scripts/test-paridad-servidor.ts && tsx scripts/test-campana.ts && tsx scripts/test-gcode.ts && tsx scripts/test-formatos.ts && tsx scripts/test-paridad-calculadora.ts && tsx scripts/test-dinero.ts",
+    "test": "tsx scripts/test-pricing.ts && tsx scripts/test-respuesta.ts && tsx scripts/test-uv-mapping.ts && tsx scripts/test-3mf.ts && tsx scripts/test-estimador.ts && tsx scripts/test-motor-precios.ts && tsx scripts/test-campana.ts && tsx scripts/test-gcode.ts && tsx scripts/test-formatos.ts && tsx scripts/test-paridad-calculadora.ts && tsx scripts/test-dinero.ts",
     "test:db": "node scripts/test-migraciones.mjs",
     "test:ui": "node scripts/test-ui.mjs",
     "test:recibo": "deno run -A scripts/test-recibo.ts",
