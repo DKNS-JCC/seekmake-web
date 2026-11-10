@@ -60,6 +60,8 @@ import { colorParecido, leer3mf, zonificar, type Meta3mf } from '@/lib/quote/tre
 import {
   computeQuote,
   normalizeSettings,
+  fechaLarga,
+  fechaTope,
   DEFAULT_QUOTE_SETTINGS,
   type Cupon,
   type PiezaInput,
@@ -153,6 +155,8 @@ export function QuoteClient({
 
   // ─── settings (runtime fetch so tariff edits apply instantly) ───────────
   const [settings, setSettings] = useState<QuoteSettings>(DEFAULT_QUOTE_SETTINGS);
+  // Hours already queued (accepted orders): the deadline counts them.
+  const [colaH, setColaH] = useState(0);
   // Don't show prices computed with defaults — wait for the real tariffs so
   // the total never visibly jumps after the fetch resolves.
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -234,6 +238,9 @@ export function QuoteClient({
         if (data?.config) setSettings(normalizeSettings(data.config));
         setSettingsLoaded(true);
       });
+    createClient()
+      .rpc('plazo_cola_horas')
+      .then(({ data }) => setColaH(Number(data) || 0), () => undefined);
   }, []);
 
   async function aplicarCupon(txt: string) {
@@ -824,8 +831,13 @@ export function QuoteClient({
     : 1;
   const listo = !!quote && analizando.length === 0;
   // "Final" only when nothing on screen says we still have to look at it.
+  // With validated piece types (phase 1) only a firm price is final; with
+  // the list empty, the old rule (everything layer-analysed).
+  const firmeActivo = settings.tipos_precio_firme.length > 0;
   const precioFinal =
-    !!quote && !tooBig && !degenerate && quote.piezas.every((p) => p.metodo === 'capas');
+    !!quote && !tooBig && !degenerate &&
+    (firmeActivo ? quote.precioFirme : quote.piezas.every((p) => p.metodo === 'capas'));
+  const listoAntes = quote ? fechaTope(quote.tiempoH, settings, colaH) : null;
   const cpValido = entrega === 'envio' && /^\d{5}$/.test(cp) ? cp : undefined;
 
   // The price on screen: the funnel's "saw the price" step, then again each
@@ -1155,7 +1167,7 @@ export function QuoteClient({
   // no PDF library needed for a static-export site.
   function downloadPdf() {
     if (!quote) return;
-    if (!openQuotePdf(quote, settings)) return;
+    if (!openQuotePdf(quote, settings, colaH)) return;
     trackEvent('pdf_descargado', { total: quote.total, piezas: piezas.length });
   }
 
@@ -1672,13 +1684,26 @@ export function QuoteClient({
                     <Tick />
                     {precioFinal
                       ? 'Precio final, sin sorpresas'
-                      : 'Precio orientativo: lo cerramos al revisar la pieza'}
+                      : firmeActivo
+                        ? 'Te confirmamos el precio en menos de 24 h'
+                        : 'Precio orientativo: lo cerramos al revisar la pieza'}
                   </li>
-                  <li>
-                    <Tick />
-                    Listo en ~{quote.diasEstimados} día{quote.diasEstimados !== 1 ? 's' : ''} laborables
-                    {entrega === 'envio' ? ' + envío' : ''}
-                  </li>
+                  {listoAntes && (
+                    <li>
+                      <Tick />
+                      <span>
+                        Listo antes del {fechaLarga(listoAntes)}
+                        {entrega === 'envio' ? ' + envío' : ''}.{' '}
+                        <a
+                          href={whatsappUrl(`Hola, necesito mi pedido antes del ${fechaLarga(listoAntes)}. ¿Se puede?`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          ¿Lo necesitas antes? Escríbenos
+                        </a>
+                      </span>
+                    </li>
+                  )}
                   {resenas && resenas.total > 0 && (
                     <li>
                       <Tick />
@@ -1987,7 +2012,11 @@ export function QuoteClient({
         >
           <span className="qt-sticky-label">{precioFinal ? 'Total' : 'Total estimado'}</span>
           <strong>{euros(quote.total)}</strong>
-          <span className="qt-sticky-days">~{quote.diasEstimados} d</span>
+          {listoAntes && (
+            <span className="qt-sticky-days">
+              {new Date(`${listoAntes}T12:00:00Z`).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', timeZone: 'UTC' })}
+            </span>
+          )}
         </button>
       )}
     </div>

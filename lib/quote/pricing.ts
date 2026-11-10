@@ -141,8 +141,15 @@ export interface QuoteSettings {
   envio_gratis_desde: number;
   /** Printing hours available per working day (for the lead-time estimate). */
   plazo_horas_dia: number;
-  /** Extra working days for preparation/queue added to every estimate. */
-  plazo_dias_margen: number;
+  /** Working days of slack added to every deadline, so it is always met. */
+  plazo_holgura_dias: number;
+  /** Rush surcharge, % (admin only: the public tasador has no rush option). */
+  urgencia_recargo_pct: number;
+  /**
+   * Piece types (tipoPieza) validated by the real benchmark (phase 1) that
+   * get a firm price. Empty = no firm prices: the tasador works as before.
+   */
+  tipos_precio_firme: TipoPieza[];
   recargo_acabado_pct: Record<string, number>;
   recargo_multicolor: { base_pct: number; por_color_extra: number };
   resistencia: ResistenciaPreset[];
@@ -196,8 +203,10 @@ const BASE_SETTINGS: QuoteSettings = {
   ],
   envio_gratis_desde: 30,
   fraccion_pared: 0.35,
-  plazo_horas_dia: 8,
-  plazo_dias_margen: 1,
+  plazo_horas_dia: 4,
+  plazo_holgura_dias: 2,
+  urgencia_recargo_pct: 50,
+  tipos_precio_firme: [],
   recargo_acabado_pct: {
     'Metálico': 10,
     'Fluorescente': 10,
@@ -241,6 +250,84 @@ const BASE_SETTINGS: QuoteSettings = {
   // so no extra quantity discount by default.
   descuentos_cantidad: []
 };
+
+// ─── Plazo (fecha tope) ──────────────────────────────────────────────────
+// Same count as public.fecha_tope() in SQL (20261110170000_pedido_estandar)
+// and its copy in supabase/functions/submit-quote: keep the three in step.
+
+/** Working days to have it ready: queue + this order at plazo_horas_dia, + extra days + slack. */
+export function diasPlazo(horas: number, settings: QuoteSettings, colaH = 0, diasExtra = 0): number {
+  return (
+    Math.ceil(Math.max(0, colaH + horas) / Math.max(settings.plazo_horas_dia, 1)) +
+    Math.max(0, Math.round(diasExtra)) +
+    Math.max(0, Math.round(settings.plazo_holgura_dias))
+  );
+}
+
+/** `n` working days (Mon–Fri) after `desde` (YYYY-MM-DD). A weekend start counts from Monday. */
+export function sumarLaborables(desde: string, n: number): string {
+  const d = new Date(`${desde}T00:00:00Z`);
+  const laborable = () => d.getUTCDay() % 6 !== 0;
+  while (!laborable()) d.setUTCDate(d.getUTCDate() + 1);
+  for (let i = Math.max(0, Math.round(n)); i > 0; ) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    if (laborable()) i--;
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/** Today in Spain, YYYY-MM-DD (the browser or server clock may be elsewhere). */
+export function hoyMadrid(ahora: Date = new Date()): string {
+  return ahora.toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' });
+}
+
+/** Deadline date: today + diasPlazo working days. */
+export function fechaTope(horas: number, settings: QuoteSettings, colaH = 0, hoy = hoyMadrid()): string {
+  return sumarLaborables(hoy, diasPlazo(horas, settings, colaH));
+}
+
+/** «viernes 14 de noviembre» for a YYYY-MM-DD date. */
+export function fechaLarga(iso: string): string {
+  return new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'
+  });
+}
+
+// ─── Precio firme ────────────────────────────────────────────────────────
+
+/** Benchmark piece types (public.tasador_tipos, phase 1); the hardest wins. */
+export type TipoPieza = 'sin soportes' | 'con soportes' | 'multicolor' | 'lote';
+
+export function tipoPieza(numColores: number, cantidad: number, conSoportes: boolean): TipoPieza {
+  if (numColores > 1) return 'multicolor';
+  if (cantidad > 1) return 'lote';
+  return conSoportes ? 'con soportes' : 'sin soportes';
+}
+
+export function cabeEnCama(bbox: { x: number; y: number; z: number } | undefined, settings: QuoteSettings): boolean {
+  return !!bbox && Math.max(bbox.x, bbox.y, bbox.z) <= settings.max_bed_mm;
+}
+
+/**
+ * Firm only with measured confidence: layer analysis, fits the bed and a
+ * validated type. A multicolor piece is never firm (the workshop prices it).
+ */
+export function esPrecioFirme(
+  piezas: { tipo: TipoPieza; metodo: 'capas' | 'aproximado'; cabe: boolean }[],
+  settings: QuoteSettings
+): boolean {
+  const validos = settings.tipos_precio_firme ?? [];
+  return (
+    validos.length > 0 &&
+    piezas.length > 0 &&
+    piezas.every((p) => p.metodo === 'capas' && p.cabe && p.tipo !== 'multicolor' && validos.includes(p.tipo))
+  );
+}
+
+/** Deposit to start: half the price (decision 13). */
+export function senalPendiente(precio: number, cobrado: number): boolean {
+  return Number(cobrado || 0) + 0.005 < Number(precio || 0) / 2;
+}
 
 // ─── Calculadora-derived tariff ──────────────────────────────────────────
 
@@ -299,7 +386,8 @@ export function normalizeSettings(raw: unknown): QuoteSettings {
       : base.descuentos_cantidad,
     envio_tramos: r.envio_tramos?.length
       ? [...r.envio_tramos].sort((a, b) => a.max_g - b.max_g)
-      : base.envio_tramos
+      : base.envio_tramos,
+    tipos_precio_firme: Array.isArray(r.tipos_precio_firme) ? [...r.tipos_precio_firme] : []
   };
   if (s.modo_precio !== 'tarifa') s.modo_precio = 'calculadora';
   if (s.modo_precio === 'calculadora') {
@@ -389,8 +477,14 @@ export interface QuoteResult {
   total: number;
   /** True when precio_minimo kicked in (already spread over the pieces). */
   minimoAplicado: boolean;
-  /** Estimated working days until the order is ready for pickup/shipping. */
+  /** Working days until ready, without the queue (see diasPlazo). */
   diasEstimados: number;
+  /**
+   * Every piece is of a validated type, layer-analysed, single-color and
+   * fits the bed: what the customer sees is what they pay. Always false
+   * while tipos_precio_firme is empty.
+   */
+  precioFirme: boolean;
   /** Shipping line included in the total (0 for pickup or free shipping). */
   envio: number;
   /** € more in pieces before shipping is free (0: already free, or no threshold). */
@@ -627,9 +721,15 @@ export function computeQuote(
     }
   }
 
-  const diasEstimados =
-    Math.ceil(tiempoTotal / Math.max(settings.plazo_horas_dia, 1)) +
-    Math.max(0, Math.round(settings.plazo_dias_margen));
+  const diasEstimados = diasPlazo(tiempoTotal, settings);
+  const precioFirme = esPrecioFirme(
+    piezasOut.map((r, i) => ({
+      tipo: tipoPieza(new Set(piezas[i].colores.map((c) => `${c.nombre}|${c.hex}`)).size, r.cantidad, r.conSoportes),
+      metodo: r.metodo,
+      cabe: cabeEnCama(piezas[i].metrics.bboxMm, settings)
+    })),
+    settings
+  );
 
   return {
     pesoG: round2(pesoTotal),
@@ -643,6 +743,7 @@ export function computeQuote(
     total: round2(total),
     minimoAplicado,
     diasEstimados,
+    precioFirme,
     envio: round2(envio),
     faltaEnvioGratis,
     margenMinimo

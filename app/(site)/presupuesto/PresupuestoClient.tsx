@@ -44,6 +44,14 @@ const PAGO_LABEL: Record<QuotePago, string> = {
   pagado: 'Pagado — gracias'
 };
 
+// «viernes 14 de noviembre» (como fechaLarga de lib/quote/pricing, sin
+// arrastrar el estimador a esta página).
+function fechaLarga(isoDia: string): string {
+  return new Date(`${isoDia.slice(0, 10)}T12:00:00Z`).toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'
+  });
+}
+
 function fecha(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', {
     day: '2-digit',
@@ -59,6 +67,8 @@ export function PresupuestoClient() {
   const [envio, setEnvio] = useState<EnvioPublico | null>(null);
   // Pedidos hechos en el taller (Calculadora): qué se encarga, en palabras.
   const [encargo, setEncargo] = useState('');
+  // Fecha tope: la prometida al aceptar, o la orientativa antes.
+  const [plazo, setPlazo] = useState<{ fecha_prometida: string | null; fecha_orientativa: string | null } | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Accept-link token from the confirmation email (?codigo=..&token=..).
@@ -74,6 +84,7 @@ export function PresupuestoClient() {
     setResult(null);
     setEnvio(null);
     setEncargo('');
+    setPlazo(null);
     setAcceptError(null);
     try {
       const { data, error: err } = await createClient().rpc('get_quote_status', {
@@ -88,6 +99,8 @@ export function PresupuestoClient() {
         setResult(row);
         const { data: det } = await createClient().rpc('get_quote_detalle', { p_codigo: row.codigo });
         if (det?.[0]?.origen === 'calculadora') setEncargo(det[0].descripcion ?? '');
+        const { data: pl } = await createClient().rpc('get_quote_plazo', { p_codigo: row.codigo });
+        if (pl?.[0]) setPlazo(pl[0]);
         // El envío va en su propia RPC: se pide solo cuando toca y su fallo
         // no puede tumbar la consulta de estado, que es lo importante.
         if (row.entrega === 'envio') {
@@ -139,6 +152,10 @@ export function PresupuestoClient() {
         );
       } else {
         setResult({ ...result, estado: 'aceptado' });
+        // La fecha prometida se fija al aceptar: se vuelve a pedir.
+        void createClient()
+          .rpc('get_quote_plazo', { p_codigo: result.codigo })
+          .then(({ data: pl }) => pl?.[0] && setPlazo(pl[0]), () => undefined);
         void createClient()
           .from('quote_events')
           .insert({ session_id: '', evento: 'aceptado', payload: { codigo: result.codigo } })
@@ -269,6 +286,26 @@ export function PresupuestoClient() {
             )}
 
             {encargo && <p className="pr-msg" style={{ margin: '12px 0' }}>{encargo}</p>}
+
+            {!rechazado && (result.estado === 'aceptado' || result.estado === 'imprimiendo') && plazo?.fecha_prometida && (
+              <p className="pr-plazo">
+                <strong>Listo antes del {fechaLarga(plazo.fecha_prometida)}</strong>
+                {result.entrega === 'envio' ? ' (más los días del envío)' : ''}
+              </p>
+            )}
+            {!expirado && (result.estado === 'nuevo' || result.estado === 'revisado') && plazo?.fecha_orientativa && (
+              <p className="pr-plazo">
+                Si lo aceptas hoy, listo antes del {fechaLarga(plazo.fecha_orientativa)}
+                {result.entrega === 'envio' ? ' (más los días del envío)' : ''}.{' '}
+                <a
+                  href={whatsappUrl(`Hola, necesito el pedido ${result.codigo} antes del ${fechaLarga(plazo.fecha_orientativa)}. ¿Se puede?`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ¿Lo necesitas antes? Escríbenos
+                </a>
+              </p>
+            )}
 
             <div className="pr-meta">
               <span>{result.material}</span>

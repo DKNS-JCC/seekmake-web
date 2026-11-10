@@ -11,7 +11,8 @@ import {
   factorCalculadora,
   normalizeSettings,
   precioKgDe,
-  type QuoteSettings
+  type QuoteSettings,
+  type TipoPieza
 } from '@/lib/quote/pricing';
 import { PERFIL_K1SE, MATERIALES_K1SE, type PerfilImpresora } from '@/lib/quote/estimador';
 import { percentil } from '@/lib/quote/estadistica';
@@ -22,6 +23,9 @@ import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { AdminCabecera } from '../_components/AdminNav';
 import { ErrorBanner } from '../_components/ErrorBanner';
 import { useConfirm } from '../_components/useConfirm';
+
+// Tipos que pueden ser firmes (el multicolor no: lo tasa el taller).
+const TIPOS_FIRMES: TipoPieza[] = ['sin soportes', 'con soportes', 'lote'];
 
 const ACABADOS = [
   'Metálico',
@@ -302,13 +306,41 @@ export default function AdminTarifas() {
           <Field label="Validez del presupuesto (días)" hint="Ventana para aceptar; pasada la fecha caduca">
             <Num value={settings.validez_dias} step={1} onChange={(v) => patch((s) => ({ ...s, validez_dias: Math.max(1, Math.round(v)) }))} />
           </Field>
-          <Field label="Horas de impresión / día" hint="Para el plazo estimado que ve el cliente">
+          <Field label="Horas de impresión / día" hint="Fecha tope: (cola + este pedido) ÷ estas horas">
             <Num value={settings.plazo_horas_dia} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_horas_dia: v }))} />
           </Field>
-          <Field label="Días de margen" hint="Preparación y cola, se suman a todo plazo">
-            <Num value={settings.plazo_dias_margen} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_dias_margen: v }))} />
+          <Field label="Holgura (días laborables)" hint="Se suma a toda fecha tope para cumplirla siempre">
+            <Num value={settings.plazo_holgura_dias} step={1} onChange={(v) => patch((s) => ({ ...s, plazo_holgura_dias: Math.max(0, Math.round(v)) }))} />
+          </Field>
+          <Field label="Recargo de urgencia (%)" hint="Solo en el admin; el tasador no ofrece urgencia">
+            <Num value={settings.urgencia_recargo_pct} step={5} onChange={(v) => patch((s) => ({ ...s, urgencia_recargo_pct: Math.max(0, v) }))} />
           </Field>
         </div>
+        <Field
+          label="Precio firme por tipo de pieza"
+          hint="Marca un tipo solo cuando el banco de pruebas real lo respalde (fase 1). Sin ninguno marcado, el tasador funciona como siempre. El multicolor nunca es firme."
+        >
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 14 }}>
+            {TIPOS_FIRMES.map((t) => (
+              <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="checkbox"
+                  style={{ accentColor: 'var(--accent)' }}
+                  checked={settings.tipos_precio_firme.includes(t)}
+                  onChange={(e) =>
+                    patch((s) => ({
+                      ...s,
+                      tipos_precio_firme: e.target.checked
+                        ? [...s.tipos_precio_firme, t]
+                        : s.tipos_precio_firme.filter((x) => x !== t)
+                    }))
+                  }
+                />
+                {t}
+              </label>
+            ))}
+          </div>
+        </Field>
         <details>
           <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
             Estimación de respaldo (solo si una pieza no se puede laminar)

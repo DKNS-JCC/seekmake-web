@@ -27,6 +27,7 @@ import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { AdminCabecera } from '../_components/AdminNav';
 import { ErrorBanner } from '../_components/ErrorBanner';
 import { euros } from '@/lib/recibo/types';
+import { fechaLarga, senalPendiente } from '@/lib/quote/pricing';
 
 const ESTADOS: { id: QuoteEstado; label: string }[] = [
   { id: 'nuevo', label: 'Nuevo' },
@@ -95,6 +96,9 @@ export default function AdminPresupuestos() {
   // Presupuestos con pedido en la Calculadora: su precio se fija allí.
   const [conPedido, setConPedido] = useState<Set<string>>(new Set());
   const [precioFinal, setPrecioFinal] = useState<string>('');
+  const [fechaPrometida, setFechaPrometida] = useState('');
+  const [urgente, setUrgente] = useState(false);
+  const [recargoUrgencia, setRecargoUrgencia] = useState(50);
   const [notas, setNotas] = useState('');
   const [save, setSave] = useState<SaveState>('idle');
   const [dirty, setDirty] = useState(false);
@@ -135,12 +139,15 @@ export default function AdminPresupuestos() {
 
   async function refresh() {
     setLoading(true);
-    const [{ data, error: err }, pedidos] = await Promise.all([
+    const [{ data, error: err }, pedidos, ajustes] = await Promise.all([
       supabase().from('quotes').select('*').order('created_at', { ascending: false }),
-      supabase().rpc('quotes_con_pedido')
+      supabase().rpc('quotes_con_pedido'),
+      supabase().from('quote_settings').select('config').eq('id', 1).maybeSingle()
     ]);
     if (err) setError(mensajeDeError(err, 'No se pudieron cargar los presupuestos'));
     setQuotes(data ?? []);
+    const pct = Number((ajustes.data?.config as any)?.urgencia_recargo_pct);
+    if (Number.isFinite(pct)) setRecargoUrgencia(pct);
     if (!pedidos.error) setConPedido(new Set((pedidos.data ?? []).map(String)));
     setLoading(false);
   }
@@ -152,6 +159,8 @@ export default function AdminPresupuestos() {
     if (!data) return;
     setQuotes((prev) => prev.map((q) => (q.id === id ? data : q)));
     setOpen((cur) => (cur && cur.id === id ? data : cur));
+    // La fecha la pone la base de datos al aceptar: que el campo la vea.
+    if (open?.id === id) setFechaPrometida(data.fecha_prometida ?? '');
   }
 
   const visible = useMemo(() => {
@@ -189,6 +198,8 @@ export default function AdminPresupuestos() {
     setOpen(q);
     setEstado(q.estado);
     setPrecioFinal(q.precio_final != null ? String(q.precio_final) : '');
+    setFechaPrometida(q.fecha_prometida ?? '');
+    setUrgente(!!q.urgente);
     setNotas(q.notas_admin);
     setSave('idle');
     setDirty(false);
@@ -196,8 +207,13 @@ export default function AdminPresupuestos() {
   }
 
   function buildUpdate() {
-    const upd: Partial<Quote> = { estado, notas_admin: notas };
-    if (open && !conPedido.has(open.id)) {
+    const upd: Partial<Quote> = { estado, notas_admin: notas, urgente };
+    // La fecha se manda solo si se tocó: si no, al aceptar la fija la base de datos.
+    if (open && fechaPrometida !== (open.fecha_prometida ?? '')) {
+      upd.fecha_prometida = fechaPrometida || null;
+    }
+    // Precio firme: ni se manda (la base de datos rechaza cambiarlo).
+    if (open && !conPedido.has(open.id) && !open.precio_firme) {
       upd.precio_final = precioFinal === '' ? null : Number(precioFinal);
     }
     return upd;
@@ -219,6 +235,32 @@ export default function AdminPresupuestos() {
     setQuotes((prev) => prev.map((q) => (q.id === open.id ? { ...q, ...upd } : q)));
     await releer(open.id);
     return true;
+  }
+
+  // El cliente cambió el encargo: quita el precio firme y reinicia la aceptación.
+  async function rehacer(q: Quote) {
+    const motivo = window.prompt(
+      `Rehacer el presupuesto ${q.codigo}: quita el precio firme y el cliente tendrá que aceptarlo de nuevo.\n\n¿Qué ha cambiado? (unidades, material, diseño, envío, urgencia…)`
+    );
+    if (!motivo?.trim()) return;
+    const { error: err } = await supabase().rpc('rehacer_presupuesto', { p_quote_id: q.id, p_motivo: motivo.trim() });
+    if (err) {
+      setError(mensajeDeError(err, 'No se pudo rehacer el presupuesto'));
+      return;
+    }
+    await releer(q.id);
+    setEstado('revisado');
+    setFechaPrometida('');
+    setInfo('Presupuesto rehecho: pon el precio nuevo y avisa al cliente.');
+  }
+
+  async function recalcularFecha(q: Quote) {
+    const { data, error: err } = await supabase().rpc('fecha_tope_quote', { p_quote_id: q.id });
+    if (err) setError(mensajeDeError(err, 'No se pudo calcular la fecha'));
+    else if (data) {
+      setFechaPrometida(String(data).slice(0, 10));
+      setDirty(true);
+    }
   }
 
   async function avisar(quoteId: string) {
@@ -256,6 +298,8 @@ export default function AdminPresupuestos() {
       return;
     }
     setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, estado: value } : x)));
+    // Al aceptar, la base de datos pone la fecha prometida.
+    void releer(q.id);
     // Mismo criterio que la Calculadora: al cambiar de estado se pregunta si
     // avisar al cliente; nunca se avisa solo.
     if (AVISABLES.includes(value) && q.email) {
@@ -791,9 +835,11 @@ export default function AdminPresupuestos() {
               <Field
                 label="Precio final (€)"
                 hint={
-                  conPedido.has(open.id)
-                    ? 'Lo fija el pedido de la Calculadora.'
-                    : `Estimado: ${euros(open.precio_total)}`
+                  open.precio_firme
+                    ? 'Precio firme: es el que vio el cliente. Para cambiarlo, «Rehacer presupuesto».'
+                    : conPedido.has(open.id)
+                      ? 'Lo fija el pedido de la Calculadora.'
+                      : `Estimado: ${euros(open.precio_total)}`
                 }
               >
                 <input
@@ -802,13 +848,90 @@ export default function AdminPresupuestos() {
                   step={0.01}
                   min={0}
                   placeholder={Number(open.precio_total).toFixed(2)}
-                  value={precioFinal}
-                  disabled={conPedido.has(open.id)}
+                  value={open.precio_firme ? String(open.precio_total) : precioFinal}
+                  disabled={conPedido.has(open.id) || !!open.precio_firme}
                   onChange={(e) => {
                     setPrecioFinal(e.target.value);
                     setDirty(true);
                   }}
                 />
+              </Field>
+            </div>
+            {open.precio_firme && (
+              <p className="pq-aviso">
+                <strong>Precio firme · {euros(open.precio_total)}</strong>
+                <button type="button" className="btn-outline" onClick={() => void rehacer(open)}>
+                  Rehacer presupuesto…
+                </button>
+              </p>
+            )}
+            {open.rehecho_at && (
+              <p className="pq-nota">
+                Rehecho el {fecha(open.rehecho_at)}: «{open.rehecho_motivo}»
+              </p>
+            )}
+            <div className="pq-respuesta">
+              <Field
+                label="Listo antes del"
+                hint={
+                  fechaPrometida
+                    ? `${fechaLarga(fechaPrometida)}${open.listo_at ? ` · listo el ${fecha(open.listo_at)}` : ''}`
+                    : 'Se fija sola al aceptar (cola + holgura).'
+                }
+              >
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    style={inputStyle}
+                    type="date"
+                    value={fechaPrometida}
+                    onChange={(e) => {
+                      setFechaPrometida(e.target.value);
+                      setDirty(true);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    style={{ padding: '5px 10px', fontSize: 11, flexShrink: 0 }}
+                    onClick={() => void recalcularFecha(open)}
+                  >
+                    Recalcular
+                  </button>
+                </div>
+              </Field>
+              <Field
+                label="Urgencia"
+                hint={`La fecha ignora la cola. Con recargo (+${recargoUrgencia} %): ${euros(
+                  Math.round(Number(open.precio_total) * (1 + recargoUrgencia / 100) * 100) / 100
+                )}`}
+              >
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, padding: '9px 0' }}>
+                  <input
+                    type="checkbox"
+                    checked={urgente}
+                    style={{ accentColor: 'var(--accent)' }}
+                    onChange={(e) => {
+                      setUrgente(e.target.checked);
+                      setDirty(true);
+                    }}
+                  />
+                  Urgente
+                  {urgente && !conPedido.has(open.id) && !open.precio_firme && (
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ padding: '5px 10px', fontSize: 11 }}
+                      onClick={() => {
+                        setPrecioFinal(
+                          (Math.round(Number(open.precio_total) * (1 + recargoUrgencia / 100) * 100) / 100).toFixed(2)
+                        );
+                        setDirty(true);
+                      }}
+                    >
+                      Aplicar recargo
+                    </button>
+                  )}
+                </label>
               </Field>
             </div>
             <Field label="Notas internas">
@@ -823,6 +946,24 @@ export default function AdminPresupuestos() {
               />
             </Field>
             <h3 className="pq-seccion">Cobros</h3>
+            {['aceptado', 'imprimiendo', 'listo'].includes(open.estado) &&
+              senalPendiente(Number(open.precio_final ?? open.precio_total), Number(open.importe_pagado)) && (
+                <p className="pq-aviso">
+                  <strong>Señal del 50 % pendiente</strong>
+                  <span>
+                    {euros(open.importe_pagado)} cobrados de{' '}
+                    {euros(Number(open.precio_final ?? open.precio_total) / 2)}
+                  </span>
+                </p>
+              )}
+            {open.coste_estimado != null && (
+              <p className="pq-nota">
+                Coste de impresión: estimado {euros(Number(open.coste_estimado))} · real{' '}
+                {euros(Number(open.coste_real ?? open.coste_estimado))} · desvío{' '}
+                {Number(open.desvio_coste ?? 0) > 0 ? '+' : ''}
+                {euros(Number(open.desvio_coste ?? 0))}
+              </p>
+            )}
             <div className="pq-pago-linea">
               <Field label="Pago" hint="Sale del libro de cobros: se registra abajo, no se edita a mano.">
                 <div style={{ fontSize: 14, padding: '9px 0' }}>

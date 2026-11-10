@@ -227,6 +227,20 @@ export type Quote = {
   ip_hash?: string;
   /** Discount code that took effect on this quote. */
   cupon?: string | null;
+  /** Deadline (YYYY-MM-DD): fixed by the database on acceptance; the admin may correct it. */
+  fecha_prometida?: string | null;
+  /** When it reached «listo» (punctuality = listo_at vs fecha_prometida). */
+  listo_at?: string | null;
+  /** Rush (admin only): the deadline ignores the queue. */
+  urgente?: boolean;
+  /** What the customer saw is what they pay: change it only with rehacer_presupuesto. */
+  precio_firme?: boolean;
+  coste_estimado?: number | null;
+  coste_real?: number | null;
+  /** coste_real − coste_estimado (generated column). */
+  desvio_coste?: number | null;
+  rehecho_motivo?: string;
+  rehecho_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -589,6 +603,22 @@ export type Database = {
       get_quote_detalle: {
         Args: { p_codigo: string };
         Returns: { codigo: string; origen: QuoteOrigen; descripcion: string }[];
+      };
+      plazo_cola_horas: {
+        Args: { p_excluir?: string };
+        Returns: number;
+      };
+      get_quote_plazo: {
+        Args: { p_codigo: string };
+        Returns: { fecha_prometida: string | null; fecha_orientativa: string | null; listo_at: string | null }[];
+      };
+      fecha_tope_quote: {
+        Args: { p_quote_id: string };
+        Returns: string | null;
+      };
+      rehacer_presupuesto: {
+        Args: { p_quote_id: string; p_motivo: string };
+        Returns: undefined;
       };
       tasador_tipos: {
         Args: Record<string, never>;

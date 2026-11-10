@@ -6,20 +6,27 @@
 
 import { readFileSync } from 'node:fs';
 import { transformSync } from 'esbuild';
-import { computeQuote, normalizeSettings, type Cupon, type PiezaInput } from '../lib/quote/pricing';
+import { computeQuote, diasPlazo, normalizeSettings, sumarLaborables, type Cupon, type PiezaInput } from '../lib/quote/pricing';
 import { analizarPieza } from '../lib/quote/estimador/analizar';
 import { configAnalisis } from '../lib/quote/estimador';
 import { caja, cilindro, malla } from './_mallas';
 import { check, done, eq, section } from './_assert';
+
+const igual = (label: string, got: unknown, expected: unknown) =>
+  check(label, got === expected, `got ${got}, expected ${expected}`);
 
 const src = readFileSync('supabase/functions/submit-quote/index.ts', 'utf8');
 const ini = src.indexOf('const COSTES_CALCULADORA');
 const fin = src.indexOf('Deno.serve(');
 if (ini < 0 || fin < 0) throw new Error('no encuentro el bloque de precios en submit-quote');
 const js = transformSync(src.slice(ini, fin), { loader: 'ts' }).code;
-const servidor = new Function(`${js}; return { normalizeServerSettings, computeServerQuote };`)() as {
+const servidor = new Function(
+  `${js}; return { normalizeServerSettings, computeServerQuote, sumarLaborables, diasPlazo };`
+)() as {
   normalizeServerSettings: (raw: unknown) => any;
   computeServerQuote: (archivos: any[], entrega: string, settings: any, cupon?: any) => any;
+  sumarLaborables: (desde: string, n: number) => string;
+  diasPlazo: (horas: number, settings: any, colaH?: number, diasExtra?: number) => number;
 };
 
 /** What the quote page sends for each piece (see QuoteClient submit()). */
@@ -50,6 +57,7 @@ function archivos(piezas: PiezaInput[], q: ReturnType<typeof computeQuote>) {
 
 const casos: [string, unknown][] = [
   ['por defecto (Calculadora)', null],
+  ['precio firme para sin soportes, con soportes y lote', { tipos_precio_firme: ['sin soportes', 'con soportes', 'lote'] }],
   ['markup alto + postpro', { calculadora: { markup: 3, error: 0.5, postpro_soportes_eur: 4 } }],
   ['envío gratis desde 5 €', { envio_gratis_desde: 5 }],
   ['tarifa manual con descuentos', {
@@ -88,6 +96,18 @@ for (const [nombre, raw] of casos) {
       JSON.stringify(srv.lineas) + ' vs ' + JSON.stringify(cli.lineas));
     check(`${entrega}: acepta las cifras del análisis`,
       srv.piezas.slice(0, 3).every((p: any) => p.metodo === 'capas'));
+    check(`${entrega}: mismo plazo (${cli.diasEstimados} días)`, srv.diasEstimados === cli.diasEstimados,
+      `${srv.diasEstimados} vs ${cli.diasEstimados}`);
+    check(`${entrega}: mismo precio firme (${cli.precioFirme})`, srv.precioFirme === cli.precioFirme);
+    // Solo las de un color y laminadas, por separado.
+    for (const i of [0, 2]) {
+      const una = [piezas[i]];
+      const c1 = computeQuote(una, s, entrega);
+      const s1 = servidor.computeServerQuote(archivos(una, c1), entrega, servidor.normalizeServerSettings(raw));
+      check(`${entrega}: ${piezas[i].nombre} sola, mismo precio firme (${c1.precioFirme})`, s1.precioFirme === c1.precioFirme);
+      check(`${entrega}: ${piezas[i].nombre} sola es firme solo con la lista`,
+        c1.precioFirme === s.tipos_precio_firme.length > 0);
+    }
   }
   // Tampered weights fall back to the volume heuristic instead of being trusted.
   const cli = computeQuote(piezas.slice(0, 1), s);
@@ -95,6 +115,19 @@ for (const [nombre, raw] of casos) {
   trampa[0].metricas.peso_g = 0.001;
   const srv = servidor.computeServerQuote(trampa, 'recogida', servidor.normalizeServerSettings(raw));
   check('rechaza un peso imposible', srv.piezas[0].metodo === 'aproximado');
+}
+
+// ── Plazo: el servidor cuenta los días igual que la web ──────────────────
+section('plazo (fecha tope)');
+{
+  const s = normalizeSettings(null);
+  const ss = servidor.normalizeServerSettings(null);
+  for (const [desde, n] of [['2026-11-10', 2], ['2026-11-13', 1], ['2026-11-14', 0], ['2026-11-15', 2], ['2026-12-31', 7]] as const) {
+    igual(`sumarLaborables(${desde}, ${n})`, servidor.sumarLaborables(desde, n), sumarLaborables(desde, n));
+  }
+  for (const [h, cola, extra] of [[0, 0, 0], [6, 0, 0], [6, 13, 0], [0.5, 40, 2]]) {
+    eq(`diasPlazo(${h} h, cola ${cola} h, +${extra})`, servidor.diasPlazo(h, ss, cola, extra), diasPlazo(h, s, cola, extra));
+  }
 }
 
 // ── Discount codes ──────────────────────────────────────────────────────
