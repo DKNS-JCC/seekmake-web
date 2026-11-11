@@ -22,7 +22,12 @@ set config = config || jsonb_build_object(
   'perfil', coalesce(config -> 'perfil', '{}'::jsonb) || jsonb_build_object(
     'vParedInt', 250,
     'vSuperior', 200,
-    'aParedExt', 3000
+    'aParedExt', 3000,
+    -- Como lamina el taller (wall_loops, top/bottom_shell_layers de sus proyectos).
+    -- Medido con 18 proyectos laminados: sin esto el estimador da ~8 % de gramos de más.
+    'paredes', 2,
+    'capasSuperiores', 5,
+    'capasInferiores', 3
   ),
   'materiales', jsonb_set(
     coalesce(config -> 'materiales', '{}'::jsonb),

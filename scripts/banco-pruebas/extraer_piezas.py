@@ -36,6 +36,10 @@ def main(src, dst):
     subt = {}
     for oid, cuerpo in re.findall(r'<object id="(\d+)">(.*?)</object>', ms, re.S):
         subt[oid] = re.findall(r'<part id="\d+" subtype="(\w+)"', cuerpo)
+    # solo lo que está en alguna bandeja: lo que queda fuera no se imprime
+    en_bandeja = set()
+    for pl in re.findall(r"<plate>(.*?)</plate>", ms, re.S):
+        en_bandeja.update(re.findall(r'<metadata key="object_id" value="(\d+)"', pl))
     main_path = "/3D/3dmodel.model"
     root = ET.fromstring(z.read(main_path.lstrip("/")))
     os.makedirs(dst, exist_ok=True)
@@ -44,6 +48,8 @@ def main(src, dst):
         if it.get("printable") == "0":
             continue
         oid = it.get("objectid")
+        if en_bandeja and oid not in en_bandeja:
+            continue
         tris = []
         def recoger(path, oid, pila, top):
             o = objetos(path).get(oid)
