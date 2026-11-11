@@ -270,3 +270,34 @@ export function colorParecido<T extends { hex: string }>(hex: string, colores: T
   }
   return mejor;
 }
+
+/** A printed body: its bounding box (any frame, the same for all) and the zones it uses. */
+export interface Cuerpo {
+  min: number[];
+  max: number[];
+  zonas: number[];
+}
+
+/**
+ * Phase 1, part D: several bodies of one color each whose boxes neither
+ * touch nor overlap are separate objects (they print with no color changes,
+ * like single-color pieces). A body with two colors, or bodies of different
+ * colors that touch, are a multicolor piece. When in doubt it stays
+ * multicolor, which goes to review: that side never gives a low price.
+ * `colorDeZona`: the color chosen for each zone (null = none yet).
+ */
+export function objetosSeparados(cuerpos: Cuerpo[], colorDeZona: (string | null)[]): boolean {
+  if (cuerpos.length < 2) return false;
+  const color = cuerpos.map((c) => {
+    const cs = new Set(c.zonas.map((z) => colorDeZona[z] ?? null));
+    return cs.size === 1 ? [...cs][0] : undefined;
+  });
+  if (color.some((c) => c === undefined || c === null)) return false;
+  const tocan = (a: Cuerpo, b: Cuerpo) => [0, 1, 2].every((k) => a.min[k] <= b.max[k] && b.min[k] <= a.max[k]);
+  for (let i = 0; i < cuerpos.length; i++) {
+    for (let j = i + 1; j < cuerpos.length; j++) {
+      if (color[i] !== color[j] && tocan(cuerpos[i], cuerpos[j])) return false;
+    }
+  }
+  return true;
+}

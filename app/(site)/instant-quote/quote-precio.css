@@ -1,0 +1,234 @@
+/* Tasador, second half: price, code, sticky pill, request and the responsive
+   rules for the whole page. Imported right after quote.css (same order as
+   when they were one file). */
+
+/* ── breakdown ──────────────────────────────────────── */
+.qt-total {
+    padding: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+}
+.qt-total-empty {
+    font-size: 13px; color: var(--muted); text-align: center;
+    padding: 8px 0;
+}
+.qt-lines { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.qt-lines li {
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 13px; color: var(--muted);
+}
+.qt-lines li span:last-child {
+    font-family: var(--font-mono), monospace; white-space: nowrap;
+}
+.qt-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 14px; color: var(--text);
+}
+.qt-total-row strong {
+    font-family: var(--font-display), sans-serif;
+    font-size: 34px; letter-spacing: 0.02em; color: var(--accent);
+}
+.qt-total-note {
+    margin-top: 8px;
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+}
+
+/* ── Discount code ───────────────────────────────────── */
+.qt-cupon { margin-top: 10px; font-size: 12px; }
+.qt-cupon-abrir, .qt-cupon-quitar {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font: inherit; color: var(--accent); text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.qt-cupon-quitar { margin-left: 8px; color: var(--muted); }
+.qt-cupon-form { display: flex; gap: 8px; }
+.qt-cupon-form input {
+    flex: 1; min-width: 0;
+    padding: 9px 12px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r);
+    /* 16px: iOS zooms into smaller inputs on focus. */
+    font-family: var(--font-mono), monospace; font-size: 16px;
+    text-transform: uppercase; outline: none;
+}
+.qt-cupon-form input:focus { border-color: var(--accent); }
+.qt-cupon-form .btn-outline { padding: 8px 16px; font-size: 11px; }
+.qt-cupon-ok { color: var(--accent); }
+.qt-cupon-aviso { color: var(--muted); }
+.qt-cupon-error { margin-top: 6px; color: #e0524d; }
+
+/* ── Sticky price pill ───────────────────────────────── */
+.qt-sticky-price {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 60;
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 9px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border-h);
+    border-radius: 999px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+    animation: qt-sticky-in 0.25s ease;
+    backdrop-filter: blur(6px);
+}
+.qt-sticky-price:hover { border-color: var(--accent); }
+.qt-sticky-label {
+    font-family: var(--font-mono), monospace;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+}
+.qt-sticky-price strong {
+    font-family: var(--font-display), sans-serif;
+    font-size: 22px; letter-spacing: 0.02em; color: var(--accent);
+    line-height: 1;
+}
+.qt-sticky-days {
+    font-family: var(--font-mono), monospace;
+    font-size: 10px; color: var(--muted);
+}
+@keyframes qt-sticky-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+/* Phones: anchor left so the WhatsApp FAB (bottom-right) stays clear. */
+@media (max-width: 640px) {
+    .qt-sticky-price {
+        left: 16px; transform: none;
+        animation: qt-sticky-in-m 0.25s ease;
+    }
+    @keyframes qt-sticky-in-m {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+}
+
+/* ── Trust next to the price ─────────────────────────── */
+.qt-trust {
+    list-style: none;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px;
+    margin-top: 12px;
+    font-size: 12px; color: var(--text); line-height: 1.35;
+}
+.qt-trust li { display: flex; gap: 6px; align-items: flex-start; }
+.qt-trust a { color: var(--accent); white-space: nowrap; }
+.qt-trust svg { flex: none; margin-top: 2px; color: var(--accent); }
+@media (max-width: 400px) { .qt-trust { grid-template-columns: 1fr; } }
+
+/* ── Small-order nudge ───────────────────────────────── */
+.qt-upsell {
+    margin-top: 12px; padding: 12px 14px;
+    background: var(--bg);
+    border: 1px dashed var(--accent);
+    border-radius: var(--r);
+    font-size: 13px; color: var(--text); line-height: 1.5;
+}
+.qt-upsell-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.qt-upsell-acciones .btn-outline { padding: 7px 14px; font-size: 11px; }
+.qt-envio-gratis { color: var(--accent); font-size: 12px; }
+
+.qt-cp {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 10px;
+    font-size: 13px; color: var(--text);
+}
+.qt-cp small { color: var(--muted); }
+.qt-cp input {
+    width: 96px;
+    padding: 8px 12px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r);
+    font-family: var(--font-mono), monospace; font-size: 16px; /* iOS: no zoom */
+    outline: none;
+}
+.qt-cp input:focus { border-color: var(--accent); }
+
+/* ── Ask for it ──────────────────────────────────────── */
+.qt-pedir { display: flex; flex-direction: column; gap: 10px; }
+.qt-ctas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 400px) { .qt-ctas { grid-template-columns: 1fr; } }
+.qt-cta { width: 100%; justify-content: center; }
+.qt-cta-wa { display: inline-flex; align-items: center; gap: 8px; }
+.qt-cta-wa svg { color: #15803d; }
+
+.qt-guardar { font-size: 12px; text-align: center; }
+.qt-guardar-opciones { display: flex; justify-content: center; gap: 8px; color: var(--muted); }
+.qt-guardar .qt-form-hint { margin-top: 6px; }
+.qt-guardar-ok { display: inline-flex; gap: 6px; align-items: center; color: var(--accent); }
+
+/* ── request form ───────────────────────────────────── */
+.qt-form { display: flex; flex-direction: column; gap: 10px; }
+.qt-form input, .qt-form textarea {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text);
+    font-family: var(--font-sans), sans-serif; font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.qt-form input:focus, .qt-form textarea:focus { border-color: var(--accent); }
+.qt-form input { font-size: 16px; } /* iOS: no zoom on focus */
+.qt-form input[aria-invalid="true"] { border-color: #e0524d; }
+.qt-form textarea { min-height: 84px; resize: vertical; }
+.qt-form-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.qt-form-hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: -4px; }
+.qt-form-mas summary {
+    cursor: pointer; font-size: 12px; color: var(--accent);
+    padding: 4px 0;
+}
+.qt-form-mas[open] { display: flex; flex-direction: column; gap: 10px; }
+.qt-form-legal { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.qt-form-legal a { color: var(--accent); }
+.qt-honeypot {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0,0,0,0);
+}
+
+.qt-msg.err {
+    padding: 10px 14px;
+    background: rgba(224, 82, 77, 0.08);
+    border: 1px solid rgba(224, 82, 77, 0.5);
+    border-radius: var(--r);
+    font-size: 13px; color: var(--text);
+}
+
+.qt-success {
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--r);
+    text-align: center;
+    display: flex; flex-direction: column; gap: 12px; align-items: center;
+}
+.qt-success:focus { outline: none; }
+.qt-success-icon { color: var(--accent); }
+.qt-success-title {
+    font-family: var(--font-display), sans-serif;
+    font-size: 26px; letter-spacing: 0.02em; color: var(--text);
+}
+.qt-success .qt-success-lead { font-size: 15px; color: var(--text); }
+.qt-success-acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.qt-success-acciones .btn-outline { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 11px; }
+.qt-success-code {
+    font-family: var(--font-display), sans-serif;
+    font-size: 32px; letter-spacing: 0.06em; color: var(--accent);
+}
+.qt-success p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── responsive ─────────────────────────────────────── */
+@media (max-width: 900px) {
+    .qt-main { grid-template-columns: 1fr; }
+    .qt-viewer {
+        position: relative; top: 0;
+        height: 50vh; min-height: 320px;
+    }
+    .qt-cards { grid-template-columns: 1fr; }
+}

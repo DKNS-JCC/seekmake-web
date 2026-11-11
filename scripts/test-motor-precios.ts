@@ -1,55 +1,78 @@
-// The submit-quote Edge Function re-prices every request with its own port
-// of lib/quote/pricing.ts. This test loads that port straight out of the
-// function's source and checks it agrees with the browser to the cent.
+// The tasador prices with ONE engine: supabase/functions/_shared/precios.ts,
+// imported by the quote page (through lib/quote/pricing.ts) and by the
+// submit-quote function. Until phase 8 the function had its own copy and
+// test-paridad-servidor.ts compared the two; this replaces it.
 //
-//   npx tsx scripts/test-paridad-servidor.ts
+// 1. Fixture: what submit-quote charged BEFORE the merge, for 300 seeded
+//    orders (scripts/_casos-precios.ts → serverCases), photographed from the
+//    old copy (commit ad2fa5a). The engine must give the same, to the cent
+//    and line by line. The cases carry the browser's figures, so the fixture
+//    does not depend on the estimator. If you edit serverCases, the fixture
+//    no longer matches: do not regenerate it to make this pass.
+// 2. Browser = server: computeQuote on the page and computeServerQuote on
+//    what the page sends give the same order (browserCases + the cases below).
+//
+//   npx tsx scripts/test-motor-precios.ts
 
 import { readFileSync } from 'node:fs';
-import { transformSync } from 'esbuild';
+import { deepStrictEqual } from 'node:assert';
 import { computeQuote, normalizeSettings, type Cupon, type PiezaInput } from '../lib/quote/pricing';
+import { computeServerQuote } from '../supabase/functions/_shared/precios';
 import { analizarPieza } from '../lib/quote/estimador/analizar';
 import { configAnalisis } from '../lib/quote/estimador';
+import { archivosDe, browserCases, serverCases } from './_casos-precios';
 import { caja, cilindro, malla } from './_mallas';
 import { check, done, eq, section } from './_assert';
 
-const src = readFileSync('supabase/functions/submit-quote/index.ts', 'utf8');
-const ini = src.indexOf('const COSTES_CALCULADORA');
-const fin = src.indexOf('Deno.serve(');
-if (ini < 0 || fin < 0) throw new Error('no encuentro el bloque de precios en submit-quote');
-const js = transformSync(src.slice(ini, fin), { loader: 'ts' }).code;
-const servidor = new Function(`${js}; return { normalizeServerSettings, computeServerQuote };`)() as {
-  normalizeServerSettings: (raw: unknown) => any;
-  computeServerQuote: (archivos: any[], entrega: string, settings: any, cupon?: any) => any;
-};
+const servidor = { computeServerQuote, normalizeServerSettings: normalizeSettings };
+const archivos = archivosDe;
 
-/** What the quote page sends for each piece (see QuoteClient submit()). */
-function archivos(piezas: PiezaInput[], q: ReturnType<typeof computeQuote>) {
-  return piezas.map((p, i) => {
-    const pr = q.piezas[i];
-    return {
-      nombre: p.nombre,
-      cantidad: p.cantidad,
-      material: p.material,
-      resistencia: p.resistenciaId,
-      detalle: p.detalleId,
-      colores: p.colores,
-      metricas: {
-        volumen_cm3: p.metrics.volumenCm3,
-        soporte_cm3: p.metrics.soporteCm3,
-        bbox_mm: p.metrics.bboxMm,
-        peso_g: pr.pesoG,
-        soporte_g: pr.soporteG,
-        tiempo_h: pr.tiempoH,
-        estimador: pr.metodo === 'capas' ? 'capas-v1' : 'aproximado',
-        por_cama: pr.porCama,
-        con_soportes: pr.conSoportes
-      }
-    };
-  });
+function mismo(a: unknown, b: unknown): string {
+  try {
+    deepStrictEqual(a, b);
+    return '';
+  } catch (e) {
+    return String((e as Error).message).slice(0, 600);
+  }
+}
+
+// ── 1. Lo que cobraba el servidor antes de la fase 8 ─────────────────────
+section('submit-quote: mismo precio que antes de unificar (300 pedidos)');
+{
+  const antes = JSON.parse(readFileSync('scripts/fixtures/precios-servidor-antes-fase8.json', 'utf8')) as
+    { nombre: string; salida: unknown }[];
+  const casos = serverCases();
+  check('mismos casos que en la foto', casos.length === antes.length && casos.every((c, i) => c.nombre === antes[i].nombre));
+  let distintos = 0;
+  for (const [i, c] of casos.entries()) {
+    const ahora = computeServerQuote(c.archivos, c.entrega, normalizeSettings(c.ajustes), c.cupon);
+    const dif = mismo(JSON.parse(JSON.stringify(ahora)), antes[i].salida);
+    if (dif && distintos++ < 5) check(c.nombre, false, dif);
+  }
+  check(`${casos.length} pedidos idénticos (total, líneas, piezas, plazo, cupón)`, distintos === 0, `${distintos} distintos`);
+}
+
+// ── 2. Navegador = servidor ──────────────────────────────────────────────
+section('navegador = servidor (pedidos sembrados)');
+{
+  let distintos = 0;
+  const casos = browserCases();
+  for (const c of casos) {
+    const s = normalizeSettings(c.ajustes);
+    const cli = computeQuote(c.piezas, s, c.entrega, c.cupon);
+    const srv = computeServerQuote(archivos(c.piezas, cli), c.entrega, s, c.cupon && { ...c.cupon, valor: String(c.cupon.valor) });
+    const dif =
+      mismo(srv.lineas, cli.lineas) ||
+      mismo([srv.total, srv.cupon, srv.diasEstimados, srv.precioFirme, srv.minimoAplicado, srv.envio],
+        [cli.total, cli.cupon, cli.diasEstimados, cli.precioFirme, cli.minimoAplicado, cli.envio]);
+    if (dif && distintos++ < 5) check(c.nombre, false, dif);
+  }
+  check(`${casos.length} pedidos con el mismo desglose`, distintos === 0, `${distintos} distintos`);
 }
 
 const casos: [string, unknown][] = [
   ['por defecto (Calculadora)', null],
+  ['precio firme para sin soportes, con soportes y lote', { tipos_precio_firme: ['sin soportes', 'con soportes', 'lote'] }],
   ['markup alto + postpro', { calculadora: { markup: 3, error: 0.5, postpro_soportes_eur: 4 } }],
   ['envío gratis desde 5 €', { envio_gratis_desde: 5 }],
   ['tarifa manual con descuentos', {
@@ -88,6 +111,18 @@ for (const [nombre, raw] of casos) {
       JSON.stringify(srv.lineas) + ' vs ' + JSON.stringify(cli.lineas));
     check(`${entrega}: acepta las cifras del análisis`,
       srv.piezas.slice(0, 3).every((p: any) => p.metodo === 'capas'));
+    check(`${entrega}: mismo plazo (${cli.diasEstimados} días)`, srv.diasEstimados === cli.diasEstimados,
+      `${srv.diasEstimados} vs ${cli.diasEstimados}`);
+    check(`${entrega}: mismo precio firme (${cli.precioFirme})`, srv.precioFirme === cli.precioFirme);
+    // Solo las de un color y laminadas, por separado.
+    for (const i of [0, 2]) {
+      const una = [piezas[i]];
+      const c1 = computeQuote(una, s, entrega);
+      const s1 = servidor.computeServerQuote(archivos(una, c1), entrega, servidor.normalizeServerSettings(raw));
+      check(`${entrega}: ${piezas[i].nombre} sola, mismo precio firme (${c1.precioFirme})`, s1.precioFirme === c1.precioFirme);
+      check(`${entrega}: ${piezas[i].nombre} sola es firme solo con la lista`,
+        c1.precioFirme === s.tipos_precio_firme.length > 0);
+    }
   }
   // Tampered weights fall back to the volume heuristic instead of being trusted.
   const cli = computeQuote(piezas.slice(0, 1), s);
@@ -170,6 +205,32 @@ section('códigos de descuento');
     eq(`${nombre}: total servidor = cliente (${cli.total} €)`, srv.total, cli.total, 0.001);
     check(`${nombre}: mismas líneas`, JSON.stringify(srv.lineas) === JSON.stringify(cli.lineas),
       JSON.stringify(srv.lineas) + ' vs ' + JSON.stringify(cli.lineas));
+  }
+}
+
+// ── Objetos separados (fase 1, parte D): tipo de pieza, no precio ────────
+section('objetos separados: cambian el tipo de pieza, nunca el precio');
+{
+  const met = { volumenCm3: 8, soporteCm3: 0, areaCm2: 0, bboxMm: { x: 20, y: 20, z: 20 }, triangulos: 12, mallas: 2, overhangCm2: 0 };
+  for (const raw of [null, { tipos_precio_firme: ['sin soportes'] }]) {
+    const s = normalizeSettings(raw);
+    const base: PiezaInput = {
+      nombre: 'qr', metrics: met, analisis: analizarPieza(cubo, configAnalisis(s)), cantidad: 1, material: 'PLA',
+      colores: [{ nombre: 'N', hex: '#000', acabado: null }, { nombre: 'B', hex: '#fff', acabado: null }],
+      resistenciaId: 'estandar', detalleId: 'estandar'
+    };
+    const junta = computeQuote([base], s);
+    const suelta = computeQuote([{ ...base, separados: true }], s);
+    check(`${raw ? 'con' : 'sin'} lista: mismo desglose`, mismo(suelta.lineas, junta.lineas) === '' && suelta.total === junta.total);
+    check(`${raw ? 'con' : 'sin'} lista: precio firme solo si son separados y el tipo está validado`,
+      junta.precioFirme === false && suelta.precioFirme === (raw !== null));
+    const a = archivos([base], junta);
+    const srvJunta = computeServerQuote(a, 'recogida', s);
+    a[0].metricas = { ...a[0].metricas, objetos_separados: true } as typeof a[0]['metricas'];
+    const srvSuelta = computeServerQuote(a, 'recogida', s);
+    check(`${raw ? 'con' : 'sin'} lista: el servidor ve el tipo y no cambia el precio`,
+      srvJunta.piezas[0].tipo === 'multicolor' && srvSuelta.piezas[0].tipo === 'sin soportes' &&
+      mismo(srvSuelta.lineas, srvJunta.lineas) === '' && srvSuelta.precioFirme === suelta.precioFirme);
   }
 }
 

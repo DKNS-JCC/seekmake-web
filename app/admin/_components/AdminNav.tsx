@@ -7,31 +7,41 @@ import { createClient } from '@/lib/supabase/client';
 import { NuevosBadge } from './NuevosBadge';
 import { RebuildButton } from './RebuildButton';
 
-// Grouped by how often each thing is touched: orders daily, the public web
-// now and then, settings rarely.
-const GRUPOS: { titulo: string; links: { href: string; label: string; badge?: ReactNode }[] }[] = [
+// Ordenado por el trabajo que se hace, de lo diario a lo raro: pedidos cada
+// día, la web de vez en cuando, los ajustes casi nunca. «Web» va plegado.
+type Enlace = { href: string; label: string; badge?: ReactNode };
+const GRUPOS: { titulo: string; plegado?: boolean; links: Enlace[] }[] = [
   { titulo: '', links: [{ href: '/admin', label: 'Hoy' }] },
+  { titulo: 'Pedidos', links: [{ href: '/admin/presupuestos', label: 'Pedidos', badge: <NuevosBadge /> }] },
   {
-    titulo: 'Pedidos',
+    titulo: 'Taller',
     links: [
-      { href: '/admin/presupuestos', label: 'Presupuestos', badge: <NuevosBadge /> },
-      { href: '/admin/cupones', label: 'Códigos de descuento' },
-      { href: '/admin/campanas', label: 'Campañas por email' },
-      { href: '/admin/estadisticas', label: 'Estadísticas' }
+      { href: '/admin/taller', label: 'Cola de impresión' },
+      { href: '/admin/filamento', label: 'Filamento gastado' }
     ]
   },
+  { titulo: 'Dinero', links: [{ href: '/admin/estadisticas', label: 'Estadísticas' }] },
   {
     titulo: 'Web',
+    plegado: true,
     links: [
       { href: '/admin/productos', label: 'Productos' },
       { href: '/admin/filamentos', label: 'Filamentos y colores' },
       { href: '/admin/trabajos', label: 'Trabajos' },
       { href: '/admin/resenas', label: 'Reseñas' },
       { href: '/admin/blog', label: 'Blog' },
+      { href: '/admin/cupones', label: 'Códigos de descuento' },
+      { href: '/admin/campanas', label: 'Campañas por email' },
       { href: '/admin/navidad', label: 'Navidad' }
     ]
   },
-  { titulo: 'Ajustes', links: [{ href: '/admin/tarifas', label: 'Tarifas del tasador' }] }
+  {
+    titulo: 'Ajustes',
+    links: [
+      { href: '/admin/tarifas', label: 'Precios' },
+      { href: '/admin/tasador', label: 'Tasador' }
+    ]
+  }
 ];
 
 const sinBarra = (p: string) => (p.length > 1 ? p.replace(/\/$/, '') : p);
@@ -40,7 +50,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const ruta = sinBarra(usePathname() ?? '/admin');
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const actual = GRUPOS.flatMap((g) => g.links).find((l) => l.href === ruta);
+  const actual =
+    ruta === '/admin/encargo' ? { label: 'Nuevo encargo' } : GRUPOS.flatMap((g) => g.links).find((l) => l.href === ruta);
+
+  // Alt+N: «Nuevo encargo» desde cualquier pantalla del admin.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        router.push('/admin/encargo');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [router]);
 
   // The mobile sheet closes when a link is followed and with Esc.
   useEffect(() => {
@@ -59,6 +82,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <div className={'adm' + (abierto ? ' adm-abierto' : '')}>
       <header className="adm-top">
         <span className="adm-top-titulo">3DCC · {actual?.label ?? 'Admin'}</span>
+        <div className="adm-top-acciones">
+        <Link href="/admin/encargo" className="adm-menu-btn" title="Alt+N">+ Encargo</Link>
         <button
           type="button"
           className="adm-menu-btn"
@@ -71,6 +96,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </svg>
           Menú
         </button>
+        </div>
       </header>
 
       <div className="adm-velo" onClick={() => setAbierto(false)} aria-hidden="true" />
@@ -85,19 +111,50 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </Link>
         {GRUPOS.map((g) => (
           <div key={g.titulo || 'inicio'} className="adm-grupo">
-            {g.titulo && <p className="adm-grupo-titulo">{g.titulo}</p>}
-            {g.links.map((l) => (
+            {g.plegado ? (
+              <details open={g.links.some((l) => l.href === ruta)}>
+                <summary className="adm-grupo-titulo adm-grupo-plegable">{g.titulo}</summary>
+              {g.links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="adm-link"
+                  aria-current={l.href === ruta ? 'page' : undefined}
+                  onClick={() => setAbierto(false)}
+                >
+                  {l.label}
+                  {l.badge}
+                </Link>
+              ))}
+              </details>
+            ) : (
+              <>
+                {g.titulo && g.links.length > 1 && <p className="adm-grupo-titulo">{g.titulo}</p>}
+              {g.links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="adm-link"
+                  aria-current={l.href === ruta ? 'page' : undefined}
+                  onClick={() => setAbierto(false)}
+                >
+                  {l.label}
+                  {l.badge}
+                </Link>
+              ))}
+              </>
+            )}
+            {!g.titulo && (
               <Link
-                key={l.href}
-                href={l.href}
-                className="adm-link"
-                aria-current={l.href === ruta ? 'page' : undefined}
+                href="/admin/encargo"
+                className="btn-primary adm-nuevo"
+                title="Alt+N"
+                aria-current={ruta === '/admin/encargo' ? 'page' : undefined}
                 onClick={() => setAbierto(false)}
               >
-                {l.label}
-                {l.badge}
+                Nuevo encargo
               </Link>
-            ))}
+            )}
           </div>
         ))}
         <div className="adm-side-pie">

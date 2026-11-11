@@ -94,6 +94,9 @@ await client.query(`
   create or replace function auth.uid() returns uuid language sql stable as $fn$
     select nullif(auth.jwt() ->> 'sub', '')::uuid;
   $fn$;
+  create or replace function auth.role() returns text language sql stable as $fn$
+    select auth.jwt() ->> 'role';
+  $fn$;
 
   create table storage.buckets (
     id text primary key, name text, public boolean default false,
@@ -108,6 +111,7 @@ await client.query(`
   -- Idempotente: el directorio de datos sobrevive entre ejecuciones.
   do $r$ begin create role anon; exception when duplicate_object then null; end $r$;
   do $r$ begin create role authenticated; exception when duplicate_object then null; end $r$;
+  do $r$ begin create role service_role; exception when duplicate_object then null; end $r$;
   grant usage on schema public to anon, authenticated;
 `);
 
@@ -1120,6 +1124,36 @@ await check('cupones: una solicitud sin cupón no lleva nada en el pedido', asyn
   assert(!('cupon' in o.data) && !o.data.notes.includes('Cupón'), 'cupón fantasma');
 });
 
+// ── Detalle por pieza en el pedido (20261112100000) ─────────────────────────
+await check('pedido web: conserva cada pieza (material, colores, gramos y horas) y los totales', async () => {
+  const archivos = [
+    { nombre: 'tapa.stl', cantidad: 3, material: 'PLA', resistencia: 'estandar', detalle: 'estandar',
+      colores: [{ nombre: 'Negro', hex: '#000000', parte: '' }],
+      metricas: { peso_g: 12.5, tiempo_h: 0.75, estimador: 'capas-v1' } },
+    { nombre: 'qr.3mf', cantidad: 1, material: 'PETG', resistencia: 'resistente', detalle: 'fino',
+      colores: [{ nombre: 'Blanco', hex: '#ffffff', parte: 'Base' }, { nombre: 'Negro', hex: '#000000', parte: 'Código' }],
+      metricas: { peso_g: 30, tiempo_h: 2, estimador: 'aproximado' } }
+  ];
+  const { rows } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, archivos, colores)
+    values ('Dos Piezas', 'dos@example.com', '612', 'PLA, PETG', 4, 'recogida', 25, $1,
+            '[{"nombre":"Negro"},{"nombre":"Blanco"}]')
+    returning id`, [JSON.stringify(archivos)]);
+  const o = await ordenDeQuote(rows[0].id);
+  const p = o?.data.piezas;
+  assert(Array.isArray(p) && p.length === 2, `piezas: ${JSON.stringify(p)}`);
+  assert(p[0].nombre === 'tapa.stl' && p[0].cantidad === 3 && p[0].material === 'PLA' && Number(p[0].peso_g) === 12.5 &&
+    Number(p[0].horas) === 0.75 && p[0].metodo === 'capas-v1', `primera: ${JSON.stringify(p[0])}`);
+  assert(p[1].material === 'PETG' && p[1].colores.length === 2 && p[1].colores[1].parte === 'Código' &&
+    p[1].colores[0].hex === '#ffffff', `segunda: ${JSON.stringify(p[1])}`);
+  // Los totales aplanados que lee la 7.2 siguen igual: 3 × 12,5 + 30 g y 3 × 0,75 + 2 h.
+  assert(o.data.peso_g === '68' && o.data.horas === '4.25' && o.data.cantidad === 4, `totales: ${o.data.peso_g} g, ${o.data.horas} h, ${o.data.cantidad}`);
+  assert(o.data.notes.includes('Solicitud web') && o.data.filamento === 'PLA, PETG', 'se perdió lo de siempre');
+  // Sin archivos: lista vacía, no null.
+  const v = await ordenDeQuote(webQuote.id);
+  assert(Array.isArray(v.data.piezas), 'sin lista de piezas');
+});
+
 console.log('\n▸ Miniaturas del tasador');
 
 await check('tasador-miniaturas: privado, solo JPEG pequeño; anon sube con ruta válida y no lee', async () => {
@@ -1144,6 +1178,337 @@ await check('tasador-miniaturas: privado, solo JPEG pequeño; anon sube con ruta
     await client.query('rollback');
     await comoAdmin();
   }
+});
+
+// ── Acceso del admin a orders y empresa_docs (20261110150000) ──────────────
+console.log('\n▸ Admin sobre orders y empresa_docs');
+await check('admin lee y escribe orders de 3DCC; anon y usuario sin claim no ven nada', async () => {
+  await comoAdmin();
+  const { rows: [{ n: total }] } = await client.query(`select count(*)::int as n from public.orders where empresa = '3dcc'`);
+  assert(total > 0, 'sin pedidos de 3DCC en el banco de pruebas');
+  const sesion = async (claims, sql, params = []) => {
+    await client.query('begin');
+    try {
+      await client.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claims)]);
+      await client.query('set local role authenticated');
+      return (await client.query(sql, params)).rows;
+    } finally {
+      await client.query('rollback');
+    }
+  };
+  const SIN_CLAIM = '00000000-0000-0000-0000-0000000000ff'; // autenticado, sin empresa ni is_admin
+  for (const t of ['orders', 'empresa_docs']) {
+    const q = `select count(*)::int as n from public.${t} where empresa = '3dcc'`;
+    const admin = (await sesion({ app_metadata: { is_admin: true } }, q))[0].n;
+    assert(admin > 0, `admin ve ${admin} filas de ${t}`);
+    for (const [quien, claims] of [['anon', {}], ['usuario sin claim', { sub: SIN_CLAIM }]]) {
+      const n = (await sesion(claims, q))[0].n;
+      assert(n === 0, `${quien} ve ${n} filas de ${t}`);
+    }
+  }
+  // Escritura del admin (y solo del admin) en orders.
+  const admin = { app_metadata: { is_admin: true } };
+  const ins = `insert into public.orders (empresa, id, data) values ('3dcc', 'ADM00001', '{}')`;
+  assert((await sesion(admin, ins + ' returning id')).length === 1, 'admin no inserta');
+  assert((await sesion(admin, `update public.orders set data = '{"x":1}' where empresa = '3dcc' returning id`)).length === total, 'admin no actualiza todos');
+  let bloqueado = false;
+  try { await sesion({ sub: SIN_CLAIM }, ins); } catch { bloqueado = true; }
+  assert(bloqueado, 'un usuario sin claim inserta en orders');
+  assert((await sesion({ sub: SIN_CLAIM }, `update public.orders set data = '{}' returning id`)).length === 0, 'un usuario sin claim actualiza orders');
+});
+
+// ── Pedido estándar: fecha prometida y precio firme (20261110170000) ───────
+console.log('\n▸ Pedido estándar (fase 2)');
+await comoAdmin();
+const val1 = async (sql, params = []) => Object.values((await client.query(sql, params)).rows[0])[0];
+const iso = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+// pg convierte date a Date en hora local: se pide como texto.
+const fechaSql = async (sql, params = []) => iso(await val1(`select (${sql})::text`, params));
+
+await check('ajustes: 4 h/día, 2 días de holgura, lista de tipos firmes vacía', async () => {
+  const c = await val1('select config from public.quote_settings where id = 1');
+  assert(Number(c.plazo_horas_dia) === 4, `plazo_horas_dia ${c.plazo_horas_dia}`);
+  assert(Number(c.plazo_holgura_dias) === 2, `holgura ${c.plazo_holgura_dias}`);
+  assert(Array.isArray(c.tipos_precio_firme) && c.tipos_precio_firme.length === 0, JSON.stringify(c.tipos_precio_firme));
+  assert(!('plazo_dias_margen' in c), 'sigue plazo_dias_margen');
+});
+
+await check('sumar_laborables: salta fines de semana (mismos casos que test-pricing)', async () => {
+  // Mismos casos que scripts/test-pricing.ts (sumarLaborables).
+  for (const [desde, n, esperado] of [
+    ['2026-11-10', 2, '2026-11-12'], // martes + 2 → jueves
+    ['2026-11-13', 1, '2026-11-16'], // viernes + 1 → lunes
+    ['2026-11-12', 3, '2026-11-17'], // jueves + 3 → martes
+    ['2026-11-14', 0, '2026-11-16'], // sábado + 0 → lunes
+    ['2026-11-15', 2, '2026-11-18']  // domingo + 2 → miércoles
+  ]) {
+    const r = await fechaSql('public.sumar_laborables($1::date, $2)', [desde, n]);
+    assert(r === esperado, `${desde} + ${n} = ${r}, esperaba ${esperado}`);
+  }
+});
+
+await check('fecha_tope: cola + horas entre 4 h/día + extra + holgura; urgente ignora la cola', async () => {
+  const cola = Number(await val1('select public.plazo_cola_horas()'));
+  const esperada = (dias) => fechaSql('public.sumar_laborables(public.en_madrid(now())::date, $1)', [dias]);
+  const caso = async (args, dias) => {
+    const r = await fechaSql(`public.fecha_tope(${args})`);
+    const e = await esperada(dias);
+    assert(r === e, `fecha_tope(${args}) = ${r}, esperaba ${e} (${dias} días, cola ${cola} h)`);
+  };
+  await caso('6', Math.ceil((cola + 6) / 4) + 2);
+  await caso('6, 3', Math.ceil((cola + 6) / 4) + 3 + 2);
+  await caso('6, 0, true', Math.ceil(6 / 4) + 2);
+  await caso('0, 0, true', 2);
+  // Un pedido aceptado más alarga la cola de los siguientes.
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, estado, metricas, archivos)
+    values ('Cola', 'cola@example.com', '6', 'PLA', 1, 'recogida', 10, 'aceptado', '{"tiempo_h": 40}', '[]')
+    returning id`);
+  const cola2 = Number(await val1('select public.plazo_cola_horas()'));
+  assert(Math.abs(cola2 - cola - 40) < 0.01, `cola ${cola} → ${cola2}`);
+  assert(Math.abs(Number(await val1('select public.plazo_cola_horas($1)', [q.id])) - cola) < 0.01, 'p_excluir no excluye');
+  await client.query('delete from public.quotes where id = $1', [q.id]);
+});
+
+let plazoQuote;
+await check('al aceptar se fija la fecha prometida; el pedido de la Calculadora sigue a la par', async () => {
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, estado, archivos, metricas)
+    values ('Plazo', 'plazo@example.com', '6', 'PLA', 1, 'recogida', 12, 'revisado',
+      '[{"nombre":"pieza.stl","cantidad":2,"metricas":{"peso_g":20,"tiempo_h":3}}]', '{"tiempo_h": 6}')
+    returning *`);
+  plazoQuote = q;
+  assert(q.fecha_prometida === null, 'fecha antes de aceptar');
+  const o = await ordenDeQuote(q.id);
+  assert(Number(o.data.horas) === 6, `horas del pedido ${o.data.horas}`);
+  const cola = Number(await val1('select public.plazo_cola_horas($1)', [q.id]));
+  const e = await fechaSql('public.sumar_laborables(public.en_madrid(now())::date, $1)', [Math.ceil((cola + 6) / 4) + 2]);
+  await client.query(`update public.quotes set estado = 'aceptado', aceptado_at = now() where id = $1`, [q.id]);
+  const f = await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]);
+  assert(f === e, `fecha_prometida ${f}, esperaba ${e}`);
+  const o2 = await ordenDeQuote(q.id);
+  assert(o2.data.estado === 'Aceptado' && o2.data.accepted_at, `pedido en ${o2.data.estado}`);
+  // La fecha no se mueve al imprimir y el admin puede corregirla a mano.
+  await client.query(`update public.quotes set estado = 'imprimiendo' where id = $1`, [q.id]);
+  assert(await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]) === f, 'la fecha cambió al imprimir');
+  await client.query(`update public.quotes set fecha_prometida = '2030-01-15' where id = $1`, [q.id]);
+  assert(await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]) === '2030-01-15', 'no se pudo corregir a mano');
+  // Urgente en marcha: recalcula sin cola.
+  await client.query(`update public.quotes set urgente = true where id = $1`, [q.id]);
+  const u = await fechaSql('select fecha_prometida from public.quotes where id = $1', [q.id]);
+  const eu = await fechaSql('public.sumar_laborables(public.en_madrid(now())::date, $1)', [Math.ceil(6 / 4) + 2]);
+  assert(u === eu, `urgente ${u}, esperaba ${eu}`);
+});
+
+await check('listo_at al pasar a listo; get_quote_plazo para anon', async () => {
+  await client.query(`update public.quotes set estado = 'listo' where id = $1`, [plazoQuote.id]);
+  const { rows: [r] } = await client.query('select listo_at from public.quotes where id = $1', [plazoQuote.id]);
+  assert(r.listo_at, 'sin listo_at');
+  const plazo = await cuponComoAnon('select fecha_prometida::text as f, fecha_orientativa::text as o, listo_at from public.get_quote_plazo($1)', [plazoQuote.codigo]);
+  assert(plazo[0]?.f && !plazo[0].o && plazo[0].listo_at, JSON.stringify(plazo));
+  // Sin aceptar: fecha orientativa, sin fecha prometida.
+  const { rows: [n] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, metricas, archivos)
+    values ('Orientativa', 'or@example.com', '6', 'PLA', 1, 'recogida', 9, '{"tiempo_h": 2}', '[]') returning codigo`);
+  const p2 = await cuponComoAnon('select fecha_prometida, fecha_orientativa::text as o from public.get_quote_plazo($1)', [n.codigo]);
+  assert(!p2[0].fecha_prometida && /^\d{4}-\d{2}-\d{2}$/.test(p2[0].o), JSON.stringify(p2));
+  const cola = await cuponComoAnon('select public.plazo_cola_horas() as h');
+  assert(Number(cola[0].h) >= 0, 'anon no lee la cola');
+});
+
+await check('precio firme: el admin no cambia el precio; la Calculadora no lo pisa; rehacer pide motivo', async () => {
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, precio_firme, archivos)
+    values ('Firme', 'firme@example.com', '6', 'PLA', 1, 'recogida', 20, true,
+      '[{"nombre":"f.stl","cantidad":1,"metricas":{"peso_g":30,"tiempo_h":2}}]')
+    returning *`);
+  let lanzo = false;
+  try { await client.query('update public.quotes set precio_final = 25 where id = $1', [q.id]); } catch { lanzo = true; }
+  assert(lanzo, 'el admin subió un precio firme');
+  await client.query('update public.quotes set precio_final = 20 where id = $1', [q.id]);
+  // Guardado de la Calculadora con otro precio: se guarda el pedido, no el precio.
+  const o = await ordenDeQuote(q.id);
+  await guardarPedido('3dcc', o.id, { ...o.data, precio_final: 30, last_status_update: new Date().toISOString() });
+  const { rows: [tras] } = await client.query('select precio_final from public.quotes where id = $1', [q.id]);
+  assert(Number(tras.precio_final) === 20, `precio tras guardar en la Calculadora: ${tras.precio_final}`);
+  assert(Number((await ordenDeQuote(q.id)).data.precio_final) === 30, 'el guardado del pedido se perdió');
+  // Quitar el precio firme a mano sin motivo: no.
+  lanzo = false;
+  try { await client.query('update public.quotes set precio_firme = false where id = $1', [q.id]); } catch { lanzo = true; }
+  assert(lanzo, 'se quitó el precio firme sin motivo');
+  lanzo = false;
+  try { await client.query(`select public.rehacer_presupuesto($1, '  ')`, [q.id]); } catch { lanzo = true; }
+  assert(lanzo, 'rehacer sin motivo');
+  await client.query(`update public.quotes set estado = 'aceptado' where id = $1`, [q.id]);
+  const token = (await client.query('select acepta_token from public.quotes where id = $1', [q.id])).rows[0].acepta_token;
+  await client.query(`select public.rehacer_presupuesto($1, 'Pide 2 unidades')`, [q.id]);
+  const { rows: [r] } = await client.query('select * from public.quotes where id = $1', [q.id]);
+  assert(!r.precio_firme && r.rehecho_motivo === 'Pide 2 unidades' && r.rehecho_at, 'no quedó rehecho');
+  assert(r.estado === 'revisado' && !r.aceptado_at && !r.fecha_prometida && r.acepta_token !== token, 'no reinició la aceptación');
+  await client.query('update public.quotes set precio_final = 35 where id = $1', [q.id]);
+  // Un anónimo no puede rehacer.
+  lanzo = false;
+  await client.query('begin');
+  try {
+    await client.query('set local role anon');
+    await comoAnon();
+    await client.query(`select public.rehacer_presupuesto($1, 'x')`, [q.id]);
+  } catch { lanzo = true; } finally { await client.query('rollback'); await comoAdmin(); }
+  assert(lanzo, 'anon rehízo un presupuesto');
+});
+
+await check('desvío: coste real − coste estimado del pedido del tasador', async () => {
+  const { rows: [q] } = await client.query(`
+    insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, archivos)
+    values ('Desvío', 'desvio@example.com', '6', 'PLA', 1, 'recogida', 15,
+      '[{"nombre":"d.stl","cantidad":1,"metricas":{"peso_g":50,"tiempo_h":2}}]')
+    returning id`);
+  const o = await ordenDeQuote(q.id);
+  const est = Number(o.data.coste_bruto);
+  let { rows: [r] } = await client.query('select coste_estimado, coste_real, desvio_coste from public.quotes where id = $1', [q.id]);
+  assert(Number(r.coste_estimado) === est && Number(r.desvio_coste) === 0, JSON.stringify(r));
+  await guardarPedido('3dcc', o.id, { ...o.data, coste_bruto: est + 1.5 });
+  ({ rows: [r] } = await client.query('select coste_estimado, coste_real, desvio_coste from public.quotes where id = $1', [q.id]));
+  assert(Number(r.coste_estimado) === est && Math.abs(Number(r.desvio_coste) - 1.5) < 0.001, JSON.stringify(r));
+});
+
+// ── Limpieza automática de pedidos (20261111100000) ────────────────────────
+console.log('\n▸ Limpieza de pedidos');
+
+await check('limpieza_pedidos: descarta a los 15 días, archiva entregados cobrados, respeta lo demás', async () => {
+  // El pago sale del libro de cobros: para estar «pagado» hay que cobrar de verdad.
+  const nueva = async (nombre, estado, cobrado = false) => {
+    const { rows: [q] } = await client.query(
+      `insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, precio_final, estado)
+       values ($1, 'l@example.com', '6', 'PLA', 1, 'recogida', 20, 20, $2) returning id`,
+      [nombre, estado]
+    );
+    if (cobrado) {
+      await client.query(`select public.registrar_cobro(p_importe => 20, p_metodo => 'Bizum', p_quote_id => $1)`, [q.id]);
+    }
+    return q.id;
+  };
+  const viejo = async (id, dias) => {
+    await client.query('alter table public.quotes disable trigger touch_quotes');
+    await client.query(`update public.quotes set updated_at = now() - ($2 || ' days')::interval where id = $1`, [id, String(dias)]);
+    await client.query('alter table public.quotes enable trigger touch_quotes');
+  };
+  const sinRespuesta = await nueva('Limp sin respuesta', 'revisado');
+  const conAdelanto = await nueva('Limp con adelanto', 'revisado');
+  await client.query(`select public.registrar_cobro(p_importe => 5, p_metodo => 'Bizum', p_quote_id => $1)`, [conAdelanto]);
+  const reciente = await nueva('Limp reciente', 'revisado');
+  const aceptado = await nueva('Limp aceptado viejo', 'aceptado');
+  const cobrado = await nueva('Limp entregado cobrado', 'entregado', true);
+  const debe = await nueva('Limp entregado sin cobrar', 'entregado');
+  const entregadoReciente = await nueva('Limp entregado reciente', 'entregado', true);
+  await viejo(sinRespuesta, 16); await viejo(conAdelanto, 20); await viejo(reciente, 10); await viejo(aceptado, 40);
+  await viejo(cobrado, 8); await viejo(debe, 30); await viejo(entregadoReciente, 2);
+
+  const { rows: [r] } = await client.query('select * from public.limpieza_pedidos()');
+  assert(r.descartados >= 1 && r.archivados >= 1, JSON.stringify(r));
+  const q = async (id) => quoteDe(id);
+  assert((await q(sinRespuesta)).estado === 'rechazado', 'no descartó el presupuesto sin respuesta');
+  assert((await q(reciente)).estado === 'revisado', 'descartó uno reciente');
+  assert((await q(conAdelanto)).estado === 'revisado', 'descartó uno con adelanto');
+  assert((await q(aceptado)).estado === 'aceptado', 'tocó un aceptado');
+  const c = await q(cobrado);
+  assert(c.archivado, 'no archivó el entregado y cobrado');
+  assert((await ordenDeQuote(cobrado)).data.archived === true, 'no archivó el pedido de taller');
+  assert(!(await q(debe)).archivado, 'archivó uno sin cobrar');
+  assert(!(await q(entregadoReciente)).archivado, 'archivó uno reciente');
+  // El descarte baja al pedido de taller (0026).
+  assert((await ordenDeQuote(sinRespuesta)).data.estado === 'Descartado', 'el pedido no quedó «Descartado»');
+  // Idempotente.
+  const { rows: [r2] } = await client.query('select * from public.limpieza_pedidos()');
+  assert(r2.descartados === 0 && r2.archivados === 0, 'la segunda pasada volvió a tocar cosas ' + JSON.stringify(r2));
+});
+
+await check('limpieza_pedidos: ni anon ni un usuario normal pueden ejecutarla', async () => {
+  for (const rol of ['anon', 'authenticated']) {
+    let lanzo = false;
+    await client.query('begin');
+    try {
+      await client.query(`set local role ${rol}`);
+      await client.query('select * from public.limpieza_pedidos()');
+    } catch { lanzo = true; } finally { await client.query('rollback'); }
+    assert(lanzo, `${rol} ejecutó la limpieza`);
+  }
+});
+
+// ── Gasto de filamento (20261111110000) ─────────────────────────────────────
+console.log('\n▸ Gasto de filamento');
+
+await check('gasto_filamento: igual que filamentUsageByColor/filamentSpendG/Eur de la 7.2', async () => {
+  const { filamentUsageByColor, filamentSpendG, filamentSpendEur } = await import('./calculadora-7.2/backend.mjs');
+  await comoAdmin();
+  const previoCfg = (await client.query(`select data from public.empresa_docs where empresa = '3dcc' and doc = 'config'`)).rows[0]?.data;
+  const previoInv = (await client.query(`select data from public.empresa_docs where empresa = '3dcc' and doc = 'inventory'`)).rows[0]?.data;
+  const tipos = [{ name: 'PLA', price_per_kg: 20 }, { name: 'PETG', price_per_kg: 25 }];
+  const upsert = (doc, data) =>
+    client.query(
+      `insert into public.empresa_docs (empresa, doc, data) values ('3dcc', $1, $2)
+       on conflict (empresa, doc) do update set data = excluded.data`,
+      [doc, JSON.stringify(data)]
+    );
+  await upsert('config', { ...(previoCfg ?? {}), filament_types: tipos });
+  const stock = [
+    { material: 'PLA', color: 'Negro', ajuste_g: 40 },
+    { material: 'PETG', color: 'Verde', ajuste_g: 15.5 }, // solo ajuste, sin pedidos
+    { material: 'PLA', color: 'Rojo', ajuste_g: 0 }
+  ];
+  await upsert('inventory', { filament_stock: stock });
+  await client.query(`insert into public.filamentos (material, nombre, orden) values ('PLA', 'PLA', 1) on conflict (material) do nothing`);
+  await client.query(`insert into public.colores (filamento_id, nombre, hex) select id, 'Azul', '#0000ff' from public.filamentos where material = 'PLA' on conflict do nothing`);
+
+  // Es el último test: se parte de cero para que los pedidos de los anteriores no cuenten.
+  await client.query("delete from public.orders where empresa in ('3dcc', 'silab3d')");
+  const base = { estado: 'Aceptado', precio_final: 10, horas: '1', cantidad: 1, notes: '', payment_history: [], notif_history: [], importe_pagado: 0 };
+  const pedidos = [
+    { id: 'GF000001', filamento: 'PLA', filamento_color: 'Negro', peso_g: '100.5', material_contabilizado: true },
+    { id: 'GF000002', filamento: 'PLA', filamento_color: ' negro ', peso_g: '20', material_contabilizado: true },
+    { id: 'GF000003', filamento: 'PLA', filamento_color: 'Negro', peso_g: '999', material_contabilizado: false },
+    { id: 'GF000004', filamento: 'PLA + PETG', filamento_color: 'Multicolor', peso_g: '60', is_multimaterial: true, material_contabilizado: true,
+      material_breakdown: [{ material: 'PLA', color: 'Azul', grams: 35 }, { material: 'PETG', color: 'Verde', grams: 25 }] },
+    { id: 'GF000005', filamento: 'PETG', filamento_color: '', peso_g: '12.25', material_contabilizado: true, estado: 'Descartado' },
+    { id: 'GF000006', filamento: 'PLA', filamento_color: 'Blanco', peso_g: '0', material_contabilizado: true }
+  ].map((p) => ({ ...base, cliente: 'GF', fecha: '2026-11-01', empresa: '3DCC', ...p }));
+  for (const p of pedidos) await guardarPedido('3dcc', p.id, p);
+  // Otra empresa: no cuenta.
+  await guardarPedido('silab3d', 'GF000009', { ...base, id: 'GF000009', filamento: 'PLA', filamento_color: 'Negro', peso_g: '5000', material_contabilizado: true });
+
+  const { rows } = await client.query(`select * from public.gasto_filamento order by material, color`);
+  const usage = filamentUsageByColor({ orders: pedidos });
+  const esp = (material, color) => {
+    const item = stock.find((s) => s.material === material && s.color.toLowerCase() === color.toLowerCase()) ?? { material, color, ajuste_g: 0 };
+    return { g: filamentSpendG(item, usage), eur: filamentSpendEur(item, tipos, usage) };
+  };
+  const fila = (m, c) => rows.find((r) => r.material === m && r.color.toLowerCase() === c.toLowerCase());
+  for (const [m, c] of [['PLA', 'Negro'], ['PLA', 'Azul'], ['PETG', 'Verde'], ['PETG', 'Negro'], ['PLA', 'Rojo']]) {
+    const r = fila(m, c);
+    const e = esp(m, c);
+    assert(r, `falta la fila ${m} ${c}`);
+    assert(Math.abs(Number(r.total_g) - e.g) < 0.01 && Math.abs(Number(r.equivale_eur) - e.eur) < 0.01,
+      `${m} ${c}: vista ${r.total_g} g / ${r.equivale_eur} €, 7.2 ${e.g} g / ${e.eur} €`);
+  }
+  // Valores concretos: 100,5 + 20 + ajuste 40 = 160,5 g de PLA negro; el no contabilizado y el de SILAB no cuentan.
+  assert(Number(fila('PLA', 'Negro').total_g) === 160.5 && fila('PLA', 'Negro').pedidos === 2, JSON.stringify(fila('PLA', 'Negro')));
+  assert(Number(fila('PETG', 'Verde').total_g) === 40.5, 'PETG verde: multimaterial 25 + ajuste 15,5');
+  assert(fila('PLA', 'Azul'), 'el color del catálogo sin gasto debe salir con 0 g');
+  // Anónimo y usuario sin claim: nada (ni siquiera la vista).
+  for (const rol of ['anon', 'authenticated']) {
+    await client.query('begin');
+    let n = -1;
+    try {
+      await client.query(`set local role ${rol}`);
+      await comoAnon();
+      n = (await client.query(`select * from public.gasto_filamento where en_pedidos_g > 0`)).rows.length;
+    } catch { n = 0; } finally { await client.query('rollback'); await comoAdmin(); }
+    assert(n === 0, `${rol} lee el gasto de filamento (${n} filas)`);
+  }
+  // Limpieza: se restaura lo que había.
+  await client.query(`delete from public.orders where id like 'GF0000%'`);
+  if (previoCfg) await upsert('config', previoCfg);
+  if (previoInv) await upsert('inventory', previoInv); else await client.query(`delete from public.empresa_docs where empresa = '3dcc' and doc = 'inventory'`);
 });
 
 // ── Cierre ─────────────────────────────────────────────────────────────────

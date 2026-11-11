@@ -284,3 +284,14 @@
     margin-left: auto; flex-shrink: 0;
     padding: 7px 14px; font-size: 11px;
 }
+
+/* Fecha tope (fase 2): la prometida o la orientativa */
+.pr-plazo {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r, 6px);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.pr-plazo a { color: var(--accent); }

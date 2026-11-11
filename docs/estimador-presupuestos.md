@@ -108,11 +108,13 @@ barata que la de referencia.
   ven de solo lectura. Allí se ajustan markup, error, mínimo, paredes por
   calidad, perfil de impresora, tipo de soporte, orientación y correcciones.
 
-El servidor (`submit-quote`) recalcula el dinero con la misma fórmula; como no
-puede laminar (2 s de CPU), acepta los gramos/horas del navegador solo si son
-plausibles para el volumen de la pieza y si no usa la estimación antigua.
-`scripts/test-paridad-servidor.ts` carga el código real de la función y
-comprueba que cliente y servidor coinciden al céntimo.
+El servidor (`submit-quote`) recalcula el dinero con el mismo código: el motor
+vive en `supabase/functions/_shared/precios.ts`, lo importa la función y
+`lib/quote/pricing.ts` lo reexporta para la web. Como no puede laminar (2 s de
+CPU), acepta los gramos/horas del navegador solo si son plausibles para el
+volumen de la pieza y si no usa la estimación antigua.
+`scripts/test-motor-precios.ts` comprueba que navegador y servidor dan el mismo
+desglose y que el servidor cobra lo mismo que antes de unificarlo (fase 8).
 
 ## 5. Calibración con tus datos reales
 
@@ -124,8 +126,11 @@ puntos. Dos formas de eliminarlo:
    `tasador_calibracion()` (migración 0024) los cruza y el panel «Precisión del
    tasador» de /admin/tarifas propone la corrección; con ≥ 3 pedidos, un clic
    en «Aplicar corrección» y Guardar.
-2. **Manual**: lamina unas cuantas piezas en Orca, anota gramos y minutos en
-   `orca.csv` y ejecuta `npx tsx scripts/benchmark-estimador.ts <carpeta>`.
+2. **Manual**: carpeta con cada `nombre.stl` y su laminado exportado de Orca
+   (`nombre.gcode` o `nombre.gcode.3mf`; el `.3mf` de proyecto no sirve) y, si
+   hay lotes, un `piezas.csv`. `npx tsx scripts/benchmark-estimador.ts <carpeta>`
+   da mediana y percentil 90 de real ÷ estimado por tipo de pieza. Carpeta de
+   muestra (cifras inventadas): `scripts/ejemplo-benchmark`.
 
 ## 6. Puesta en marcha
 

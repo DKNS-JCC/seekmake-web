@@ -23,6 +23,14 @@
 // deno-lint-ignore-file no-explicit-any
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import {
+  computeServerQuote,
+  diasPlazo,
+  fechaLarga,
+  hoyMadrid,
+  normalizeSettings,
+  sumarLaborables
+} from '../_shared/precios.ts';
 
 const PROD_ALLOWED = (Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.impresion3dcc.com')
   .split(',')
@@ -57,7 +65,7 @@ function corsHeaders(origin: string): Record<string, string> {
 // Pricing version of this function. The Pages build refuses to publish a
 // web whose tasador expects a newer server (see deploy-pages.yml): otherwise
 // the customer would see one price and get another one by email.
-const TASADOR_VERSION = '7';
+const TASADOR_VERSION = '8';
 
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
@@ -122,353 +130,10 @@ async function sha256Hex(s: string): Promise<string> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Server-side pricing — compact port of lib/quote/pricing.ts. The client
-// total is NEVER trusted: we recompute the money from the per-piece figures
-// and the quote_settings row. Grams and hours come from the browser's layer
-// analysis (the server cannot slice within its CPU budget) and are only
-// accepted when they are plausible for the part's volume; otherwise the old
-// volume heuristic is used. Keep the math in sync with the web version.
+// Pricing: the same engine as the quote page (../_shared/precios.ts). The
+// client total is NEVER trusted: computeServerQuote recomputes the money from
+// the per-piece figures and the quote_settings row.
 // ─────────────────────────────────────────────────────────────────────────
-
-const COSTES_CALCULADORA: any = {
-  impresora_eur: 738,
-  mantenimiento_eur: 100,
-  vida_h: 3000,
-  consumo_kw: 0.15,
-  precio_kwh: 0.24,
-  precio_kg: { PLA: 20, PETG: 18, 'PLA SILK/MARBLE': 23, ASA: 24, TPU: 21 },
-  markup: 2.3,
-  error: 0.25,
-  postpro_soportes_eur: 0
-};
-
-const DEFAULT_SETTINGS: any = {
-  modo_precio: 'calculadora',
-  calculadora: COSTES_CALCULADORA,
-  materiales: {
-    PLA: { precio_g: 0.05, densidad: 1.24, factor_velocidad: 1 },
-    PETG: { precio_g: 0.06, densidad: 1.27, factor_velocidad: 0.9 },
-    ASA: { precio_g: 0.07, densidad: 1.07, factor_velocidad: 0.85 },
-    TPU: { precio_g: 0.08, densidad: 1.21, factor_velocidad: 0.4 }
-  },
-  precio_hora: 0.3,
-  tarifa_preparacion: 0,
-  precio_minimo: 7,
-  redondeo: 0.05,
-  soporte_min_g: 1,
-  caudal_g_h: 18,
-  tiempo_capa_s: 6,
-  soporte_relleno: 0.15,
-  validez_dias: 15,
-  envio_tramos: [
-    { max_g: 500, precio: 4.5 },
-    { max_g: 2000, precio: 6.9 },
-    { max_g: 999999, precio: 9.9 }
-  ],
-  envio_gratis_desde: 30,
-  fraccion_pared: 0.35,
-  plazo_horas_dia: 8,
-  plazo_dias_margen: 1,
-  recargo_acabado_pct: {
-    'Metálico': 10, 'Fluorescente': 10, 'Translucido': 5, 'Textura': 10,
-    'Brillante': 5, 'Purpurina': 10, 'Mate': 0, 'Flexible': 15
-  },
-  recargo_multicolor: { base_pct: 15, por_color_extra: 1 },
-  resistencia: [
-    { id: 'decorativa', relleno_pct: 10 },
-    { id: 'estandar', relleno_pct: 15 },
-    { id: 'resistente', relleno_pct: 40 },
-    { id: 'maciza', relleno_pct: 100 }
-  ],
-  detalle: [
-    { id: 'rapido', altura_capa_mm: 0.24, factor_tiempo: 0.8 },
-    { id: 'estandar', altura_capa_mm: 0.2, factor_tiempo: 1 },
-    { id: 'fino', altura_capa_mm: 0.12, factor_tiempo: 1.7 }
-  ],
-  descuentos_cantidad: []
-};
-
-function precioKgDe(c: any, material: string): number | undefined {
-  const tabla = c?.precio_kg ?? {};
-  const key = String(material).trim().toUpperCase();
-  for (const [k, v] of Object.entries(tabla)) if (k.toUpperCase() === key) return Number(v);
-  const fam = ['PETG', 'ASA', 'ABS', 'TPU', 'NYLON', 'PLA'].find((f) => key.includes(f));
-  if (fam) for (const [k, v] of Object.entries(tabla)) if (k.toUpperCase() === fam) return Number(v);
-  return undefined;
-}
-
-const r4 = (n: number) => Math.round(n * 10000) / 10000;
-
-function normalizeServerSettings(raw: any): any {
-  const r = raw && typeof raw === 'object' ? raw : {};
-  const s: any = {
-    ...DEFAULT_SETTINGS,
-    ...r,
-    calculadora: {
-      ...DEFAULT_SETTINGS.calculadora,
-      ...(r.calculadora ?? {}),
-      precio_kg: { ...DEFAULT_SETTINGS.calculadora.precio_kg, ...(r.calculadora?.precio_kg ?? {}) }
-    },
-    materiales: Object.fromEntries(
-      Object.entries({ ...DEFAULT_SETTINGS.materiales, ...(r.materiales ?? {}) })
-        .map(([k, v]: [string, any]) => [k, { ...v }])
-    ),
-    recargo_acabado_pct: {
-      ...DEFAULT_SETTINGS.recargo_acabado_pct,
-      ...(r.recargo_acabado_pct ?? {})
-    },
-    recargo_multicolor: {
-      ...DEFAULT_SETTINGS.recargo_multicolor,
-      ...(r.recargo_multicolor ?? {})
-    },
-    resistencia: r.resistencia?.length ? r.resistencia : DEFAULT_SETTINGS.resistencia,
-    detalle: r.detalle?.length ? r.detalle : DEFAULT_SETTINGS.detalle,
-    descuentos_cantidad: Array.isArray(r.descuentos_cantidad)
-      ? [...r.descuentos_cantidad].sort((a: any, b: any) => a.min - b.min)
-      : DEFAULT_SETTINGS.descuentos_cantidad,
-    envio_tramos: r.envio_tramos?.length
-      ? [...r.envio_tramos].sort((a: any, b: any) => a.max_g - b.max_g)
-      : DEFAULT_SETTINGS.envio_tramos
-  };
-  if (s.modo_precio !== 'tarifa') s.modo_precio = 'calculadora';
-  if (s.modo_precio === 'calculadora') {
-    const c = s.calculadora;
-    const f = Math.max(0, Number(c.markup) || 0) + Math.max(0, Number(c.error) || 0);
-    const vida = Number(c.vida_h) > 0 ? Number(c.vida_h) : 1;
-    const hora = Number(c.consumo_kw) * Number(c.precio_kwh) +
-      (Number(c.impresora_eur) + Number(c.mantenimiento_eur)) / vida;
-    s.precio_hora = r4(hora * f);
-    for (const [k, m] of Object.entries(s.materiales) as [string, any][]) {
-      const kg = precioKgDe(c, k);
-      if (kg !== undefined) m.precio_g = r4((kg / 1000) * f);
-    }
-  }
-  return s;
-}
-
-const r2 = (n: number) => Math.round(n * 100) / 100;
-
-function redondear(n: number, paso: number): number {
-  if (!(paso > 0)) return r2(n);
-  return r2(Math.ceil(r2(n) / paso - 1e-9) * paso);
-}
-
-/**
- * Grams/hours per unit from the browser's layer analysis, if plausible for
- * the part's volume (supports can outweigh a part, a hollow shell can be
- * light, but not by orders of magnitude).
- */
-function figurasCliente(am: any, densidad: number): { pesoG: number; soporteG: number; tiempoH: number } | null {
-  if (am?.estimador !== 'capas-v1') return null;
-  const pesoG = Number(am.peso_g), tiempoH = Number(am.tiempo_h);
-  const soporteG = Math.max(0, Number(am.soporte_g) || 0);
-  const solido = Math.max(0, Number(am.volumen_cm3) || 0) * densidad;
-  if (!Number.isFinite(pesoG) || !Number.isFinite(tiempoH)) return null;
-  if (pesoG <= 0 || tiempoH <= 0 || tiempoH > 2000) return null;
-  if (pesoG > solido * 3 + 5 || pesoG < solido * 0.05) return null;
-  return { pesoG, soporteG: Math.min(soporteG, pesoG), tiempoH };
-}
-
-/** Recompute the quote from sanitized `archivos` + settings (+ a valid code). */
-function computeServerQuote(archivos: any[], entrega: string, settings: any, cupon: any = null) {
-  const lineas: Array<{ concepto: string; importe: number }> = [];
-  const piezas: any[] = [];
-  let base = 0;
-  let pesoTotal = 0;
-  let tiempoTotal = 0;
-  let unidades = 0;
-  const calculadora = settings.modo_precio === 'calculadora';
-
-  for (const a of archivos) {
-    const am = a.metricas ?? {};
-    const mat = settings.materiales[a.material] ?? settings.materiales['PLA'];
-    const res =
-      settings.resistencia.find((x: any) => x.id === a.resistencia) ?? settings.resistencia[0];
-    const det =
-      settings.detalle.find((x: any) => x.id === a.detalle) ?? settings.detalle[0];
-    const cantidad = Math.max(1, Math.floor(a.cantidad));
-
-    let pesoG: number, soporteG: number, tiempoH: number, metodo: string;
-    let conSoportes: boolean;
-    const cli = figurasCliente(am, mat.densidad);
-    if (cli) {
-      ({ pesoG, soporteG, tiempoH } = cli);
-      metodo = 'capas';
-      conSoportes = Boolean(am.con_soportes);
-    } else {
-      // Fallback: the old volume heuristic.
-      const volumen = Math.max(0, Number(am.volumen_cm3) || 0);
-      const soporteVol = Math.max(0, Number(am.soporte_cm3) || 0);
-      const alturaMm = Math.max(0, Number(am.bbox_mm?.y) || 0);
-      const fraccion =
-        settings.fraccion_pared + (1 - settings.fraccion_pared) * (res.relleno_pct / 100);
-      soporteG = soporteVol * settings.soporte_relleno * mat.densidad;
-      pesoG = volumen * mat.densidad * fraccion + soporteG;
-      const caudal =
-        Math.max(settings.caudal_g_h, 1) * Math.max(mat.factor_velocidad ?? 1, 0.05);
-      const capas = det.altura_capa_mm > 0 ? alturaMm / det.altura_capa_mm : 0;
-      tiempoH =
-        (pesoG / caudal) * det.factor_tiempo + (capas * settings.tiempo_capa_s) / 3600;
-      metodo = 'aproximado';
-      conSoportes = soporteG >= Math.max(1, Number(settings.soporte_min_g) || 0);
-    }
-
-    pesoG = Math.round(pesoG * 1000) / 1000;
-    soporteG = Math.round(soporteG * 1000) / 1000;
-    tiempoH = Math.round(tiempoH * 10000) / 10000;
-    let unidad = pesoG * mat.precio_g + tiempoH * settings.precio_hora;
-
-    const extras: string[] = [];
-    if (soporteG >= 1) extras.push(`soportes ~${Math.round(soporteG)} g`);
-    const postpro = Number(settings.calculadora?.postpro_soportes_eur) || 0;
-    if (calculadora && conSoportes && postpro > 0) {
-      unidad += postpro;
-      extras.push('retirada de soportes');
-    }
-
-    const acabadoPct = Math.max(
-      0,
-      ...a.colores.map((c: any) =>
-        c.acabado ? settings.recargo_acabado_pct[c.acabado] ?? 0 : 0
-      )
-    );
-    if (acabadoPct > 0) {
-      unidad *= 1 + acabadoPct / 100;
-      extras.push(`acabado +${acabadoPct}%`);
-    }
-
-    // Multi-part 3MFs send one entry per part; count distinct colors like the client does.
-    const numColores = new Set(a.colores.map((c: any) => `${c.nombre}|${c.hex}`)).size;
-    if (numColores > 1) {
-      unidad =
-        unidad * (1 + settings.recargo_multicolor.base_pct / 100) +
-        settings.recargo_multicolor.por_color_extra * (numColores - 1);
-      extras.push(`${numColores} colores`);
-    }
-    const porCama = Math.max(1, Math.floor(Number(am.por_cama) || 1));
-    if (metodo === 'capas' && cantidad > 1 && porCama > 1) {
-      extras.push(`${porCama} por cama`);
-    }
-
-    const subtotal = redondear(unidad * cantidad, settings.redondeo);
-    piezas.push({
-      peso_g: pesoG,
-      soporte_g: soporteG,
-      tiempo_h: tiempoH,
-      relleno_pct: res.relleno_pct,
-      metodo
-    });
-    lineas.push({
-      concepto:
-        `${a.nombre}${cantidad > 1 ? ` × ${cantidad}` : ''} — ${a.material} ` +
-        `(~${Math.round(pesoG)} g, ~${tiempoH.toFixed(1)} h${cantidad > 1 ? ' c/u' : ''}` +
-        (extras.length ? `, ${extras.join(', ')}` : '') +
-        ')',
-      importe: subtotal
-    });
-
-    base += subtotal;
-    pesoTotal += pesoG * cantidad;
-    tiempoTotal += tiempoH * cantidad;
-    unidades += cantidad;
-  }
-
-  const subtotal = base;
-  let descuentoPct = 0;
-  for (const tier of settings.descuentos_cantidad) {
-    if (unidades >= tier.min) descuentoPct = tier.pct;
-  }
-  const paso = settings.redondeo > 0 ? settings.redondeo : 0.01;
-  const aPaso = (n: number) => r2(Math.floor(r2(n) / paso + 1e-9) * paso);
-  const dtoCantidad = descuentoPct > 0 ? aPaso(subtotal * (descuentoPct / 100)) : 0;
-  const prep = settings.tarifa_preparacion > 0 ? r2(settings.tarifa_preparacion) : 0;
-  const minimo = settings.precio_minimo;
-
-  // Discount code: same rules as the web — after the minimum (it can go below
-  // it), never stacked with the quantity discount (less to pay wins).
-  const sinCupon = Math.max(minimo, subtotal + prep);
-  let dtoCupon = 0;
-  if (cupon && subtotal >= Number(cupon.pedido_minimo)) {
-    const valor = Number(cupon.valor);
-    dtoCupon = aPaso(Math.min(sinCupon, cupon.tipo === 'pct' ? sinCupon * (valor / 100) : valor));
-  }
-  const conCantidad = Math.max(minimo, subtotal - dtoCantidad + prep);
-  if (dtoCupon > 0 && sinCupon - dtoCupon <= conCantidad) descuentoPct = 0;
-  else dtoCupon = 0;
-  const dtoAntes = dtoCupon > 0 ? 0 : dtoCantidad;
-
-  // Minimum order spread over the piece lines (never shown as such).
-  const previo = r2(subtotal - dtoAntes + prep);
-  const nPiezas = piezas.length;
-  const minimoAplicado = previo < minimo && nPiezas > 0;
-  if (minimoAplicado) {
-    const falta = r2(minimo - previo);
-    let repartido = 0;
-    for (let i = 0; i < nPiezas; i++) {
-      const actual = lineas[i].importe;
-      const extra =
-        i === nPiezas - 1
-          ? r2(falta - repartido)
-          : aPaso(subtotal > 0 ? falta * (actual / subtotal) : 0);
-      repartido = r2(repartido + extra);
-      lineas[i].importe = r2(actual + extra);
-    }
-  }
-
-  if (dtoAntes > 0) {
-    lineas.push({ concepto: `Descuento por cantidad (-${descuentoPct}%)`, importe: -dtoAntes });
-  }
-  if (prep > 0) lineas.push({ concepto: 'Preparación y laminado', importe: prep });
-  let total = Math.max(minimo, previo);
-  if (dtoCupon > 0) {
-    const valor = Number(cupon.valor);
-    lineas.push({
-      concepto:
-        `Código ${cupon.codigo} (` +
-        (cupon.tipo === 'pct' ? `-${valor}%` : `-${valor.toFixed(2)} €`) +
-        ')',
-      importe: -dtoCupon
-    });
-    total -= dtoCupon;
-  }
-
-  let envio = 0;
-  if (entrega === 'envio') {
-    const tramo =
-      settings.envio_tramos.find((t: any) => pesoTotal <= t.max_g) ??
-      settings.envio_tramos[settings.envio_tramos.length - 1];
-    envio = tramo?.precio ?? 0;
-    const gratisDesde = Number(settings.envio_gratis_desde) || 0;
-    const gratis = gratisDesde > 0 && r2(total) >= gratisDesde;
-    if (gratis) envio = 0;
-    if (envio > 0 || gratis) {
-      lineas.push({
-        concepto: `Envío nacional (≈${Math.round(pesoTotal)} g)${gratis ? ' — gratis' : ''}`,
-        importe: r2(envio)
-      });
-      total += envio;
-    }
-  }
-
-  const diasEstimados =
-    Math.ceil(tiempoTotal / Math.max(settings.plazo_horas_dia, 1)) +
-    Math.max(0, Math.round(settings.plazo_dias_margen));
-
-  return {
-    total: r2(total),
-    lineas,
-    descuentoPct,
-    cupon: dtoCupon > 0 ? cupon.codigo : null,
-    cuponDescuento: dtoCupon,
-    minimoAplicado,
-    envio: r2(envio),
-    pesoG: r2(pesoTotal),
-    tiempoH: r2(tiempoTotal),
-    unidades,
-    diasEstimados,
-    piezas
-  };
-}
 
 const SITIO = 'https://www.impresion3dcc.com';
 const CUPON_RECORDATORIO = 'VUELVE5';
@@ -730,7 +395,7 @@ Deno.serve(async (req: Request) => {
     .select('config')
     .eq('id', 1)
     .maybeSingle();
-  const settings = normalizeServerSettings(settingsRow?.config ?? null);
+  const settings = normalizeSettings(settingsRow?.config ?? null);
 
   // The code is checked again here: it may have expired or run out since the
   // customer saw the price. Refuse rather than email them a different total.
@@ -752,6 +417,13 @@ Deno.serve(async (req: Request) => {
   }
 
   const sq = computeServerQuote(archivos, entrega, settings, cupon);
+  // Deadline with the current queue (orientative until accepted, when the
+  // database fixes fecha_prometida with fecha_tope()).
+  const { data: colaH } = await supabase.rpc('plazo_cola_horas');
+  const fechaOrientativa = sumarLaborables(hoyMadrid(), diasPlazo(sq.tiempoH, settings, Number(colaH) || 0));
+  const listoAntes = `listo antes del ${fechaLarga(fechaOrientativa)}`;
+  // With validated types, a non-firm request shows no closed figure.
+  const sinCifraCerrada = (settings.tipos_precio_firme ?? []).length > 0 && !sq.precioFirme;
   const clienteTotal = precioTotal;
   const precioServidor = sq.total;
   const desvio = Math.abs(precioServidor - clienteTotal) > 0.01;
@@ -777,6 +449,7 @@ Deno.serve(async (req: Request) => {
     peso_g: sq.pesoG,
     tiempo_h: sq.tiempoH,
     dias_estimados: sq.diasEstimados,
+    fecha_orientativa: fechaOrientativa,
     piezas: archivos.length
   };
   const desgloseServidor = {
@@ -811,7 +484,7 @@ Este es el presupuesto que has calculado en impresion3dcc.com:
 
 ${sq.lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
 
-  TOTAL: ${precioServidor.toFixed(2)} € · listo en ~${sq.diasEstimados} días laborables
+  TOTAL: ${precioServidor.toFixed(2)} € · ${listoAntes}
   Válido hasta el ${validezTxt}.
 
 Para pedirlo, responde a este correo con tu archivo 3D o escríbenos por
@@ -822,7 +495,7 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
 — 3DCC Salamanca · impresion3dcc.com`;
     const html = `<div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#111;">
   <h2 style="margin:0 0 8px 0;color:#0EA5E9;font-family:Arial,sans-serif;">Tu presupuesto</h2>
-  <p style="margin:0 0 16px 0;color:#444;line-height:1.6;">Esto es lo que has calculado en nuestra web. Listo en ~${sq.diasEstimados} días laborables; precio válido hasta el ${validezTxt}.</p>
+  <p style="margin:0 0 16px 0;color:#444;line-height:1.6;">Esto es lo que has calculado en nuestra web. ${listoAntes[0].toUpperCase() + listoAntes.slice(1)}; precio válido hasta el ${validezTxt}.</p>
   ${desgloseHtml(sq.lineas, precioServidor)}
   <div style="text-align:center;margin:20px 0;">${boton(wa, 'Pedirlo por WhatsApp')}</div>
   <p style="margin:0;color:#444;font-size:13px;line-height:1.6;">O responde a este correo con tu archivo 3D y lo preparamos. Mañana te mandaremos un único recordatorio.</p>
@@ -873,6 +546,7 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
       metricas: metricasServidor,
       desglose: desgloseServidor,
       precio_total: precioServidor,
+      precio_firme: sq.precioFirme,
       cupon: sq.cupon,
       valido_hasta: validoHasta.toISOString(),
       ip_hash: ipHash
@@ -959,7 +633,7 @@ Total:      ~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión
 
 Unidades:   ${cantidad}
 Entrega:    ${entregaTxt}
-Plazo est.: ~${m?.dias_estimados ?? '—'} días laborables
+Plazo est.: ${listoAntes}${sq.precioFirme ? '\nPrecio:     FIRME (no se puede cambiar sin rehacer el presupuesto)' : ''}
 
 Desglose:
 ${lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
@@ -986,7 +660,8 @@ IP ${ip} · ${new Date().toISOString()}
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Total</td><td>~${m?.peso_g ?? '—'} g · ~${m?.tiempo_h ?? '—'} h de impresión</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Unidades</td><td>× ${cantidad}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${escapeHtml(entregaTxt)}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>${listoAntes}</td></tr>
+    ${sq.precioFirme ? '<tr><td style="padding:6px 12px 6px 0;color:#666;">Precio</td><td><strong>Firme</strong></td></tr>' : ''}
   </table>
   <h3 style="margin:24px 0 8px 0;font-size:14px;color:#666;text-transform:uppercase;letter-spacing:0.1em;">Piezas (${archivos.length})</h3>
   <ul style="list-style:none;padding:0;margin:0;">${piezasHtml}</ul>
@@ -1021,12 +696,14 @@ Hemos recibido tu solicitud de presupuesto. Tu código de referencia es:
 Resumen:
 ${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${a.material} (${coloresDe(a)})`).join('\n')}
   Entrega:      ${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}
-  Plazo est.:   ~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
+  Plazo:        ${listoAntes}${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
 
   TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' (envío incluido)' : ''}
 
-Es el precio final, válido hasta el ${validezTxt}. Si al revisar tu pieza
-viésemos algo que lo cambie, te avisamos antes de imprimir.
+${sinCifraCerrada
+  ? 'Te confirmamos el precio en menos de 24 h, después de revisar tu pieza.'
+  : `Es el precio final, válido hasta el ${validezTxt}. Si al revisar tu pieza
+viésemos algo que lo cambie, te avisamos antes de imprimir.`}
 
 Consulta el estado de tu presupuesto:
 ${statusUrl}
@@ -1050,13 +727,15 @@ ${acceptUrl}
   <table style="width:100%;border-collapse:collapse;font-size:14px;">
     <tr><td style="padding:6px 12px 6px 0;color:#666;width:110px;">Piezas</td><td>${archivos.map((a: any) => `${escapeHtml(a.nombre)}${a.cantidad > 1 ? ` × ${a.cantidad}` : ''} — ${escapeHtml(a.material)} (${escapeHtml(coloresDe(a))})`).join('<br/>')}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}</td></tr>
-    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo est.</td><td>~${m?.dias_estimados ?? '—'} días laborables${entrega === 'envio' ? ' + envío' : ''}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo</td><td>${listoAntes}${entrega === 'envio' ? ' + envío' : ''}</td></tr>
     ${sq.cupon ? `<tr><td style="padding:6px 12px 6px 0;color:#666;">Código</td><td>${escapeHtml(sq.cupon)} (−${sq.cuponDescuento.toFixed(2)} €)</td></tr>` : ''}
     <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' <span style="font-size:11px;color:#999;font-weight:400;">(envío incluido)</span>' : ''}</td></tr>
   </table>
   <p style="margin:20px 0;color:#444;line-height:1.6;font-size:13px;">
-    Es el precio final, <strong>válido hasta el ${validezTxt}</strong>. Si al revisar
-    tu pieza viésemos algo que lo cambie, te avisamos antes de imprimir.
+    ${sinCifraCerrada
+      ? 'Te confirmamos el precio en <strong>menos de 24 h</strong>, después de revisar tu pieza.'
+      : `Es el precio final, <strong>válido hasta el ${validezTxt}</strong>. Si al revisar
+    tu pieza viésemos algo que lo cambie, te avisamos antes de imprimir.`}
   </p>
   <div style="text-align:center;margin:0 0 20px 0;">
     <a href="${acceptUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">Ver estado y aceptar presupuesto</a>

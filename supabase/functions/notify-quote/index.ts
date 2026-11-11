@@ -100,6 +100,13 @@ function asciiHeader(s: string): string {
     .trim();
 }
 
+// «viernes 14 de noviembre» for a YYYY-MM-DD date (as in lib/quote/pricing).
+function fechaLarga(iso: string): string {
+  return new Date(`${String(iso).slice(0, 10)}T12:00:00Z`).toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'
+  });
+}
+
 // Subject + message per estado. `precio` is precio_final ?? precio_total.
 const PLANTILLAS: Record<
   string,
@@ -268,7 +275,18 @@ Deno.serve(async (req: Request) => {
   }
 
   const precio = Number(q.precio_final ?? q.precio_total) || 0;
-  const cuerpo = plantilla.cuerpo(q, precio);
+  // Fecha tope (fase 2): la prometida al aceptar; antes, la orientativa.
+  let plazoTxt = '';
+  const envioTxt = q.entrega === 'envio' ? ' (más los días del envío)' : '';
+  if ((q.estado === 'aceptado' || q.estado === 'imprimiendo') && q.fecha_prometida) {
+    plazoTxt = `Lo tendrás listo antes del ${fechaLarga(q.fecha_prometida)}${envioTxt}.`;
+  } else if (q.estado === 'revisado') {
+    const { data: pl } = await supabase.rpc('get_quote_plazo', { p_codigo: q.codigo });
+    if (pl?.[0]?.fecha_orientativa) {
+      plazoTxt = `Si lo aceptas hoy, estará listo antes del ${fechaLarga(pl[0].fecha_orientativa)}${envioTxt}.`;
+    }
+  }
+  const cuerpo = plantilla.cuerpo(q, precio) + (plazoTxt ? ` ${plazoTxt}` : '');
 
   // Deep link to the status page; for "revisado" include the personal accept
   // token so the customer can confirm the order in one click.

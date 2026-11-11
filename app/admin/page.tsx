@@ -8,12 +8,14 @@ import { mensajeDeError } from '@/lib/errors';
 import { useAdminAuth, AccesoDenegado } from './_components/useAdminAuth';
 import { AdminCabecera } from './_components/AdminNav';
 import { ErrorBanner } from './_components/ErrorBanner';
+import { hoyMadrid, senalPendiente } from '@/lib/quote/pricing';
+import { plazoDe } from './presupuestos/estados';
 
 // "Hoy": what needs doing, oldest first. Each row opens the quote.
 type Fila = Pick<
   Quote,
   'id' | 'codigo' | 'nombre' | 'estado' | 'pago' | 'entrega' | 'precio_total' | 'precio_final' |
-  'importe_pagado' | 'created_at' | 'updated_at' | 'valido_hasta'
+  'importe_pagado' | 'created_at' | 'updated_at' | 'valido_hasta' | 'fecha_prometida' | 'urgente'
 >;
 
 const DIA = 24 * 60 * 60 * 1000;
@@ -31,13 +33,16 @@ function Grupo({
   vacio,
   filas,
   detalle,
-  verTodos
+  verTodos,
+  enlace
 }: {
   titulo: string;
   vacio: string;
   filas: Fila[];
   detalle: (q: Fila) => string;
   verTodos?: string;
+  /** Dónde abre cada fila (por defecto, la ficha). */
+  enlace?: (q: Fila) => string;
 }) {
   return (
     <section className="hoy-grupo" aria-labelledby={`hoy-${titulo}`}>
@@ -55,7 +60,7 @@ function Grupo({
         <ul>
           {filas.slice(0, 8).map((q) => (
             <li key={q.id}>
-              <Link href={`/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}`} className="hoy-fila">
+              <Link href={enlace ? enlace(q) : `/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}`} className="hoy-fila">
                 <span className="hoy-fila-txt">
                   <strong>{q.nombre}</strong>
                   <span>{q.codigo} · {detalle(q)}</span>
@@ -80,7 +85,7 @@ export default function AdminHoy() {
     if (!authed) return;
     supabase()
       .from('quotes')
-      .select('id, codigo, nombre, estado, pago, entrega, precio_total, precio_final, importe_pagado, created_at, updated_at, valido_hasta')
+      .select('id, codigo, nombre, estado, pago, entrega, precio_total, precio_final, importe_pagado, created_at, updated_at, valido_hasta, fecha_prometida, urgente')
       .eq('archivado', false)
       .in('estado', ['nuevo', 'revisado', 'aceptado', 'imprimiendo', 'listo'])
       .order('created_at', { ascending: true })
@@ -96,7 +101,20 @@ export default function AdminHoy() {
   const de = (...e: Fila['estado'][]) => (filas ?? []).filter((q) => e.includes(q.estado));
   const nuevos = de('nuevo');
   const esperando = de('revisado').sort((a, b) => a.valido_hasta.localeCompare(b.valido_hasta));
-  const enMarcha = de('aceptado', 'imprimiendo');
+  // Por imprimir: lo que antes vence primero (sin fecha, al final).
+  const enMarcha = de('aceptado', 'imprimiendo').sort((a, b) =>
+    (a.fecha_prometida ?? '9999').localeCompare(b.fecha_prometida ?? '9999')
+  );
+  const hoy = hoyMadrid();
+  const plazoTxt = (q: Fila): string => {
+    if (!q.fecha_prometida) return 'sin fecha';
+    const p = plazoDe(q, hoy);
+    return p.riesgo ? `en riesgo · ${p.texto}` : `antes del ${p.texto}`;
+  };
+  const enRiesgo = enMarcha.filter((q) => plazoDe(q, hoy).riesgo).length;
+  const sinSenal = enMarcha.filter((q) =>
+    senalPendiente(Number(q.precio_final ?? q.precio_total), Number(q.importe_pagado))
+  ).length;
   const listos = de('listo');
   const sinCobrar = de('aceptado', 'imprimiendo', 'listo').filter((q) => q.pago !== 'pagado');
   const pendiente = sinCobrar.reduce(
@@ -107,7 +125,7 @@ export default function AdminHoy() {
   return (
     <div>
       <AdminCabecera titulo="Hoy">
-        Lo que tienes pendiente, lo más antiguo primero. Toca un pedido para abrirlo.
+        Lo que tienes pendiente: lo por imprimir, por fecha tope; el resto, lo más antiguo primero. Toca un pedido para abrirlo.
       </AdminCabecera>
       {error && <ErrorBanner>{error}</ErrorBanner>}
       {filas === null && !error ? (
@@ -119,6 +137,8 @@ export default function AdminHoy() {
             <div><span>{enMarcha.length}</span>en producción</div>
             <div><span>{listos.length}</span>para entregar</div>
             <div><span>{euros(pendiente)}</span>por cobrar</div>
+            {enRiesgo > 0 && <div className="hoy-alerta"><span>{enRiesgo}</span>en riesgo de llegar tarde</div>}
+            {sinSenal > 0 && <div className="hoy-alerta"><span>{sinSenal}</span>con la señal pendiente</div>}
           </div>
           <div className="hoy-grid">
             <Grupo
@@ -127,6 +147,18 @@ export default function AdminHoy() {
               filas={nuevos}
               detalle={(q) => `llegó ${hace(q.created_at)}`}
               verTodos="/admin/presupuestos?estado=nuevo"
+            />
+            <Grupo
+              titulo="Por imprimir"
+              vacio="Nada aceptado pendiente de imprimir."
+              filas={enMarcha}
+              detalle={(q) =>
+                plazoTxt(q) +
+                (q.urgente ? ' · urgente' : '') +
+                (q.estado === 'imprimiendo' ? ' · en la impresora' : '') +
+                (senalPendiente(Number(q.precio_final ?? q.precio_total), Number(q.importe_pagado)) ? ' · señal pendiente' : '')
+              }
+              verTodos="/admin/presupuestos?estado=aceptado"
             />
             <Grupo
               titulo="Para entregar"
@@ -141,7 +173,10 @@ export default function AdminHoy() {
               filas={esperando}
               detalle={(q) => {
                 const d = Math.ceil((new Date(q.valido_hasta).getTime() - Date.now()) / DIA);
-                return d < 0 ? 'caducado' : d === 0 ? 'caduca hoy' : `caduca en ${d} día${d === 1 ? '' : 's'}`;
+                // Recordatorio al taller a los 3 y 7 días sin respuesta; a los 15 se descarta solo (limpieza_pedidos).
+                const sin = Math.floor((Date.now() - new Date(q.updated_at).getTime()) / DIA);
+                const aviso = sin >= 7 ? `recuérdaselo: ${sin} días sin respuesta · ` : sin >= 3 ? `${sin} días sin respuesta · ` : '';
+                return aviso + (d < 0 ? 'caducado' : d === 0 ? 'caduca hoy' : `caduca en ${d} día${d === 1 ? '' : 's'}`);
               }}
               verTodos="/admin/presupuestos?estado=revisado"
             />
@@ -150,6 +185,7 @@ export default function AdminHoy() {
               vacio="Todo lo aceptado está cobrado."
               filas={sinCobrar}
               detalle={(q) => `cobrado ${euros(q.importe_pagado)}`}
+              enlace={(q) => `/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}&pestana=cobros`}
             />
           </div>
         </>
