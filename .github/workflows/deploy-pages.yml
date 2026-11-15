@@ -96,6 +96,18 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # El rebuild programado vuelve a publicar el mismo commit y la API de
+      # Pages a veces responde 422 (Validation Failed) de forma intermitente;
+      # un segundo intento tras una pausa lo resuelve.
       - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Reintentar el despliegue
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 60
+
+      - name: Deploy to GitHub Pages (reintento)
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
