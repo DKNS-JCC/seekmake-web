@@ -17,6 +17,7 @@
     "test:ui": "node scripts/test-ui.mjs",
     "test:recibo": "deno run -A scripts/test-recibo.ts",
     "test:funcion": "deno run -A --import-map=scripts/deno-test.json scripts/test-recibo-emitir.ts",
+    "test:pedido": "deno run -A --import-map=scripts/deno-test.json --no-config scripts/test-submit-quote.ts",
     "test:todo": "npm run test && npm run test:db && npm run test:ui && npm run test:recibo && npm run test:funcion"
   },
   "dependencies": {

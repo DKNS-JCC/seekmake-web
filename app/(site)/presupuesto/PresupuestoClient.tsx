@@ -69,6 +69,8 @@ export function PresupuestoClient() {
   const [encargo, setEncargo] = useState('');
   // Fecha tope: la prometida al aceptar, o la orientativa antes.
   const [plazo, setPlazo] = useState<{ fecha_prometida: string | null; fecha_orientativa: string | null } | null>(null);
+  // Big order (desglose.consultar): no automatic figure until we price it.
+  const [consultar, setConsultar] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Accept-link token from the confirmation email (?codigo=..&token=..).
@@ -85,6 +87,7 @@ export function PresupuestoClient() {
     setEnvio(null);
     setEncargo('');
     setPlazo(null);
+    setConsultar(false);
     setAcceptError(null);
     try {
       const { data, error: err } = await createClient().rpc('get_quote_status', {
@@ -99,6 +102,7 @@ export function PresupuestoClient() {
         setResult(row);
         const { data: det } = await createClient().rpc('get_quote_detalle', { p_codigo: row.codigo });
         if (det?.[0]?.origen === 'calculadora') setEncargo(det[0].descripcion ?? '');
+        setConsultar(!!det?.[0]?.consultar);
         const { data: pl } = await createClient().rpc('get_quote_plazo', { p_codigo: row.codigo });
         if (pl?.[0]) setPlazo(pl[0]);
         // El envío va en su propia RPC: se pide solo cuando toca y su fallo
@@ -313,7 +317,9 @@ export function PresupuestoClient() {
               <span>
                 {result.precio_final != null
                   ? `${euros(Number(result.precio_final))} confirmados`
-                  : `${euros(Number(result.precio_total))} estimados`}
+                  : consultar
+                    ? 'Precio por confirmar'
+                    : `${euros(Number(result.precio_total))} estimados`}
               </span>
               <span>{result.entrega === 'envio' ? 'Envío nacional' : 'Recogida'}</span>
               <span className={'pr-pago pr-pago--' + result.pago}>

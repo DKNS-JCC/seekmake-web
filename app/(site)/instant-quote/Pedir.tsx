@@ -34,6 +34,7 @@ export function Pedir({
   filamentos,
   entrega,
   cpValido,
+  consultar,
   status,
   setStatus,
   cup
@@ -46,6 +47,8 @@ export function Pedir({
   filamentos: Filamento[];
   entrega: QuoteEntrega;
   cpValido: string | undefined;
+  /** Big order: no price anywhere, we send it. */
+  consultar: boolean;
   status: QuoteStatus;
   setStatus: (s: QuoteStatus) => void;
   cup: CuponEstado;
@@ -163,11 +166,17 @@ export function Pedir({
         fallo(data.error, data.error);
         return;
       }
+      // Only a real code is a saved request: anything else must not look sent.
+      if (!/^Q-\d{4}-\d+$/.test(String(data?.codigo ?? ''))) {
+        fallo(`No hemos podido registrar tu solicitud. Inténtalo de nuevo o ${ESCRIBENOS}.`, 'sin_codigo');
+        return;
+      }
       if (!data?.duplicado) {
         trackEvent('solicitud_enviada', {
           codigo: data?.codigo,
           piezas: piezas.length,
           total: quote.total,
+          consultar,
           entrega,
           cp: cpValido,
           via: datos.email ? 'email' : 'whatsapp'
@@ -210,9 +219,13 @@ export function Pedir({
   // Night visitors would rather type than fill a form: the whole order, ready to send.
   const waPedido = quote
     ? [
-        'Hola, quiero pedir este presupuesto de la web:',
-        ...quote.lineas.map((l) => `• ${l.concepto}: ${euros(l.importe)}`),
-        `Total: ${euros(quote.total)} · ${entrega === 'envio' ? `envío${cpValido ? ` a ${cpValido}` : ''}` : 'recogida en Salamanca'}`,
+        consultar
+          ? 'Hola, quiero pedir esto de la web (pedido grande, precio a consultar):'
+          : 'Hola, quiero pedir este presupuesto de la web:',
+        ...(consultar
+          ? piezas.map((p) => `• ${p.name}${p.cantidad > 1 ? ` × ${p.cantidad}` : ''}`)
+          : quote.lineas.map((l) => `• ${l.concepto}: ${euros(l.importe)}`)),
+        `${consultar ? '' : `Total: ${euros(quote.total)} · `}${entrega === 'envio' ? `envío${cpValido ? ` a ${cpValido}` : ''}` : 'recogida en Salamanca'}`,
         `Colores: ${piezas
           .map((p) => `${piezas.length > 1 ? `${p.name} → ` : ''}${piezaColors(p).map((c) => c.nombre).join(', ') || 'me ayudáis a elegir'}`)
           .join('; ')}`,
@@ -308,7 +321,11 @@ export function Pedir({
                 disabled={status.kind === 'sending'}
                 aria-busy={status.kind === 'sending'}
               >
-                {status.kind === 'sending' ? status.progress : `Enviar solicitud · ${euros(quote.total)}`}
+                {status.kind === 'sending'
+                  ? status.progress
+                  : consultar
+                    ? 'Enviar solicitud'
+                    : `Enviar solicitud · ${euros(quote.total)}`}
               </button>
               <p className="qt-form-legal">
                 Al enviar aceptas los{' '}
@@ -322,7 +339,9 @@ export function Pedir({
             </form>
           )}
 
-          {/* Not ready yet: keep it (and a reminder tomorrow) */}
+          {/* Not ready yet: keep it (and a reminder tomorrow). Not for big
+              orders: both would hand out the automatic price. */}
+          {!consultar && (
           <div className="qt-guardar">
             {guardado.kind === 'ok' ? (
               <p className="qt-guardar-ok" role="status">
@@ -364,6 +383,7 @@ export function Pedir({
               <p className="qt-cupon-error" role="alert">{guardado.message}</p>
             )}
           </div>
+          )}
         </div>
       )}
 

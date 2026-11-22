@@ -475,6 +475,21 @@ await check('Tasador · Pedir y Recibido: solicitar, WhatsApp, PDF y el código'
   assert(render(Recibido, { status: { kind: 'ok', codigo: 'Q-1', duplicado: true, porEmail: false } }).includes('Ya teníamos esta misma solicitud'), 'duplicado');
 });
 
+await check('Tasador · pedido grande: ni precio, ni PDF, ni «envíamelo»; solo pedirlo', async () => {
+  const html = render(Resumen, {
+    totalRef: { current: null }, settings: ajustes, settingsLoaded: true, numPiezas: 1, numAnalizando: 0, progresoAnalisis: 1,
+    listo: true, quote, precioFinal: false, consultar: true, firmeActivo: false, listoAntes: '2026-11-13', entrega: 'recogida',
+    resenas: null, masUnaUnidad: { pieza, extra: 0 }, masUno() {}, otraPieza() {}, cup
+  });
+  assert(html.includes('A consultar') && html.includes('menos de 24 h'), 'falta el «a consultar»');
+  assert(!html.includes(euro(quote.total)) && !html.includes('código de descuento'), 'enseña el precio o el cupón');
+  const props = { piezas: [pieza], quote, listo: true, settings: ajustes, colaH: 0, filamentos, entrega: 'recogida', cpValido: undefined, setStatus() {}, cup, consultar: true };
+  const ped = render(Pedir, { ...props, status: { kind: 'idle' } });
+  assert(ped.includes('Solicitar presupuesto') && ped.includes('Pedir por WhatsApp'), 'tiene que poder pedirlo');
+  assert(!ped.includes('Descargar PDF') && !ped.includes('Envíame el presupuesto por email'), 'PDF o email llevarían el precio');
+  assert(!ped.includes('Total%3A') && !ped.includes(encodeURIComponent(euro(quote.total))), 'el WhatsApp lleva el precio');
+});
+
 await check('Tasador · Piezas y configuración: material, colores, resistencia y detalle', async () => {
   const lista = render(ListaPiezas, { pz, quote, tooBig: true, degenerate: false, maxBedMm: 220, scaleSuggestions: [{ unidad: 'pulgadas', factor: 25.4 }], setActivePart() {} });
   assert(lista.includes('soporte.stl') && lista.includes('Quitar soporte.stl'), 'la lista de piezas');

@@ -157,6 +157,14 @@ export interface QuoteSettings<P extends object = object, C extends object = obj
    * get a firm price. Empty = no firm prices: the tasador works as before.
    */
   tipos_precio_firme: TipoPieza[];
+  /**
+   * Big orders show no price ("a consultar"): the automatic figure overshoots
+   * on long prints and the shop prices them by hand. From this total (€) or
+   * these print hours. 0 = that rule off. Size alone does not count: an
+   * oversized file is usually a unit mistake or parts laid far apart.
+   */
+  consultar_desde_eur: number;
+  consultar_desde_h: number;
   recargo_acabado_pct: Record<string, number>;
   recargo_multicolor: { base_pct: number; por_color_extra: number };
   resistencia: ResistenciaPreset[];
@@ -214,6 +222,8 @@ const BASE_SETTINGS: QuoteSettings = {
   plazo_holgura_dias: 2,
   urgencia_recargo_pct: 50,
   tipos_precio_firme: [],
+  consultar_desde_eur: 100,
+  consultar_desde_h: 40,
   recargo_acabado_pct: {
     'Metálico': 10,
     'Fluorescente': 10,
@@ -337,6 +347,16 @@ export function esPrecioFirme(
     piezas.length > 0 &&
     piezas.every((p) => p.metodo === 'capas' && p.cabe && p.tipo !== 'multicolor' && validos.includes(p.tipo))
   );
+}
+
+/** A big order: no price shown or emailed, the shop answers with one (see consultar_desde_*). */
+export function esConsultar(
+  q: { total: number; tiempoH: number },
+  settings: Pick<QuoteSettings, 'consultar_desde_eur' | 'consultar_desde_h'>
+): boolean {
+  const eur = num(settings.consultar_desde_eur);
+  const h = num(settings.consultar_desde_h);
+  return (eur > 0 && q.total >= eur) || (h > 0 && q.tiempoH >= h);
 }
 
 /** Deposit to start: half the price (decision 13). */

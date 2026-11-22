@@ -16,6 +16,7 @@ import {
   hoyMadrid,
   fechaLarga,
   esPrecioFirme,
+  esConsultar,
   tipoPieza,
   cabeEnCama,
   senalPendiente,
@@ -330,5 +331,16 @@ check('el precio unitario baja al agrupar',
 check('lo explica en la línea', capas30.lineas[0].concepto.includes('30 por cama'));
 const multiplo = Math.round(capas30.total * 100) % 5 === 0;
 check('el total es múltiplo de 5 céntimos', multiplo, String(capas30.total));
+
+section('pedido grande: precio a consultar');
+const SG = DEFAULT_QUOTE_SETTINGS;
+check('pedido normal: con precio', !esConsultar({ total: 40, tiempoH: 10 }, SG));
+check('99,95 € y 39,9 h: todavía con precio', !esConsultar({ total: 99.95, tiempoH: 39.9 }, SG));
+check('desde 100 € (por defecto): a consultar', esConsultar({ total: 100, tiempoH: 10 }, SG));
+check('desde 40 h (por defecto): a consultar', esConsultar({ total: 60, tiempoH: 40 }, SG));
+check('0 = regla apagada',
+  !esConsultar({ total: 500, tiempoH: 90 }, normalizeSettings({ consultar_desde_eur: 0, consultar_desde_h: 0 })));
+check('ajustes antiguos sin la clave usan los valores por defecto',
+  normalizeSettings({}).consultar_desde_eur === 100 && normalizeSettings({}).consultar_desde_h === 40);
 
 done();

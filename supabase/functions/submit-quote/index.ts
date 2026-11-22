@@ -26,6 +26,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import {
   computeServerQuote,
   diasPlazo,
+  esConsultar,
   fechaLarga,
   hoyMadrid,
   normalizeSettings,
@@ -65,7 +66,7 @@ function corsHeaders(origin: string): Record<string, string> {
 // Pricing version of this function. The Pages build refuses to publish a
 // web whose tasador expects a newer server (see deploy-pages.yml): otherwise
 // the customer would see one price and get another one by email.
-const TASADOR_VERSION = '8';
+const TASADOR_VERSION = '9';
 
 function json(body: unknown, status: number, origin: string): Response {
   return new Response(JSON.stringify(body), {
@@ -343,7 +344,11 @@ Deno.serve(async (req: Request) => {
   // ── Validate ──
   // Only a way to reach the customer is required: name, address and colours
   // are asked afterwards (the form was where people gave up).
-  if (hp) return json({ ok: true, codigo: 'Q-0000-0000' }, 200, allowedOrigin); // bot
+  // The honeypot never drops a request: autofill and password managers fill
+  // it for real people, and a fake "Q-0000-0000" lost them without a trace.
+  // It only tags the admin email; files + rate limit already stop bots.
+  const sospechoso = !!hp;
+  if (sospechoso) console.warn('submit-quote: honeypot relleno, se guarda igualmente');
   const tieneEmail = isValidEmail(email);
   const tieneTelefono = telefono.replace(/[^\d]/g, '').length >= 9;
   if (email && !tieneEmail)         return json({ error: 'Revisa el email: parece que le falta algo.' }, 400, allowedOrigin);
@@ -417,6 +422,8 @@ Deno.serve(async (req: Request) => {
   }
 
   const sq = computeServerQuote(archivos, entrega, settings, cupon);
+  // Big order: the customer sees no price; the shop answers with one.
+  const consultar = esConsultar(sq, settings);
   // Deadline with the current queue (orientative until accepted, when the
   // database fixes fecha_prometida with fecha_tope()).
   const { data: colaH } = await supabase.rpc('plazo_cola_horas');
@@ -458,6 +465,7 @@ Deno.serve(async (req: Request) => {
     ...(sq.cupon ? { cupon_descuento: sq.cuponDescuento } : {}),
     minimo_aplicado: sq.minimoAplicado,
     envio: sq.envio,
+    ...(consultar ? { consultar: true } : {}),
     ...(desvio ? { cliente_total: clienteTotal } : {})
   };
 
@@ -467,6 +475,9 @@ Deno.serve(async (req: Request) => {
     day: '2-digit', month: 'long', year: 'numeric'
   });
 
+  if (guardar && consultar) {
+    return json({ error: 'Es un pedido grande: solicítalo y te enviamos el precio nosotros.' }, 409, allowedOrigin);
+  }
   if (guardar) {
     const { error: gErr } = await supabase.from('presupuestos_guardados').insert({
       email, total: precioServidor, lineas: sq.lineas, entrega, ip_hash: ipHash
@@ -522,7 +533,7 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
   const repetida = (previas ?? []).find((q: any) => firma(q.archivos ?? []) === firma(archivos));
   if (repetida) {
     return json(
-      { ok: true, codigo: repetida.codigo, duplicado: true, precio_total: precioServidor, valido_hasta: repetida.valido_hasta },
+      { ok: true, codigo: repetida.codigo, duplicado: true, precio_total: consultar ? null : precioServidor, valido_hasta: repetida.valido_hasta },
       200,
       allowedOrigin
     );
@@ -638,7 +649,7 @@ Plazo est.: ${listoAntes}${sq.precioFirme ? '\nPrecio:     FIRME (no se puede ca
 Desglose:
 ${lineas.map((l) => `  ${l.concepto}: ${Number(l.importe).toFixed(2)} €`).join('\n')}
 
-TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${desvio ? ` (cliente vio ${clienteTotal.toFixed(2)} € — revisar)` : ''}
+${consultar ? 'PEDIDO GRANDE: el cliente NO ha visto precio. Cálculo automático solo de referencia.\n' : ''}TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${desvio ? ` (cliente vio ${clienteTotal.toFixed(2)} € — revisar)` : ''}
 Válido hasta: ${validezTxt}
 
 Mensaje del cliente:
@@ -669,6 +680,7 @@ IP ${ip} · ${new Date().toISOString()}
   <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f5f5f5;border-radius:6px;">
     ${lineas.map((l) => `<tr><td style="padding:6px 14px;color:#444;">${escapeHtml(l.concepto)}</td><td style="padding:6px 14px;text-align:right;font-family:monospace;">${Number(l.importe).toFixed(2)} €</td></tr>`).join('')}
     <tr><td style="padding:10px 14px;font-weight:700;border-top:1px solid #ddd;">TOTAL ESTIMADO</td><td style="padding:10px 14px;text-align:right;font-family:monospace;font-weight:700;border-top:1px solid #ddd;color:#0EA5E9;">${precioServidor.toFixed(2)} €</td></tr>
+    ${consultar ? '<tr><td colspan="2" style="padding:8px 14px;color:#b45309;font-size:12px;">⚠ Pedido grande: el cliente NO ha visto precio. Esta cifra automática es solo de referencia; mándale tú el precio.</td></tr>' : ''}
     ${desvio ? `<tr><td colspan="2" style="padding:8px 14px;color:#b45309;font-size:12px;">⚠ El cliente vio ${clienteTotal.toFixed(2)} € — revisar (posible manipulación o tarifas desactualizadas).</td></tr>` : ''}
   </table>
   ${mensaje ? `<h3 style="margin:24px 0 8px 0;font-size:14px;color:#666;text-transform:uppercase;letter-spacing:0.1em;">Mensaje</h3><div style="background:#f5f5f5;padding:16px 20px;border-radius:6px;white-space:pre-wrap;line-height:1.6;">${escapeHtml(mensaje)}</div>` : ''}
@@ -698,9 +710,11 @@ ${archivos.map((a: any) => `  Pieza:        ${a.nombre}${a.cantidad > 1 ? ` × $
   Entrega:      ${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}
   Plazo:        ${listoAntes}${entrega === 'envio' ? ' + envío' : ''}${sq.cupon ? `\n  Código:       ${sq.cupon} (-${sq.cuponDescuento.toFixed(2)} €)` : ''}
 
-  TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' (envío incluido)' : ''}
+${consultar ? '' : `  TOTAL ESTIMADO: ${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' (envío incluido)' : ''}
 
-${sinCifraCerrada
+`}${consultar
+  ? 'Es un pedido grande: lo presupuestamos a mano para ajustar el precio al\nmáximo. Te lo enviamos en menos de 24 h.'
+  : sinCifraCerrada
   ? 'Te confirmamos el precio en menos de 24 h, después de revisar tu pieza.'
   : `Es el precio final, válido hasta el ${validezTxt}. Si al revisar tu pieza
 viésemos algo que lo cambie, te avisamos antes de imprimir.`}
@@ -729,10 +743,12 @@ ${acceptUrl}
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Entrega</td><td>${entrega === 'envio' ? `Envío nacional (${sq.envio > 0 ? 'incluido' : 'gratis'})` : 'Recogida en Salamanca (gratis)'}</td></tr>
     <tr><td style="padding:6px 12px 6px 0;color:#666;">Plazo</td><td>${listoAntes}${entrega === 'envio' ? ' + envío' : ''}</td></tr>
     ${sq.cupon ? `<tr><td style="padding:6px 12px 6px 0;color:#666;">Código</td><td>${escapeHtml(sq.cupon)} (−${sq.cuponDescuento.toFixed(2)} €)</td></tr>` : ''}
-    <tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' <span style="font-size:11px;color:#999;font-weight:400;">(envío incluido)</span>' : ''}</td></tr>
+    ${consultar ? '' : `<tr><td style="padding:10px 12px 10px 0;color:#666;border-top:1px solid #eee;font-weight:700;">Total estimado</td><td style="border-top:1px solid #eee;font-weight:700;color:#0EA5E9;font-size:18px;">${precioServidor.toFixed(2)} €${entrega === 'envio' && sq.envio > 0 ? ' <span style="font-size:11px;color:#999;font-weight:400;">(envío incluido)</span>' : ''}</td></tr>`}
   </table>
   <p style="margin:20px 0;color:#444;line-height:1.6;font-size:13px;">
-    ${sinCifraCerrada
+    ${consultar
+      ? 'Es un pedido grande: lo presupuestamos a mano para ajustar el precio al máximo. Te lo enviamos en <strong>menos de 24 h</strong>.'
+      : sinCifraCerrada
       ? 'Te confirmamos el precio en <strong>menos de 24 h</strong>, después de revisar tu pieza.'
       : `Es el precio final, <strong>válido hasta el ${validezTxt}</strong>. Si al revisar
     tu pieza viésemos algo que lo cambie, te avisamos antes de imprimir.`}
@@ -756,7 +772,7 @@ ${acceptUrl}
         from: `3DCC Tasador <${gmailUser}>`,
         to: recipient,
         ...(tieneEmail ? { replyTo: `${asciiHeader(nombre || email)} <${email}>` } : {}),
-        subject: asciiHeader(`[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} €${sq.cupon ? ` (${sq.cupon})` : ''} — ${quien}`),
+        subject: asciiHeader(`${sospechoso ? '[¿spam?] ' : ''}${consultar ? '[CONSULTAR] ' : ''}[Presupuesto ${codigo}] ${material} · ${precioServidor.toFixed(2)} €${sq.cupon ? ` (${sq.cupon})` : ''} — ${quien}`),
         content: text,
         html
       });
@@ -790,7 +806,8 @@ ${acceptUrl}
       ok: true,
       codigo,
       emailSent,
-      precio_total: precioServidor,
+      consultar,
+      precio_total: consultar ? null : precioServidor,
       valido_hasta: validoHasta.toISOString(),
       message: `Solicitud ${codigo} registrada. Te responderemos en breve.`
     },
