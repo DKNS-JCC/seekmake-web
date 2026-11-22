@@ -88,6 +88,7 @@ export function Resumen({
   listo,
   quote,
   precioFinal,
+  consultar,
   firmeActivo,
   listoAntes,
   entrega,
@@ -106,6 +107,8 @@ export function Resumen({
   listo: boolean;
   quote: QuoteResult | null;
   precioFinal: boolean;
+  /** Big order: no price on screen, we send it (esConsultar). */
+  consultar: boolean;
   firmeActivo: boolean;
   listoAntes: string | null;
   entrega: QuoteEntrega;
@@ -136,7 +139,26 @@ export function Resumen({
           </div>
         </div>
       )}
-      {numPiezas > 0 && listo && quote && (
+      {numPiezas > 0 && listo && quote && consultar && (
+        <div className="qt-consultar">
+          <div className="qt-total-row">
+            <span>Total</span>
+            <strong>A consultar</strong>
+          </div>
+          <p>
+            Es un pedido grande. Estos no los dejamos al cálculo automático: los
+            presupuestamos a mano para ajustar el precio al máximo.{' '}
+            <strong>Envíanos la solicitud y te mandamos el precio en menos de 24 h.</strong>
+          </p>
+          {listoAntes && (
+            <p className="qt-total-note">
+              Orientativo: listo antes del {fechaLarga(listoAntes)}
+              {entrega === 'envio' ? ' + envío' : ''}.
+            </p>
+          )}
+        </div>
+      )}
+      {numPiezas > 0 && listo && quote && !consultar && (
         <>
           <ul className="qt-lines">
             {quote.lineas.map((l, i) => (

@@ -642,7 +642,7 @@ export type Database = {
       };
       get_quote_detalle: {
         Args: { p_codigo: string };
-        Returns: { codigo: string; origen: QuoteOrigen; descripcion: string }[];
+        Returns: { codigo: string; origen: QuoteOrigen; descripcion: string; consultar: boolean }[];
       };
       plazo_cola_horas: {
         Args: { p_excluir?: string };

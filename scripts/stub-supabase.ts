@@ -20,6 +20,10 @@ export const estado = {
   usuarios: new Map<string, any>(),
   /** Fuerza el fallo de la siguiente subida al bucket. */
   fallarUpload: false,
+  /** Lo que devuelve cada rpc(nombre) (submit-quote: plazo_cola_horas, validar_cupon). */
+  rpcs: {} as Record<string, any>,
+  /** Fuerza el fallo del siguiente insert (simula la base de datos caída). */
+  fallarInsert: false,
   secuencia: 1
 };
 
@@ -28,6 +32,8 @@ export function reset() {
   estado.storage = new Map();
   estado.usuarios = new Map();
   estado.fallarUpload = false;
+  estado.rpcs = {};
+  estado.fallarInsert = false;
   estado.secuencia = 1;
 }
 
@@ -63,11 +69,12 @@ class Query implements PromiseLike<{ data: any; error: any }> {
   private payload: Fila | null = null;
   private unico: false | 'single' | 'maybe' = false;
   private embebido: string | null = null;
+  private soloCuenta = false;
 
   constructor(private tabla: string) {}
 
-  select(cols = '*') {
-    if (this.modo === 'select') this.modo = 'select';
+  select(cols = '*', opts?: { count?: string; head?: boolean }) {
+    if (opts?.head) this.soloCuenta = true;
     // Relación embebida al estilo PostgREST: "quotes!inner(codigo, token)".
     const m = /(\w+)!inner\(/.exec(cols);
     this.embebido = m ? m[1] : null;
@@ -85,6 +92,14 @@ class Query implements PromiseLike<{ data: any; error: any }> {
     this.filtros.push((f) => (f[col] ?? null) === val);
     return this;
   }
+  neq(col: string, val: any) {
+    this.filtros.push((f) => String(f[col]) !== String(val));
+    return this;
+  }
+  lte(col: string, val: any) {
+    this.filtros.push((f) => String(f[col]) <= String(val));
+    return this;
+  }
   gte(col: string, val: any) {
     this.filtros.push((f) => String(f[col]) >= String(val));
     return this;
@@ -97,13 +112,17 @@ class Query implements PromiseLike<{ data: any; error: any }> {
   single() { this.unico = 'single'; return this; }
   maybeSingle() { this.unico = 'maybe'; return this; }
 
-  private ejecutar(): { data: any; error: any } {
+  private ejecutar(): { data: any; error: any; count?: number } {
     const filas = (estado.tablas[this.tabla] ??= []);
 
     if (this.modo === 'insert') {
+      if (estado.fallarInsert) return { data: null, error: { message: 'base de datos caída' } };
       const nueva = this.tabla === 'recibos'
         ? defaultsRecibo(this.payload ?? {})
-        : { id: uuid(), created_at: new Date().toISOString(), ...(this.payload ?? {}) };
+        : this.tabla === 'quotes'
+          ? { id: uuid(), created_at: new Date().toISOString(), estado: 'nuevo',
+              codigo: `Q-2026-${String(estado.secuencia++).padStart(4, '0')}`, acepta_token: uuid(), ...(this.payload ?? {}) }
+          : { id: uuid(), created_at: new Date().toISOString(), ...(this.payload ?? {}) };
       filas.push(nueva);
       return this.envolver([nueva]);
     }
@@ -122,6 +141,7 @@ class Query implements PromiseLike<{ data: any; error: any }> {
       return this.envolver(sel);
     }
 
+    if (this.soloCuenta) return { data: null, error: null, count: sel.length };
     if (this.orden) {
       const { col, asc } = this.orden;
       sel = [...sel].sort((a, b) =>
@@ -152,7 +172,7 @@ class Query implements PromiseLike<{ data: any; error: any }> {
   }
 
   then<R1 = any, R2 = never>(
-    res?: ((v: { data: any; error: any }) => R1 | PromiseLike<R1>) | null,
+    res?: ((v: { data: any; error: any; count?: number }) => R1 | PromiseLike<R1>) | null,
     rej?: ((r: any) => R2 | PromiseLike<R2>) | null
   ): PromiseLike<R1 | R2> {
     return Promise.resolve(this.ejecutar()).then(res, rej);
@@ -179,6 +199,8 @@ function bucket(_id: string) {
 export function createClient(_url: string, _key: string) {
   return {
     from: (tabla: string) => new Query(tabla),
+    // deno-lint-ignore require-await
+    rpc: async (nombre: string, _args?: any) => ({ data: estado.rpcs[nombre] ?? null, error: null }),
     storage: { from: bucket },
     auth: {
       // deno-lint-ignore require-await

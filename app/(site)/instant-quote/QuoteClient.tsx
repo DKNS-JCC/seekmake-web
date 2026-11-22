@@ -26,6 +26,7 @@ import {
   computeQuote,
   normalizeSettings,
   fechaTope,
+  esConsultar,
   DEFAULT_QUOTE_SETTINGS,
   type PiezaInput,
   type QuoteSettings
@@ -195,6 +196,7 @@ export function QuoteClient({
   const precioFinal =
     !!quote && !tooBig && !degenerate &&
     (firmeActivo ? quote.precioFirme : quote.piezas.every((p) => p.metodo === 'capas'));
+  const consultar = !!quote && esConsultar(quote, settings);
   const listoAntes = quote ? fechaTope(quote.tiempoH, settings, colaH) : null;
   const cpValido = entrega === 'envio' && /^\d{5}$/.test(cp) ? cp : undefined;
 
@@ -264,6 +266,7 @@ export function QuoteClient({
             listo={listo}
             quote={quote}
             precioFinal={precioFinal}
+            consultar={consultar}
             firmeActivo={firmeActivo}
             listoAntes={listoAntes}
             entrega={entrega}
@@ -283,6 +286,7 @@ export function QuoteClient({
             filamentos={filamentos}
             entrega={entrega}
             cpValido={cpValido}
+            consultar={consultar}
             status={status}
             setStatus={setStatus}
             cup={cup}
@@ -302,8 +306,8 @@ export function QuoteClient({
           }
           aria-label="Ver desglose del precio"
         >
-          <span className="qt-sticky-label">{precioFinal ? 'Total' : 'Total estimado'}</span>
-          <strong>{euros(quote.total)}</strong>
+          <span className="qt-sticky-label">{precioFinal || consultar ? 'Total' : 'Total estimado'}</span>
+          <strong>{consultar ? 'A consultar' : euros(quote.total)}</strong>
           {listoAntes && (
             <span className="qt-sticky-days">
               {new Date(`${listoAntes}T12:00:00Z`).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', timeZone: 'UTC' })}

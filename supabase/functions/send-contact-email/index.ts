@@ -159,10 +159,9 @@ Deno.serve(async (req: Request) => {
     });
 
   // ── Validate ──
-  if (hp) {
-    // Bot filled the honeypot field. Pretend it worked.
-    return json({ ok: true }, 200, allowedOrigin);
-  }
+  // The honeypot never drops a message (autofill fills it for real people):
+  // it only tags the subject.
+  const sospechoso = !!hp;
   if (nombre.length < 2 || nombre.length > 120) return json({ error: 'Escribe tu nombre (2 a 120 caracteres).' }, 400, allowedOrigin);
   if (email.length > 254 || !isValidEmail(email)) return json({ error: 'El email no es válido.' }, 400, allowedOrigin);
   if (telefono.length > 40 || tipo.length > 80) return json({ error: 'Solicitud no válida.' }, 400, allowedOrigin);
@@ -205,7 +204,7 @@ Deno.serve(async (req: Request) => {
     }
   });
 
-  const subject = asciiHeader(`[Web 3DCC] ${tipo} — ${nombre}`);
+  const subject = asciiHeader(`${sospechoso ? "[spam?] " : ""}[Web 3DCC] ${tipo} — ${nombre}`);
 
   const attachmentsText = archivos.length
     ? '\n\nArchivos adjuntos:\n' +

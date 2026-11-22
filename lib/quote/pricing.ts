@@ -22,6 +22,7 @@ export {
   tipoPieza,
   cabeEnCama,
   esPrecioFirme,
+  esConsultar,
   senalPendiente,
   costeHoraMaquina,
   factorCalculadora,

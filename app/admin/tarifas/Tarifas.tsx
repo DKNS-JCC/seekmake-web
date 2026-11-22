@@ -310,6 +310,12 @@ export function Tarifas({ modo }: { modo: 'precios' | 'tasador' }) {
           <Field label="Cama máxima (mm)" hint="Eje imprimible más largo — por encima se avisa al cliente">
             <Num value={settings.max_bed_mm} step={1} onChange={(v) => patch((s) => ({ ...s, max_bed_mm: v }))} />
           </Field>
+          <Field label="Precio a consultar desde (€)" hint="Pedido grande: el cliente no ve precio, se lo mandas tú. 0 = nunca">
+            <Num value={settings.consultar_desde_eur} step={10} onChange={(v) => patch((s) => ({ ...s, consultar_desde_eur: Math.max(0, v) }))} />
+          </Field>
+          <Field label="Precio a consultar desde (h de impresión)" hint="Igual, por horas totales de impresión. 0 = nunca">
+            <Num value={settings.consultar_desde_h} step={5} onChange={(v) => patch((s) => ({ ...s, consultar_desde_h: Math.max(0, v) }))} />
+          </Field>
           <Field label="Validez del presupuesto (días)" hint="Ventana para aceptar; pasada la fecha caduca">
             <Num value={settings.validez_dias} step={1} onChange={(v) => patch((s) => ({ ...s, validez_dias: Math.max(1, Math.round(v)) }))} />
           </Field>
