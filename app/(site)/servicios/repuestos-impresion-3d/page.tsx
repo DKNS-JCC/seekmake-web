@@ -2,14 +2,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 
 const S: Servicio = {
   slug: 'repuestos-impresion-3d',
+  categoria: 'repuestos',
   title: 'Repuestos y piezas que ya no se fabrican | 3DCC',
   description:
     'Repuestos impresos en 3D a partir de fotos con medidas o de la pieza rota. Taller en Salamanca con recogida en persona y envío a toda España.',
   nombre: 'Repuestos e impresión 3D de piezas descatalogadas',
   h1: 'Repuestos y piezas',
   h1Accent: 'que ya no se fabrican',
-  intro:
-    'Se rompe una pestaña de plástico y el fabricante ya no la vende, o te piden el aparato entero por una pieza de nada. En nuestro taller de Salamanca copiamos esas piezas en impresión 3D a partir de fotos con medidas o de la pieza rota que nos traes en mano, para que no tengas que tirar algo que todavía funciona.',
+  intro: 'La pieza de plástico que ya no se vende, hecha a partir de la rota o de unas medidas.',
   pasos: [
     'Nos escribes por WhatsApp con fotos de la pieza y de dónde va montada.',
     'Te decimos si se puede reproducir en impresión 3D y qué material recomendamos.',

@@ -20,5 +20,5 @@
 .aviso-navidad-abeto .estrella { fill: #e9b949; }
 
 @media (max-width: 600px) {
-    .aviso-navidad { font-size: 13px; gap: 10px; padding: 9px 16px; justify-content: flex-start; text-align: left; }
+    .aviso-navidad { font-size: var(--fs-min); gap: 10px; padding: 9px 16px; justify-content: flex-start; text-align: left; }
 }

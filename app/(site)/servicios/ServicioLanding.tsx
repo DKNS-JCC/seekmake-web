@@ -8,6 +8,8 @@ import { loadResenas } from '@/lib/resenas';
 import { ResenasSection } from '@/components/ResenasSection';
 import { ContactForm } from '../contacto/ContactForm';
 import '../contacto/contacto.css';
+import { TrabajosGrid } from '@/components/TrabajosGrid';
+import { categoriaDe, loadTrabajos, type CategoriaId } from '@/lib/trabajos';
 
 export type Servicio = {
   slug: string;
@@ -28,6 +30,8 @@ export type Servicio = {
   hermano: { href: string; texto: string };
   /** Precio orientativo, tamaño y plazo, para los servicios con precio cerrado. */
   ficha?: { precio: string; tamano: string; plazo: string };
+  /** Trabajos que se enseñan justo debajo del titular. */
+  categoria?: CategoriaId;
 };
 
 export function servicioMetadata(s: Servicio): Metadata {
@@ -45,7 +49,8 @@ export function servicioMetadata(s: Servicio): Metadata {
 }
 
 export default async function ServicioLanding({ s }: { s: Servicio }) {
-  const resenas = await loadResenas();
+  const [resenas, todos] = await Promise.all([loadResenas(), loadTrabajos()]);
+  const trabajos = s.categoria ? todos.filter((t) => categoriaDe(t) === s.categoria).slice(0, 6) : [];
   const url = siteUrl(`/servicios/${s.slug}/`);
   const jsonLd = [
     {
@@ -106,6 +111,18 @@ export default async function ServicioLanding({ s }: { s: Servicio }) {
         </div>
       </section>
 
+      {trabajos.length > 0 && (
+        <section className="zona-section">
+          <div className="container-3dcc">
+            <h2 className="servicio-trabajos-titulo">Algunos que hemos hecho</h2>
+            <TrabajosGrid trabajos={trabajos} />
+            <div className="tg-mas">
+              <Link href="/trabajos/" className="btn-outline">Ver más trabajos</Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="zona-section">
         <div className="container-3dcc">
           <div className="servicio-pedir">
@@ -116,10 +133,7 @@ export default async function ServicioLanding({ s }: { s: Servicio }) {
                   <li key={p}>{p}</li>
                 ))}
               </ol>
-              <p className="servicio-alt">
-                ¿Prefieres hablarlo directamente? Escríbenos por WhatsApp y te
-                contestamos en el día.
-              </p>
+              <p className="servicio-alt">¿Prefieres hablarlo? Escríbenos por WhatsApp.</p>
               <div className="zona-actions">
                 <a href={wa} className="btn-primary" target="_blank" rel="noopener noreferrer">
                   Pedir por WhatsApp

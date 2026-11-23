@@ -1,15 +1,14 @@
 'use client';
 
 // Asking for the quote: the short form (only a way to reach the customer),
-// WhatsApp, "envíame el presupuesto por email" and the PDF.
+// WhatsApp and "envíame el presupuesto por email".
 // STL/OBJ are gzipped client-side before upload to protect Storage quota.
 
 import { useState, type FormEvent } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Filamento, QuoteEntrega } from '@/lib/types';
-import type { QuoteResult, QuoteSettings } from '@/lib/quote/pricing';
+import type { QuoteResult } from '@/lib/quote/pricing';
 import { piezaColors, type Pieza, type QuoteStatus } from '@/lib/quote/types';
-import { openQuotePdf } from '@/lib/quote/pdf';
 import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import { WhatsAppIcon } from '@/components/WhatsAppFAB';
 import { CONTACTO, ESCRIBENOS, whatsappUrl } from '@/lib/contacto';
@@ -29,8 +28,6 @@ export function Pedir({
   piezas,
   quote,
   listo,
-  settings,
-  colaH,
   filamentos,
   entrega,
   cpValido,
@@ -42,8 +39,6 @@ export function Pedir({
   piezas: Pieza[];
   quote: QuoteResult | null;
   listo: boolean;
-  settings: QuoteSettings;
-  colaH: number;
   filamentos: Filamento[];
   entrega: QuoteEntrega;
   cpValido: string | undefined;
@@ -71,7 +66,6 @@ export function Pedir({
   const ficha = (p: Pieza, i: number) => fichaPieza(p, i, quote, filamentos);
   const cuerpo = (archivos: Record<string, unknown>[]) =>
     cuerpoPedido(archivos, piezas, quote, entrega, cpValido, website);
-  const piezasSinColor = piezas.filter((p) => piezaColors(p).length === 0);
 
   function fallo(message: string, motivo: string) {
     setStatus({ kind: 'err', message });
@@ -208,14 +202,6 @@ export function Pedir({
     }
   }
 
-  // Printable summary — the browser's "save as PDF" does the heavy lifting,
-  // no PDF library needed for a static-export site.
-  function downloadPdf() {
-    if (!quote) return;
-    if (!openQuotePdf(quote, settings, colaH)) return;
-    trackEvent('pdf_descargado', { total: quote.total, piezas: piezas.length });
-  }
-
   // Night visitors would rather type than fill a form: the whole order, ready to send.
   const waPedido = quote
     ? [
@@ -237,30 +223,33 @@ export function Pedir({
     <>
       {/* request: form, WhatsApp, or keep it for later */}
       {piezas.length > 0 && listo && quote && status.kind !== 'ok' && (
-        <div className="qt-pedir">
+        <div className={'qt-pedir' + (showForm ? ' con-form' : '')}>
           {!showForm && (
             <div className="qt-ctas">
-              <button type="button" className="btn-primary qt-cta" onClick={abrirFormulario}>
-                Solicitar presupuesto
+              <button id="qt-pedirlo" type="button" className="btn-primary qt-cta" onClick={abrirFormulario}>
+                {consultar ? 'Pedirlo' : `Pedirlo · ${euros(quote.total)}`}
               </button>
               <a
                 className="btn-outline qt-cta qt-cta-wa"
                 href={whatsappUrl(waPedido)}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-no-contar
+                onClick={() =>
+                  trackEvent('whatsapp_clic', {
+                    pagina: 'tasador (pedido)',
+                    total: consultar ? null : quote.total,
+                    piezas: piezas.length,
+                    consultar
+                  })
+                }
               >
                 <WhatsAppIcon />
-                Pedir por WhatsApp
+                WhatsApp
               </a>
             </div>
           )}
-          {!showForm && (
-            <p className="qt-step-hint">
-              {piezasSinColor.length > 0
-                ? `¿Sin color para ${piezasSinColor.map((p) => p.name).join(', ')}? Pídelo igual: te ayudamos a elegirlo.`
-                : 'Sin registro: solo un email o tu WhatsApp.'}
-            </p>
-          )}
+          {!showForm && consultar && <p className="qt-pedir-nota">No pagas nada ahora. Sin registro.</p>}
 
           {showForm && (
             <form className="qt-form" onSubmit={submit} noValidate>
@@ -340,8 +329,8 @@ export function Pedir({
           )}
 
           {/* Not ready yet: keep it (and a reminder tomorrow). Not for big
-              orders: both would hand out the automatic price. */}
-          {!consultar && (
+              orders: it would hand out the automatic price. */}
+          {!consultar && !showForm && (
           <div className="qt-guardar">
             {guardado.kind === 'ok' ? (
               <p className="qt-guardar-ok" role="status">
@@ -364,15 +353,12 @@ export function Pedir({
                 </button>
               </form>
             ) : (
-              <div className="qt-guardar-opciones">
+              <p className="qt-pedir-nota">
+                No pagas nada ahora ·{' '}
                 <button type="button" className="qt-cupon-abrir" onClick={() => setGuardarAbierto(true)}>
-                  Envíame el presupuesto por email
+                  Envíamelo por email
                 </button>
-                <span aria-hidden="true">·</span>
-                <button type="button" className="qt-cupon-abrir" onClick={downloadPdf}>
-                  Descargar PDF
-                </button>
-              </div>
+              </p>
             )}
             {guardarAbierto && guardado.kind !== 'ok' && (
               <p className="qt-form-hint">

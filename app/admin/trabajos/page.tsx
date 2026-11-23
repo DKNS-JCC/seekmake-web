@@ -11,6 +11,7 @@ import { AdminCabecera } from '../_components/AdminNav';
 import { useConfirm } from '../_components/useConfirm';
 import { mensajeDeError } from '@/lib/errors';
 import { activable } from '@/lib/a11y';
+import { CATEGORIAS, type CategoriaId } from '@/lib/categorias-trabajo';
 import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { ErrorBanner } from '../_components/ErrorBanner';
 
@@ -401,6 +402,23 @@ export default function AdminTrabajos() {
               </Field>
             </div>
 
+            <Field label="Dónde sale" hint="La página de servicio que enseña este trabajo.">
+              <select
+                value={draft.etiquetas.find((e) => CATEGORIAS.some((c) => c.id === e)) ?? ''}
+                onChange={(e) => {
+                  const resto = draft.etiquetas.filter((x) => !CATEGORIAS.some((c) => c.id === x));
+                  const cat = e.target.value as CategoriaId | '';
+                  patch('etiquetas', cat ? [cat, ...resto] : resto);
+                }}
+                style={inputStyle}
+              >
+                <option value="">Solo en el álbum de trabajos</option>
+                {CATEGORIAS.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </Field>
+
             <Field label="Etiquetas" hint="Para filtrar / SEO. Enter para añadir.">
               <ChipInput
                 values={draft.etiquetas}
@@ -430,7 +448,7 @@ export default function AdminTrabajos() {
                 <span style={{ fontSize: 13 }}>
                   Mostrar en la home{' '}
                   <span style={{ color: 'var(--muted)', fontSize: 11 }}>
-                    (los no destacados solo se ven en /trabajos)
+                    (los destacados salen en la portada; todos salen en /trabajos)
                   </span>
                 </span>
               </label>

@@ -3,14 +3,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 // Sin tarifas a propósito: los pedidos de grupo se cierran hablando.
 const S: Servicio = {
   slug: 'grupos',
+  categoria: 'grupos',
   title: 'Pedidos para grupos, clubes y empresas en Salamanca | 3DCC',
   description:
     'Llaveros de socio, trofeos, medallas y detalles con nombre para colegios, clubes, asociaciones y empresas de Salamanca. Precio a medida por WhatsApp.',
   nombre: 'Pedidos para grupos y empresas',
   h1: 'Para grupos',
   h1Accent: 'clubes, colegios y empresas',
-  intro:
-    'Cuando el pedido es para un colectivo, cada caso es distinto: cuántas unidades, para qué fecha y con qué presupuesto. Por eso no ponemos tarifas. Nos escribís, os pasamos una muestra y un precio cerrado, y os lo entregamos en mano en Salamanca.',
+  intro: 'Para clubes, asociaciones y empresas, con unidades, fecha y precio a vuestra medida.',
   pasos: [
     'Nos escribís con cuántas unidades, para qué es y la fecha.',
     'Os proponemos un diseño y os mandamos una foto de la muestra.',

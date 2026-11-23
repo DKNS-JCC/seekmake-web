@@ -23,8 +23,7 @@
 .resena-texto { font-size: 16px; line-height: 1.7; color: var(--text); }
 .resena-autor {
     margin-top: 10px;
-    font-family: var(--font-mono), monospace; font-size: 11px;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text);
+    font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--text);
 }
 .resena-autor span { color: var(--muted); text-transform: none; letter-spacing: 0.04em; }
 

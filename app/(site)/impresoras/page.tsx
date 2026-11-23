@@ -134,13 +134,7 @@ export default function ImpresorasPage() {
             <span className="accent">taller</span>
           </h1>
           <div className="slogan">Capa a capa, idea a realidad</div>
-          <p className="about-intro-block">
-            Aquí no hay oficinas ni cubículos: solo{' '}
-            <strong>máquinas de precisión</strong> trabajando sin descanso.
-            Nuestro taller en Salamanca combina velocidad y detalle para
-            convertir cualquier archivo en una pieza real. Cada impresora
-            tiene su personalidad, su especialidad y sus horas de vuelo.
-          </p>
+          <p className="about-intro-block">Las máquinas con las que imprimimos tus piezas en Salamanca.</p>
         </div>
       </section>
 

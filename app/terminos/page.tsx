@@ -36,7 +36,7 @@ export default function TerminosPage() {
           <p
             style={{
               fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 11,
+              fontSize: 14,
               color: 'var(--muted)',
               marginTop: 12,
               letterSpacing: '0.1em'

@@ -123,6 +123,8 @@ export default function AdminEstadisticas() {
     const conPrecio = sesiones('precio_visto');
     const conSolicitud = sesiones('solicitud_enviada');
     const conPdf = sesiones('pdf_descargado');
+    // Solo el botón «Pedir por WhatsApp» del tasador lleva sesión (el flotante no).
+    const conWhatsapp = sesiones('whatsapp_clic');
     const conVisita = sesiones('visita');
     const conFormulario = sesiones('formulario_abierto');
     const conError = sesiones('formulario_error');
@@ -151,7 +153,7 @@ export default function AdminEstadisticas() {
       }
     }
     // Vieron el precio y se fueron sin solicitar ni descargar el PDF.
-    const abandonos = [...conPrecio].filter((s) => !conSolicitud.has(s) && !conPdf.has(s)).length;
+    const abandonos = [...conPrecio].filter((s) => !conSolicitud.has(s) && !conPdf.has(s) && !conWhatsapp.has(s)).length;
     // Se fueron mientras se laminaba (o el archivo no se pudo tasar). Solo
     // desde el primer 'precio_visto': antes el tasador no lo mandaba y toda
     // sesión antigua contaría aquí.
@@ -200,6 +202,7 @@ export default function AdminEstadisticas() {
         antesDelPrecio,
         solicitudes: conSolicitud.size,
         pdfs: conPdf.size,
+        whatsapp: conWhatsapp.size,
         abandonos,
         aceptados
       }
@@ -255,6 +258,7 @@ export default function AdminEstadisticas() {
         <Bar label="Abrieron formulario" value={f.formularios} max={topEmbudo} color="#a855f7" />
         <Bar label="Error en formulario" value={f.conError} max={topEmbudo} color="#ef4444" />
         <Bar label="Solicitaron" value={f.solicitudes} max={topEmbudo} color="#a855f7" />
+        <Bar label="Pidieron por WhatsApp" value={f.whatsapp} max={topEmbudo} color="#25D366" />
         <Bar label="Aceptaron" value={f.aceptados} max={topEmbudo} color="#10b981" />
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
           Conversión a solicitud: <strong>{convSolicitud.toFixed(0)}%</strong> ·

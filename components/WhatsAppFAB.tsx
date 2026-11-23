@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { whatsappUrl } from '@/lib/contacto';
 import { createClient } from '@/lib/supabase/client';
@@ -39,13 +39,33 @@ export function WhatsAppIcon({ size = 18 }: { size?: number }) {
 
 export function WhatsAppFAB() {
   const pathname = usePathname() ?? '/';
+  const [tapado, setTapado] = useState(false);
+
+  useEffect(() => {
+    const otros = [...document.querySelectorAll('a[href^="https://wa.me/"]:not(.wa-fab)')];
+    if (!otros.length) return;
+    const vistos = new Set<Element>();
+    const obs = new IntersectionObserver((entradas) => {
+      for (const e of entradas) {
+        if (e.isIntersecting) vistos.add(e.target);
+        else vistos.delete(e.target);
+      }
+      setTapado(vistos.size > 0);
+    });
+    otros.forEach((a) => obs.observe(a));
+    return () => {
+      obs.disconnect();
+      setTapado(false);
+    };
+  }, [pathname]);
 
   // Cuenta cada clic en cualquier enlace de WhatsApp de la web: página y nada
   // más. Sin cookies ni datos de quien pulsa (/admin/estadisticas).
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const a = (e.target as Element | null)?.closest?.('a[href^="https://wa.me/"]');
-      if (!a || location.pathname.startsWith('/admin') || noRastrear()) return;
+      // data-no-contar: the link counts itself, with more detail (tasador).
+      if (!a || a.hasAttribute('data-no-contar') || location.pathname.startsWith('/admin') || noRastrear()) return;
       void createClient()
         .from('quote_events')
         .insert({ session_id: '', evento: 'whatsapp_clic', payload: { pagina: location.pathname } })
@@ -55,12 +75,17 @@ export function WhatsAppFAB() {
     return () => document.removeEventListener('click', onClick, { capture: true });
   }, []);
 
+  // The tasador has its own «Pedir por WhatsApp», with the order in it.
+  if (pathname.startsWith('/instant-quote')) return null;
+
   return (
     <a
       href={whatsappUrl(mensajeWhatsApp(pathname))}
       target="_blank"
       rel="noopener noreferrer"
-      className="wa-fab"
+      className={'wa-fab' + (tapado ? ' oculto' : '')}
+      aria-hidden={tapado || undefined}
+      tabIndex={tapado ? -1 : undefined}
     >
       <WhatsAppIcon size={22} />
       Pedir por WhatsApp

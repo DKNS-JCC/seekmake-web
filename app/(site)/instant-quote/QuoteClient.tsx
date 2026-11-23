@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { Color, Filamento, QuoteEntrega, ResenasResumen } from '@/lib/types';
+import type { Color, Filamento, QuoteEntrega } from '@/lib/types';
 import { useCatalogoColores } from '@/lib/useCatalogoColores';
 import { piezaColors, type QuoteStatus } from '@/lib/quote/types';
 import { looksDegenerate, suggestScales } from '@/lib/quote/geometry';
@@ -47,12 +47,10 @@ import { piezaSeparada } from './solicitud';
 
 export function QuoteClient({
   filamentos: filamentosIniciales,
-  colores: coloresIniciales,
-  resenas
+  colores: coloresIniciales
 }: {
   filamentos: Filamento[];
   colores: Color[];
-  resenas: ResenasResumen | null;
 }) {
   // Build-time snapshot first, live data as soon as it arrives — otherwise a
   // colour marked agotado stays orderable until the next rebuild.
@@ -75,8 +73,8 @@ export function QuoteClient({
   const [status, setStatus] = useState<QuoteStatus>({ kind: 'idle' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sticky price pill: visible only while the real breakdown is off-screen,
-  // so the price follows you through the config steps without duplicating.
+  // Phones: a «Pedirlo» pill while the price and its button are off-screen.
+  // On a PC they never are: the panel keeps them pinned at its foot.
   const totalRef = useRef<HTMLDivElement>(null);
   const [totalInView, setTotalInView] = useState(true);
 
@@ -163,24 +161,10 @@ export function QuoteClient({
     return computeQuote(entradas, settings, entrega, cup.cupon);
   }, [entradas, settings, settingsLoaded, entrega, cup.cupon]);
 
-  // Small orders pay the minimum: what one more unit of the active piece
-  // would add, so the customer can see the order has room left.
-  const masUnaUnidad = useMemo(() => {
-    if (!quote?.minimoAplicado || !activeId) return null;
-    const i = piezas.findIndex((p) => p.id === activeId);
-    if (i < 0) return null;
-    const otra = computeQuote(
-      entradas.map((e, j) => (j === i ? { ...e, cantidad: e.cantidad + 1 } : e)),
-      settings,
-      entrega,
-      cup.cupon
-    );
-    return { pieza: piezas[i], extra: Math.max(0, Math.round((otra.total - quote.total) * 100) / 100) };
-  }, [quote, activeId, piezas, entradas, settings, entrega, cup.cupon]);
-
   const maxBedMm = settings.max_bed_mm;
+  // Per object: several objects side by side may be wider than the bed.
   const tooBig = piezas.some(
-    (p) => Math.max(p.metrics.bboxMm.x, p.metrics.bboxMm.y, p.metrics.bboxMm.z) > maxBedMm
+    (p) => (p.metrics.objetoMayorMm ?? Math.max(p.metrics.bboxMm.x, p.metrics.bboxMm.y, p.metrics.bboxMm.z)) > maxBedMm
   );
   const degenerate = piezas.some((p) => looksDegenerate(p.metrics));
   // Pieces still being "sliced": the price waits for them.
@@ -207,16 +191,11 @@ export function QuoteClient({
   // ─── render ─────────────────────────────────────────────────────────────
   return (
     <div className="page-content qt-page">
-      <section className="qt-hero">
-        <div className="section-tag" style={{ justifyContent: 'center' }}>
-          Calculadora de precio
-        </div>
+      <section className={'qt-hero' + (piezas.length ? ' compacto' : '')}>
         <h1>Calcula el precio de tu pieza</h1>
-        <p className="qt-hero-desc">
-          Sube tus modelos 3D, configura cada pieza con material y color del
-          muestrario real y obtén una estimación al instante. Sin registros, sin
-          esperas.
-        </p>
+        {!piezas.length && (
+          <p className="qt-hero-desc">Sube tu archivo 3D y te decimos el precio al momento. Sin registros.</p>
+        )}
       </section>
 
       <div className="container-3dcc qt-main">
@@ -232,6 +211,7 @@ export function QuoteClient({
 
         {/* ── options panel ── */}
         <aside className="qt-panel">
+          <div className="qt-panel-opciones">
           <ListaPiezas
             pz={pz}
             quote={quote}
@@ -243,7 +223,6 @@ export function QuoteClient({
           />
           <ConfigPieza
             pz={pz}
-            settings={settings}
             filamentos={filamentos}
             materialColors={materialColors}
             activeColors={activeColors}
@@ -255,10 +234,11 @@ export function QuoteClient({
           {piezas.length > 0 && (
             <Entrega settings={settings} entrega={entrega} setEntrega={setEntrega} cp={cp} setCp={setCp} />
           )}
+          </div>
 
+          {/* price and button: pinned at the panel's foot on a PC */}
+          <div className="qt-panel-pie" ref={totalRef}>
           <Resumen
-            totalRef={totalRef}
-            settings={settings}
             settingsLoaded={settingsLoaded}
             numPiezas={piezas.length}
             numAnalizando={analizando.length}
@@ -270,10 +250,6 @@ export function QuoteClient({
             firmeActivo={firmeActivo}
             listoAntes={listoAntes}
             entrega={entrega}
-            resenas={resenas}
-            masUnaUnidad={masUnaUnidad}
-            masUno={(p) => pz.setCantidad(p.id, p.cantidad + 1)}
-            otraPieza={() => fileInputRef.current?.click()}
             cup={cup}
           />
 
@@ -281,8 +257,6 @@ export function QuoteClient({
             piezas={piezas}
             quote={quote}
             listo={listo}
-            settings={settings}
-            colaH={colaH}
             filamentos={filamentos}
             entrega={entrega}
             cpValido={cpValido}
@@ -291,28 +265,23 @@ export function QuoteClient({
             setStatus={setStatus}
             cup={cup}
           />
+          </div>
         </aside>
       </div>
 
-      {/* Sticky price — follows the user while configuring; tapping it jumps
-          to the full breakdown. Hidden once the breakdown itself is visible
-          or after the request is sent. */}
+      {/* Phones: «Pedirlo» follows the user; tapping it goes to the price and
+          opens the form. Hidden once the price is on screen or after sending. */}
       {listo && quote && status.kind !== 'ok' && !totalInView && (
         <button
           type="button"
           className="qt-sticky-price"
-          onClick={() =>
-            totalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-          aria-label="Ver desglose del precio"
+          onClick={() => {
+            // Open the form, then bring its field into view once it exists.
+            document.querySelector<HTMLButtonElement>('#qt-pedirlo')?.click();
+            setTimeout(() => document.querySelector('#qt-contacto')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+          }}
         >
-          <span className="qt-sticky-label">{precioFinal || consultar ? 'Total' : 'Total estimado'}</span>
-          <strong>{consultar ? 'A consultar' : euros(quote.total)}</strong>
-          {listoAntes && (
-            <span className="qt-sticky-days">
-              {new Date(`${listoAntes}T12:00:00Z`).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', timeZone: 'UTC' })}
-            </span>
-          )}
+          {consultar ? 'Pedirlo' : <>Pedirlo · <strong>{euros(quote.total)}</strong></>}
         </button>
       )}
     </div>

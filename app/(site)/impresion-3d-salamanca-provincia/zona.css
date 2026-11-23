@@ -15,7 +15,7 @@
     display: flex; flex-wrap: wrap; gap: 8px;
 }
 .zona-towns li {
-    font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: 0.06em;
+    font-family: var(--font-mono), monospace; font-size: var(--fs-min); letter-spacing: 0.06em;
     padding: 8px 14px; border: 1px solid var(--border-h); border-radius: var(--r);
     background: var(--surface); color: var(--text);
 }

@@ -4,6 +4,7 @@
 // pieces with their quantity.
 
 import { colorPreviewStyle } from '@/lib/color-preview';
+import { whatsappUrl } from '@/lib/contacto';
 import { piezaColors } from '@/lib/quote/types';
 import type { QuoteResult } from '@/lib/quote/pricing';
 import type { Piezas } from './usePiezas';
@@ -47,7 +48,7 @@ export function ListaPiezas({
                     key={s.unidad}
                     type="button"
                     className="btn-outline"
-                    style={{ padding: '6px 14px', fontSize: 11 }}
+                    style={{ padding: '6px 14px' }}
                     onClick={() => pz.rescalePieza(activePieza.id, s.factor)}
                   >
                     Convertir de {s.unidad} (×{s.factor})
@@ -74,7 +75,7 @@ export function ListaPiezas({
       {/* piezas */}
       {piezas.length > 0 && (
         <div className="qt-step">
-          <div className="qt-step-label">Tus piezas</div>
+          {piezas.length > 1 && <div className="qt-step-label">Tus piezas</div>}
           <ul className="qt-piezas">
             {piezas.map((p) => (
               <li
@@ -133,12 +134,21 @@ export function ListaPiezas({
         </div>
       )}
 
+      {/* The second door: no 3D file, just a photo, an idea or a broken part. */}
       {!piezas.length && (
-        <div className="qt-step">
-          <p className="qt-step-hint">
-            Sube una o varias piezas para configurar material, color y acabado
-            de cada una.
+        <div className="qt-sin-archivo">
+          <p>
+            <strong>¿No tienes archivo 3D?</strong> Mándanos una foto de la pieza o de tu idea y
+            te decimos el precio.
           </p>
+          <a
+            className="btn-outline"
+            href={whatsappUrl('Hola, no tengo archivo 3D. Os mando una foto de lo que quiero.')}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Mándanos una foto
+          </a>
         </div>
       )}
     </>

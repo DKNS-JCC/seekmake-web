@@ -25,8 +25,7 @@
     line-height: 1.05; color: var(--text); text-transform: capitalize; margin-bottom: 8px;
 }
 .ss-row-title {
-    font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); margin-bottom: 10px;
 }
 .ss-tabs { display: flex; gap: 6px; margin: 20px 0 14px; }
 .ss-tab {
@@ -48,7 +47,7 @@
 .ss-swatch-muestrario::before { content: ''; position: absolute; left: -13px; top: 4px; bottom: 4px; width: 1px; background: var(--border-h); }
 .ss-mas {
     height: 34px; padding: 0 14px; border-radius: 999px; border: 1px dashed var(--border-h);
-    background: none; color: var(--text); font-size: 13px; white-space: nowrap; flex: 0 0 auto;
+    background: none; color: var(--text); font-size: var(--fs-min); white-space: nowrap; flex: 0 0 auto;
 }
 .ss-mas:hover { border-color: var(--accent); color: var(--accent); }
 .ss-mas[aria-pressed='true'] { border-style: solid; border-color: var(--accent); color: var(--accent); }
@@ -81,8 +80,7 @@
 .ss-foto:hover { transform: rotate(0) translateY(-4px); }
 .ss-foto img { display: block; width: 100%; height: auto; border-radius: 3px; }
 .ss-foto figcaption {
-    font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--muted); text-align: center; padding: 10px 0 12px;
+    font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); text-align: center; padding: 10px 0 12px;
 }
 @media (prefers-reduced-motion: reduce) { .ss-foto { transition: none; } }
 

@@ -2,14 +2,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 
 const S: Servicio = {
   slug: 'figuras-desde-foto',
+  categoria: 'figuras',
   title: 'Figuras 3D desde tu foto en Salamanca | 3DCC',
   description:
     'Figuras impresas en 3D a partir de una foto: personas, parejas y mascotas. Taller en Salamanca, con recogida en persona o envío a toda España.',
   nombre: 'Figuras 3D desde una foto',
   h1: 'Figuras desde tu foto',
   h1Accent: 'impresas en 3D',
-  intro:
-    'Nos mandas una foto y la convertimos en una figura que se puede tener en la mano: una persona, una pareja o vuestra mascota. Preparamos el modelo a partir de la foto, lo ajustamos para que se imprima bien y lo imprimimos en nuestro taller de Salamanca. Fue de lo que más nos pidieron la Navidad pasada.',
+  intro: 'Nos mandas una foto y la convertimos en figura: una persona, una pareja o tu mascota.',
   pasos: [
     'Nos mandas la foto por WhatsApp y nos dices qué tamaño quieres.',
     'Te decimos si la foto sirve. Si no, te pedimos otra antes de empezar.',

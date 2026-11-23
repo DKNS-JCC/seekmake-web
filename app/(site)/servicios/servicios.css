@@ -16,7 +16,7 @@ a.value-card { display: block; color: inherit; text-decoration: none; }
 
 /* Cómo funciona + formulario, lado a lado; en móvil, uno debajo del otro. */
 .servicio-pedir { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
-.servicio-pedir h2 {
+.servicio-pedir h2, .servicio-trabajos-titulo {
     font-family: var(--font-display), sans-serif;
     font-size: clamp(30px, 3.5vw, 44px); line-height: 1.05;
     letter-spacing: 0.02em; color: var(--text); margin-bottom: 16px;
@@ -37,7 +37,7 @@ a.value-card { display: block; color: inherit; text-decoration: none; }
 
 /* Precio, tamaño y plazo bajo la intro del servicio. */
 .servicio-ficha { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px 40px; margin: 28px 0 0; }
-.servicio-ficha dt { font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.servicio-ficha dt { font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); }
 .servicio-ficha dd { margin: 4px 0 0; font-family: var(--font-display), sans-serif; font-size: 26px; color: var(--text); }
 .servicio-ficha div:first-child dd { color: var(--accent); }
 @media (max-width: 480px) {

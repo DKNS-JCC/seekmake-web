@@ -157,7 +157,7 @@ export default async function NavidadPage() {
       <section className="nv-fechas" id="fechas" aria-labelledby="nv-fechas-titulo">
         <div className="container-3dcc">
           <h2 id="nv-fechas-titulo" className="section-title">Cola de impresión</h2>
-          <p className="section-desc">Último día para pedir cada cosa. Llevan un día de margen por si una pieza hay que repetirla.</p>
+          <p className="section-desc">Último día para pedir cada cosa, con un día de margen.</p>
           <ol className="nv-cola">
             {FECHAS.map((f, i) => {
               const cerrada = f.fecha < hoy;

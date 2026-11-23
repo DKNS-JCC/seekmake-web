@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { useFadeUp } from '@/components/useFadeUp';
-import { TrabajosSection } from '@/components/TrabajosSection';
+import { TrabajosGrid } from '@/components/TrabajosGrid';
 import { FaqSection } from '@/components/FaqSection';
 import { ResenasSection } from '@/components/ResenasSection';
 import type { ResenasData } from '@/lib/resenas';
 import { AvisoNavidad } from '@/components/AvisoNavidad';
 import type { Plazas } from '@/lib/campana-navidad';
-import { ContactForm } from '@/app/(site)/contacto/ContactForm';
 import '@/app/(site)/contacto/contacto.css';
 import './page.css';
 import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
@@ -39,11 +38,8 @@ export function HomeClient({
           <h1 className="hero-title">
             Impresión{' '}<span className="accent">3D</span>{' '}a medida
           </h1>
-          <p className="hero-desc">
-            Taller de impresión 3D en Salamanca con envíos a toda España: regalos
-            personalizados, repuestos imposibles y piezas técnicas, con precio al instante.
-          </p>
-          {/* El tasador va en azul; WhatsApp ya está siempre a mano en el botón flotante. */}
+          <p className="hero-desc">Regalos, repuestos y piezas a medida en Salamanca. Envío a toda España.</p>
+          {/* El tasador va en azul; quien no tiene archivo, a WhatsApp con una foto. */}
           <div className="hero-actions">
             <Link href="/instant-quote" className="btn-primary">
               <svg
@@ -56,19 +52,17 @@ export function HomeClient({
               >
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
               </svg>{' '}
-              Calcular precio
+              Sube tu archivo y mira el precio
             </Link>
+            {/* The second door: a photo, an idea or a broken part, no 3D file. */}
             <a
-              href={whatsappUrl('Hola, os mando una foto de lo que quiero imprimir.')}
+              href={whatsappUrl('Hola, no tengo archivo 3D. Os mando una foto de lo que quiero.')}
               className="btn-outline"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Pedir por WhatsApp
+              No tengo archivo: mando una foto
             </a>
-            <Link href="#contacto" className="btn-outline">
-              Contáctanos
-            </Link>
           </div>
           <div className="hero-stats">
             <div>
@@ -133,77 +127,43 @@ export function HomeClient({
           <div className="section-header">
             <div className="section-tag">Qué ofrecemos</div>
             <h2 className="section-title">Nuestros Servicios</h2>
-            <p className="section-desc">
-              Recogida en Salamanca capital y envío a toda la provincia:{' '}
-              <Link href="/impresion-3d-salamanca-provincia/" className="footer-link">impresión 3D en Salamanca y provincia</Link>.
-            </p>
+            <p className="section-desc">Recogemos en Salamanca y enviamos a toda España.</p>
           </div>
           <div className="services-grid">
             {[
               {
                 title: 'Regalos',
+                foto: '/images/trabajos/pareja-silueta-600.webp',
                 desc: 'Figuras desde tu foto, litofanías y detalles con nombre.',
                 href: '/catalogo/',
                 num: '01',
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
-                  />
-                )
               },
               {
                 title: 'Trofeos y medallas',
+                foto: '/images/trabajos/trofeo-primer-premio-600.webp',
                 desc: 'Para clubes, colegios y asociaciones, con vuestro diseño y desde pocas unidades.',
                 href: '/servicios/trofeos-y-medallas/',
                 num: '02',
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0"
-                  />
-                )
               },
               {
                 title: 'Repuestos',
+                foto: '/images/trabajos/pasadores-rosa-600.webp',
                 desc: 'La pieza que ya no se fabrica, a partir de la rota o de unas medidas.',
                 href: '/servicios/repuestos-impresion-3d/',
                 num: '03',
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21.75 6.75a4.5 4.5 0 0 1-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 1 1-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 0 1 6.336-4.486l-3.276 3.276a3.004 3.004 0 0 0 2.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852Z"
-                  />
-                )
               },
               {
                 title: 'Diseño a medida',
+                foto: '/images/trabajos/bulldog-moto-600.webp',
                 desc: 'Si no hay archivo, lo diseñamos nosotros a partir de tu idea.',
                 href: '/servicios/diseno-3d-a-medida/',
                 num: '04',
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                  />
-                )
               }
             ].map((s) => (
               <a key={s.num} href={s.href} className="service-card fade-up"
                 {...(s.href.startsWith('https:') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-                <svg
-                  className="service-icon"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  {s.icon}
-                </svg>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="service-foto" src={s.foto} alt="" loading="lazy" decoding="async" />
                 <h3 className="service-title">{s.title}</h3>
                 <p className="service-desc">{s.desc}</p>
                 <span className="service-num">{s.num}</span>
@@ -216,16 +176,34 @@ export function HomeClient({
         </div>
       </section>
 
+      {/* ── TRABAJOS ─────────────────────────────────────────── */}
+      {/* Fotos fijas en cuadrícula: un carrusel que se mueve solo casi nadie lo recorre. */}
+      {trabajos.length > 0 && (
+        <section id="trabajos">
+          <div className="container-3dcc">
+            <div className="section-header">
+              <div className="section-tag">Hecho en nuestro taller</div>
+              <h2 className="section-title">Nuestros trabajos</h2>
+              <p className="section-desc">Piezas reales de nuestro taller.</p>
+            </div>
+            {/* Solo los marcados como destacados en /admin/trabajos. */}
+            <TrabajosGrid trabajos={trabajos.filter((t) => t.destacado).slice(0, 6)} />
+            <div className="tg-mas">
+              <Link href="/trabajos/" className="btn-outline">
+                Ver todos los trabajos
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── MUESTRARIO PREVIEW ───────────────────────────────── */}
       <section id="muestrario">
         <div className="container-3dcc">
           <div className="section-header">
             <div className="section-tag">Materiales y Colores</div>
             <h2 className="section-title">Muestrario</h2>
-            <p className="section-desc">
-              Amplia gama de colores y acabados. Visita el muestrario completo
-              para ver todas las opciones.
-            </p>
+            <p className="section-desc">Colores y acabados disponibles.</p>
           </div>
           <div className="colors-row">
             {[
@@ -264,9 +242,6 @@ export function HomeClient({
         </div>
       </section>
 
-      {/* ── TRABAJOS ─────────────────────────────────────────── */}
-      <TrabajosSection trabajos={trabajos} />
-
       <ResenasSection {...resenas} />
 
       {/* ── PRESUPUESTO CTA ─────────────────────────────────── */}
@@ -278,12 +253,9 @@ export function HomeClient({
             <br />
             tu idea?
           </h2>
-          <p className="section-desc">
-            Sistema automático de cotización. Sube tu archivo y recibe tu precio
-            en segundos.
-          </p>
+          <p className="section-desc">Sube tu archivo y ten el precio en segundos.</p>
           <Link href="/instant-quote" className="btn-white">
-            Calcular Precio Ahora{' '}
+            Sube tu archivo y mira el precio{' '}
             <svg
               width="16"
               height="16"
@@ -308,8 +280,9 @@ export function HomeClient({
             <h2 className="section-title">Contacto</h2>
           </div>
           <div className="contact-grid">
-            <div className="contact-form-container">
-              <ContactForm />
+            <div className="contact-corto">
+              <p className="section-desc">WhatsApp, teléfono o mensaje. Respondemos en menos de 24&nbsp;h.</p>
+              <Link href="/contacto/" className="btn-primary">Escribir un mensaje</Link>
             </div>
             <div>
               <div className="contact-item fade-up">

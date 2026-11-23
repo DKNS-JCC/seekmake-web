@@ -11,7 +11,7 @@ section#inicio {
     /* El % se mide sobre la mitad del hero (su celda): mitad - 600 + 24. Sin 100vw, que incluye la barra de scroll. */
     padding: 80px 32px 80px max(80px, calc(100% - 576px));
 }
-.hero-eyebrow { font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--accent); margin-bottom: 28px; display: flex; align-items: center; gap: 12px; }
+.hero-eyebrow { font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--accent); margin-bottom: 28px; display: flex; align-items: center; gap: 12px; }
 .hero-eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--accent); }
 .hero-title { font-family: var(--font-display), sans-serif; font-size: clamp(68px, 7.5vw, 116px); line-height: 0.88; letter-spacing: 0.02em; color: var(--text); margin-bottom: 32px; }
 .hero-title .accent { color: var(--accent); display: block; }
@@ -21,7 +21,7 @@ section#inicio {
 @media (min-width: 901px) { .hero-actions .btn-primary, .hero-actions .btn-outline { padding-left: 18px; padding-right: 18px; } }
 .hero-stats { display: flex; gap: 40px; margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--border); }
 .stat-num { font-family: var(--font-display), sans-serif; font-size: 38px; color: var(--accent); line-height: 1; display: block; }
-.stat-label { font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-top: 4px; display: block; }
+.stat-label { font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); margin-top: 4px; display: block; }
 .hero-right { position: relative; overflow: hidden; }
 .hero-grid { position: absolute; inset: 0; z-index: 1; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 44px 44px; animation: grid-scroll 18s linear infinite; }
 @keyframes grid-scroll { from { background-position: 0 0; } to { background-position: 0 44px; } }
@@ -33,7 +33,7 @@ section#inicio {
 /* 80%: si la columna es estrecha, recorta cielo por la izquierda y no la torre. */
 .hero-img { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; display: block; }
 .hero-img-mask { position: absolute; inset: 0; z-index: 3; background: linear-gradient(to right, var(--bg) 0%, transparent 35%); }
-.scroll-hint { position: absolute; bottom: 36px; left: 80px; display: flex; align-items: center; gap: 12px; font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); z-index: 5; }
+.scroll-hint { position: absolute; bottom: 36px; left: 80px; display: flex; align-items: center; gap: 12px; font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); z-index: 5; }
 .scroll-line { width: 36px; height: 1px; background: var(--border); overflow: hidden; position: relative; }
 .scroll-line::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: var(--accent); animation: scan 2s ease-in-out infinite; }
 @keyframes scan { 0%{left:-100%} 100%{left:100%} }
@@ -41,14 +41,14 @@ section#inicio {
     section#inicio { grid-template-columns: 1fr; min-height: auto; }
     .hero-left { padding: 8px 20px 32px; }
     .hero-title { font-size: clamp(48px, 12vw, 72px); margin-bottom: 20px; }
-    .hero-desc { font-size: 15px; margin-bottom: 32px; }
+    .hero-desc { margin-bottom: 32px; }
     /* En móvil la catedral va arriba, como cabecera, y se funde con el fondo. */
     .hero-right { height: 300px; order: -1; }
     .hero-img-mask { background: linear-gradient(to top, var(--bg) 0%, transparent 30%); }    .hero-actions { flex-direction: row; }
     .hero-stats { gap: 16px; margin-top: 36px; padding-top: 28px; }
     .hero-stats > div { flex: 1; }
     .stat-num { font-size: 30px; }
-    .stat-label { font-size: 8px; }
+    .stat-label { font-size: var(--fs-min); }
     .scroll-hint { display: none; }
 }
 @media (max-width: 640px) {
@@ -58,9 +58,9 @@ section#inicio {
 }
 @media (max-width: 480px) {
     .hero-left { padding: 4px 16px 28px; }
-    .hero-eyebrow { font-size: 9px; margin-bottom: 18px; }
+    .hero-eyebrow { font-size: var(--fs-min); margin-bottom: 18px; }
     .hero-title { font-size: 48px; margin-bottom: 16px; }
-    .hero-desc { font-size: 14px; margin-bottom: 28px; line-height: 1.65; }
+    .hero-desc { font-size: var(--fs-body); margin-bottom: 28px; line-height: 1.6; }
     .hero-right { height: 260px; }
     .hero-stats { gap: 16px; margin-top: 28px; padding-top: 20px; }
 }
@@ -71,9 +71,10 @@ section#inicio {
 .service-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 0; background: var(--accent); transition: height 0.4s cubic-bezier(0.4,0,0.2,1); }
 .service-card:hover::before { height: 100%; }
 .service-card:hover { background: var(--surface); }
-.service-icon { width: 44px; height: 44px; color: var(--accent); margin-bottom: 22px; }
-.service-title { font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
-.service-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.service-title { font-weight: 700; font-size: var(--fs-h3); color: var(--text); margin-bottom: 10px; }
+.service-desc { font-size: var(--fs-label); color: var(--muted); line-height: 1.6; }
+/* Una foto real de cada servicio en vez de un icono. */
+.service-foto { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: contain; border-radius: 6px; margin-bottom: 18px; background: var(--surface-2); }
 .service-num { font-family: var(--font-display), sans-serif; font-size: 64px; color: var(--border); position: absolute; bottom: 12px; right: 20px; line-height: 1; transition: color 0.3s; pointer-events: none; }
 .service-card:hover .service-num { color: var(--accent-dim); }
 .service-card:nth-child(1).fade-up { transition-delay: 0.05s; } .service-card:nth-child(2).fade-up { transition-delay: 0.15s; } .service-card:nth-child(3).fade-up { transition-delay: 0.25s; } .service-card:nth-child(4).fade-up { transition-delay: 0.35s; }
@@ -85,9 +86,6 @@ section#inicio {
     #servicios { padding: 48px 0; }
     .services-grid { grid-template-columns: 1fr; }
     .service-card { padding: 24px 20px 36px; }
-    .service-icon { width: 36px; height: 36px; margin-bottom: 16px; }
-    .service-title { font-size: 15px; }
-    .service-desc { font-size: 13px; }
     .service-num { font-size: 48px; }
 }
 
@@ -109,7 +107,7 @@ section#inicio {
     .swatch { width: 48px; height: 48px; }
 }
 
-#trabajos { padding: 112px 0; background: var(--surface); }
+#trabajos { padding: 112px 0; }
 /* Carousel / Portfolio overrides */
 .embla { overflow: hidden; width: 100%; background: var(--border); }
 .embla__container { display: flex; touch-action: pan-y pinch-zoom; }
@@ -129,13 +127,13 @@ section#inicio {
 .portfolio-cap { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,11,14,0.92) 0%, transparent 55%); opacity: 0; transition: opacity 0.35s; display: flex; flex-direction: column; justify-content: flex-end; padding: 22px; pointer-events: none; }
 .portfolio-item:hover .portfolio-cap { opacity: 1; }
 .portfolio-title { font-weight: 700; font-size: 17px; color: #fff; margin-bottom: 4px; }
-.portfolio-sub { font-family: var(--font-mono), monospace; font-size: 11px; color: rgba(255,255,255,0.55); }
+.portfolio-sub { font-family: var(--font-mono), monospace; font-size: var(--fs-min); color: rgba(255,255,255,0.55); }
 @media (max-width: 768px) {
     #trabajos { padding: 48px 0; }
     /* Carousel tweaks on mobile */
     .portfolio-cap { opacity: 1; }
     .portfolio-title { font-size: 15px; }
-    .portfolio-sub { font-size: 10px; }
+    .portfolio-sub { font-size: var(--fs-min); }
 }
 
 #presupuesto { padding: 112px 0; background: var(--accent); position: relative; overflow: hidden; }

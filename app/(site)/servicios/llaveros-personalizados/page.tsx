@@ -2,14 +2,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 
 const S: Servicio = {
   slug: 'llaveros-personalizados',
+  categoria: 'regalos',
   title: 'Llaveros personalizados en 3D | 3DCC',
   description:
     'Llaveros personalizados en 3D con nombre o logo, sueltos o en lotes para empresas. Taller en Salamanca, recogida en persona y envío a toda España.',
   nombre: 'Llaveros personalizados en 3D',
   h1: 'Llaveros personalizados',
   h1Accent: 'en 3D',
-  intro:
-    'Un llavero con un nombre, una fecha o un dibujo concreto es un regalo pequeño que se usa todos los días. En nuestro taller de Salamanca los imprimimos en 3D, en un color o a dos colores, tanto sueltos para un regalo como en lotes para empresas, asociaciones o eventos que quieren llevar su logo encima.',
+  intro: 'Con un nombre, una fecha o un dibujo. Un regalo pequeño que se usa a diario.',
   pasos: [
     'Nos cuentas por WhatsApp qué quieres: texto, logo o dibujo, y cuántas unidades.',
     'Te proponemos la forma, los colores y el tamaño, y lo ajustamos hasta que te guste.',

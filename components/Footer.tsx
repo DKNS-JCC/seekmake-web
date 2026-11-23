@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CONTACTO } from '@/lib/contacto';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -24,6 +25,10 @@ export function Footer() {
           {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/servicios/semana-santa/" className="footer-link">
             Mini cofrades Semana Santa
+          </Link>
+          {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
+          <Link href="/trabajos/" className="footer-link">
+            Trabajos
           </Link>
           {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           <Link href="/muestrario" className="footer-link">
@@ -56,6 +61,7 @@ export function Footer() {
           {' '}<span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>{' '}
           Servicio ofrecido como hobby sin ánimo de lucro
         </span>
+        <ThemeToggle />
       </div>
     </footer>
   );

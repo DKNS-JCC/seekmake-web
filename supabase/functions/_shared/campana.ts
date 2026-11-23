@@ -2,9 +2,11 @@
 // scripts/test-campana.ts can check it from Node.
 
 // denomailer breaks non-ASCII subjects (see send-contact-email), but passes
-// pure ASCII untouched: hand it RFC 2047 encoded-words already built. 10
-// characters per word keep each one under the 75-char limit (≤ 4 UTF-8
-// bytes each).
+// pure ASCII untouched — unless it starts with "=?": then it QP-wraps it again,
+// soft-breaks the header and the whole email arrives as raw MIME (campaña de
+// Navidad, nov 2026). So hand it RFC 2047 encoded-words already built, behind a
+// leading space (header parsers drop it). 10 characters per word keep each one
+// under the 75-char limit (≤ 4 UTF-8 bytes each).
 export function encodeAsunto(s: string): string {
   if (/^[\x20-\x7E]*$/.test(s)) return s;
   const chars = [...s.replace(/\s+/g, ' ').trim()];
@@ -13,7 +15,7 @@ export function encodeAsunto(s: string): string {
     const bytes = new TextEncoder().encode(chars.slice(i, i + 10).join(''));
     palabras.push(`=?UTF-8?B?${btoa(String.fromCharCode(...bytes))}?=`);
   }
-  return palabras.join(' ');
+  return ' ' + palabras.join(' ');
 }
 
 // Unsubscribe token: HMAC of the email, so a link only unsubscribes its own

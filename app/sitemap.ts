@@ -21,6 +21,7 @@ const STATIC: MetadataRoute.Sitemap = [
   { url: `${BASE}/servicios/llaveros-personalizados/`, priority: 0.8,  changeFrequency: 'monthly' },
   { url: `${BASE}/servicios/semana-santa/`, priority: 0.8,  changeFrequency: 'monthly' },
   { url: `${BASE}/servicios/diseno-3d-a-medida/`, priority: 0.8,  changeFrequency: 'monthly' },
+  { url: `${BASE}/trabajos/`,        priority: 0.8,  changeFrequency: 'weekly'  },
   { url: `${BASE}/catalogo/`,        priority: 0.8,  changeFrequency: 'weekly'  },
   { url: `${BASE}/muestrario/`,      priority: 0.7,  changeFrequency: 'monthly' },
   { url: `${BASE}/blog/`,            priority: 0.7,  changeFrequency: 'weekly'  },

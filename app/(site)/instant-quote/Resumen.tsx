@@ -1,15 +1,12 @@
 'use client';
 
-// Step 5 (delivery, for the whole order) and the price: lines, total, what
-// backs it, the room left in the minimum and the discount code.
+// Step 5 (delivery, for the whole order) and the price: lines, total, the
+// promise behind it and the discount code.
 
-import type { RefObject } from 'react';
-import type { QuoteEntrega, ResenasResumen } from '@/lib/types';
+import type { QuoteEntrega } from '@/lib/types';
 import { fechaLarga, type QuoteResult, type QuoteSettings } from '@/lib/quote/pricing';
-import type { Pieza } from '@/lib/quote/types';
 import { whatsappUrl } from '@/lib/contacto';
 import { euros } from '@/lib/recibo/types';
-import { MAX_FILES } from './modelo';
 import type { CuponEstado } from './useCupon';
 
 export function Tick() {
@@ -35,31 +32,32 @@ export function Entrega({
 }) {
   return (
     <div className="qt-step">
-      <div className="qt-step-label">5 · Entrega del pedido</div>
-      <div className="qt-cards">
+      <div className="qt-step-label">3 · Entrega</div>
+      <div className="qt-pills">
         <button
           type="button"
-          className={'qt-card' + (entrega === 'recogida' ? ' active' : '')}
+          className={'qt-pill' + (entrega === 'recogida' ? ' active' : '')}
           aria-pressed={entrega === 'recogida'}
           onClick={() => setEntrega('recogida')}
         >
-          <strong>Recogida en Salamanca</strong>
-          <span>Gratis · Plza. Barrio Vidal</span>
+          Recogida en Salamanca
         </button>
         <button
           type="button"
-          className={'qt-card' + (entrega === 'envio' ? ' active' : '')}
+          className={'qt-pill' + (entrega === 'envio' ? ' active' : '')}
           aria-pressed={entrega === 'envio'}
           onClick={() => setEntrega('envio')}
         >
-          <strong>Envío nacional</strong>
-          <span>
-            {settings.envio_gratis_desde > 0
-              ? `Gratis desde ${euros(settings.envio_gratis_desde)} · si no, por peso`
-              : 'Coste por peso, incluido en el total'}
-          </span>
+          Envío a España
         </button>
       </div>
+      <p className="qt-step-hint">
+        {entrega === 'recogida'
+          ? 'Gratis · Plza. Barrio Vidal'
+          : settings.envio_gratis_desde > 0
+            ? `Gratis desde ${euros(settings.envio_gratis_desde)} · si no, por peso`
+            : 'Coste por peso, incluido en el total'}
+      </p>
       {entrega === 'envio' && (
         <label className="qt-cp">
           <span>Código postal <small>(opcional)</small></span>
@@ -79,8 +77,6 @@ export function Entrega({
 }
 
 export function Resumen({
-  totalRef,
-  settings,
   settingsLoaded,
   numPiezas,
   numAnalizando,
@@ -92,14 +88,8 @@ export function Resumen({
   firmeActivo,
   listoAntes,
   entrega,
-  resenas,
-  masUnaUnidad,
-  masUno,
-  otraPieza,
   cup
 }: {
-  totalRef: RefObject<HTMLDivElement>;
-  settings: QuoteSettings;
   settingsLoaded: boolean;
   numPiezas: number;
   numAnalizando: number;
@@ -112,16 +102,11 @@ export function Resumen({
   firmeActivo: boolean;
   listoAntes: string | null;
   entrega: QuoteEntrega;
-  resenas: ResenasResumen | null;
-  masUnaUnidad: { pieza: Pieza; extra: number } | null;
-  /** One more unit of that piece. */
-  masUno: (p: Pieza) => void;
-  otraPieza: () => void;
   cup: CuponEstado;
 }) {
   const { cupon } = cup;
   return (
-    <div className="qt-total" ref={totalRef}>
+    <div className="qt-total">
       {!numPiezas && (
         <p className="qt-total-empty">Sube una pieza para ver el precio.</p>
       )}
@@ -131,8 +116,8 @@ export function Resumen({
       {numPiezas > 0 && settingsLoaded && numAnalizando > 0 && (
         <div className="qt-total-empty qt-analizando" role="status">
           <p>
-            Laminando {numAnalizando === 1 ? 'tu pieza' : `${numAnalizando} piezas`}{' '}
-            para calcular gramos y horas reales…
+            Calculando el precio{numAnalizando > 1 ? ` de ${numAnalizando} piezas` : ''}…{' '}
+            {Math.round(progresoAnalisis * 100)} %
           </p>
           <div className="qt-progress">
             <span style={{ width: `${Math.round(progresoAnalisis * 100)}%` }} />
@@ -160,14 +145,17 @@ export function Resumen({
       )}
       {numPiezas > 0 && listo && quote && !consultar && (
         <>
-          <ul className="qt-lines">
-            {quote.lineas.map((l, i) => (
-              <li key={i}>
-                <span>{l.concepto}</span>
-                <span>{l.importe === 0 ? 'Gratis' : euros(l.importe)}</span>
-              </li>
-            ))}
-          </ul>
+          {/* One line is the total itself: only list them when there are more. */}
+          {quote.lineas.length > 1 && (
+            <ul className="qt-lines">
+              {quote.lineas.map((l, i) => (
+                <li key={i}>
+                  <span>{l.concepto.replace(/ \(~[^)]*\)/, '')}</span>
+                  <span>{l.importe === 0 ? 'Gratis' : euros(l.importe)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="qt-total-row">
             <span>{precioFinal ? 'Total' : 'Total estimado'}</span>
             <strong>{euros(quote.total)}</strong>
@@ -199,47 +187,8 @@ export function Resumen({
                 </span>
               </li>
             )}
-            {resenas && resenas.total > 0 && (
-              <li>
-                <Tick />
-                {resenas.total} reseñas ·{' '}
-                {Number(resenas.media).toLocaleString('es-ES', { maximumFractionDigits: 1 })}★
-              </li>
-            )}
-            <li>
-              <Tick />
-              Recogida en Salamanca o envío a toda España
-            </li>
           </ul>
 
-          {/* Small orders: show the room left inside the same price */}
-          {masUnaUnidad && (
-            <div className="qt-upsell">
-              <p>
-                {masUnaUnidad.extra === 0 ? (
-                  <>Una unidad más de <strong>{masUnaUnidad.pieza.name}</strong> te sale <strong>gratis</strong>.</>
-                ) : (
-                  <>
-                    2 unidades de <strong>{masUnaUnidad.pieza.name}</strong> por solo{' '}
-                    <strong>+{euros(masUnaUnidad.extra)}</strong>.
-                  </>
-                )}
-                {quote.margenMinimo >= 1 && numPiezas < MAX_FILES && (
-                  <> O añade otra pieza: hasta {euros(quote.margenMinimo)} entran en el mismo precio.</>
-                )}
-              </p>
-              <div className="qt-upsell-acciones">
-                <button type="button" className="btn-outline" onClick={() => masUno(masUnaUnidad.pieza)}>
-                  + 1 unidad
-                </button>
-                {numPiezas < MAX_FILES && (
-                  <button type="button" className="btn-outline" onClick={otraPieza}>
-                    + Otra pieza
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
           {entrega === 'envio' && quote.faltaEnvioGratis > 0 && (
             <p className="qt-total-note qt-envio-gratis">
               Te faltan {euros(quote.faltaEnvioGratis)} para el envío gratis.
@@ -288,12 +237,6 @@ export function Resumen({
               <p className="qt-cupon-error" role="alert">{cup.cuponError}</p>
             )}
           </div>
-          <p className="qt-total-note">
-            Calculado laminando tus piezas como en nuestra impresora
-            (~{Math.round(quote.pesoG)} g, ~{quote.tiempoH.toFixed(1)} h de impresión
-            en total), válido {settings.validez_dias} días.
-            {!precioFinal && ' Alguna pieza necesita que la revisemos; te confirmamos el precio antes de imprimir.'}
-          </p>
           {quote.piezas.some((p) => p.metodo === 'aproximado') && (
             <p className="qt-total-note">
               Alguna pieza no se pudo laminar en el navegador; su precio es una
