@@ -3,7 +3,7 @@
 //   { campana_id, prueba: true }  → la manda solo a CONTACT_RECIPIENT.
 //   { campana_id }                → la manda a la audiencia, de una en una.
 //   { accion: 'programadas' } + x-cron-secret → la primera programada que ya
-//                                   toca (workflow campanas-programadas.yml).
+//                                   toca (pg_cron cada 5 min).
 //
 // Al terminar una campaña llega un resumen a CONTACT_RECIPIENT.
 //
@@ -68,11 +68,12 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { return json({ error: 'JSON inválido' }, 400, origin); }
   const db = createClient(supabaseUrl, serviceKey);
 
-  // El cron (con CRON_SECRET) o el admin de la web (no los de la Calculadora).
-  const cronSecret = Deno.env.get('CRON_SECRET') ?? '';
+  // pg_cron (secreto del vault, ver 20261123130000_campanas_cron.sql) o el
+  // admin de la web (no los de la Calculadora). Sin verify_jwt: lo hace esto.
   const cron = body?.accion === 'programadas';
   if (cron) {
-    if (!cronSecret || req.headers.get('x-cron-secret') !== cronSecret) return json({ error: 'No autorizado.' }, 401, origin);
+    const { data: ok } = await db.rpc('campana_cron_ok', { secreto: req.headers.get('x-cron-secret') ?? '' });
+    if (ok !== true) return json({ error: 'No autorizado.' }, 401, origin);
   } else {
     const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
     const { data: u } = jwt ? await createClient(supabaseUrl, anonKey).auth.getUser(jwt) : { data: null };
