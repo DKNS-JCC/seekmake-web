@@ -1,6 +1,6 @@
 'use client';
 
-// Asking for the quote: the short form (only a way to reach the customer),
+// Asking for the quote: the short form (name, mobile, optional email),
 // WhatsApp and "envíame el presupuesto por email".
 // STL/OBJ are gzipped client-side before upload to protect Storage quota.
 
@@ -13,7 +13,7 @@ import { gzipFile, shouldCompress } from '@/lib/quote/compress';
 import { WhatsAppIcon } from '@/components/WhatsAppFAB';
 import { CONTACTO, ESCRIBENOS, whatsappUrl } from '@/lib/contacto';
 import { euros } from '@/lib/recibo/types';
-import { cuerpoPedido, fichaPieza, leerContacto, randomPath } from './solicitud';
+import { cuerpoPedido, emailValido, fichaPieza, randomPath, telefonoValido } from './solicitud';
 import { trackEvent } from './seguimiento';
 import { Tick } from './Resumen';
 import { Recibido } from './Recibido';
@@ -34,7 +34,8 @@ export function Pedir({
   consultar,
   status,
   setStatus,
-  cup
+  cup,
+  materialParaTodas
 }: {
   piezas: Pieza[];
   quote: QuoteResult | null;
@@ -47,13 +48,19 @@ export function Pedir({
   status: QuoteStatus;
   setStatus: (s: QuoteStatus) => void;
   cup: CuponEstado;
+  materialParaTodas: (f: Filamento) => void;
 }) {
-  // Only a way to reach the customer: name, address and colours are asked
-  // when we answer (the long form was where people gave up).
+  // Name and mobile: an email alone left us guessing who it was and writing
+  // back and forth. Address and colours are asked when we answer.
   const [showForm, setShowForm] = useState(false);
-  const [contacto, setContacto] = useState('');
   const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
+  const [intentado, setIntentado] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  // Marketing consent: its own box, never pre-ticked (RGPD art. 7).
+  const [aceptaOfertas, setAceptaOfertas] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
 
   // "Envíame el presupuesto por email" for whoever is not ready to ask yet.
@@ -62,6 +69,10 @@ export function Pedir({
   const [guardado, setGuardado] = useState<
     { kind: 'idle' } | { kind: 'sending' } | { kind: 'ok'; email: string } | { kind: 'err'; message: string }
   >({ kind: 'idle' });
+
+  // Two pieces in black, one left in PLA and the other in PETG: easy to miss.
+  const [mezclaOk, setMezclaOk] = useState(false);
+  const materiales = filamentos.filter((f) => piezas.some((p) => p.config.filamentoId === f.id));
 
   const ficha = (p: Pieza, i: number) => fichaPieza(p, i, quote, filamentos);
   const cuerpo = (archivos: Record<string, unknown>[]) =>
@@ -80,11 +91,17 @@ export function Pedir({
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!piezas.length || !quote || !listo || status.kind === 'sending') return;
-    const datos = leerContacto(contacto);
-    if (!datos) {
-      fallo('Escribe un email (tu@email.com) o un móvil de 9 cifras.', 'contacto');
-      return;
-    }
+    setIntentado(true);
+    if (!nombre.trim()) return fallo('Dinos tu nombre.', 'nombre');
+    if (!telefonoValido(telefono)) return fallo('Escribe un móvil de 9 cifras.', 'telefono');
+    if (email.trim() && !emailValido(email)) return fallo('Revisa el email: parece que le falta algo.', 'email');
+    if (!aceptaTerminos) return fallo('Marca la casilla de los Términos para enviarlo.', 'terminos');
+    const datos = {
+      nombre: nombre.trim(),
+      telefono: telefono.trim(),
+      email: email.trim(),
+      acepta_ofertas: aceptaOfertas
+    };
 
     const supabase = createClient();
 
@@ -139,7 +156,7 @@ export function Pedir({
 
       // 2. Quote request → Edge Function (inserts row + emails).
       const { data, error } = await supabase.functions.invoke('submit-quote', {
-        body: { ...cuerpo(archivos), ...datos, nombre, mensaje }
+        body: { ...cuerpo(archivos), ...datos, mensaje }
       });
 
       if (error) {
@@ -186,7 +203,7 @@ export function Pedir({
     e.preventDefault();
     const email = guardarEmail.trim();
     if (!quote || guardado.kind === 'sending') return;
-    if (!leerContacto(email)?.email) {
+    if (!emailValido(email)) {
       setGuardado({ kind: 'err', message: 'Revisa el email: parece que le falta algo.' });
       return;
     }
@@ -224,6 +241,27 @@ export function Pedir({
       {/* request: form, WhatsApp, or keep it for later */}
       {piezas.length > 0 && listo && quote && status.kind !== 'ok' && (
         <div className={'qt-pedir' + (showForm ? ' con-form' : '')}>
+          {materiales.length > 1 && !mezclaOk && (
+            <div className="qt-warn qt-mezcla" role="status">
+              <p>
+                ⚠ Tus piezas van en materiales distintos:{' '}
+                {piezas
+                  .map((p) => `${p.name} en ${filamentos.find((f) => f.id === p.config.filamentoId)?.material ?? '?'}`)
+                  .join(', ')}
+                . ¿Es lo que quieres?
+              </p>
+              <div className="qt-mezcla-botones">
+                {materiales.map((f) => (
+                  <button key={f.id} type="button" className="btn-outline" onClick={() => materialParaTodas(f)}>
+                    Todas en {f.material}
+                  </button>
+                ))}
+                <button type="button" className="qt-link" onClick={() => setMezclaOk(true)}>
+                  Sí, así está bien
+                </button>
+              </div>
+            </div>
+          )}
           {!showForm && (
             <div className="qt-ctas">
               <button id="qt-pedirlo" type="button" className="btn-primary qt-cta" onClick={abrirFormulario}>
@@ -253,35 +291,47 @@ export function Pedir({
 
           {showForm && (
             <form className="qt-form" onSubmit={submit} noValidate>
-              <label className="qt-form-label" htmlFor="qt-contacto">
-                ¿Dónde te enviamos el presupuesto?
-              </label>
+              <p className="qt-form-label" id="qt-datos">Tus datos</p>
+              <div className="qt-form-fila" role="group" aria-labelledby="qt-datos">
+                <input
+                  id="qt-contacto"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Nombre"
+                  aria-label="Nombre"
+                  autoFocus
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  aria-invalid={intentado && !nombre.trim()}
+                />
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="Móvil"
+                  aria-label="Móvil"
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  aria-invalid={intentado && !telefonoValido(telefono)}
+                />
+              </div>
               <input
-                id="qt-contacto"
-                type="text"
+                type="email"
                 inputMode="email"
                 autoComplete="email"
-                placeholder="Email o WhatsApp"
-                autoFocus
-                value={contacto}
-                onChange={(e) => setContacto(e.target.value)}
-                aria-invalid={status.kind === 'err' && !leerContacto(contacto)}
+                placeholder="Email (opcional)"
+                aria-label="Email (opcional)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={intentado && !!email.trim() && !emailValido(email)}
                 aria-describedby="qt-contacto-ayuda"
               />
               <p id="qt-contacto-ayuda" className="qt-form-hint">
-                Nada más. Nombre{entrega === 'envio' ? ', dirección' : ''} y colores te los
-                preguntamos al contestarte.
+                Te escribimos por WhatsApp si hay que ajustar algo. Con email te llegan también
+                los avisos del pedido.
               </p>
               <details className="qt-form-mas">
-                <summary>Añadir nombre o notas (opcional)</summary>
-                <input
-                  type="text"
-                  placeholder="Tu nombre"
-                  aria-label="Tu nombre"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  autoComplete="name"
-                />
+                <summary>Añadir notas (opcional)</summary>
                 <textarea
                   placeholder="Reparto de colores, plazo, lo que necesites…"
                   aria-label="Notas"
@@ -300,6 +350,31 @@ export function Pedir({
                 />
               </div>
 
+              <label className="qt-form-check">
+                <input
+                  type="checkbox"
+                  checked={aceptaTerminos}
+                  onChange={(e) => setAceptaTerminos(e.target.checked)}
+                  aria-invalid={intentado && !aceptaTerminos}
+                />
+                <span>
+                  Acepto los{' '}
+                  <a href="/terminos/" target="_blank" rel="noopener noreferrer">Términos</a> y la{' '}
+                  <a href="/privacidad/" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
+                </span>
+              </label>
+              <label className="qt-form-check">
+                <input
+                  type="checkbox"
+                  checked={aceptaOfertas}
+                  onChange={(e) => setAceptaOfertas(e.target.checked)}
+                />
+                <span>
+                  Quiero recibir por email alguna oferta o aviso de 3DCC (opcional). Te das de baja
+                  con un clic.
+                </span>
+              </label>
+
               {status.kind === 'err' && (
                 <div className="qt-msg err" role="alert">{status.message}</div>
               )}
@@ -317,13 +392,8 @@ export function Pedir({
                     : `Enviar solicitud · ${euros(quote.total)}`}
               </button>
               <p className="qt-form-legal">
-                Al enviar aceptas los{' '}
-                <a href="/terminos/" target="_blank" rel="noopener noreferrer">Términos</a>. Usamos
-                tus datos y archivos para preparar y gestionar este presupuesto y los borramos
-                periódicamente. También podremos enviarte alguna oferta o aviso a tu email; cada
-                correo trae un enlace para darte de baja. Puedes ejercer tus derechos en{' '}
-                {CONTACTO.email}. Más en la{' '}
-                <a href="/privacidad/">Política de Privacidad</a>.
+                Usamos tus datos y archivos para preparar y gestionar este presupuesto y los
+                borramos periódicamente. Puedes ejercer tus derechos en {CONTACTO.email}.
               </p>
             </form>
           )}

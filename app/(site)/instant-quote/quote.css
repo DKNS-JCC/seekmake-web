@@ -221,10 +221,15 @@
     font-size: 20px; color: var(--text); line-height: 1;
 }
 .qt-pieza-qty button:hover { border-color: var(--accent); }
-.qt-pieza-qty span {
-    min-width: 30px; text-align: center;
-    font-family: var(--font-mono), monospace; font-size: var(--fs-label);
+.qt-pieza-qty input {
+    width: 48px; height: 40px; text-align: center;
+    background: var(--field); color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r);
+    font-family: var(--font-mono), monospace; font-size: 16px; /* 16px: iOS no hace zoom */
 }
+.qt-pieza-qty input:focus { outline: none; border-color: var(--accent); }
+.qt-mezcla-botones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.qt-mezcla-botones .btn-outline { padding: 6px 14px; min-height: 40px; }
 .qt-pieza-remove {
     flex-shrink: 0;
     width: 40px; height: 40px;

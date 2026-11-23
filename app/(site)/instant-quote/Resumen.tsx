@@ -76,6 +76,25 @@ export function Entrega({
   );
 }
 
+/**
+ * What one unit comes to, quantity discount and code included (shipping not):
+ * 50 keyrings at -15 % read better as «0,85 € la unidad».
+ */
+export function porUnidad(q: QuoteResult): string {
+  const piezas = q.total - q.envio;
+  if (q.piezas.length === 1) return `Sale a ${euros(piezas / q.unidades)} la unidad.`;
+  // Several files: each one's share of the order, per unit.
+  const bruto = q.piezas.reduce((s, p) => s + p.subtotal, 0);
+  return (
+    'Por unidad: ' +
+    q.piezas
+      .filter((p) => p.cantidad > 1)
+      .map((p) => `${p.nombre} ${euros(bruto > 0 ? (piezas * p.subtotal) / bruto / p.cantidad : 0)}`)
+      .join(' · ') +
+    '.'
+  );
+}
+
 export function Resumen({
   settingsLoaded,
   numPiezas,
@@ -160,6 +179,9 @@ export function Resumen({
             <span>{precioFinal ? 'Total' : 'Total estimado'}</span>
             <strong>{euros(quote.total)}</strong>
           </div>
+          {quote.piezas.some((p) => p.cantidad > 1) && (
+            <p className="qt-total-note">{porUnidad(quote)}</p>
+          )}
 
           {/* Trust, right where the number is read */}
           <ul className="qt-trust">

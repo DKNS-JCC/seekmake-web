@@ -6,12 +6,8 @@ import type { QuoteResult } from '@/lib/quote/pricing';
 import { piezaColors, type Pieza } from '@/lib/quote/types';
 import { objetosSeparados } from '@/lib/quote/tresmf';
 
-/** The one contact field: an email if it has an @, else a phone of 9+ digits. */
-export function leerContacto(txt: string): { email: string; telefono: string } | null {
-  const t = txt.trim();
-  if (t.includes('@')) return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? { email: t, telefono: '' } : null;
-  return t.replace(/\D/g, '').length >= 9 ? { email: '', telefono: t } : null;
-}
+export const emailValido = (t: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.trim());
+export const telefonoValido = (t: string) => t.replace(/\D/g, '').length >= 9;
 
 export function randomPath(ext: string): string {
   const safe = (Math.random().toString(36).slice(2, 8) + Date.now().toString(36)).slice(0, 16);

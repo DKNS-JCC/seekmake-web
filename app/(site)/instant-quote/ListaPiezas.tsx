@@ -3,15 +3,48 @@
 // Warnings about the files (size, units, damaged mesh) and the list of
 // pieces with their quantity.
 
+import { useState } from 'react';
 import { colorPreviewStyle } from '@/lib/color-preview';
 import { whatsappUrl } from '@/lib/contacto';
 import { piezaColors } from '@/lib/quote/types';
 import type { QuoteResult } from '@/lib/quote/pricing';
 import type { Piezas } from './usePiezas';
 
+/** Units: typed (80 copies are not 80 taps) or with − / +. */
+function Cantidad({ valor, onChange }: { valor: number; onChange: (n: number) => void }) {
+  // Only while typing (an empty box must not snap back to 1 mid-edit).
+  const [txt, setTxt] = useState<string | null>(null);
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      aria-label="Unidades"
+      value={txt ?? String(valor)}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const t = e.target.value.replace(/\D/g, '').slice(0, 3);
+        setTxt(t);
+        if (t) onChange(Number(t));
+      }}
+      onBlur={() => setTxt(null)}
+    />
+  );
+}
+
+/** The quantity discount reached and the next one, in one line. */
+function pistaDescuento(tramos: { min: number; pct: number }[], unidades: number, pct: number): string | null {
+  const siguiente = tramos.find((t) => t.min > unidades && t.pct > pct);
+  if (pct > 0) {
+    return `-${pct} % por cantidad (${unidades} unidades).` + (siguiente ? ` Desde ${siguiente.min}, -${siguiente.pct} %.` : '');
+  }
+  return siguiente ? `Desde ${siguiente.min} unidades, -${siguiente.pct} % por cantidad.` : null;
+}
+
 export function ListaPiezas({
   pz,
   quote,
+  descuentos,
   tooBig,
   degenerate,
   maxBedMm,
@@ -20,6 +53,8 @@ export function ListaPiezas({
 }: {
   pz: Piezas;
   quote: QuoteResult | null;
+  /** settings.descuentos_cantidad, ascending by min. */
+  descuentos: { min: number; pct: number }[];
   tooBig: boolean;
   degenerate: boolean;
   maxBedMm: number;
@@ -106,7 +141,7 @@ export function ListaPiezas({
                   >
                     −
                   </button>
-                  <span>{p.cantidad}</span>
+                  <Cantidad valor={p.cantidad} onChange={(n) => pz.setCantidad(p.id, n)} />
                   <button
                     type="button"
                     onClick={() => pz.setCantidad(p.id, p.cantidad + 1)}
@@ -126,11 +161,14 @@ export function ListaPiezas({
               </li>
             ))}
           </ul>
-          {quote && quote.descuentoPct > 0 && (
-            <p className="qt-step-hint" style={{ color: 'var(--accent)' }}>
-              -{quote.descuentoPct}% por cantidad ({quote.unidades} unidades en total)
-            </p>
-          )}
+          {quote && (() => {
+            const pista = pistaDescuento(descuentos, quote.unidades, quote.descuentoPct);
+            return pista && (
+              <p className="qt-step-hint" style={quote.descuentoPct > 0 ? { color: 'var(--accent)' } : undefined}>
+                {pista}
+              </p>
+            );
+          })()}
         </div>
       )}
 

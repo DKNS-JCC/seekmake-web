@@ -217,7 +217,7 @@ export default function AdminCampanas() {
     <div style={{ maxWidth: 760 }}>
       {dialogo}
       <AdminCabecera titulo="Campañas por email">
-        Llegan a {audiencia.length} clientes con email (solicitudes del tasador y pedidos de 3DCC), sin
+        Llegan a {audiencia.length} clientes con email (quien marcó «Quiero recibir ofertas» en el tasador y los pedidos de 3DCC), sin
         contar las {bajas} bajas. Cada persona recibe su propio correo con un enlace para darse de
         baja; quien se da de baja no vuelve a recibir ninguno. Envía siempre una prueba primero.
       </AdminCabecera>

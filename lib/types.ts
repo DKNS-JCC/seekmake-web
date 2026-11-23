@@ -235,6 +235,8 @@ export type Quote = {
   urgente?: boolean;
   /** What the customer saw is what they pay: change it only with rehacer_presupuesto. */
   precio_firme?: boolean;
+  /** Ticked «quiero recibir ofertas». Null = sent before the box existed. */
+  acepta_ofertas?: boolean | null;
   coste_estimado?: number | null;
   coste_real?: number | null;
   /** coste_real − coste_estimado (generated column). */

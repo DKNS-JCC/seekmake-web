@@ -215,6 +215,7 @@ export function QuoteClient({
           <ListaPiezas
             pz={pz}
             quote={quote}
+            descuentos={settings.descuentos_cantidad}
             tooBig={tooBig}
             degenerate={degenerate}
             maxBedMm={maxBedMm}
@@ -264,6 +265,7 @@ export function QuoteClient({
             status={status}
             setStatus={setStatus}
             cup={cup}
+            materialParaTodas={pz.materialParaTodas}
           />
           </div>
         </aside>
