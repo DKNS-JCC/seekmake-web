@@ -255,7 +255,7 @@ export type CampanaRow = {
   estado: 'borrador' | 'enviando' | 'enviada';
   created_at: string;
   enviada_at: string | null;
-  /** Scheduled send (sent by the campanas-programadas workflow). */
+  /** Scheduled send (sent by pg_cron, see 20261123130000_campanas_cron.sql). */
   programada_at: string | null;
 };
 export type CampanaEnvio = { campana_id: string; email: string; ok: boolean; error: string | null; created_at: string };
