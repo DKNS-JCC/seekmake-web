@@ -547,7 +547,8 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
       email,
       telefono,
       mensaje,
-      acepta_ofertas: aceptaOfertas,
+      // Without an email there is nowhere to send them: not consent to anything.
+      acepta_ofertas: aceptaOfertas && tieneEmail,
       archivos,
       material,
       colores,

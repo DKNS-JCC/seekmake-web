@@ -132,8 +132,12 @@ r = await llamar(submit, pedido({ email: 'h@cliente.es', telefono: '' }));
 check('sin móvil no se guarda la solicitud', r.status === 400 && (estado.tablas.quotes ?? []).length === 0, JSON.stringify(r.json));
 r = await llamar(submit, pedido({ email: 'h@cliente.es', nombre: '  ' }));
 check('sin nombre no se guarda la solicitud', r.status === 400 && (estado.tablas.quotes ?? []).length === 0, JSON.stringify(r.json));
-r = await llamar(submit, pedido({ email: '' }));
+r = await llamar(submit, pedido({ email: '', acepta_ofertas: true }));
 check('nombre y móvil sin email: se guarda', r.status === 200 && estado.tablas.quotes.length === 1, JSON.stringify(r.json));
+check('ofertas marcadas sin email: no cuenta como consentimiento', estado.tablas.quotes[0].acepta_ofertas === false);
+preparar();
+await llamar(submit, pedido({ email: 'i@cliente.es', acepta_ofertas: true }));
+check('ofertas marcadas con email: se guarda el consentimiento', estado.tablas.quotes[0]?.acepta_ofertas === true);
 
 console.log('\nsend-contact-email');
 resetMail();
