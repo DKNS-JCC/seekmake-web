@@ -291,7 +291,7 @@ export function Tarifas({ modo }: { modo: 'precios' | 'tasador' }) {
       <>
       {/* Costes base */}
       <section style={cardStyle}>
-        <h2 style={h2Style}>Pedido mínimo, plazos y urgencia</h2>
+        <h2 style={h2Style}>Pedido, plazos y urgencia</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
           {settings.modo_precio === 'tarifa' && (
             <Field label="€ / hora de máquina">
@@ -300,9 +300,6 @@ export function Tarifas({ modo }: { modo: 'precios' | 'tasador' }) {
           )}
           <Field label="Preparación / diseño (€)" hint="Por pedido. 0 = no se cobra (el cliente trae el archivo)">
             <Num value={settings.tarifa_preparacion} onChange={(v) => patch((s) => ({ ...s, tarifa_preparacion: v }))} />
-          </Field>
-          <Field label="Pedido mínimo (€)">
-            <Num value={settings.precio_minimo} onChange={(v) => patch((s) => ({ ...s, precio_minimo: v }))} />
           </Field>
           <Field label="Redondeo al alza (€)" hint="La Calculadora redondea a 0.05. 0 = sin redondeo">
             <Num value={settings.redondeo} step={0.05} onChange={(v) => patch((s) => ({ ...s, redondeo: v }))} />
