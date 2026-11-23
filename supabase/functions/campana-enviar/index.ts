@@ -2,6 +2,10 @@
 //
 //   { campana_id, prueba: true }  → la manda solo a CONTACT_RECIPIENT.
 //   { campana_id }                → la manda a la audiencia, de una en una.
+//   { accion: 'programadas' } + x-cron-secret → la primera programada que ya
+//                                   toca (workflow campanas-programadas.yml).
+//
+// Al terminar una campaña llega un resumen a CONTACT_RECIPIENT.
 //
 // Cada llamada envía lo que cabe en ~100 s y devuelve cuántos quedan; el admin
 // vuelve a llamar hasta que no quede nadie. campana_envios evita los dobles
@@ -60,27 +64,39 @@ Deno.serve(async (req: Request) => {
   const replyTo = Deno.env.get('CONTACT_RECIPIENT')?.trim() || gmailUser;
   if (!gmailUser || !gmailPass) return json({ error: 'Faltan GMAIL_USER / GMAIL_APP_PASSWORD.' }, 500, origin);
 
-  // Solo el admin de la web (no los usuarios de la Calculadora).
-  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-  const { data: u } = jwt ? await createClient(supabaseUrl, anonKey).auth.getUser(jwt) : { data: null };
-  if (u?.user?.app_metadata?.is_admin !== true) return json({ error: 'Solo administradores.' }, 403, origin);
-
   let body: any;
   try { body = await req.json(); } catch { return json({ error: 'JSON inválido' }, 400, origin); }
-  const prueba = body?.prueba === true;
   const db = createClient(supabaseUrl, serviceKey);
 
-  const { data: c, error: cErr } = await db.from('campanas').select('*').eq('id', String(body?.campana_id ?? '')).maybeSingle();
+  // El cron (con CRON_SECRET) o el admin de la web (no los de la Calculadora).
+  const cronSecret = Deno.env.get('CRON_SECRET') ?? '';
+  const cron = body?.accion === 'programadas';
+  if (cron) {
+    if (!cronSecret || req.headers.get('x-cron-secret') !== cronSecret) return json({ error: 'No autorizado.' }, 401, origin);
+  } else {
+    const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+    const { data: u } = jwt ? await createClient(supabaseUrl, anonKey).auth.getUser(jwt) : { data: null };
+    if (u?.user?.app_metadata?.is_admin !== true) return json({ error: 'Solo administradores.' }, 403, origin);
+  }
+  const prueba = !cron && body?.prueba === true;
+
+  const pedida = cron
+    ? db.from('campanas').select('*').neq('estado', 'enviada').lte('programada_at', new Date().toISOString())
+        .order('programada_at').limit(1).maybeSingle()
+    : db.from('campanas').select('*').eq('id', String(body?.campana_id ?? '')).maybeSingle();
+  const { data: c, error: cErr } = await pedida;
+  if (cron && !cErr && !c) return json({ ok: true, enviados: 0, fallidos: 0, pendientes: 0 }, 200, origin);
   if (cErr || !c) return json({ error: 'Campaña no encontrada.' }, 404, origin);
 
   let destinatarios: { email: string; nombre: string | null }[];
   if (prueba) {
     destinatarios = [{ email: replyTo!, nombre: 'Jorge' }];
   } else {
-    const [{ data: aud, error: aErr }, { data: hechos }] = await Promise.all([
-      db.rpc('campana_audiencia'),
-      db.from('campana_envios').select('email').eq('campana_id', c.id).eq('ok', true)
-    ]);
+    // El cron no reintenta los fallidos (los repetiría cada 10 min): eso queda
+    // para el botón «Reenviar a los que falten».
+    let hechosQ = db.from('campana_envios').select('email').eq('campana_id', c.id);
+    if (!cron) hechosQ = hechosQ.eq('ok', true);
+    const [{ data: aud, error: aErr }, { data: hechos }] = await Promise.all([db.rpc('campana_audiencia'), hechosQ]);
     if (aErr) return json({ error: 'No se pudo leer la audiencia.' }, 500, origin);
     const ya = new Set((hechos ?? []).map((h) => h.email));
     destinatarios = (aud ?? []).filter((a) => !ya.has(a.email));
@@ -130,13 +146,32 @@ Deno.serve(async (req: Request) => {
       }
       if (i < destinatarios.length - 1) await new Promise((r) => setTimeout(r, PAUSA_MS));
     }
+
+    // Terminada (el cron da por terminada también con fallidos): resumen para
+    // no olvidar que salió. Sin destinatarios nuevos no se avisa otra vez.
+    const terminada = !prueba && destinatarios.length - i === 0 && (cron || fallidos === 0);
+    if (terminada) {
+      await db.from('campanas').update({ estado: 'enviada', enviada_at: new Date().toISOString() }).eq('id', c.id);
+    }
+    if (terminada && destinatarios.length) {
+      const { data: todos } = await db.from('campana_envios').select('ok').eq('campana_id', c.id);
+      const ok = (todos ?? []).filter((e) => e.ok).length;
+      const ko = (todos ?? []).length - ok;
+      try {
+        await smtp.send({
+          from: `3DCC Salamanca <${gmailUser}>`,
+          to: replyTo!,
+          subject: encodeAsunto(`Campaña enviada: ${c.asunto}`),
+          content: `«${c.asunto}» ha salido${cron ? ' (programada)' : ''}: ${ok} enviados${ko ? `, ${ko} fallidos (en /admin/campanas, «Reenviar a los que falten»)` : ''}.\n\n${SITIO}/admin/campanas/`
+        });
+      } catch (err) {
+        console.error('campana-enviar resumen', String(err?.message ?? err));
+      }
+    }
   } finally {
     try { await smtp.close(); } catch { /* ignore */ }
   }
 
-  const pendientes = destinatarios.length - i + (prueba ? 0 : fallidos);
-  if (!prueba && destinatarios.length - i === 0 && fallidos === 0) {
-    await db.from('campanas').update({ estado: 'enviada', enviada_at: new Date().toISOString() }).eq('id', c.id);
-  }
+  const pendientes = destinatarios.length - i + (prueba || cron ? 0 : fallidos);
   return json({ ok: true, enviados, fallidos, pendientes }, 200, origin);
 });

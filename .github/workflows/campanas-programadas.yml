@@ -1,0 +1,27 @@
+name: Campañas programadas
+
+# Every 10 minutes campana-enviar sends the scheduled campaign that is due
+# (programada_at <= now). GitHub may start scheduled runs a few minutes late.
+#
+# Required secrets: the same as recordatorios-tasador.yml (CRON_SECRET in
+# GitHub and in Supabase, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY).
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar campañas que tocan
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          ANON: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS -m 150 -X POST "$SUPABASE_URL/functions/v1/campana-enviar" \
+            -H "Authorization: Bearer $ANON" -H "apikey: $ANON" \
+            -H "x-cron-secret: $CRON_SECRET" -H "Content-Type: application/json" \
+            -d '{"accion":"programadas"}'

@@ -37,6 +37,14 @@ const PLANTILLAS: { nombre: string; asunto: string; cuerpo: string }[] = [
 
 const vacio = (): Draft => ({ id: null, asunto: '', cuerpo: '', cupon: null });
 
+// <input type="datetime-local"> works in local time; the table, in UTC.
+const aLocal = (iso: string) => {
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+const fechaHora = (iso: string) =>
+  new Date(iso).toLocaleString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
 export default function AdminCampanas() {
   const [campanas, setCampanas] = useState<CampanaRow[]>([]);
   const [envios, setEnvios] = useState<Record<string, { ok: number; ko: number }>>({});
@@ -47,6 +55,7 @@ export default function AdminCampanas() {
   const [error, setError] = useState<string | null>(null);
   const [estado, setEstado] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [cuando, setCuando] = useState('');
   const { authed, supabase } = useAdminAuth();
   const { confirmar, dialogo } = useConfirm();
 
@@ -54,6 +63,11 @@ export default function AdminCampanas() {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // A new or duplicated draft starts unscheduled.
+  const nueva = (d: Draft) => {
+    setDraft(d);
+    setCuando('');
+  };
 
   async function refresh() {
     const db = supabase();
@@ -158,11 +172,39 @@ export default function AdminCampanas() {
     refresh();
   }
 
+  async function programar() {
+    const fecha = new Date(cuando);
+    if (!cuando || isNaN(fecha.getTime()) || fecha.getTime() < Date.now()) {
+      setError('Elige un día y una hora en el futuro.');
+      return;
+    }
+    const id = await guardar();
+    if (!id) return;
+    const ok = await confirmar({
+      titulo: 'Programar campaña',
+      mensaje: `¿Enviar «${draft.asunto}» el ${fechaHora(fecha.toISOString())}?`,
+      detalle: `Saldrá sola (puede tardar unos minutos) a quien esté en la lista ese día, ahora ${audiencia.length} personas. Te llegará un correo cuando termine.`,
+      confirmar: 'Programar',
+      destructivo: false
+    });
+    if (!ok) return;
+    const { error } = await supabase().from('campanas').update({ programada_at: fecha.toISOString() }).eq('id', id);
+    if (error) setError(mensajeDeError(error, 'No se pudo programar'));
+    else setEstado(`Programada para el ${fechaHora(fecha.toISOString())}.`);
+    refresh();
+  }
+
+  async function desprogramar(c: CampanaRow) {
+    const { error } = await supabase().from('campanas').update({ programada_at: null }).eq('id', c.id);
+    if (error) setError(mensajeDeError(error, 'No se pudo cancelar la programación'));
+    refresh();
+  }
+
   async function borrar(c: CampanaRow) {
     if (!(await confirmar({ mensaje: `¿Borrar «${c.asunto}»?`, detalle: 'Se pierde también su registro de envíos.' }))) return;
     const { error } = await supabase().from('campanas').delete().eq('id', c.id);
     if (error) setError(mensajeDeError(error, 'No se pudo borrar'));
-    if (draft.id === c.id) setDraft(vacio());
+    if (draft.id === c.id) nueva(vacio());
     refresh();
   }
 
@@ -187,12 +229,12 @@ export default function AdminCampanas() {
           <span style={{ color: 'var(--muted)', fontSize: 12, alignSelf: 'center' }}>Empezar desde:</span>
           {PLANTILLAS.map((p) => (
             <button key={p.nombre} type="button" className="btn-outline" style={mini}
-              onClick={() => setDraft({ ...vacio(), asunto: p.asunto, cuerpo: p.cuerpo, cupon: cupones[0]?.codigo ?? null })}>
+              onClick={() => nueva({ ...vacio(), asunto: p.asunto, cuerpo: p.cuerpo, cupon: cupones[0]?.codigo ?? null })}>
               {p.nombre}
             </button>
           ))}
           {draft.id && (
-            <button type="button" className="btn-outline" style={mini} onClick={() => setDraft(vacio())}>
+            <button type="button" className="btn-outline" style={mini} onClick={() => nueva(vacio())}>
               Nueva en blanco
             </button>
           )}
@@ -235,6 +277,16 @@ export default function AdminCampanas() {
           </button>
         </div>
 
+        {!enviada && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 12 }}>
+            <input type="datetime-local" aria-label="Día y hora del envío" value={cuando}
+              onChange={(e) => setCuando(e.target.value)} style={{ ...inputStyle, width: 'auto', flex: '1 1 200px' }} />
+            <button type="button" className="btn-outline" disabled={ocupado || !cuando} onClick={programar}>
+              Programar envío
+            </button>
+          </div>
+        )}
+
         <details style={{ marginTop: 16, fontSize: 13 }}>
           <summary style={{ cursor: 'pointer', color: 'var(--muted)' }}>Ver destinatarios ({audiencia.length})</summary>
           <ul style={{ columns: 2, paddingLeft: 18 }}>
@@ -251,18 +303,28 @@ export default function AdminCampanas() {
             <li key={c.id} style={{ padding: 14, border: '1px solid var(--border)', borderRadius: 'var(--r)' }}>
               <strong>{c.asunto}</strong>
               <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-                {c.estado === 'borrador' ? 'Borrador' : c.estado === 'enviando' ? 'A medias' : 'Enviada'}
+                {c.estado !== 'enviada' && c.programada_at
+                  ? `Programada para el ${fechaHora(c.programada_at)}`
+                  : c.estado === 'borrador' ? 'Borrador' : c.estado === 'enviando' ? 'A medias' : 'Enviada'}
                 {c.enviada_at && ` el ${new Date(c.enviada_at).toLocaleDateString('es-ES')}`}
                 {(n.ok > 0 || n.ko > 0) && ` · ${n.ok} enviados${n.ko ? ` · ${n.ko} fallidos` : ''}`}
                 {c.cupon && ` · ${c.cupon}`}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
                 <button type="button" className="btn-outline" style={mini}
-                  onClick={() => setDraft({ id: c.id, asunto: c.asunto, cuerpo: c.cuerpo, cupon: c.cupon })}>
+                  onClick={() => {
+                    setDraft({ id: c.id, asunto: c.asunto, cuerpo: c.cuerpo, cupon: c.cupon });
+                    setCuando(c.programada_at ? aLocal(c.programada_at) : '');
+                  }}>
                   {c.estado === 'borrador' ? 'Editar' : 'Abrir'}
                 </button>
+                {c.estado !== 'enviada' && c.programada_at && (
+                  <button type="button" className="btn-outline" style={mini} onClick={() => desprogramar(c)}>
+                    Cancelar programación
+                  </button>
+                )}
                 <button type="button" className="btn-outline" style={mini}
-                  onClick={() => setDraft({ id: null, asunto: c.asunto, cuerpo: c.cuerpo, cupon: c.cupon })}>
+                  onClick={() => nueva({ id: null, asunto: c.asunto, cuerpo: c.cuerpo, cupon: c.cupon })}>
                   Duplicar
                 </button>
                 <button type="button" className="btn-outline" style={mini} onClick={() => borrar(c)}>Borrar</button>
