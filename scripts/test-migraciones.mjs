@@ -542,11 +542,11 @@ await check('get_quote_status sigue funcionando igual que antes', async () => {
 // ═══ tasador v4 (0024) ═════════════════════════════════════════════════════
 console.log('\n▸ Tasador: precio como la Calculadora y calibración');
 
-await check('quote_settings pasa a modo calculadora con mínimo 7 €', async () => {
+await check('quote_settings pasa a modo calculadora con mínimo 5,80 €', async () => {
   const { rows } = await client.query('select config from public.quote_settings where id = 1');
   const c = rows[0].config;
   assert(c.modo_precio === 'calculadora', `modo ${c.modo_precio}`);
-  assert(Number(c.precio_minimo) === 7, `mínimo ${c.precio_minimo}`);
+  assert(Number(c.precio_minimo) === 5.8, `mínimo ${c.precio_minimo}`);
   assert(Number(c.tarifa_preparacion) === 0, 'sigue cobrando preparación');
   assert(Array.isArray(c.descuentos_cantidad) && c.descuentos_cantidad.length === 0, 'descuentos no vacíos');
   assert(Number(c.calculadora.markup) === 2.3 && Number(c.calculadora.precio_kg.PLA) === 20, 'costes raros');
@@ -591,6 +591,21 @@ await check('guardar la config en la Calculadora actualiza los costes de la web'
   assert(!('Raro' in c.precio_kg), 'copió un precio no numérico');
   assert(Number(c.markup) === 3, 'tocó el markup de la web');
   assert(c.impresora === 'Creality K1SE Combo' && c.sincronizado, 'sin marca de sincronización');
+});
+
+await check('el mínimo de la Calculadora es el del tasador (y no se pisa)', async () => {
+  await comoAdmin();
+  const previo = (await client.query(`select data from public.empresa_docs where empresa = '3dcc' and doc = 'config'`)).rows[0].data;
+  await client.query(
+    `update public.empresa_docs set data = jsonb_set(data, '{global_config,precio_minimo}', '"6,5"') where empresa = '3dcc' and doc = 'config'`
+  );
+  let c = (await client.query('select config from public.quote_settings where id = 1')).rows[0].config;
+  assert(Number(c.precio_minimo) === 6.5, `no copió el mínimo: ${c.precio_minimo}`);
+  // Guardar las tarifas con una copia vieja no lo cambia.
+  await client.query(`update public.quote_settings set config = jsonb_set(config, '{precio_minimo}', '7') where id = 1`);
+  c = (await client.query('select config from public.quote_settings where id = 1')).rows[0].config;
+  assert(Number(c.precio_minimo) === 6.5, `las tarifas pisaron el mínimo: ${c.precio_minimo}`);
+  await client.query(`update public.empresa_docs set data = $1 where empresa = '3dcc' and doc = 'config'`, [previo]);
 });
 
 await check('la config de SILAB3D no toca la web', async () => {
@@ -1060,6 +1075,31 @@ await check('campana_navidad: una fila, anon lee y no escribe, ocupadas <= seman
     assert(rows.length === 1 && rows[0].plazas_semana === 15, `anon ve ${JSON.stringify(rows)}`);
     const r = await client.query('update public.campana_navidad set plazas_ocupadas = 1');
     assert(r.rowCount === 0, 'anon pudo cambiar las plazas');
+  } finally {
+    await client.query('rollback');
+  }
+});
+
+await check('campana_audiencia: solo la casilla marcada o clientes, y gana la última respuesta', async () => {
+  await comoAdmin();
+  await client.query('begin');
+  try {
+    await client.query(`insert into public.quotes (nombre, email, material, cantidad, precio_total, acepta_ofertas, created_at) values
+      ('Si',      'si@ofertas.test',      'PLA', 1, 10, true,  now()),
+      ('No',      'no@ofertas.test',      'PLA', 1, 10, false, now()),
+      ('Antigua', 'antigua@ofertas.test', 'PLA', 1, 10, null,  now()),
+      ('Cambia',  'cambia@ofertas.test',  'PLA', 1, 10, true,  now() - interval '2 days'),
+      ('Cambia',  'cambia@ofertas.test',  'PLA', 1, 10, false, now()),
+      ('Cliente', 'cliente@ofertas.test', 'PLA', 1, 10, false, now() - interval '1 day')`);
+    await client.query(`insert into public.orders (empresa, id, data) values
+      ('3dcc', 'OFE00001', '{"cliente":"Comprador","cliente_email":"comprador@ofertas.test","estado":"Entregado"}'),
+      ('3dcc', 'OFE00002', '{"cliente":"Cliente","cliente_email":"cliente@ofertas.test","estado":"Aceptado"}'),
+      ('3dcc', 'OFE00003', '{"cliente":"Curioso","cliente_email":"curioso@ofertas.test","estado":"Presupuesto enviado"}')`);
+    const { rows } = await client.query(
+      `select email from public.campana_audiencia() where email like '%@ofertas.test' order by email`
+    );
+    const lista = rows.map((r) => r.email).join(',');
+    assert(lista === 'comprador@ofertas.test,si@ofertas.test', `audiencia: ${lista}`);
   } finally {
     await client.query('rollback');
   }

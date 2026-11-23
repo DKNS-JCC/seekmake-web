@@ -21,7 +21,7 @@ import { ErrorBanner } from '../_components/ErrorBanner';
 import { useAviso } from '../_components/Aviso';
 import { Ficha } from './Ficha';
 import {
-  AVISABLES, ESTADO_COLOR, ESTADO_LABEL, FILTROS, PAGO_LABEL, SIGUIENTE,
+  AVISABLES, ESTADO_COLOR, ESTADO_LABEL, FILTROS, PAGO_LABEL, siguientePaso,
   coincideFiltro, fechaCorta, piezas, plazoDe, type Filtro
 } from './estados';
 import { contabilizarMaterial, nuevoId, parchearOrden, type PedidoRow } from './orden';
@@ -296,14 +296,14 @@ export default function AdminPedidos() {
 
   const hoy = hoyMadrid();
   const siguienteBtn = (q: Quote) => {
-    if (q.estado === 'nuevo') {
+    const s = siguientePaso(q);
+    if (q.estado === 'nuevo' && !s) {
       return (
         <Link href={`/admin/encargo?solicitud=${encodeURIComponent(q.codigo)}`} className="pq-siguiente" onClick={(e) => e.stopPropagation()}>
           Presupuestar ▸
         </Link>
       );
     }
-    const s = SIGUIENTE[q.estado];
     if (!s) return null;
     return (
       <button

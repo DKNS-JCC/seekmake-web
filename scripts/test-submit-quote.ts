@@ -67,6 +67,7 @@ function pedido(extra: Record<string, unknown>, volumen = 5, cantidad = 1) {
       metricas: { volumen_cm3: volumen, area_cm2: 50, soporte_cm3: 0, bbox_mm: { x: 50, y: 50, z: 50 } }
     }],
     material: 'PLA', colores: [], cantidad, entrega: 'recogida', precio_total: 0,
+    nombre: 'Ana', telefono: '600 123 456',
     ...extra
   };
 }
@@ -125,6 +126,14 @@ preparar();
 r = await llamar(submit, pedido({ email: 'g@cliente.es' }));
 const r2 = await llamar(submit, pedido({ email: 'g@cliente.es' }));
 check('doble clic: devuelve el mismo código, sin duplicar', r2.json.duplicado === true && r2.json.codigo === r.json.codigo && estado.tablas.quotes.length === 1);
+
+preparar();
+r = await llamar(submit, pedido({ email: 'h@cliente.es', telefono: '' }));
+check('sin móvil no se guarda la solicitud', r.status === 400 && (estado.tablas.quotes ?? []).length === 0, JSON.stringify(r.json));
+r = await llamar(submit, pedido({ email: 'h@cliente.es', nombre: '  ' }));
+check('sin nombre no se guarda la solicitud', r.status === 400 && (estado.tablas.quotes ?? []).length === 0, JSON.stringify(r.json));
+r = await llamar(submit, pedido({ email: '' }));
+check('nombre y móvil sin email: se guarda', r.status === 200 && estado.tablas.quotes.length === 1, JSON.stringify(r.json));
 
 console.log('\nsend-contact-email');
 resetMail();

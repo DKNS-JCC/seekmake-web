@@ -335,6 +335,28 @@ export function usePiezas({
     });
   }
 
+  /** Every piece in material `f`, keeping each colour where `f` has it too. */
+  function materialParaTodas(f: Filamento) {
+    const mismo = (c: Color | null): Color | null =>
+      c ? colores.find((x) => x.filamento_id === f.id && x.nombre === c.nombre && !x.agotado) ?? null : null;
+    setPiezas((prev) =>
+      prev.map((p) =>
+        p.config.filamentoId === f.id
+          ? p
+          : {
+              ...p,
+              config: {
+                ...p.config,
+                filamentoId: f.id,
+                mainColor: mismo(p.config.mainColor),
+                extraColors: p.config.extraColors.map(mismo).filter((c): c is Color => !!c),
+                partColors: p.config.partColors.map(mismo)
+              }
+            }
+      )
+    );
+  }
+
   function pickColor(c: Color) {
     if (!activePieza || c.agotado) return;
     if (partsMode) {
@@ -379,6 +401,7 @@ export function usePiezas({
     patchActiveConfig,
     applyToAll,
     changeMaterial,
+    materialParaTodas,
     pickColor,
     toggleExtraColor
   };

@@ -118,7 +118,7 @@ export function CostesTaller({ errorDefecto }: { errorDefecto: number }) {
         <Field label="Electricidad"><CampoNumero value={txt(gc.energy_cost_kwh)} onChange={(v) => setGc('energy_cost_kwh', v)} unidad="€/kWh" /></Field>
         <Field label="Mano de obra: diseño"><CampoNumero value={txt(gc.labor_cost_h)} onChange={(v) => setGc('labor_cost_h', v)} unidad="€/h" /></Field>
         <Field label="Mano de obra: post-procesado"><CampoNumero value={txt(gc.postproc_cost_h)} onChange={(v) => setGc('postproc_cost_h', v)} unidad="€/h" /></Field>
-        <Field label="Precio mínimo de un encargo"><CampoNumero value={txt(gc.precio_minimo)} onChange={(v) => setGc('precio_minimo', v)} unidad="€" /></Field>
+        <Field label="Pedido mínimo" hint="El mismo en el tasador y en los encargos"><CampoNumero value={txt(gc.precio_minimo)} onChange={(v) => setGc('precio_minimo', v)} unidad="€" /></Field>
       </div>
 
       <h3 className="ct-sub">Materiales</h3>

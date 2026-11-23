@@ -144,9 +144,10 @@ export default function PrivacidadPage() {
               <li>
                 <strong>Enviarte de vez en cuando ofertas, códigos de descuento y
                 avisos</strong> (por ejemplo, plazos de Navidad) sobre nuestros
-                servicios de impresión 3D, al email con el que nos pediste un
-                presupuesto o un encargo. Base: interés legítimo y art. 21.2 de la
-                LSSI. Cada correo trae un enlace para darte de baja con un clic; al
+                servicios de impresión 3D. Solo si marcaste la casilla «Quiero
+                recibir ofertas» al pedir un presupuesto (base: tu consentimiento,
+                art. 6.1.a RGPD) o si ya nos has hecho un encargo (art. 21.2 de la
+                LSSI). Cada correo trae un enlace para darte de baja con un clic; al
                 hacerlo, tu email sale de la lista y no vuelves a recibir ninguno.
                 También puedes pedirlo respondiendo a cualquier correo con
                 «baja».

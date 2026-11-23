@@ -274,6 +274,8 @@ Deno.serve(async (req: Request) => {
   const telefono = String(body?.telefono ?? '').trim().slice(0, 50);
   const mensaje  = String(body?.mensaje  ?? '').trim().slice(0, 5000);
   const hp       = String(body?.website  ?? '').trim(); // honeypot
+  // Only an explicit tick counts as consent for offers (campana_audiencia).
+  const aceptaOfertas = body?.acepta_ofertas === true;
 
   const material    = String(body?.material    ?? '').trim().slice(0, 50);
   const resistencia = String(body?.resistencia ?? 'estandar').slice(0, 50);
@@ -342,8 +344,8 @@ Deno.serve(async (req: Request) => {
     });
 
   // ── Validate ──
-  // Only a way to reach the customer is required: name, address and colours
-  // are asked afterwards (the form was where people gave up).
+  // A request needs a name and a mobile (an email alone left us guessing who
+  // it was); the email is optional. Address and colours are asked afterwards.
   // The honeypot never drops a request: autofill and password managers fill
   // it for real people, and a fake "Q-0000-0000" lost them without a trace.
   // It only tags the admin email; files + rate limit already stop bots.
@@ -353,9 +355,8 @@ Deno.serve(async (req: Request) => {
   const tieneTelefono = telefono.replace(/[^\d]/g, '').length >= 9;
   if (email && !tieneEmail)         return json({ error: 'Revisa el email: parece que le falta algo.' }, 400, allowedOrigin);
   if (guardar && !tieneEmail)       return json({ error: 'Necesitamos un email para enviártelo.' }, 400, allowedOrigin);
-  if (!tieneEmail && !tieneTelefono) {
-    return json({ error: 'Déjanos un email o un WhatsApp para enviarte el presupuesto.' }, 400, allowedOrigin);
-  }
+  if (!guardar && !nombre)          return json({ error: 'Dinos tu nombre.' }, 400, allowedOrigin);
+  if (!guardar && !tieneTelefono)   return json({ error: 'Déjanos un móvil para hablar contigo.' }, 400, allowedOrigin);
   if (!material)                    return json({ error: 'Material requerido.' }, 400, allowedOrigin);
   if (!archivos.length)             return json({ error: 'Ningún archivo de modelo válido.' }, 400, allowedOrigin);
 
@@ -546,6 +547,7 @@ Mañana te mandaremos un único recordatorio; si no lo quieres, ignóralo.
       email,
       telefono,
       mensaje,
+      acepta_ofertas: aceptaOfertas,
       archivos,
       material,
       colores,
