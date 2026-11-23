@@ -26,8 +26,7 @@
 .nv-hero-foto { margin: 0; }
 .nv-hero-foto img { width: 100%; height: auto; max-height: 620px; object-fit: cover; border-radius: 10px; display: block; }
 .nv-hero-foto figcaption, .nv-producto-foto figcaption {
-    font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--muted); margin-top: 10px;
+    font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); margin-top: 10px;
 }
 
 .nv-productos { padding: 88px 0; background: var(--nv-fondo); border-top: 4px solid var(--nv-rojo); }
@@ -42,13 +41,13 @@
     aspect-ratio: 4 / 5; border-radius: 8px; display: grid; place-items: center; text-align: center;
     background: repeating-linear-gradient(0deg, var(--surface-2) 0 6px, var(--bg) 6px 8px);
     border: 1px dashed var(--border-h);
-    font-family: var(--font-mono), monospace; font-size: 12px; color: var(--muted); line-height: 1.7;
+    font-family: var(--font-mono), monospace; font-size: var(--fs-min); color: var(--muted); line-height: 1.7;
 }
 .nv-capas span { background: var(--bg); padding: 10px 14px; border-radius: 4px; }
 .nv-producto-texto h3 { font-family: var(--font-display), sans-serif; font-size: clamp(30px, 3.4vw, 44px); line-height: 1; color: var(--text); }
 .nv-producto-texto .nv-precio { font-family: var(--font-display), sans-serif; font-size: 28px; color: var(--nv-rojo); margin: 6px 0 14px; }
 .nv-ficha { display: flex; gap: 28px; margin: 0 0 16px; }
-.nv-ficha dt { font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.nv-ficha dt { font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--muted); }
 .nv-ficha dd { margin: 2px 0 0; font-weight: 600; color: var(--text); }
 .nv-producto-texto p { font-size: 16px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; max-width: 560px; }
 .nv-necesitamos strong { color: var(--text); }
@@ -65,7 +64,7 @@
 .nv-job { color: var(--muted); }
 .nv-dia { color: var(--text); font-weight: 600; }
 .nv-que { color: var(--text); font-family: var(--font-sans), sans-serif; font-size: 15px; }
-.nv-estado { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.nv-estado { font-size: var(--fs-min); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
 .nv-cola li.cerrada > span { color: var(--muted); text-decoration: line-through; }
 .nv-cola li.cerrada .nv-estado { text-decoration: none; }
 .nv-regaliz { max-width: 640px; font-size: 15px; color: var(--muted); line-height: 1.7; }

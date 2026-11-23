@@ -5,8 +5,11 @@
 
 import { useState, type ChangeEvent, type DragEvent, type RefObject } from 'react';
 import type { Pieza } from '@/lib/quote/types';
-import { ACCEPT, MAX_FILES, MAX_FILE_MB } from './modelo';
+import { ACCEPT, MAX_FILES } from './modelo';
 import type { Visor as VisorRefs } from './useVisor';
+
+/** mm → «4,5» cm: what anyone can picture. */
+const cm = (mm: number) => (mm / 10).toLocaleString('es-ES', { maximumFractionDigits: 1 });
 
 export function Visor({
   visor,
@@ -21,7 +24,8 @@ export function Visor({
   fileInputRef: RefObject<HTMLInputElement>;
   numPiezas: number;
   activePieza: Pieza | null;
-  loadingFile: boolean;
+  /** Name of the file being opened, if any. */
+  loadingFile: string | null;
   fileError: string | null;
   addFiles: (files: FileList | File[]) => Promise<void>;
 }) {
@@ -57,23 +61,20 @@ export function Visor({
           className="qt-drop"
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className="qt-drop-icon">
+          <span className="qt-drop-icon">
             <svg width="34" height="34" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
-          </div>
-          <div className="qt-drop-title">Arrastra aquí tus archivos 3D</div>
-          <div className="qt-drop-sub">
-            STL · 3MF · OBJ — hasta {MAX_FILE_MB} MB · máx. {MAX_FILES} piezas
-          </div>
-          <div className="qt-drop-aviso">
-            Tu archivo no sale de tu navegador hasta que nos pides el presupuesto. Para ajustar
-            precios guardamos 30 días una miniatura de la pieza y el precio calculado, sin datos
-            tuyos (más en la política de privacidad).
-          </div>
+          </span>
+          <span className="btn-primary qt-drop-btn">Sube tu archivo 3D</span>
         </button>
       )}
-      {loadingFile && <div className="qt-overlay-msg">Analizando pieza…</div>}
+      {loadingFile && (
+        <div className="qt-overlay-msg" role="status">
+          <span className="cat-spinner qt-spinner" aria-hidden="true" />
+          Abriendo {loadingFile}…
+        </div>
+      )}
       {fileError && <div className="qt-overlay-err">{fileError}</div>}
 
       {activePieza && (
@@ -82,10 +83,9 @@ export function Visor({
             {activePieza.name}
           </span>
           <span>
-            {activePieza.metrics.bboxMm.x} × {activePieza.metrics.bboxMm.z} ×{' '}
-            {activePieza.metrics.bboxMm.y} mm
+            {cm(activePieza.metrics.bboxMm.x)} × {cm(activePieza.metrics.bboxMm.z)} ×{' '}
+            {cm(activePieza.metrics.bboxMm.y)} cm
           </span>
-          <span>{activePieza.metrics.volumenCm3.toFixed(1)} cm³</span>
         </div>
       )}
 

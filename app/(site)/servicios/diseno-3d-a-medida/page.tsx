@@ -2,14 +2,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 
 const S: Servicio = {
   slug: 'diseno-3d-a-medida',
+  categoria: 'regalos',
   title: 'Diseño 3D a medida desde una foto o boceto | 3DCC',
   description:
     'Diseño 3D a medida desde una foto, un boceto o unas medidas, e impresión de la pieza. Taller en Salamanca con recogida en persona y envío a toda España.',
   nombre: 'Diseño 3D a medida',
   h1: 'Diseño 3D a medida',
   h1Accent: 'desde una foto o boceto',
-  intro:
-    'No hace falta que tengas un archivo 3D ni que sepas modelar. Si tienes una idea, un dibujo en una servilleta o una foto de algo parecido a lo que buscas, nosotros nos encargamos de convertirlo en un modelo 3D y de imprimirlo en nuestro taller de Salamanca.',
+  intro: 'Tú pones la idea, aunque sea un dibujo en una servilleta. Nosotros la diseñamos y la imprimimos.',
   pasos: [
     'Nos explicas por WhatsApp qué necesitas y para qué lo vas a usar.',
     'Nos mandas fotos, bocetos y medidas, y te hacemos las preguntas que hagan falta.',

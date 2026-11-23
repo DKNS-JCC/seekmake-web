@@ -2,14 +2,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 
 const S: Servicio = {
   slug: 'litofanias-personalizadas',
+  categoria: 'regalos',
   title: 'Litofanías personalizadas impresas en 3D | 3DCC',
   description:
     'Litofanías con tu foto impresas en 3D en un taller de Salamanca. Recogida en persona o envío a toda España. Calcula el precio o escríbenos por WhatsApp.',
   nombre: 'Litofanías personalizadas',
   h1: 'Litofanías personalizadas',
   h1Accent: 'impresas en 3D',
-  intro:
-    'Una litofanía es una foto convertida en relieve: a simple vista parece una placa blanca con textura, pero cuando le pones luz detrás aparece la imagen con todos sus tonos. Las imprimimos una a una en nuestro taller de Salamanca a partir de la foto que nos mandes, y es de los regalos que más emocionan cuando se encienden por primera vez.',
+  intro: 'Tu foto en relieve: aparece cuando le pones luz detrás.',
   pasos: [
     'Nos mandas la foto por WhatsApp y nos cuentas qué tamaño tienes en mente.',
     'Revisamos la imagen y te decimos si va a quedar bien o si conviene recortarla o usar otra.',

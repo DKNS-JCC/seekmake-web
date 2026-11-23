@@ -123,7 +123,7 @@ export default async function ProductoPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <nav aria-label="Migas de pan" style={{ marginBottom: 16, color: 'var(--muted)', fontSize: 13 }}>
+      <nav aria-label="Migas de pan" style={{ marginBottom: 16, color: 'var(--muted)', fontSize: 14 }}>
         <Link href="/">Inicio</Link> › <Link href="/catalogo/">Catálogo</Link> › {p.nombre}
       </nav>
       <article className="cat-modal cat-detalle" style={{ transform: 'none', maxHeight: 'none' }}>

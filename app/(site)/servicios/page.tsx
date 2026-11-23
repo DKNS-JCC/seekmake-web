@@ -88,11 +88,7 @@ export default function ServiciosPage() {
             Servicios de{' '}<br />
             <span className="accent">impresión 3D</span>
           </h1>
-          <p className="about-intro-block">
-            Imprimimos en FDM en nuestro taller de Salamanca y enviamos a toda
-            España. Estos son los encargos que más nos piden. Si el tuyo no
-            encaja en ninguno, escríbenos igualmente.
-          </p>
+          <p className="about-intro-block">Lo que más nos piden. Si lo tuyo no está, escríbenos igual.</p>
         </div>
       </section>
 

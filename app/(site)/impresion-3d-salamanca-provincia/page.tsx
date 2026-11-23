@@ -74,13 +74,7 @@ export default function ZonaSalamancaPage() {
             Impresión 3D en{' '}<br />
             <span className="accent">Salamanca y alrededores</span>
           </h1>
-          <p className="about-intro-block">
-            3DCC es un taller pequeño en Salamanca que atiende cada pedido de
-            tú a tú. Imprimimos en <strong>FDM</strong> con PLA, PETG, ASA, TPU
-            y Nylon, y trabajamos igual para alguien del barrio que para
-            alguien de la otra punta de la provincia. Lo único que cambia es
-            cómo te llega la pieza.
-          </p>
+          <p className="about-intro-block">Un taller pequeño en Salamanca. Te llevamos la pieza a cualquier punto de la provincia.</p>
         </div>
       </section>
 

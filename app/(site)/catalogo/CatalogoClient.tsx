@@ -113,7 +113,7 @@ export function CatalogoClient({ productos: initialProductos }: { productos: Pro
             <span>Productos</span>
           </h1>
           <p className="cat-hero-desc">
-            Diseños impresos en 3D de la más alta calidad, con precisión milimétrica y atención al detalle en cada pieza.
+            Regalos y piezas listos para pedir.
           </p>
           <div className="cat-hero-stats">
             <div>

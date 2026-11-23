@@ -37,8 +37,7 @@ export default async function BlogPage() {
         <div className="section-tag">Blog</div>
         <h1 className="section-title">Cuaderno de impresión</h1>
         <p className="section-desc">
-          Materiales, técnicas y casos reales del taller. Sin tecnicismos
-          innecesarios.
+          Materiales, técnicas y casos reales del taller.
         </p>
       </header>
       <BlogList posts={posts} />

@@ -353,7 +353,7 @@ export function MuestrarioClient({
                   type="button"
                   onClick={startTest}
                   className="btn-primary"
-                  style={{ padding: '10px 24px', fontSize: 11 }}
+                  style={{ padding: '10px 24px' }}
                 >
                   Comenzar
                 </button>
@@ -454,14 +454,14 @@ export function MuestrarioClient({
                   <button
                     onClick={restartTest}
                     className="btn-outline"
-                    style={{ padding: '8px 18px', fontSize: 11 }}
+                    style={{ padding: '8px 18px' }}
                   >
                     Repetir
                   </button>
                   <Link
                     href="/instant-quote"
                     className="btn-primary"
-                    style={{ padding: '8px 18px', fontSize: 11 }}
+                    style={{ padding: '8px 18px' }}
                   >
                     Calcular precio
                   </Link>
@@ -869,7 +869,7 @@ function ColorModal({
               href="/instant-quote"
               className="btn-primary"
               style={{
-                fontSize: 11,
+                fontSize: 14,
                 padding: '10px 20px',
                 justifyContent: 'center'
               }}
@@ -882,7 +882,7 @@ function ColorModal({
               rel="noopener noreferrer"
               className="btn-outline"
               style={{
-                fontSize: 11,
+                fontSize: 14,
                 padding: '10px 20px',
                 justifyContent: 'center',
                 borderColor: '#25D366',

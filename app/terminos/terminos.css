@@ -12,14 +12,14 @@
 .terms-card strong { color: var(--text); }
 .notice-box { background: var(--surface-2); border-left: 3px solid var(--accent); padding: 24px; border-radius: 0 var(--r) var(--r) 0; margin-bottom: 32px; }
 .terms-footer { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r); padding: 24px; margin-top: 40px; }
-.terms-footer p { font-size: 13px; font-style: italic; }
-.back-link { font-family: var(--font-mono), monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+.terms-footer p { font-size: var(--fs-min); font-style: italic; }
+.back-link { font-family: var(--font-sans), sans-serif; font-size: var(--fs-min); color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
 .back-link:hover { opacity: 0.7; }
 @media (max-width: 640px) {
     .terms-page { padding-top: calc(var(--nav-h) + 24px); padding-bottom: 48px; }
     .terms-card { padding: 24px 16px; margin-top: 20px; }
     .terms-card h2 { font-size: 17px; margin-top: 28px; margin-bottom: 12px; }
-    .terms-card p, .terms-card li { font-size: 13px; line-height: 1.7; }
+    .terms-card p, .terms-card li { font-size: var(--fs-min); line-height: 1.7; }
     .notice-box { padding: 16px; margin-bottom: 24px; }
     .terms-footer { padding: 16px; }
 }

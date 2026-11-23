@@ -45,7 +45,7 @@ export function BlogPostView({ post }: { post: BlogPost | null }) {
           href="/blog"
           style={{
             fontFamily: "'IBM Plex Mono', monospace",
-            fontSize: 11,
+            fontSize: 14,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
             color: 'var(--muted)',

@@ -39,10 +39,8 @@
 
 .contacto-field { display: flex; flex-direction: column; gap: 6px; }
 .contacto-field label {
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
   color: var(--muted);
 }
 .contacto-field input,
@@ -99,7 +97,7 @@
 .contacto-msg {
   padding: 12px 14px;
   border-radius: var(--r);
-  font-size: 13px;
+  font-size: var(--fs-min);
   line-height: 1.5;
 }
 .contacto-msg.ok {
@@ -140,10 +138,8 @@
 }
 .contacto-aside-item:last-child { border-bottom: none; }
 .contacto-aside-label {
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
   color: var(--muted);
   margin-bottom: 6px;
 }
@@ -183,12 +179,12 @@
   gap: 2px;
 }
 .contacto-drop-text strong {
-  font-size: 13px;
+  font-size: var(--fs-min);
   color: var(--text);
   font-weight: 600;
 }
 .contacto-drop-text span {
-  font-size: 11px;
+  font-size: var(--fs-min);
   color: var(--muted);
   font-family: var(--font-mono), monospace;
   letter-spacing: 0.04em;
@@ -211,7 +207,7 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  font-size: 12px;
+  font-size: var(--fs-min);
 }
 .contacto-att-name {
   overflow: hidden;
@@ -222,12 +218,12 @@
 }
 .contacto-att-size {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: var(--fs-min);
   color: var(--muted);
 }
 .contacto-att-status {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: var(--fs-min);
   color: var(--muted);
 }
 .contacto-att--done .contacto-att-status { color: #10b981; }

@@ -1,16 +1,23 @@
 'use client';
 
-// Steps 1-4 for the active piece: material, color (per part in a multi-part
-// 3MF), strength and detail. Each piece keeps its own configuration.
+// Material and color for the active piece (color per part in a multi-part
+// 3MF). Strength and detail stay at «estándar»: whoever needs more says so in
+// the notes. Each piece keeps its own configuration.
 
+import { useState } from 'react';
 import { acabadoLabel, type Color, type Filamento } from '@/lib/types';
 import { colorPreviewStyle } from '@/lib/color-preview';
-import type { QuoteSettings } from '@/lib/quote/pricing';
 import type { Piezas } from './usePiezas';
+
+/** Materials by what they are for; the rest go under «Más materiales». */
+const USO: Record<string, { nombre: string; para: string }> = {
+  PLA: { nombre: 'Normal', para: 'Para casi todo: figuras, decoración, piezas de uso diario.' },
+  PETG: { nombre: 'Resistente', para: 'Aguanta golpes, calor, humedad y exterior.' },
+  TPU: { nombre: 'Flexible', para: 'Blando y elástico, como la goma.' }
+};
 
 export function ConfigPieza({
   pz,
-  settings,
   filamentos,
   materialColors,
   activeColors,
@@ -18,7 +25,6 @@ export function ConfigPieza({
   setActivePart
 }: {
   pz: Piezas;
-  settings: QuoteSettings;
   filamentos: Filamento[];
   materialColors: Color[];
   activeColors: Color[];
@@ -26,7 +32,32 @@ export function ConfigPieza({
   setActivePart: (i: number) => void;
 }) {
   const { piezas, activePieza, activeFilamento, partsMode, patchActiveConfig } = pz;
+  const [masMateriales, setMasMateriales] = useState(false);
   if (!activePieza) return null;
+
+  const principales = filamentos.filter((f) => USO[f.material]);
+  const otros = filamentos.filter((f) => !USO[f.material]);
+  const verOtros = masMateriales || otros.some((f) => f.id === activePieza.config.filamentoId);
+  const elegido = partsMode
+    ? activePieza.config.partColors[activePart]
+    : activePieza.config.mainColor;
+  const pill = (f: Filamento) => (
+    <button
+      key={f.id}
+      type="button"
+      className={'qt-pill' + (activePieza.config.filamentoId === f.id ? ' active' : '')}
+      onClick={() => pz.changeMaterial(f)}
+    >
+      {USO[f.material] ? (
+        <>
+          {USO[f.material].nombre} <small>{f.material}</small>
+        </>
+      ) : (
+        f.material
+      )}
+    </button>
+  );
+
   return (
     <>
       {piezas.length > 1 && (
@@ -44,28 +75,24 @@ export function ConfigPieza({
       <div className="qt-step">
         <div className="qt-step-label">1 · Material</div>
         <div className="qt-pills">
-          {filamentos.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              className={
-                'qt-pill' + (activePieza.config.filamentoId === f.id ? ' active' : '')
-              }
-              onClick={() => pz.changeMaterial(f)}
-            >
-              {f.material}
-            </button>
-          ))}
+          {principales.map(pill)}
+          {verOtros && otros.map(pill)}
         </div>
-        {activeFilamento?.descripcion && (
-          <p className="qt-step-hint">{activeFilamento.descripcion}</p>
-        )}
+        <p className="qt-step-hint">
+          {activeFilamento && (USO[activeFilamento.material]?.para ?? activeFilamento.descripcion)}{' '}
+          {!verOtros && otros.length > 0 && (
+            <button type="button" className="qt-link" onClick={() => setMasMateriales(true)}>
+              Más materiales
+            </button>
+          )}
+        </p>
       </div>
 
       {/* color */}
       <div className="qt-step">
         <div className="qt-step-label">
           2 · Color{partsMode ? ' por parte' : ''}
+          {elegido ? <span className="qt-step-valor">{elegido.nombre}</span> : <small> (opcional)</small>}
         </div>
 
         {partsMode && (
@@ -134,23 +161,26 @@ export function ConfigPieza({
           })}
         </div>
 
+        <div className="qt-step-enlaces">
+          {!partsMode && (
+            <button
+              type="button"
+              className="qt-link"
+              aria-pressed={activePieza.config.multicolor}
+              onClick={() =>
+                patchActiveConfig({
+                  multicolor: !activePieza.config.multicolor,
+                  extraColors: activePieza.config.multicolor ? [] : activePieza.config.extraColors
+                })
+              }
+            >
+              {activePieza.config.multicolor ? 'Solo un color' : '¿Varios colores?'}
+            </button>
+          )}
+        </div>
+
         {!partsMode && (
           <>
-            <label className="qt-toggle">
-              <input
-                type="checkbox"
-                checked={activePieza.config.multicolor}
-                onChange={(e) =>
-                  patchActiveConfig({
-                    multicolor: e.target.checked,
-                    extraColors: e.target.checked
-                      ? activePieza.config.extraColors
-                      : []
-                  })
-                }
-              />
-              Quiero combinar varios colores en esta pieza
-            </label>
             {activePieza.config.multicolor && (
               <div className="qt-extra">
                 <p className="qt-step-hint">
@@ -185,7 +215,7 @@ export function ConfigPieza({
           </>
         )}
 
-        {activeColors.length > 0 && (
+        {activeColors.length > 1 && (
           <div className="qt-chosen">
             {activeColors.map((c) => (
               <span key={c.id} className="qt-chosen-chip">
@@ -197,45 +227,6 @@ export function ConfigPieza({
         )}
       </div>
 
-      {/* resistencia */}
-      <div className="qt-step">
-        <div className="qt-step-label">3 · ¿Cómo de resistente la necesitas?</div>
-        <div className="qt-cards">
-          {settings.resistencia.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              className={
-                'qt-card' + (activePieza.config.resistenciaId === r.id ? ' active' : '')
-              }
-              onClick={() => patchActiveConfig({ resistenciaId: r.id })}
-            >
-              <strong>{r.nombre}</strong>
-              <span>{r.descripcion}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* detalle */}
-      <div className="qt-step">
-        <div className="qt-step-label">4 · ¿Cuánto detalle?</div>
-        <div className="qt-cards">
-          {settings.detalle.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              className={
-                'qt-card' + (activePieza.config.detalleId === d.id ? ' active' : '')
-              }
-              onClick={() => patchActiveConfig({ detalleId: d.id })}
-            >
-              <strong>{d.nombre}</strong>
-              <span>{d.descripcion}</span>
-            </button>
-          ))}
-        </div>
-      </div>
     </>
   );
 }

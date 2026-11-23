@@ -15,6 +15,12 @@ export interface MeshMetrics {
   /** Number of independent meshes (>1 only for multi-part 3MF). */
   mallas: number;
   /**
+   * Largest side of the biggest single object, in mm. A 3MF with several
+   * objects (or several plates) can be wider than the bed as a whole while
+   * every object fits: this is what says whether one piece is too big.
+   */
+  objetoMayorMm?: number;
+  /**
    * Overhang surface (faces steeper than 45° pointing down) in cm².
    * Used to warn about supports and feed the support estimate.
    */
@@ -175,6 +181,11 @@ export function analyzeObject(root: Object3D): MeshMetrics {
   const bbox = new Box3().setFromObject(root);
   const size = new Vector3();
   if (!bbox.isEmpty()) bbox.getSize(size);
+  let objetoMayorMm = 0;
+  for (const o of objetosDe(root)) {
+    const s = new Box3().setFromObject(o).getSize(new Vector3());
+    objetoMayorMm = Math.max(objetoMayorMm, s.x, s.y, s.z);
+  }
 
   return {
     volumenCm3: volumeMm3 / 1000,
@@ -186,9 +197,20 @@ export function analyzeObject(root: Object3D): MeshMetrics {
     },
     triangulos: triangles,
     mallas: meshes,
+    objetoMayorMm: Math.round(objetoMayorMm * 10) / 10,
     overhangCm2: Math.round(overhangMm2) / 100,
     soporteCm3: Math.round(soporteMm3 / 100) / 10
   };
+}
+
+/**
+ * The printed objects of a parsed model: the build items of a 3MF (its loader
+ * group is marked `userData.objetos`), else the whole model as one. An OBJ's
+ * meshes are parts of one object, not separate ones.
+ */
+export function objetosDe(root: Object3D): Object3D[] {
+  const grupo = root.children.find((c) => c.userData.objetos);
+  return grupo && grupo.children.length > 1 ? grupo.children : [root];
 }
 
 export interface ScaleSuggestion {

@@ -39,7 +39,7 @@ export function usePiezas({
   const { modelsRef, stateRef, shownRef, showModel } = visor;
   const [piezas, setPiezas] = useState<Pieza[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [loadingFile, setLoadingFile] = useState(false);
+  const [loadingFile, setLoadingFile] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
   // Latest pieces for async callbacks, and a version per piece so a stale
@@ -93,7 +93,6 @@ export function usePiezas({
     let added: Pieza | null = null;
     let count = piezas.length;
 
-    setLoadingFile(true);
     try {
       for (const f of list) {
         if (count >= MAX_FILES) {
@@ -111,7 +110,8 @@ export function usePiezas({
         }
 
         try {
-          const model = await parseModel(f, ext);
+          setLoadingFile(f.name);
+          const model = await parseModel(f, ext, settings.max_bed_mm);
           if (!model.meshes.length) {
             errors.push(`${f.name}: no contiene ninguna malla imprimible.`);
             disposeModel(model);
@@ -156,7 +156,7 @@ export function usePiezas({
         }
       }
     } finally {
-      setLoadingFile(false);
+      setLoadingFile(null);
     }
 
     if (errors.length) setFileError(errors.join(' · '));

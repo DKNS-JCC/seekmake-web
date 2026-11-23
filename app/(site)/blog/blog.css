@@ -55,10 +55,8 @@
   flex-direction: column;
 }
 .blog-card-date {
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
   color: var(--accent);
   margin-bottom: 8px;
 }
@@ -105,10 +103,8 @@
 }
 
 .blog-article-date {
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
   color: var(--accent);
 }
 
@@ -205,10 +201,8 @@
 }
 .blog-content th {
   text-align: left;
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
   color: var(--accent);
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
@@ -240,7 +234,7 @@
 .blog-content pre code {
   background: none;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--fs-min);
 }
 .blog-content img {
   max-width: 100%;
@@ -260,10 +254,8 @@
   margin-top: 56px;
   padding-top: 32px;
   border-top: 1px solid var(--border);
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
   color: var(--accent);
   text-decoration: none;
 }
@@ -273,8 +265,6 @@
   text-align: center;
   padding: 80px 0;
   color: var(--muted);
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--fs-min);
 }

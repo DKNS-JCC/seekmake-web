@@ -11,7 +11,9 @@ const decode = (s: string) =>
 assert.equal(encodeAsunto('Hola 3DCC'), 'Hola 3DCC');
 for (const s of ['Promoción de Navidad: -10 % en tu próxima impresión 🎄', 'Ñandú €€€ ççç áéíóú']) {
   const e = encodeAsunto(s);
+  // denomailer's quotedPrintableEncodeInline re-encodes (and breaks) anything else
   assert.match(e, /^[\x20-\x7E]+$/);
+  assert.ok(!e.startsWith('=?'), 'denomailer lo re-codificaría');
   assert.ok(e.split(' ').every((w) => w.length <= 75), 'encoded-word > 75');
   assert.equal(decode(e), s);
 }

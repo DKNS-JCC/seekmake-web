@@ -280,7 +280,7 @@ export default function QrPage() {
               />
             </div>
           </div>
-          <Link href="/#trabajos" className="qr-gallery-more qr-fade">
+          <Link href="/trabajos/" className="qr-gallery-more qr-fade">
             Ver todos los trabajos
             <Chevron size={14} />
           </Link>

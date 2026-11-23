@@ -412,13 +412,13 @@ const colores = [
 ];
 
 await check('Tasador: sin piezas pide subir una y no enseña precio', async () => {
-  const html = render(QuoteClient, { filamentos, colores, resenas: { total: 12, media: 4.9 } });
+  const html = render(QuoteClient, { filamentos, colores });
   assert(html.includes('Calcula el precio de tu pieza'), 'falta el título');
-  assert(html.includes('Arrastra aquí tus archivos 3D') && html.includes('STL · 3MF · OBJ'), 'falta la zona de subida');
+  assert(html.includes('Sube tu archivo 3D') && !html.includes('Elegir archivo') && !html.includes('política de privacidad'), 'subida: un botón, sin textos de más');
   assert(html.includes('accept=".stl,.3mf,.obj"') && html.includes('multiple'), 'el selector de archivos cambió');
   assert(html.includes('Sube una pieza para ver el precio.'), 'falta el aviso del precio');
-  assert(html.includes('Sube una o varias piezas para configurar'), 'falta la ayuda del panel');
-  assert(!html.includes('Solicitar presupuesto') && !html.includes('€'), 'enseña precio o pedido sin piezas');
+  assert(html.includes('¿No tienes archivo 3D?') && html.includes('Mándanos una foto'), 'falta la puerta para quien no tiene archivo');
+  assert(!html.includes('Pedirlo') && !html.includes('€'), 'enseña precio o pedido sin piezas');
 });
 
 // Las partes, con una pieza y un precio de verdad.
@@ -447,58 +447,78 @@ const euro = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximu
 
 await check('Tasador · Resumen: líneas, total estimado, plazo y confianza', async () => {
   const html = render(Resumen, {
-    totalRef: { current: null }, settings: ajustes, settingsLoaded: true, numPiezas: 1, numAnalizando: 0, progresoAnalisis: 1,
+    settings: ajustes, settingsLoaded: true, numPiezas: 1, numAnalizando: 0, progresoAnalisis: 1,
     listo: true, quote, precioFinal: false, firmeActivo: false, listoAntes: '2026-11-13', entrega: 'envio',
-    resenas: { total: 12, media: 4.9 }, masUnaUnidad: { pieza, extra: 0 }, masUno() {}, otraPieza() {}, cup
+    cup
   });
   assert(html.includes('Total estimado') && html.includes(euro(quote.total)), 'falta el total');
-  for (const l of quote.lineas) assert(html.includes(l.concepto.replace(/&/g, '&amp;')), `falta la línea ${l.concepto}`);
+  for (const l of quote.lineas) assert(html.includes(l.concepto.replace(/ \(~[^)]*\)/, '').replace(/&/g, '&amp;')), `falta la línea ${l.concepto}`);
+  assert(!html.includes('~'), 'gramos y horas no se enseñan al cliente');
   assert(html.includes('Precio orientativo: lo cerramos al revisar la pieza'), 'sin precio firme debe decir orientativo');
   assert(html.includes(`Listo antes del ${fechaLarga('2026-11-13')}`), 'falta la fecha tope');
   assert(html.includes('¿Lo necesitas antes? Escríbenos') && !/urgen/i.test(html), 'urgencia: solo el enlace, sin selector');
-  assert(html.includes('te sale <strong>gratis</strong>') && html.includes('¿Tienes un código de descuento?'), 'upsell o cupón');
-  const cargando = render(Resumen, { totalRef: { current: null }, settings: ajustes, settingsLoaded: true, numPiezas: 2, numAnalizando: 2, progresoAnalisis: 0.5,
-    listo: false, quote: null, precioFinal: false, firmeActivo: false, listoAntes: null, entrega: 'recogida', resenas: null, masUnaUnidad: null, masUno() {}, otraPieza() {}, cup });
-  assert(cargando.includes('Laminando 2 piezas') && cargando.includes('width:50%'), 'progreso del laminado');
+  assert(!html.includes('qt-upsell') && !html.includes('reseñas') && html.includes('¿Tienes un código de descuento?'), 'sin extras, con cupón');
+  const cargando = render(Resumen, { settingsLoaded: true, numPiezas: 2, numAnalizando: 2, progresoAnalisis: 0.5,
+    listo: false, quote: null, precioFinal: false, firmeActivo: false, listoAntes: null, entrega: 'recogida', cup });
+  assert(cargando.includes('Calculando el precio de 2 piezas') && cargando.includes('50') && cargando.includes('width:50%'), 'progreso del cálculo');
   const ent = render(Entrega, { settings: ajustes, entrega: 'envio', setEntrega() {}, cp: '', setCp() {} });
   assert(ent.includes('Gratis desde') && ent.includes('Código postal'), 'entrega con envío');
 });
 
-await check('Tasador · Pedir y Recibido: solicitar, WhatsApp, PDF y el código', async () => {
+await check('Tasador · Pedir y Recibido: solicitar, WhatsApp, email y el código', async () => {
   const props = { piezas: [pieza], quote, listo: true, settings: ajustes, colaH: 0, filamentos, entrega: 'recogida', cpValido: undefined, setStatus() {}, cup };
   const html = render(Pedir, { ...props, status: { kind: 'idle' } });
-  assert(html.includes('Solicitar presupuesto') && html.includes('Pedir por WhatsApp'), 'faltan las llamadas');
+  assert(html.includes('Pedirlo') && html.includes('qt-cta-wa'), 'faltan las llamadas'); assert(html.includes(`Pedirlo · ${euro(quote.total)}`), 'el botón no lleva el precio');
   assert(html.includes(encodeURIComponent(`Total: ${euro(quote.total)}`).replace(/%20/g, '%20')) || html.includes('Total%3A'), 'el WhatsApp no lleva el total');
-  assert(html.includes('Envíame el presupuesto por email') && html.includes('Descargar PDF'), 'guardar o PDF');
+  assert(html.includes('Envíamelo por email') && !html.includes('Descargar PDF'), 'guardar sí, PDF no');
   const ok = render(Pedir, { ...props, status: { kind: 'ok', codigo: 'Q-2026-0001', duplicado: false, porEmail: true } });
-  assert(ok.includes('Q-2026-0001') && ok.includes('por email') && !ok.includes('Solicitar presupuesto'), 'la confirmación');
+  assert(ok.includes('Q-2026-0001') && ok.includes('por email') && !ok.includes('Pedirlo'), 'la confirmación');
   assert(render(Recibido, { status: { kind: 'ok', codigo: 'Q-1', duplicado: true, porEmail: false } }).includes('Ya teníamos esta misma solicitud'), 'duplicado');
 });
 
 await check('Tasador · pedido grande: ni precio, ni PDF, ni «envíamelo»; solo pedirlo', async () => {
   const html = render(Resumen, {
-    totalRef: { current: null }, settings: ajustes, settingsLoaded: true, numPiezas: 1, numAnalizando: 0, progresoAnalisis: 1,
+    settings: ajustes, settingsLoaded: true, numPiezas: 1, numAnalizando: 0, progresoAnalisis: 1,
     listo: true, quote, precioFinal: false, consultar: true, firmeActivo: false, listoAntes: '2026-11-13', entrega: 'recogida',
-    resenas: null, masUnaUnidad: { pieza, extra: 0 }, masUno() {}, otraPieza() {}, cup
+    cup
   });
   assert(html.includes('A consultar') && html.includes('menos de 24 h'), 'falta el «a consultar»');
   assert(!html.includes(euro(quote.total)) && !html.includes('código de descuento'), 'enseña el precio o el cupón');
   const props = { piezas: [pieza], quote, listo: true, settings: ajustes, colaH: 0, filamentos, entrega: 'recogida', cpValido: undefined, setStatus() {}, cup, consultar: true };
   const ped = render(Pedir, { ...props, status: { kind: 'idle' } });
-  assert(ped.includes('Solicitar presupuesto') && ped.includes('Pedir por WhatsApp'), 'tiene que poder pedirlo');
-  assert(!ped.includes('Descargar PDF') && !ped.includes('Envíame el presupuesto por email'), 'PDF o email llevarían el precio');
+  assert(ped.includes('Pedirlo') && ped.includes('qt-cta-wa'), 'tiene que poder pedirlo'); assert(!ped.includes(euro(quote.total)), 'el botón enseña el precio');
+  assert(!ped.includes('Descargar PDF') && !ped.includes('Envíamelo por email'), 'PDF o email llevarían el precio');
   assert(!ped.includes('Total%3A') && !ped.includes(encodeURIComponent(euro(quote.total))), 'el WhatsApp lleva el precio');
 });
 
-await check('Tasador · Piezas y configuración: material, colores, resistencia y detalle', async () => {
+await check('Tasador · Piezas y configuración: material por uso y color, sin resistencia ni detalle', async () => {
   const lista = render(ListaPiezas, { pz, quote, tooBig: true, degenerate: false, maxBedMm: 220, scaleSuggestions: [{ unidad: 'pulgadas', factor: 25.4 }], setActivePart() {} });
   assert(lista.includes('soporte.stl') && lista.includes('Quitar soporte.stl'), 'la lista de piezas');
   assert(lista.includes('supera los 220 mm') && lista.includes('Convertir de pulgadas'), 'los avisos');
   const cfg = render(ConfigPieza, { pz, settings: ajustes, filamentos, materialColors: colores, activeColors: [colores[0]], activePart: 0, setActivePart() {} });
-  for (const t of ['1 · Material', '2 · Color', '3 · ¿Cómo de resistente', '4 · ¿Cuánto detalle?', 'PETG', 'Alto detalle', 'Maciza'])
+  for (const t of ['1 · Material', '2 · Color', 'Resistente', 'PETG'])
     assert(cfg.includes(t), `falta «${t}»`);
-  assert(cfg.includes('Oro (agotado)') && cfg.includes('Quiero combinar varios colores'), 'colores y agotados');
+  assert(!cfg.includes('¿Cómo de resistente') && !cfg.includes('¿Cuánto detalle?'), 'resistencia y detalle ya no se preguntan');
+  assert(cfg.includes('Oro (agotado)') && !cfg.includes('Ver todos') && cfg.includes('¿Varios colores?'), 'todos los colores a la vista, agotados marcados');
   assert(!cfg.includes('Aplicar a todas'), 'con una pieza no ofrece aplicar a todas');
+});
+
+await check('Tasador · 3MF con varias camas: se juntan en una y el aviso de tamaño va por objeto', async () => {
+  const THREE = await import('three');
+  const { juntarObjetos } = await cargar('app/(site)/instant-quote/modelo.ts', 'modelo');
+  const { analyzeObject } = await cargar('lib/quote/geometry.ts', 'geometry');
+  const cubo = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(100, 100, 20)); m.position.set(x, 0, 10); return m; };
+  const montar = (xs) => { const root = new THREE.Group(); const g = new THREE.Group(); g.userData.objetos = true; xs.forEach((x) => g.add(cubo(x))); root.add(g); return root; };
+  // Dos camas: objetos de 100 mm separados 300 mm, el conjunto mide 400.
+  const camas = montar([0, 300]);
+  juntarObjetos(camas, 220);
+  const m = analyzeObject(camas);
+  assert(m.bboxMm.x <= 220 && m.bboxMm.y <= 220, `no se juntaron: ${m.bboxMm.x} × ${m.bboxMm.y}`);
+  assert(m.objetoMayorMm === 100, `el objeto mayor mide 100, no ${m.objetoMayorMm}`);
+  // Un montaje cuyos objetos se tocan no se mueve.
+  const montaje = montar([0, 100, 200, 300]);
+  juntarObjetos(montaje, 220);
+  assert(analyzeObject(montaje).bboxMm.x === 400, 'un montaje que se toca no se mueve');
 });
 
 rmSync(dir, { recursive: true, force: true });

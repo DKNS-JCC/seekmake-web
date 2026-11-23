@@ -433,7 +433,7 @@ export function ContactForm() {
 
       <p
         style={{
-          fontSize: 11,
+          fontSize: 14,
           color: 'var(--muted)',
           marginTop: 4,
           lineHeight: 1.5

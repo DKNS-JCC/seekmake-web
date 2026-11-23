@@ -2,14 +2,14 @@ import ServicioLanding, { servicioMetadata, type Servicio } from '../ServicioLan
 
 const S: Servicio = {
   slug: 'trofeos-y-medallas',
+  categoria: 'grupos',
   title: 'Trofeos y medallas personalizados en Salamanca | 3DCC',
   description:
     'Trofeos y medallas impresos en 3D con vuestro diseño, para clubes, colegios, ligas y asociaciones. Desde pocas unidades, en un taller de Salamanca.',
   nombre: 'Trofeos y medallas personalizados',
   h1: 'Trofeos y medallas',
   h1Accent: 'a medida',
-  intro:
-    'Para el torneo del club, el fin de curso del cole o la liga de los viernes. Diseñamos el trofeo o la medalla con vuestro logo, colores y textos, y lo imprimimos en nuestro taller de Salamanca. No hace falta pedir cientos: hacemos tiradas pequeñas.',
+  intro: 'Con vuestro logo y colores, para el club, el cole o la liga. Desde pocas unidades.',
   pasos: [
     'Nos contáis el evento, cuántas unidades necesitáis y para qué fecha.',
     'Os proponemos un diseño con vuestro logo y colores.',

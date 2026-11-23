@@ -1,9 +1,12 @@
 /* Tasador — follows the 3DCC design system (see globals.css). */
 
 .qt-hero {
-    padding: calc(var(--nav-h) + 48px) 24px 32px;
+    padding: 32px 24px 24px; /* .page-content already clears the menu */
     text-align: center;
 }
+/* With a piece loaded the tool takes the whole screen: one line of title. */
+.qt-hero.compacto { padding: 14px 24px; }
+.qt-hero.compacto h1 { font-size: 28px; margin-bottom: 0; }
 .qt-hero h1 {
     font-family: var(--font-display), sans-serif;
     font-size: clamp(36px, 5vw, 56px);
@@ -11,7 +14,7 @@
     color: var(--text); margin-bottom: 12px;
 }
 .qt-hero-desc {
-    font-size: 15px; color: var(--muted);
+    font-size: var(--fs-body); color: var(--muted);
     max-width: 520px; margin: 0 auto;
     line-height: 1.7;
 }
@@ -45,43 +48,34 @@
 }
 .qt-drop-icon {
     width: 72px; height: 72px;
-    border: 1px dashed var(--border-h);
+    border: 2px dashed var(--line);
     border-radius: var(--r);
     display: flex; align-items: center; justify-content: center;
     color: var(--accent);
 }
-.qt-drop-title {
-    font-family: var(--font-display), sans-serif;
-    font-size: 24px; letter-spacing: 0.04em; color: var(--text);
-}
-.qt-drop-sub {
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; letter-spacing: 0.1em;
-}
-.qt-drop-aviso {
-    max-width: 340px; margin: 12px auto 0;
-    font-size: 11px; line-height: 1.5; color: var(--muted);
-}
+.qt-drop-btn { pointer-events: none; }
 
 
 .qt-overlay-msg, .qt-overlay-err {
-    position: absolute; left: 50%; bottom: 56px;
-    transform: translateX(-50%);
-    padding: 8px 16px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: max-content; max-width: calc(100% - 32px);
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px;
+    background: var(--bg);
+    border: 1px solid var(--line);
     border-radius: var(--r);
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; color: var(--text);
-    white-space: nowrap;
+    font-size: var(--fs-label); color: var(--text); line-height: 1.4;
 }
-.qt-overlay-err { color: #e0524d; border-color: #e0524d; }
+.qt-overlay-err { top: auto; bottom: 16px; transform: translateX(-50%); }
+.qt-spinner { flex: none; width: 20px; height: 20px; }
+.qt-overlay-err { color: #b42318; border-color: #b42318; }
 
 .qt-meta {
     position: absolute; left: 12px; bottom: 12px;
     display: flex; flex-wrap: wrap; gap: 6px;
     font-family: var(--font-mono), monospace;
-    font-size: 10px; color: var(--muted);
+    font-size: var(--fs-min); color: var(--muted);
 }
 .qt-meta > span {
     padding: 4px 8px;
@@ -111,46 +105,72 @@
 
 .qt-changefile {
     position: absolute; top: 12px; right: 12px;
-    padding: 7px 14px;
-    background: color-mix(in srgb, var(--bg) 80%, transparent);
-    border: 1px solid var(--border);
+    min-height: 44px; padding: 8px 16px;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    border: 2px solid var(--accent);
     border-radius: var(--r);
-    font-family: var(--font-mono), monospace;
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-label); font-weight: 600;
+    color: var(--accent);
     backdrop-filter: blur(6px);
     transition: all 0.2s;
 }
-.qt-changefile:hover { color: var(--text); border-color: var(--border-h); }
+.qt-changefile:hover { background: var(--bg); }
 
 /* ── panel ──────────────────────────────────────────── */
-.qt-panel {
-    display: flex; flex-direction: column; gap: 22px;
+.qt-panel, .qt-panel-opciones, .qt-panel-pie {
+    display: flex; flex-direction: column; gap: 18px;
     min-width: 0;
 }
+.qt-panel-opciones { gap: 22px; }
+/* PC: the options run with the page (nothing scrolls inside the panel) and
+   «Pedirlo · price» sticks to the bottom of the screen, so it is always in
+   view while you choose. Once the form opens it goes back to its place. */
+@media (min-width: 901px) {
+    /* Sticky can't leave its parent: let the panel be the parent. */
+    .qt-hero.compacto + .qt-main .qt-panel-pie { display: contents; }
+    .qt-sticky-price { display: none; } /* the phone bar: not needed here */
+    .qt-hero.compacto + .qt-main .qt-pedir:not(.con-form) {
+        position: sticky; bottom: 0; z-index: 5;
+        padding: 12px 0 14px;
+        background: var(--bg);
+        border-top: 1px solid var(--line);
+    }
+}
 
+.qt-sin-archivo {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    font-size: var(--fs-help); line-height: 1.5; color: var(--text);
+}
 .qt-warn {
     padding: 12px 14px;
     background: rgba(224, 158, 36, 0.08);
-    border: 1px solid rgba(224, 158, 36, 0.5);
+    border: 1px solid rgba(180, 120, 20, 0.8);
     border-radius: var(--r);
-    font-size: 13px; line-height: 1.5; color: var(--text);
+    font-size: var(--fs-help); line-height: 1.5; color: var(--text);
     display: flex; flex-direction: column; gap: 6px;
 }
 
 .qt-step-label {
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 10px;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-btn); font-weight: 700;
+    color: var(--text); margin-bottom: 10px;
 }
-.qt-step-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.qt-step-hint { font-size: var(--fs-help); color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.qt-step-label small { font-size: var(--fs-help); font-weight: 400; color: var(--muted); }
+.qt-step-valor { margin-left: 8px; font-weight: 400; color: var(--muted); }
+.qt-step-enlaces { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 12px; font-size: var(--fs-help); }
 
 .qt-piezas { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .qt-pieza {
     display: flex; align-items: center; gap: 8px;
     padding: 8px 10px;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: var(--r);
     transition: border-color 0.2s;
 }
@@ -159,7 +179,7 @@
     flex: 1; min-width: 0;
     display: flex; align-items: center; gap: 7px;
     background: none; border: 0; text-align: left;
-    font-size: 13px; color: var(--text);
+    font-size: var(--fs-label); color: var(--text);
     overflow: hidden;
 }
 .qt-pieza-dots { display: inline-flex; gap: 3px; flex-shrink: 0; }
@@ -175,7 +195,7 @@
     background: var(--accent-dim);
     border: 1px solid var(--accent);
     border-radius: var(--r);
-    font-size: 12px; color: var(--text);
+    font-size: var(--fs-help); color: var(--text);
 }
 .qt-configuring strong { color: var(--accent); }
 .qt-configuring button {
@@ -184,8 +204,8 @@
     background: var(--accent);
     border: 0; border-radius: var(--r);
     color: #fff;
-    font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     transition: transform 0.15s;
 }
 .qt-configuring button:hover { transform: translateY(-1px); }
@@ -194,40 +214,41 @@
     flex-shrink: 0;
 }
 .qt-pieza-qty button {
-    width: 24px; height: 24px;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    width: 40px; height: 40px;
+    background: var(--field);
+    border: 1px solid var(--line);
     border-radius: var(--r);
-    font-size: 14px; color: var(--text); line-height: 1;
+    font-size: 20px; color: var(--text); line-height: 1;
 }
 .qt-pieza-qty button:hover { border-color: var(--accent); }
 .qt-pieza-qty span {
-    min-width: 26px; text-align: center;
-    font-family: var(--font-mono), monospace; font-size: 13px;
+    min-width: 30px; text-align: center;
+    font-family: var(--font-mono), monospace; font-size: var(--fs-label);
 }
 .qt-pieza-remove {
     flex-shrink: 0;
-    width: 24px; height: 24px;
+    width: 40px; height: 40px;
     background: none;
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: var(--r);
-    color: var(--muted); font-size: 14px; line-height: 1;
+    color: var(--muted); font-size: 20px; line-height: 1;
     transition: all 0.2s;
 }
 .qt-pieza-remove:hover { color: #e0524d; border-color: #e0524d; }
 
-.qt-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.qt-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .qt-pill {
-    padding: 7px 16px;
-    background: transparent;
-    border: 1px solid var(--border);
+    min-height: var(--tap); padding: 8px 16px;
+    background: var(--field);
+    border: 1px solid var(--line);
     border-radius: var(--r);
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--muted); transition: all 0.2s;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-label); font-weight: 600;
+    color: var(--text); transition: all 0.2s;
 }
-.qt-pill:hover { border-color: var(--border-h); color: var(--text); }
+.qt-pill:hover { border-color: var(--accent); }
 .qt-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.qt-pill small { margin-left: 4px; font-size: var(--fs-min); opacity: 0.75; }
 
 .qt-parts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .qt-part {
@@ -247,24 +268,23 @@
 }
 .qt-part-swatch.vacio { border-style: dashed; }
 .qt-part-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.qt-part-txt strong { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.qt-part-txt small { font-size: 12px; color: var(--muted); }
+.qt-part-txt strong { font-size: var(--fs-min); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qt-part-txt small { font-size: var(--fs-min); color: var(--muted); }
 
-.qt-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.qt-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .qt-swatch {
-    width: 30px; height: 30px;
-    border: 2px solid var(--border);
+    width: 40px; height: 40px;
+    border: 2px solid var(--line);
     border-radius: var(--r);
     transition: transform 0.15s, border-color 0.15s;
 }
 .qt-swatch:hover { transform: scale(1.12); border-color: var(--border-h); }
 .qt-swatch.active {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent-dim);
+    box-shadow: 0 0 0 3px var(--accent);
 }
 @media (pointer: coarse) {
-    .qt-swatches { gap: 8px; }
-    .qt-swatch { width: 40px; height: 40px; }
+    .qt-swatch { width: 44px; height: 44px; }
 }
 /* Out of stock: still listed so the range is visible, but not orderable. */
 .qt-swatch.agotado {
@@ -283,12 +303,6 @@
         linear-gradient(to top left, transparent calc(50% - 2.5px), rgba(0,0,0,0.6) calc(50% - 2.5px), rgba(0,0,0,0.6) calc(50% + 2.5px), transparent calc(50% + 2.5px));
 }
 
-.qt-toggle {
-    display: flex; align-items: center; gap: 8px;
-    margin-top: 12px;
-    font-size: 13px; color: var(--text); cursor: pointer;
-}
-.qt-toggle input { accent-color: var(--accent); }
 .qt-extra { margin-top: 10px; }
 
 .qt-chosen { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
@@ -296,29 +310,15 @@
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 10px;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: var(--r);
-    font-size: 12px; color: var(--text);
+    font-size: var(--fs-help); color: var(--text);
 }
 .qt-chosen-chip > span {
     width: 12px; height: 12px; border-radius: 2px;
     border: 1px solid var(--border-h);
 }
 
-.qt-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.qt-card {
-    padding: 12px 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    text-align: left;
-    display: flex; flex-direction: column; gap: 3px;
-    transition: all 0.2s;
-}
-.qt-card strong { font-size: 14px; color: var(--text); font-weight: 600; }
-.qt-card span { font-size: 12px; color: var(--muted); line-height: 1.4; }
-.qt-card:hover { border-color: var(--border-h); }
-.qt-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
 
 .qt-qty { display: flex; align-items: center; gap: 8px; }
 .qt-qty button {
@@ -345,6 +345,6 @@
 .qt-qty input::-webkit-inner-spin-button { -webkit-appearance: none; }
 .qt-qty-dto {
     font-family: var(--font-mono), monospace;
-    font-size: 11px; color: var(--accent);
+    font-size: var(--fs-min); color: var(--accent);
 }
 

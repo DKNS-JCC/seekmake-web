@@ -22,7 +22,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     font-family: var(--font-mono), monospace;
-    font-size: 11px; color: var(--muted);
+    font-size: var(--fs-min); color: var(--muted);
 }
 .mu-hero-tip strong { color: var(--accent); }
 
@@ -50,9 +50,8 @@
     background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--r);
-    font-family: var(--font-mono), monospace;
-    font-size: 10px; letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     color: var(--muted); cursor: pointer;
     transition: all 0.2s; white-space: nowrap;
 }
@@ -62,7 +61,7 @@
     color: #fff;
 }
 .mu-pill-count {
-    font-size: 9px; opacity: 0.7; margin-left: 4px;
+    font-size: var(--fs-min); opacity: 0.7; margin-left: 4px;
 }
 .mu-search {
     position: relative; flex-shrink: 0;
@@ -75,7 +74,7 @@
     border-radius: var(--r);
     color: var(--text);
     font-family: var(--font-sans), sans-serif;
-    font-size: 13px; outline: none;
+    font-size: var(--fs-min); outline: none;
     transition: border-color 0.2s, width 0.3s;
 }
 .mu-search input::placeholder { color: var(--muted); }
@@ -106,13 +105,12 @@
     letter-spacing: 0.02em; color: var(--text);
 }
 .mu-section-desc {
-    font-size: 13px; color: var(--muted);
+    font-size: var(--fs-min); color: var(--muted);
     flex: 1;
 }
 .mu-section-count {
-    font-family: var(--font-mono), monospace;
-    font-size: 10px; letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     color: var(--muted); flex-shrink: 0;
 }
 
@@ -130,14 +128,13 @@
     border-radius: var(--r);
 }
 .mu-spec-label {
-    font-family: var(--font-mono), monospace;
-    font-size: 8px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--muted);
     margin-bottom: 2px;
 }
 .mu-spec-value {
     font-family: var(--font-sans), sans-serif;
-    font-size: 13px; font-weight: 600;
+    font-size: var(--fs-min); font-weight: 600;
     color: var(--text);
 }
 
@@ -181,9 +178,8 @@
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(4px);
     border-radius: 2px;
-    font-family: var(--font-mono), monospace;
-    font-size: 8px; letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     color: #fff;
 }
 
@@ -220,7 +216,7 @@
 .mu-color-info { padding: 8px 10px; }
 .mu-color-name {
     font-family: var(--font-sans), sans-serif;
-    font-size: 12px; font-weight: 600;
+    font-size: var(--fs-min); font-weight: 600;
     color: var(--text);
     white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis;
@@ -228,7 +224,7 @@
 }
 .mu-color-hex {
     font-family: var(--font-mono), monospace;
-    font-size: 10px; color: var(--muted);
+    font-size: var(--fs-min); color: var(--muted);
     margin-top: 1px;
 }
 
@@ -296,9 +292,8 @@
 }
 .mu-test-toggle-left { display: flex; align-items: center; gap: 10px; }
 .mu-test-toggle-label {
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--muted);
 }
 .mu-test-toggle-title {
     font-family: var(--font-display), sans-serif;
@@ -348,9 +343,8 @@
     transition: width 0.3s;
 }
 .mu-test-progress-label {
-    font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--muted);
     margin-bottom: 6px;
 }
 
@@ -425,9 +419,8 @@
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(4px);
     border-radius: 2px;
-    font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: #fff;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: #fff;
 }
 .mu-modal-body { padding: 20px; }
 .mu-modal-name {
@@ -436,9 +429,8 @@
     color: var(--text); margin-bottom: 4px;
 }
 .mu-modal-material {
-    font-family: var(--font-mono), monospace;
-    font-size: 10px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--accent);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--accent);
     margin-bottom: 16px;
 }
 .mu-modal-hex-row {
@@ -452,15 +444,14 @@
 }
 .mu-modal-hex {
     font-family: var(--font-mono), monospace;
-    font-size: 13px; font-weight: 600;
+    font-size: var(--fs-min); font-weight: 600;
     color: var(--text);
 }
 .mu-modal-copy {
     background: none; border: none;
     color: var(--muted); cursor: pointer;
-    font-family: var(--font-mono), monospace;
-    font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     display: flex; align-items: center; gap: 4px;
     transition: color 0.2s;
 }
@@ -478,29 +469,26 @@
     border-radius: var(--r);
 }
 .mu-modal-spec-label {
-    font-family: var(--font-mono), monospace;
-    font-size: 8px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--muted);
     margin-bottom: 2px;
 }
 .mu-modal-spec-val {
-    font-size: 13px; font-weight: 600; color: var(--text);
+    font-size: var(--fs-min); font-weight: 600; color: var(--text);
 }
 .mu-modal-usos {
-    font-size: 13px; color: var(--muted);
+    font-size: var(--fs-min); color: var(--muted);
     margin-bottom: 16px; line-height: 1.6;
 }
 .mu-modal-usos strong {
-    font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     display: block; margin-bottom: 4px;
 }
 .mu-modal-combina { margin-bottom: 16px; }
 .mu-modal-combina-label {
-    font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--muted);
     margin-bottom: 8px; display: block;
 }
 .mu-modal-combina-list { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -525,7 +513,7 @@
 }
 .mu-modal-combina-name {
     font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.06em;
+    font-size: var(--fs-min); letter-spacing: 0.06em;
     color: var(--text);
     white-space: nowrap;
 }
@@ -578,23 +566,22 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .mu-loading-text {
-    font-family: var(--font-mono), monospace;
-    font-size: 11px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--muted);
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min); color: var(--muted);
 }
 
 @media (max-width: 768px) {
     .mu-hero { padding: calc(var(--nav-h) + 28px) 0 24px; }
     .mu-hero h1 { font-size: clamp(30px, 8vw, 44px); }
-    .mu-hero-desc { font-size: 13px; margin-bottom: 14px; }
-    .mu-hero-tip { font-size: 10px; padding: 6px 12px; }
+    .mu-hero-desc { font-size: var(--fs-min); margin-bottom: 14px; }
+    .mu-hero-tip { font-size: var(--fs-min); padding: 6px 12px; }
 
     .mu-filters-inner { flex-wrap: wrap; padding: 10px 16px; }
     .mu-search { width: 100%; order: -1; }
     .mu-search input { width: 100%; }
     .mu-search input:focus { width: 100%; }
     .mu-pills { gap: 4px; }
-    .mu-pill { padding: 6px 10px; font-size: 9px; }
+    .mu-pill { padding: 6px 10px; font-size: var(--fs-min); }
 
     .mu-section { margin-bottom: 32px; }
     .mu-section-header { flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
@@ -608,8 +595,8 @@
 
     .mu-specs { gap: 6px; }
     .mu-spec { padding: 6px 10px; }
-    .mu-spec-label { font-size: 7px; }
-    .mu-spec-value { font-size: 12px; }
+    .mu-spec-label { font-size: var(--fs-min); }
+    .mu-spec-value { font-size: var(--fs-min); }
 
     .mu-test { padding: 0 16px 24px; }
 
@@ -640,9 +627,9 @@
         gap: 6px;
     }
     .mu-color-info { padding: 5px 6px; }
-    .mu-color-name { font-size: 10px; }
-    .mu-color-hex { font-size: 8px; }
-    .mu-swatch-acabado { font-size: 7px; padding: 2px 5px; }
+    .mu-color-name { font-size: var(--fs-min); }
+    .mu-color-hex { font-size: var(--fs-min); }
+    .mu-swatch-acabado { font-size: var(--fs-min); padding: 2px 5px; }
 }
 
 /* ─── 3D Visualizer ─────────────────────────────────────────────────── */
@@ -661,10 +648,8 @@
     color: #fff;
     border: none;
     border-radius: 999px;
-    font-family: var(--font-mono), monospace;
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 10px 30px -8px rgba(14,165,233,0.6), 0 4px 14px rgba(0,0,0,0.15);
@@ -745,10 +730,8 @@
     border-radius: var(--r);
     background: rgba(14,165,233,0.12);
     color: var(--accent);
-    font-family: var(--font-mono), monospace;
-    font-size: 13px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     z-index: 5;
     pointer-events: none;
 }
@@ -790,10 +773,8 @@
     margin-bottom: 6px;
 }
 .viz-drop-sub {
-    font-family: var(--font-mono), monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
 }
 
 .viz-loading,
@@ -806,10 +787,8 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     padding: 8px 12px;
-    font-family: var(--font-mono), monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     color: var(--muted);
     z-index: 4;
 }
@@ -841,7 +820,7 @@
     margin: 8px 0 6px;
 }
 .viz-sub {
-    font-size: 12px;
+    font-size: var(--fs-min);
     color: var(--muted);
     line-height: 1.55;
     margin-bottom: 14px;
@@ -856,10 +835,8 @@
     border: 1px solid var(--border);
     border-radius: var(--r);
     color: var(--text);
-    font-family: var(--font-mono), monospace;
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     cursor: pointer;
     transition: all 0.18s;
 }
@@ -890,7 +867,7 @@
     padding: 0 12px 0 34px;
     color: var(--text);
     font-family: var(--font-sans), sans-serif;
-    font-size: 13px;
+    font-size: var(--fs-min);
     outline: none;
 }
 .viz-search input:focus { border-color: var(--accent); }
@@ -908,15 +885,13 @@
     margin-bottom: 8px;
 }
 .viz-fila-name {
-    font-family: var(--font-mono), monospace;
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     color: var(--text);
 }
 .viz-fila-count {
     font-family: var(--font-mono), monospace;
-    font-size: 9px;
+    font-size: var(--fs-min);
     color: var(--muted);
 }
 .viz-swatches {
@@ -974,7 +949,7 @@
 .viz-selected-info { min-width: 0; }
 .viz-selected-name {
     font-family: var(--font-sans), sans-serif;
-    font-size: 13px;
+    font-size: var(--fs-min);
     font-weight: 600;
     color: var(--text);
     line-height: 1.2;
@@ -983,10 +958,8 @@
     white-space: nowrap;
 }
 .viz-selected-mat {
-    font-family: var(--font-mono), monospace;
-    font-size: 9px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font-family: var(--font-sans), sans-serif;
+    font-size: var(--fs-min);
     color: var(--muted);
     margin-top: 3px;
 }
@@ -1013,6 +986,6 @@
         /* Mobile stack: WA (h 48, bottom 20) → backToTop (h 38, bottom 76) → viz */
         bottom: 122px;
         padding: 12px 18px 12px 16px;
-        font-size: 10px;
+        font-size: var(--fs-min);
     }
 }

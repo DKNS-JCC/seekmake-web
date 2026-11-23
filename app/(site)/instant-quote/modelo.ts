@@ -7,6 +7,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ensureUVs } from '@/lib/three/materials';
 import { leer3mf, zonificar, type Cuerpo, type Meta3mf } from '@/lib/quote/tresmf';
+import { objetosDe } from '@/lib/quote/geometry';
 import type { ParsedModel } from '@/lib/quote/types';
 
 export const MAX_FILE_MB = 50;
@@ -37,7 +38,48 @@ export function centrarEnCama(root: THREE.Object3D): void {
   root.updateMatrixWorld(true);
 }
 
-export async function parseModel(f: File, ext: string): Promise<ParsedModel> {
+/**
+ * A 3MF with several plates (or objects scattered far apart) comes laid out
+ * wider than one bed. If its objects are separate (no two touch), set them
+ * side by side in rows no wider than the bed, so the viewer shows them
+ * together and the price sees them as they would really print. An assembly
+ * whose objects touch is left exactly as it came.
+ */
+export function juntarObjetos(root: THREE.Object3D, camaMm: number, hueco = 5): void {
+  root.updateMatrixWorld(true);
+  const items = objetosDe(root)
+    .map((o) => ({ o, b: new THREE.Box3().setFromObject(o) }))
+    .filter((x) => !x.b.isEmpty());
+  if (items.length < 2) return;
+  const total = new THREE.Box3();
+  for (const x of items) total.union(x.b);
+  if (total.max.x - total.min.x <= camaMm && total.max.y - total.min.y <= camaMm) return;
+  const tocan = (a: THREE.Box3, b: THREE.Box3) =>
+    a.min.x < b.max.x + 0.5 && b.min.x < a.max.x + 0.5 && a.min.y < b.max.y + 0.5 && b.min.y < a.max.y + 0.5;
+  for (let i = 0; i < items.length; i++)
+    for (let j = i + 1; j < items.length; j++) if (tocan(items[i].b, items[j].b)) return;
+
+  // ponytail: shelf packing, rows by depth; good enough to look like one plate.
+  const ancho = Math.max(camaMm, ...items.map((x) => x.b.max.x - x.b.min.x));
+  items.sort((a, b) => b.b.max.y - b.b.min.y - (a.b.max.y - a.b.min.y));
+  let x = 0, y = 0, fila = 0;
+  for (const it of items) {
+    const w = it.b.max.x - it.b.min.x;
+    const d = it.b.max.y - it.b.min.y;
+    if (x > 0 && x + w > ancho) {
+      x = 0;
+      y += fila + hueco;
+      fila = 0;
+    }
+    it.o.position.x += x - it.b.min.x;
+    it.o.position.y += y - it.b.min.y;
+    x += w + hueco;
+    fila = Math.max(fila, d);
+  }
+  root.updateMatrixWorld(true);
+}
+
+export async function parseModel(f: File, ext: string, camaMm = 220): Promise<ParsedModel> {
   const root = new THREE.Group();
   let meta: Meta3mf | null = null;
   if (ext === 'stl') {
@@ -46,8 +88,11 @@ export async function parseModel(f: File, ext: string): Promise<ParsedModel> {
     root.add(new THREE.Mesh(geometry));
   } else if (ext === '3mf') {
     const buf = await f.arrayBuffer();
-    root.add(new ThreeMFLoader().parse(buf));
+    const grupo = new ThreeMFLoader().parse(buf);
+    grupo.userData.objetos = true; // its children are the build items
+    root.add(grupo);
     meta = leer3mf(buf);
+    juntarObjetos(root, camaMm); // still Z-up: x/y is the plate
   } else {
     root.add(new OBJLoader().parse(await f.text()));
   }

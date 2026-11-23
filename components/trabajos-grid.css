@@ -1,0 +1,36 @@
+/* Cuadrícula de trabajos: portada, /trabajos y páginas de servicio. */
+.tg-grid {
+    list-style: none; padding: 0; margin: 0;
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 900px) { .tg-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .tg-grid { grid-template-columns: 1fr; } }
+
+.tg-card {
+    background: var(--surface); border-radius: 8px; overflow: hidden;
+    display: flex; flex-direction: column; min-width: 0;
+}
+/* 3:4 como las fotos del panel (1200×1600). Las que no encajan se ven enteras
+   sobre fondo neutro: una foto de trabajo nunca se recorta. */
+.tg-img {
+    display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: contain;
+    background: var(--surface-2);
+}
+.tg-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.tg-title { font-size: var(--fs-h3); font-weight: 700; line-height: 1.25; color: var(--text); }
+/* Mono solo para datos: el material es un dato. */
+.tg-material { font-family: var(--font-mono), monospace; font-size: var(--fs-min); color: var(--muted); }
+.tg-desc { font-size: var(--fs-label); color: var(--text); line-height: 1.5; }
+.tg-parecido {
+    margin-top: auto; align-self: stretch;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: var(--tap); padding: 8px 16px;
+    border: 2px solid var(--accent); border-radius: var(--r); background: var(--field);
+    color: var(--accent); font-size: var(--fs-label); font-weight: 600; text-decoration: none;
+    transition: background 0.2s;
+}
+.tg-parecido:hover { background: color-mix(in srgb, var(--accent) 8%, var(--field)); }
+
+/* Cabecera de bloque con enlace a la galería completa. */
+.tg-mas { margin-top: 24px; display: flex; justify-content: center; }

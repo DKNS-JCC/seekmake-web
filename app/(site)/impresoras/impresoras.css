@@ -25,9 +25,8 @@
         .about-hero h1 .accent { color: var(--accent); }
 
         .slogan {
-            font-family: var(--font-mono), monospace;
+            font-family: var(--font-sans), sans-serif;
             font-size: clamp(13px, 1.6vw, 17px);
-            letter-spacing: 0.18em; text-transform: uppercase;
             color: var(--muted); margin-top: 28px;
             display: flex; align-items: center; justify-content: center; gap: 16px;
         }
@@ -100,8 +99,8 @@
 
         /* Printer text content */
         .printer-eyebrow {
-            font-family: var(--font-mono), monospace;
-            font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+            font-family: var(--font-sans), sans-serif;
+            font-size: var(--fs-min);
             color: var(--accent); margin-bottom: 12px;
             display: flex; align-items: center; gap: 10px;
         }
@@ -113,8 +112,8 @@
             color: var(--text); margin-bottom: 6px;
         }
         .printer-nick {
-            font-family: var(--font-mono), monospace;
-            font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+            font-family: var(--font-sans), sans-serif;
+            font-size: var(--fs-min);
             color: var(--accent); margin-bottom: 24px;
         }
         .printer-desc {
@@ -138,8 +137,8 @@
             font-size: 28px; color: var(--accent); line-height: 1; display: block;
         }
         .spec-label {
-            font-family: var(--font-mono), monospace;
-            font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+            font-family: var(--font-sans), sans-serif;
+            font-size: var(--fs-min);
             color: var(--muted); margin-top: 4px; display: block;
         }
 
@@ -213,7 +212,7 @@
         @media (max-width: 900px) {
             .about-hero { padding: calc(var(--nav-h) + 48px) 0 40px; }
             .about-hero h1 { font-size: clamp(42px, 10vw, 60px); }
-            .slogan { font-size: 11px; letter-spacing: 0.12em; gap: 10px; }
+            .slogan { font-size: var(--fs-min); letter-spacing: 0.12em; gap: 10px; }
             .slogan::before, .slogan::after { width: 24px; }
             .about-intro-block { font-size: 15px; margin-top: 28px; padding: 0 8px; }
 
