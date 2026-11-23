@@ -95,6 +95,9 @@ export function Pedir({
     if (!nombre.trim()) return fallo('Dinos tu nombre.', 'nombre');
     if (!telefonoValido(telefono)) return fallo('Escribe un móvil de 9 cifras.', 'telefono');
     if (email.trim() && !emailValido(email)) return fallo('Revisa el email: parece que le falta algo.', 'email');
+    if (aceptaOfertas && !email.trim()) {
+      return fallo('Para recibir ofertas, escribe tu email (o desmarca esa casilla).', 'ofertas_sin_email');
+    }
     if (!aceptaTerminos) return fallo('Marca la casilla de los Términos para enviarlo.', 'terminos');
     const datos = {
       nombre: nombre.trim(),
@@ -323,7 +326,7 @@ export function Pedir({
                 aria-label="Email (opcional)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                aria-invalid={intentado && !!email.trim() && !emailValido(email)}
+                aria-invalid={intentado && (email.trim() ? !emailValido(email) : aceptaOfertas)}
                 aria-describedby="qt-contacto-ayuda"
               />
               <p id="qt-contacto-ayuda" className="qt-form-hint">
