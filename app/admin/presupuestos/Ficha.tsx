@@ -26,7 +26,7 @@ import { CampoNumero } from '../_components/Campos';
 import { useAdminAuth } from '../_components/useAdminAuth';
 import { parseNumero } from '@/lib/quote/formatos';
 import {
-  AVISABLES, ESTADOS, ESTADO_COLOR, ESTADO_LABEL, PAGO_LABEL, SIGUIENTE,
+  AVISABLES, ESTADOS, ESTADO_COLOR, ESTADO_LABEL, PAGO_LABEL, siguientePaso,
   diaCorto, fechaCorta, piezas
 } from './estados';
 import { contabilizarMaterial, lineasMaterial, parchearOrden, type PedidoRow } from './orden';
@@ -137,7 +137,7 @@ export function Ficha({
 
   if (!q) return <Drawer open={false} onClose={onCerrar} title="" >{null}</Drawer>;
 
-  const siguiente = SIGUIENTE[q.estado];
+  const siguiente = siguientePaso(q);
   const puedeAvisar = !!q.email;
   const material = d ? lineasMaterial(d) : [];
   const sinApuntar = !!d && ['aceptado', 'imprimiendo', 'listo', 'entregado'].includes(q.estado) && !d.material_contabilizado && material.length > 0;
@@ -237,7 +237,7 @@ export function Ficha({
   const tope = q.fecha_prometida ? `Listo antes del ${diaCorto(q.fecha_prometida)}` : 'Sin fecha tope';
 
   const principal = (clase: string) => {
-    if (q.estado === 'nuevo') {
+    if (q.estado === 'nuevo' && !siguiente) {
       return (
         <Link className={`btn-primary ${clase}`} href={`/admin/encargo?solicitud=${encodeURIComponent(q.codigo)}`}>
           Presupuestar

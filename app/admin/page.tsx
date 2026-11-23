@@ -142,7 +142,7 @@ export default function AdminHoy() {
           </div>
           <div className="hoy-grid">
             <Grupo
-              titulo="Por presupuestar"
+              titulo="Por revisar"
               vacio="Ninguna solicitud nueva."
               filas={nuevos}
               detalle={(q) => `llegó ${hace(q.created_at)}`}

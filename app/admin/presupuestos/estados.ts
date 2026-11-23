@@ -5,7 +5,7 @@ import type { Quote, QuoteEstado, QuotePago } from '@/lib/types';
 import { hoyMadrid } from '@/lib/quote/pricing';
 
 export const ESTADOS: { id: QuoteEstado; label: string }[] = [
-  { id: 'nuevo', label: 'Por presupuestar' },
+  { id: 'nuevo', label: 'Por revisar' },
   { id: 'revisado', label: 'Presupuestado' },
   { id: 'aceptado', label: 'Aceptado' },
   { id: 'imprimiendo', label: 'En producción' },
@@ -35,7 +35,7 @@ export const PAGO_LABEL: Record<QuotePago, string> = {
 /** Estados con plantilla de aviso en notify-quote. */
 export const AVISABLES: QuoteEstado[] = ['revisado', 'aceptado', 'imprimiendo', 'listo', 'entregado', 'rechazado'];
 
-/** Siguiente paso del pedido. «nuevo» se presupuesta en «Nuevo encargo», no aquí. */
+/** Siguiente paso del pedido por estado (para «nuevo», ver siguientePaso). */
 export const SIGUIENTE: Partial<Record<QuoteEstado, { a: QuoteEstado; label: string }>> = {
   revisado: { a: 'aceptado', label: 'Marcar aceptado' },
   aceptado: { a: 'imprimiendo', label: 'Empezar a imprimir' },
@@ -43,12 +43,26 @@ export const SIGUIENTE: Partial<Record<QuoteEstado, { a: QuoteEstado; label: str
   listo: { a: 'entregado', label: 'Marcar entregado' }
 };
 
+/**
+ * Una solicitud del tasador ya trae precio y el cliente lo aceptó al pedirla:
+ * basta con revisar que se puede imprimir y aceptarla. Sin paso, el pedido se
+ * presupuesta en «Nuevo encargo» (pedidos grandes «a consultar», sin cifra,
+ * y los que no vienen de la web).
+ */
+export function siguientePaso(
+  q: Pick<Quote, 'estado' | 'origen' | 'desglose'>
+): { a: QuoteEstado; label: string } | undefined {
+  if (q.estado !== 'nuevo') return SIGUIENTE[q.estado];
+  const consultar = !!(q.desglose as { consultar?: boolean } | null)?.consultar;
+  return q.origen === 'web' && !consultar ? { a: 'aceptado', label: 'Aceptar pedido' } : undefined;
+}
+
 /** Filtros de la lista. Los que no son un estado agrupan o miran el archivo. */
 export type Filtro = 'activos' | QuoteEstado | 'archivados';
 export const ACTIVOS: QuoteEstado[] = ['nuevo', 'revisado', 'aceptado', 'imprimiendo', 'listo'];
 export const FILTROS: { id: Filtro; label: string }[] = [
   { id: 'activos', label: 'Activos' },
-  { id: 'nuevo', label: 'Por presupuestar' },
+  { id: 'nuevo', label: 'Por revisar' },
   { id: 'revisado', label: 'Esperando' },
   { id: 'aceptado', label: 'Aceptados' },
   { id: 'imprimiendo', label: 'En producción' },
