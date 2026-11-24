@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { mensajeDeError } from '@/lib/errors';
+import { esAdmin } from '../_components/useAdminAuth';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -17,10 +18,15 @@ export default function AdminLogin() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (!err && !esAdmin(data.user)) await supabase.auth.signOut();
     setLoading(false);
     if (err) {
       setError(mensajeDeError(err));
+      return;
+    }
+    if (!esAdmin(data.user)) {
+      setError('Email o contraseña incorrectos.');
       return;
     }
     router.push('/admin');

@@ -22,3 +22,20 @@ export function NuevosBadge() {
   if (!count) return null;
   return <span className="adm-badge" aria-label={`${count} nuevos`}>{count}</span>;
 }
+
+/** Pickup slots a customer asked for and the admin has not confirmed yet. */
+export function CitasBadge() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    createClient()
+      .from('huecos_recogida')
+      .select('id', { count: 'exact', head: true })
+      .not('quote_id', 'is', null)
+      .eq('confirmada', false)
+      .then(({ count: c }) => setCount(c ?? 0));
+  }, []);
+
+  if (!count) return null;
+  return <span className="adm-badge" aria-label={`${count} citas por confirmar`}>{count}</span>;
+}

@@ -15,8 +15,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { marcarNoRastrear } from '@/lib/tracking';
+
+// Same claim the database checks in public.is_admin(): a signed-in Calculadora
+// user is not an admin and must not see the panel.
+export const esAdmin = (u: User | null | undefined) => u?.app_metadata?.is_admin === true;
 
 export function useAdminAuth() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -26,10 +31,10 @@ export function useAdminAuth() {
   useEffect(() => {
     let vivo = true;
     client.auth.getUser().then(({ data }) => {
-      if (vivo) setAuthed(!!data.user);
+      if (vivo) setAuthed(esAdmin(data.user));
     });
     const { data: sub } = client.auth.onAuthStateChange((_e, session) => {
-      if (vivo) setAuthed(!!session?.user);
+      if (vivo) setAuthed(esAdmin(session?.user));
     });
     return () => {
       vivo = false;

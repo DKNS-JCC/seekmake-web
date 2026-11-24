@@ -515,3 +515,13 @@ a.est-fila:hover { background: var(--bg); }
     .est-grid .adm-card .adm-tabla { background: none; border: 0; }
     .est-grid .adm-card .adm-tabla tbody tr:first-child td { border-top: 0; }
 }
+
+/* Login without the panel chrome. */
+.adm-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+.adm-login > div { width: 100%; }
