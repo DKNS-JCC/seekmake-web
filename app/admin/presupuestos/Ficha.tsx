@@ -32,13 +32,16 @@ import {
 import { contabilizarMaterial, lineasMaterial, parchearOrden, type PedidoRow } from './orden';
 
 export type AccionesFicha = {
-  mover: (q: Quote, a: QuoteEstado, avisar: boolean) => Promise<void>;
+  /** Sin avisar (undefined): pregunta si mandar el email. */
+  mover: (q: Quote, a: QuoteEstado, avisar?: boolean) => Promise<void>;
   archivar: (q: Quote) => Promise<void>;
   eliminar: (q: Quote) => Promise<void>;
   duplicar: (q: Quote) => Promise<void>;
   /** Vuelve a leer el pedido (los triggers pueden haber tocado pago o estado). */
   releer: (id: string) => Promise<void>;
   avisar: (texto: string, accion?: { label: string; run: () => void }) => void;
+  /** Manda al cliente el email del estado actual; devuelve el texto del resultado. */
+  avisarCliente: (q: Quote) => Promise<string>;
 };
 
 const PESTANAS = [
@@ -183,6 +186,17 @@ export function Ficha({
     }
   }
 
+  // Avisar en cualquier momento (p. ej. pedidos que se pusieron en «Listo» sin avisar).
+  async function reavisar() {
+    if (!q) return;
+    setTrabajando('avisando');
+    try {
+      acciones.avisar(await acciones.avisarCliente(q));
+    } finally {
+      setTrabajando('');
+    }
+  }
+
   async function recalcularFecha() {
     if (!q) return;
     const { data, error: err } = await supabase().rpc('fecha_tope_quote', { p_quote_id: q.id });
@@ -307,15 +321,22 @@ export function Ficha({
 
             <div className="pq-respuesta">
               <Field label="Estado">
-                <select
-                  style={inputStyle}
-                  value={q.estado}
-                  onChange={(e) => void acciones.mover(q, e.target.value as QuoteEstado, false)}
-                >
-                  {ESTADOS.map((e) => (
-                    <option key={e.id} value={e.id}>{e.label}</option>
-                  ))}
-                </select>
+                <span className="fi-fila">
+                  <select
+                    style={inputStyle}
+                    value={q.estado}
+                    onChange={(e) => void acciones.mover(q, e.target.value as QuoteEstado)}
+                  >
+                    {ESTADOS.map((e) => (
+                      <option key={e.id} value={e.id}>{e.label}</option>
+                    ))}
+                  </select>
+                  {puedeAvisar && AVISABLES.includes(q.estado) && (
+                    <button type="button" className="btn-outline" disabled={trabajando !== ''} onClick={() => void reavisar()}>
+                      {trabajando === 'avisando' ? 'Avisando…' : `Avisar de «${ESTADO_LABEL[q.estado]}»`}
+                    </button>
+                  )}
+                </span>
               </Field>
               <Field label="Listo antes del" hint={q.listo_at ? `Listo el ${fechaCorta(q.listo_at)}` : fecha ? fechaLarga(fecha) : 'Se fija sola al aceptar.'}>
                 <span className="fi-fila">
