@@ -12,6 +12,7 @@ import './presupuesto.css';
 import { CONTACTO, mailtoUrl, whatsappUrl } from '@/lib/contacto';
 import { EnvioCard } from './EnvioCard';
 import { RecibosCard } from './RecibosCard';
+import { RecogidaCard } from './RecogidaCard';
 import { euros } from '@/lib/recibo/types';
 
 interface StatusRow {
@@ -332,6 +333,10 @@ export function PresupuestoClient() {
             </div>
 
             {envio && <EnvioCard envio={envio} />}
+
+            {token && result.estado === 'listo' && result.entrega === 'recogida' && (
+              <RecogidaCard codigo={result.codigo} token={token} />
+            )}
 
             {token ? (
               <RecibosCard codigo={result.codigo} token={token} />

@@ -27,7 +27,8 @@ const DATA_DIR = join(tmpdir(), 'pg-3dcc-test');
 console.log('\n▸ Levantando PostgreSQL efímero…');
 // cleanup_mode=None: el servidor sobrevive a la salida del proceso python,
 // que si no se lleva la instancia por delante antes de que Node se conecte.
-const uri = execFileSync(
+// PG_URI=postgres://… uses an existing throwaway Postgres (e.g. Docker) instead.
+const uri = process.env.PG_URI || execFileSync(
   PYTHON,
   [
     '-c',
@@ -43,6 +44,7 @@ print(pgserver.get_server(d, cleanup_mode=None).get_uri())`
   .pop();
 
 function pararServidor() {
+  if (process.env.PG_URI) return;
   try {
     execFileSync(PYTHON, [
       '-c',
@@ -1549,6 +1551,58 @@ await check('gasto_filamento: igual que filamentUsageByColor/filamentSpendG/Eur 
   await client.query(`delete from public.orders where id like 'GF0000%'`);
   if (previoCfg) await upsert('config', previoCfg);
   if (previoInv) await upsert('inventory', previoInv); else await client.query(`delete from public.empresa_docs where empresa = '3dcc' and doc = 'inventory'`);
+});
+
+// ═══ citas de recogida ═════════════════════════════════════════════════════
+console.log('\n▸ Citas de recogida');
+
+await check('huecos de recogida: token, estado, doble reserva y RLS', async () => {
+  await comoAdmin();
+  const mk = async (nombre) => (await client.query(
+    `insert into public.quotes (nombre, email, telefono, material, cantidad, entrega, precio_total, estado)
+     values ($1, 'r@example.com', '600000000', 'PLA', 1, 'recogida', 10, 'listo') returning id, codigo, acepta_token`, [nombre])).rows[0];
+  const a = await mk('Recoge A');
+  const b = await mk('Recoge B');
+  const { rows: hs } = await client.query(
+    `insert into public.huecos_recogida (inicio) values (now() + interval '1 day'), (now() + interval '2 days'), (now() + interval '1 hour'), (now() + interval '10 years') returning id`);
+  const [h1, h2, hPronto, hLejos] = hs.map((r) => r.id);
+  await comoAnon();
+  const ver = async (q, t) => (await client.query('select * from public.get_huecos_recogida($1, $2)', [q.codigo, t])).rows;
+  const pedir = async (q, t, h) => (await client.query('select public.pedir_hueco_recogida($1, $2, $3) as ok', [q.codigo, t, h])).rows[0].ok;
+  const otro = '00000000-0000-0000-0000-000000000000';
+  assert((await ver(a, otro)).length === 0, 'sin token correcto ve huecos');
+  assert(!(await pedir(a, otro, h1)), 'reserva sin token');
+  const libres = await ver(a, a.acepta_token);
+  assert(libres.length === 2 && !libres.some((h) => h.id === hPronto || h.id === hLejos), 'solo de 2 h a 60 días vista');
+  assert(!(await pedir(a, a.acepta_token, hPronto)), 'reserva a menos de 2 h');
+  assert(!(await pedir(a, a.acepta_token, hLejos)), 'reserva a 10 años vista');
+  assert(await pedir(a, a.acepta_token, h1), 'A no pudo pedir h1');
+  assert(!(await pedir(b, b.acepta_token, h1)), 'B pisó el hueco de A');
+  assert(!(await ver(b, b.acepta_token)).some((h) => h.id === h1), 'B ve el hueco ocupado de A');
+  assert(await pedir(a, a.acepta_token, h2), 'A no pudo cambiar a h2');
+  assert(await pedir(b, b.acepta_token, h1), 'h1 no quedó libre al cambiar A');
+  await comoAdmin();
+  await client.query('update public.huecos_recogida set confirmada = true where id = $1', [h2]);
+  await comoAnon();
+  assert(!(await pedir(a, a.acepta_token, h1)), 'A movió una cita confirmada');
+  const mia = (await ver(a, a.acepta_token)).find((h) => h.mio);
+  assert(mia?.id === h2 && mia.confirmada, 'A no ve su cita confirmada');
+  for (const rol of ['anon', 'authenticated']) {
+    await client.query('begin');
+    let n = -1;
+    try {
+      await client.query(`set local role ${rol}`);
+      n = (await client.query('select * from public.huecos_recogida')).rows.length;
+    } catch { n = 0; } finally { await client.query('rollback'); }
+    assert(n === 0, `${rol} lee huecos_recogida (${n} filas)`);
+  }
+  await comoAdmin();
+  await client.query(`update public.quotes set estado = 'entregado' where id = $1`, [a.id]);
+  await comoAnon();
+  assert((await ver(a, a.acepta_token)).length === 0, 'tras entregar sigue viendo huecos');
+  await comoAdmin();
+  await client.query('delete from public.huecos_recogida where id = any($1)', [hs.map((r) => r.id)]);
+  await client.query('delete from public.quotes where id = any($1)', [[a.id, b.id]]);
 });
 
 // ── Cierre ─────────────────────────────────────────────────────────────────

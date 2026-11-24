@@ -591,6 +591,14 @@ export type Database = {
       // Read-only from the browser: campana-enviar / campana-baja write them.
       campana_envios: { Row: CampanaEnvio; Insert: never; Update: never; Relationships: [] };
       email_bajas: { Row: EmailBaja; Insert: never; Update: never; Relationships: [] };
+      huecos_recogida: {
+        Row: HuecoRecogida;
+        Insert: { inicio: string; lugar?: string };
+        Update: Partial<Pick<HuecoRecogida, 'quote_id' | 'confirmada' | 'pedida_at'>>;
+        Relationships: [
+          { foreignKeyName: 'huecos_recogida_quote_id_fkey'; columns: ['quote_id']; isOneToOne: true; referencedRelation: 'quotes'; referencedColumns: ['id'] }
+        ];
+      };
       cobros: {
         Row: Cobro;
         // Solo lectura desde el navegador: se escribe con registrar_cobro /
@@ -651,6 +659,14 @@ export type Database = {
       plazo_cola_horas: {
         Args: { p_excluir?: string };
         Returns: number;
+      };
+      get_huecos_recogida: {
+        Args: { p_codigo: string; p_token: string };
+        Returns: { id: string; inicio: string; lugar: string; mio: boolean; confirmada: boolean }[];
+      };
+      pedir_hueco_recogida: {
+        Args: { p_codigo: string; p_token: string; p_hueco: string };
+        Returns: boolean;
       };
       get_quote_plazo: {
         Args: { p_codigo: string };
@@ -717,4 +733,15 @@ export type Database = {
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };
+};
+
+/** Pickup slot in Salamanca (huecos_recogida). quote_id set = asked for. */
+export type HuecoRecogida = {
+  id: string;
+  inicio: string;
+  lugar: string;
+  quote_id: string | null;
+  confirmada: boolean;
+  pedida_at: string | null;
+  created_at: string;
 };

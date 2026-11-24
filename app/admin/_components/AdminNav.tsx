@@ -4,8 +4,9 @@ import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { NuevosBadge } from './NuevosBadge';
+import { CitasBadge, NuevosBadge } from './NuevosBadge';
 import { RebuildButton } from './RebuildButton';
+import { useAdminAuth } from './useAdminAuth';
 
 // Ordenado por el trabajo que se hace, de lo diario a lo raro: pedidos cada
 // día, la web de vez en cuando, los ajustes casi nunca. «Web» va plegado.
@@ -17,6 +18,7 @@ const GRUPOS: { titulo: string; plegado?: boolean; links: Enlace[] }[] = [
     titulo: 'Taller',
     links: [
       { href: '/admin/taller', label: 'Cola de impresión' },
+      { href: '/admin/entregas', label: 'Entregas', badge: <CitasBadge /> },
       { href: '/admin/filamento', label: 'Filamento gastado' }
     ]
   },
@@ -50,6 +52,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const ruta = sinBarra(usePathname() ?? '/admin');
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
+  const { authed } = useAdminAuth();
+  const esLogin = ruta === '/admin/login';
   const actual =
     ruta === '/admin/encargo' ? { label: 'Nuevo encargo' } : GRUPOS.flatMap((g) => g.links).find((l) => l.href === ruta);
 
@@ -73,10 +77,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [abierto]);
 
+  // Not an admin: off to the login, without drawing the menu first.
+  useEffect(() => {
+    if (authed === false && !esLogin) router.replace('/admin/login');
+  }, [authed, esLogin, router]);
+
   async function salir() {
     await createClient().auth.signOut();
     router.push('/admin/login');
   }
+
+  // Login alone, no menu; anything else stays blank until is_admin is confirmed.
+  if (esLogin) return <main className="adm-login">{children}</main>;
+  if (!authed) return null;
 
   return (
     <div className={'adm' + (abierto ? ' adm-abierto' : '')}>

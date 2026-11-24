@@ -140,7 +140,7 @@ const PLANTILLAS: Record<
     cuerpo: (q) =>
       q.entrega === 'envio'
         ? 'Tus piezas están terminadas y preparadas para el envío. Te confirmamos el seguimiento en cuanto salga.'
-        : 'Tus piezas están terminadas. Puedes pasar a recogerlas por Plza. Barrio Vidal (Salamanca) — escríbenos para cuadrar la hora.'
+        : 'Tus piezas están terminadas. Elige el día y la hora de recogida en Salamanca con el botón de abajo y te confirmamos la cita.'
   },
   entregado: {
     asunto: 'Pedido entregado',
@@ -155,6 +155,32 @@ const PLANTILLAS: Record<
       'Lo sentimos — esta pieza no es viable tal cual (tamaño, geometría o material). Respóndenos y buscamos una alternativa juntos.'
   }
 };
+
+// Pickup appointment emails (huecos_recogida), sent with body.cita.
+function citaTxt(h: any): string {
+  const f = new Date(h.inicio);
+  const dia = f.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid' });
+  const hora = f.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+  return `${dia} a las ${hora}`;
+}
+
+// .ics so the customer can add it to their phone's calendar (15 min slot).
+function ics(h: any, codigo: string): string {
+  const z = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const ini = new Date(h.inicio);
+  const esc = (t: string) => t.replace(/[\\;,]/g, (m) => '\\' + m);
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//3DCC//Recogida//ES', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:recogida-${h.id}@impresion3dcc.com`,
+    `DTSTAMP:${z(new Date())}`,
+    `DTSTART:${z(ini)}`,
+    `DTEND:${z(new Date(ini.getTime() + 15 * 60000))}`,
+    `SUMMARY:${esc(`Recoger pedido 3DCC ${codigo}`)}`,
+    `LOCATION:${esc(h.lugar)}`,
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+}
 
 // Nombre para el cliente (pedido_estados, 0026).
 const ESTADO_LABEL: Record<string, string> = {
@@ -258,7 +284,33 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Este cliente no dejó email: avísale por WhatsApp.' }, 400, allowedOrigin);
   }
 
-  const plantilla = PLANTILLAS[q.estado];
+  // Pickup appointment: confirm the slot the customer asked for, or ask for another.
+  const cita = body?.cita === 'confirmada' || body?.cita === 'otra' ? body.cita : null;
+  let hueco: any = null;
+  if (cita === 'confirmada') {
+    const { data: h } = await supabase
+      .from('huecos_recogida').select('*').eq('quote_id', q.id).eq('confirmada', true).maybeSingle();
+    if (!h) return json({ error: 'Este pedido no tiene cita confirmada.' }, 400, allowedOrigin);
+    hueco = h;
+    adjunto = { filename: 'recogida-3dcc.ics', content: btoa(unescape(encodeURIComponent(ics(h, q.codigo)))), tipo: 'text/calendar' } as any;
+  }
+  const mapa = hueco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hueco.lugar)}` : '';
+  const plantilla = cita === 'confirmada'
+    ? {
+        asunto: 'Cita de recogida confirmada',
+        titulo: 'Tu cita de recogida',
+        cuerpo: () => `Te esperamos el ${citaTxt(hueco)} en ${hueco.lugar}. Trae el código de tu pedido. Si te surge algo, avísanos por WhatsApp.`
+      }
+    : cita === 'otra'
+      ? {
+          asunto: 'Elige otra hora de recogida',
+          titulo: 'Esa hora no nos viene bien',
+          cuerpo: () => 'Lo sentimos, no podemos en la hora que elegiste. Pulsa el botón de abajo y elige otra; te la confirmamos enseguida.'
+        }
+      : PLANTILLAS[q.estado];
+  if (cita && (q.estado !== 'listo' || q.entrega !== 'recogida')) {
+    return json({ error: 'La cita solo vale para pedidos listos para recoger.' }, 400, allowedOrigin);
+  }
   if (!plantilla) {
     return json(
       { error: `Sin plantilla de aviso para el estado "${q.estado}".` },
@@ -291,12 +343,16 @@ Deno.serve(async (req: Request) => {
   // Deep link to the status page; for "revisado" include the personal accept
   // token so the customer can confirm the order in one click.
   const statusUrl = `https://www.impresion3dcc.com/presupuesto?codigo=${encodeURIComponent(q.codigo)}`;
+  // Same for «listo» pickups: the token lets them choose the pickup slot.
+  const eligeCita = q.estado === 'listo' && q.entrega === 'recogida' && cita !== 'confirmada';
   const linkUrl =
-    q.estado === 'revisado' && q.acepta_token
+    (q.estado === 'revisado' || eligeCita) && q.acepta_token
       ? `${statusUrl}&token=${encodeURIComponent(q.acepta_token)}`
       : statusUrl;
-  const linkLabel =
-    q.estado === 'revisado' ? 'Ver y aceptar mi presupuesto' : 'Seguir mi pedido';
+  const linkLabel = cita === 'confirmada'
+    ? 'Ver cómo llegar'
+    : q.estado === 'revisado' ? 'Ver y aceptar mi presupuesto' : eligeCita ? 'Elegir día de recogida' : 'Seguir mi pedido';
+  const botonUrl = cita === 'confirmada' ? mapa : linkUrl;
 
   const pagoTxt =
     q.pago === 'pagado'
@@ -314,7 +370,7 @@ ${cuerpo}
 ${pagoTxt ? '\n' + pagoTxt + '\n' : ''}
 Código:  ${q.codigo}
 Estado:  ${ESTADO_LABEL[q.estado] ?? q.estado}
-${linkLabel}: ${linkUrl}
+${linkLabel}: ${botonUrl}
 
 ¿Dudas? Responde a este email o WhatsApp: +34 923 793 123.
 
@@ -331,7 +387,7 @@ ${linkLabel}: ${linkUrl}
     <span style="display:inline-block;padding:8px 22px;background:#f0f9ff;border:1px solid #0EA5E9;border-radius:6px;font-family:monospace;font-size:18px;font-weight:700;color:#0EA5E9;letter-spacing:0.06em;">${escapeHtml(q.codigo)}</span>
   </div>
   <div style="text-align:center;margin:0 0 20px 0;">
-    <a href="${linkUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">${escapeHtml(linkLabel)}</a>
+    <a href="${botonUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5E9;color:#fff;border-radius:6px;font-weight:600;text-decoration:none;">${escapeHtml(linkLabel)}</a>
   </div>
   <p style="margin:0;color:#444;font-size:13px;">
     ¿Dudas? Responde a este email o <a href="https://wa.me/34923793123" style="color:#0EA5E9;">WhatsApp</a>.
@@ -360,7 +416,7 @@ ${linkLabel}: ${linkUrl}
       ...(adjunto
         ? {
             attachments: [
-              { filename: adjunto.filename, contentType: 'application/pdf', encoding: 'base64', content: adjunto.content }
+              { filename: adjunto.filename, contentType: (adjunto as any).tipo ?? 'application/pdf', encoding: 'base64', content: adjunto.content }
             ]
           }
         : {})
