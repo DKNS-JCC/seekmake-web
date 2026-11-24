@@ -1,21 +1,20 @@
 'use client';
 
-// Dinero → Estadísticas: arriba el dinero del taller (Dinero.tsx: facturado,
-// cobrado, beneficio, quién debe, aceptación, plazos, riesgo, tasador); debajo,
-// lo del tasador web (embudo, abandonos, tráfico, WhatsApp, materiales). Un
-// solo periodo para todo. Solo lectura, calculado en el navegador: el volumen
-// es el de un taller pequeño.
+// Lo que se ve en Dinero → Estadísticas (la carga está en page.tsx). Arriba, fijos, el periodo y las cifras del dinero;
+// debajo, una pestaña por pregunta: Dinero (por dónde entra, quién debe),
+// Pedidos (aceptación, plazos, riesgo, acierto del tasador), Tasador web
+// (embudo, tráfico, WhatsApp, materiales) y Se fueron (abandonos). Un solo
+// periodo para todo. Solo lectura, calculado en el navegador: el volumen es el
+// de un taller pequeño.
 
-import { useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useMemo, useState } from 'react';
 import type { Cobro, Quote, QuoteEstado, QuoteEvento, Recibo } from '@/lib/types';
-import { AccesoDenegado, useAdminAuth } from '../_components/useAdminAuth';
 import { AdminCabecera } from '../_components/AdminNav';
 import { ErrorBanner } from '../_components/ErrorBanner';
-import { mensajeDeError } from '@/lib/errors';
 import { Abandonos } from './Abandonos';
-import { Dinero, type FilaPedido } from './Dinero';
-import { Bar } from './Bar';
+import { PanelDinero, PanelPedidos, Tarjeta, useDinero, type FilaPedido } from './Dinero';
+import { Pestanas } from '../_components/Pestanas';
+import { Bar, Cifra } from './Bar';
 import { PERIODOS, spanDe, type PeriodoId } from '@/lib/quote/dinero';
 import { etiquetaOrigen } from '@/lib/tracking';
 
@@ -33,51 +32,32 @@ function porClave(claves: Map<string, string>, solicitaron: Set<string>): Fila[]
   return [...m].sort((a, b) => b[1].visitas - a[1].visitas);
 }
 
+const VISTAS = [
+  { value: 'dinero', label: 'Dinero' },
+  { value: 'pedidos', label: 'Pedidos' },
+  { value: 'tasador', label: 'Tasador' },
+  { value: 'abandonos', label: 'Se fueron' }
+];
+
 const ESTADOS_EN_FIRME: QuoteEstado[] = ['aceptado', 'imprimiendo', 'listo', 'entregado'];
 
-export default function AdminEstadisticas() {
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [eventos, setEventos] = useState<QuoteEvento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filas, setFilas] = useState<FilaPedido[]>([]);
-  const [cobros, setCobros] = useState<Cobro[]>([]);
-  const [recibos, setRecibos] = useState<Recibo[]>([]);
-  const [error, setError] = useState<string | null>(null);
+export type Datos = {
+  quotes: Quote[];
+  eventos: QuoteEvento[];
+  filas: FilaPedido[];
+  cobros: Cobro[];
+  recibos: Recibo[];
+};
+
+/** La página sin la carga: page.tsx le pasa los datos (y así se puede probar con datos de ejemplo). */
+export function Estadisticas({ quotes, eventos, filas, cobros, recibos, error }: Datos & { error?: string | null }) {
   const [periodo, setPeriodo] = useState<PeriodoId>('30');
   const [mes, setMes] = useState('');
-  const { authed } = useAdminAuth();
-
-  useEffect(() => {
-    const supabase = createClient();
-    Promise.all([
-      supabase.from('quotes').select('*').order('created_at', { ascending: false }),
-      supabase
-        .from('quote_events')
-        .select('*')
-        .gte('created_at', new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString())
-        .order('created_at', { ascending: false })
-        .limit(5000),
-      supabase.from('orders').select('id, quote_id, data').eq('empresa', '3dcc'),
-      supabase.from('cobros').select('*').eq('empresa', '3dcc'),
-      supabase.from('recibos').select('id, codigo, cobro_id, anulado_at')
-    ]).then(([qres, eres, ores, cres, rres]) => {
-      const fallo = [qres, ores, cres].find((r) => r.error)?.error;
-      if (fallo) setError(mensajeDeError(fallo, 'No se pudieron cargar todos los datos'));
-      setQuotes((qres.data as Quote[]) ?? []);
-      setEventos((eres.data as QuoteEvento[]) ?? []);
-      setFilas((ores.data as unknown as FilaPedido[]) ?? []);
-      setCobros((cres.data as unknown as Cobro[]) ?? []);
-      setRecibos((rres.data as unknown as Recibo[]) ?? []);
-      setLoading(false);
-    });
-  }, []);
+  const [vista, setVista] = useState('dinero');
 
   // Un mes concreto tiene prioridad sobre las píldoras mientras esté puesto.
   const span = useMemo(() => spanDe(mes ? 'concreto' : periodo, mes), [periodo, mes]);
   const desde = span.from;
-  const etiqueta = mes
-    ? new Date(span.from).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-    : (PERIODOS.find((x) => x.id === periodo)?.label ?? '').toLowerCase();
 
   const stats = useMemo(() => {
     // Archivar un pedido terminado (0027) no lo borra de la historia; el resto
@@ -209,8 +189,7 @@ export default function AdminEstadisticas() {
     };
   }, [quotes, eventos, desde, span.to]);
 
-  if (authed === false) return <AccesoDenegado />;
-  if (loading) return <p style={{ color: 'var(--muted)' }}>Cargando…</p>;
+  const dinero = useDinero({ filas, quotes, cobros, recibos, span });
 
   const maxMaterial = Math.max(1, ...stats.porMaterial.map(([, c]) => c));
   const maxSemana = Math.max(1, ...stats.semanas.map((s) => s.count));
@@ -220,11 +199,19 @@ export default function AdminEstadisticas() {
   const topEmbudo = Math.max(1, f.visitas, f.sesionesConPieza);
   const pctAbandono = f.precioVisto > 0 ? (f.abandonos / f.precioVisto) * 100 : 0;
 
+  const lista = (titulo: string, filas: Fila[]) => (
+    <Tarjeta key={titulo} titulo={titulo}>
+      {filas.slice(0, 8).map(([k, r]) => (
+        <Bar key={k} label={k} value={r.visitas} max={Math.max(1, filas[0][1].visitas)} suffix={` · ${r.solicitudes} sol.`} />
+      ))}
+      {!filas.length && <p className="hoy-vacio">Sin datos aún.</p>}
+    </Tarjeta>
+  );
+
   return (
     <div>
       <AdminCabecera titulo="Estadísticas">
-        El dinero sale de los pedidos y del libro de cobros; el embudo, las visitas y los materiales son solo
-        del tasador web. Todo usa el mismo periodo.
+        El periodo elegido vale para todas las pestañas.
       </AdminCabecera>
       <div className="est-periodo" role="group" aria-label="Periodo">
         {PERIODOS.map((p) => (
@@ -242,115 +229,117 @@ export default function AdminEstadisticas() {
       </div>
       {error && <ErrorBanner>{error}</ErrorBanner>}
 
-      <Dinero filas={filas} quotes={quotes} cobros={cobros} recibos={recibos} span={span} />
+      <div className="est-pestanas">
+        <Pestanas id="est" etiqueta="Qué mirar" value={vista} onChange={setVista} pestanas={VISTAS} />
+      </div>
 
-      <h2 className="est-titulo">Tasador web</h2>
+      <div role="tabpanel" id="est-panel" aria-labelledby={`est-${vista}`}>
+        {vista === 'dinero' && <PanelDinero d={dinero} />}
+        {vista === 'pedidos' && <PanelPedidos d={dinero} />}
 
-      {/* Funnel */}
-      <section className="adm-card">
-        <h2 className="adm-card-titulo">Embudo ({etiqueta})</h2>
-        <Bar label="Visitaron" value={f.visitas} max={topEmbudo} color="#6b7280" />
-        <Bar label="Subieron pieza" value={f.sesionesConPieza} max={topEmbudo} color="#0EA5E9" />
-        <Bar label="Antes del precio" value={f.antesDelPrecio} max={topEmbudo} color="#6b7280" />
-        <Bar label="Vieron el precio" value={f.precioVisto} max={topEmbudo} color="#0EA5E9" />
-        <Bar label="Se fueron sin más" value={f.abandonos} max={topEmbudo} color="#ef4444" />
-        <Bar label="Descargaron PDF" value={f.pdfs} max={topEmbudo} color="#eab308" />
-        <Bar label="Abrieron formulario" value={f.formularios} max={topEmbudo} color="#a855f7" />
-        <Bar label="Error en formulario" value={f.conError} max={topEmbudo} color="#ef4444" />
-        <Bar label="Solicitaron" value={f.solicitudes} max={topEmbudo} color="#a855f7" />
-        <Bar label="Pidieron por WhatsApp" value={f.whatsapp} max={topEmbudo} color="#25D366" />
-        <Bar label="Aceptaron" value={f.aceptados} max={topEmbudo} color="#10b981" />
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
-          Conversión a solicitud: <strong>{convSolicitud.toFixed(0)}%</strong> ·
-          solicitud → aceptado: <strong>{convAceptado.toFixed(0)}%</strong> ·
-          abandono tras ver el precio: <strong>{pctAbandono.toFixed(0)}%</strong>
-        </p>
-      </section>
-
-      {/* Who left without asking */}
-      <section className="adm-card">
-        <h2 className="adm-card-titulo">Se fueron sin pedir ({etiqueta})</h2>
-        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
-          Cada visita anónima que subió algo y no envió la solicitud: qué subió, cuántas veces y el
-          último precio que vio. «También en otras visitas» es la misma pieza subida otro día o por
-          otra persona. Las miniaturas se borran a los 30 días.
-        </p>
-        <Abandonos eventos={eventos} desde={desde} />
-      </section>
-
-      {/* Traffic */}
-      <section className="adm-card">
-        <h2 className="adm-card-titulo">De dónde vienen ({etiqueta})</h2>
-        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
-          Visitas al tasador y, al lado, cuántas acabaron en solicitud. Sin tus sesiones: el
-          navegador que entra al admin (o abre la web con ?no-rastrear=1) no cuenta.
-        </p>
-        {[
-          ['Origen', stats.porOrigen],
-          ['Dispositivo', stats.porDispositivo],
-          ['Entrega', stats.porZona]
-        ].map(([titulo, filas]) => (
-          <div key={titulo as string} style={{ marginBottom: 14 }}>
-            <h3 style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 6px' }}>{titulo as string}</h3>
-            {(filas as Fila[]).slice(0, 8).map(([k, r]) => (
-              <Bar key={k} label={k} value={r.visitas} max={Math.max(1, (filas as Fila[])[0][1].visitas)} color="#0EA5E9" suffix={` · ${r.solicitudes} sol.`} />
-            ))}
-            {!(filas as Fila[]).length && <p style={{ fontSize: 12, color: 'var(--muted)' }}>Sin datos aún.</p>}
-          </div>
-        ))}
-        {stats.errores.length > 0 && (
+        {vista === 'tasador' && (
           <>
-            <h3 style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 6px' }}>Errores del formulario</h3>
-            {stats.errores.slice(0, 6).map(([m, c]) => (
-              <Bar key={m} label={m} value={c} max={stats.errores[0][1]} color="#ef4444" />
-            ))}
+            <div className="est-cifras">
+              <Cifra label="Visitas" valor={f.visitas} nota="al tasador" />
+              <Cifra label="Solicitudes" valor={f.solicitudes} nota={`${f.aceptados} aceptadas`} />
+              <Cifra label="Conversión" valor={`${convSolicitud.toFixed(0)} %`} nota="de quien sube pieza, solicita" />
+              <Cifra label="Aceptación" valor={`${convAceptado.toFixed(0)} %`} nota="de las solicitudes" />
+              <Cifra label="Abandono" valor={`${pctAbandono.toFixed(0)} %`} nota="tras ver el precio" />
+            </div>
+            <div className="est-grid">
+              <Tarjeta titulo="Embudo">
+                {([
+                  ['Visitaron', f.visitas],
+                  ['Subieron pieza', f.sesionesConPieza],
+                  ['Vieron el precio', f.precioVisto],
+                  ['Solicitaron', f.solicitudes],
+                  ['Aceptaron', f.aceptados]
+                ] as const).map(([l, v], i, todos) => (
+                  <Bar
+                    key={l}
+                    label={l}
+                    value={v}
+                    max={topEmbudo}
+                    // Qué parte del paso anterior llega a este.
+                    texto={i > 0 && todos[i - 1][1] > 0 ? `${v} · ${Math.round((v / todos[i - 1][1]) * 100)} %` : String(v)}
+                  />
+                ))}
+                <h3 className="est-sub">Por el camino</h3>
+                <Bar tenue label="Antes del precio" value={f.antesDelPrecio} max={topEmbudo} />
+                <Bar tenue label="Se fueron sin más" value={f.abandonos} max={topEmbudo} />
+                <Bar tenue label="Descargaron PDF" value={f.pdfs} max={topEmbudo} />
+                <Bar tenue label="Abrieron formulario" value={f.formularios} max={topEmbudo} />
+                <Bar tenue label="Error en formulario" value={f.conError} max={topEmbudo} />
+                <Bar tenue label="Pidieron por WhatsApp" value={f.whatsapp} max={topEmbudo} />
+                <p className="est-nota">El % es cuántos del paso anterior llegan a este.</p>
+              </Tarjeta>
+
+              <Tarjeta titulo="Solicitudes por semana (8 semanas)">
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}>
+                  {stats.semanas.map((s, i) => (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600 }}>{s.count}</span>
+                      <div
+                        style={{
+                          width: '100%',
+                          maxWidth: 48,
+                          height: `${Math.max(3, (s.count / maxSemana) * 80)}px`,
+                          background: 'var(--accent)',
+                          opacity: s.count > 0 ? 1 : 0.25,
+                          borderRadius: '4px 4px 0 0'
+                        }}
+                      />
+                      <span style={{ fontSize: 10, color: 'var(--muted)' }}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </Tarjeta>
+
+              {lista('Origen', stats.porOrigen)}
+              {lista('Dispositivo', stats.porDispositivo)}
+              {lista('Entrega', stats.porZona)}
+
+              <Tarjeta titulo={`Clics en WhatsApp · ${stats.whatsapp.reduce((n, [, c]) => n + c, 0)}`}>
+                {stats.whatsapp.slice(0, 8).map(([pagina, c]) => (
+                  <Bar key={pagina} label={pagina} value={c} max={Math.max(1, stats.whatsapp[0][1])} />
+                ))}
+                {!stats.whatsapp.length && <p className="hoy-vacio">Sin clics en el periodo.</p>}
+              </Tarjeta>
+
+              <Tarjeta titulo="Materiales solicitados">
+                {stats.porMaterial.map(([mat, count]) => (
+                  <Bar key={mat} label={mat} value={count} max={maxMaterial} />
+                ))}
+                {!stats.porMaterial.length && <p className="hoy-vacio">Sin solicitudes en el periodo.</p>}
+              </Tarjeta>
+
+              {stats.errores.length > 0 && (
+                <Tarjeta titulo="Errores del formulario">
+                  {stats.errores.slice(0, 6).map(([m, c]) => (
+                    <Bar key={m} label={m} value={c} max={stats.errores[0][1]} />
+                  ))}
+                </Tarjeta>
+              )}
+            </div>
+            <p className="est-nota">
+              Las visitas no incluyen tus sesiones: el navegador que entra al admin (o abre la web con
+              ?no-rastrear=1) no cuenta. «sol.» = cuántas de esas visitas acabaron en solicitud.
+            </p>
           </>
         )}
-      </section>
 
-      {/* WhatsApp */}
-      <section className="adm-card">
-        <h2 className="adm-card-titulo">
-          Clics en WhatsApp ({etiqueta}): {stats.whatsapp.reduce((n, [, c]) => n + c, 0)}
-        </h2>
-        {stats.whatsapp.slice(0, 8).map(([pagina, c]) => (
-          <Bar key={pagina} label={pagina} value={c} max={Math.max(1, stats.whatsapp[0][1])} color="#15803d" />
-        ))}
-      </section>
-
-      {/* Weekly volume */}
-      <section className="adm-card">
-        <h2 className="adm-card-titulo">Solicitudes por semana (8 semanas)</h2>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}>
-          {stats.semanas.map((s, i) => (
-            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>{s.count}</span>
-              <div
-                style={{
-                  width: '100%',
-                  maxWidth: 48,
-                  height: `${Math.max(3, (s.count / maxSemana) * 80)}px`,
-                  background: 'var(--accent)',
-                  opacity: s.count > 0 ? 1 : 0.25,
-                  borderRadius: '4px 4px 0 0'
-                }}
-              />
-              <span style={{ fontSize: 10, color: 'var(--muted)' }}>{s.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Materials */}
-      <section className="adm-card">
-        <h2 className="adm-card-titulo">Materiales solicitados ({etiqueta})</h2>
-        {stats.porMaterial.length === 0 && (
-          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Sin solicitudes en el periodo.</p>
+        {vista === 'abandonos' && (
+          <section className="adm-card">
+            <h2 className="adm-card-titulo">Se fueron sin pedir</h2>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-4px 0 12px' }}>
+              Cada visita anónima que subió algo y no envió la solicitud: qué subió, cuántas veces y el
+              último precio que vio. «También en otras visitas» es la misma pieza subida otro día o por
+              otra persona. Las miniaturas se borran a los 30 días.
+            </p>
+            <Abandonos eventos={eventos} desde={desde} />
+          </section>
         )}
-        {stats.porMaterial.map(([mat, count]) => (
-          <Bar key={mat} label={mat} value={count} max={maxMaterial} color="#0EA5E9" />
-        ))}
-      </section>
+      </div>
     </div>
   );
 }
