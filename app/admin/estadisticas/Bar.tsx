@@ -1,40 +1,42 @@
 // Barra horizontal de un dato (sin librería de gráficos): etiqueta, barra, cifra.
+// Una serie = un color (el acento); `tenue` para lo secundario. Las etiquetas
+// largas se cortan con «…» y el texto completo queda en el title.
 
 export function Bar({
   label,
   value,
   max,
-  color,
   suffix,
-  texto
+  texto,
+  tenue
 }: {
   label: string;
   value: number;
   max: number;
-  color: string;
   suffix?: string;
   /** Cifra ya formateada (sustituye a value + suffix). */
   texto?: string;
+  tenue?: boolean;
 }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-      <span style={{ width: 110, fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 4, height: 18, overflow: 'hidden' }} aria-hidden="true">
-        <div
-          style={{
-            width: `${pct}%`,
-            minWidth: value > 0 ? 4 : 0,
-            height: '100%',
-            background: color,
-            borderRadius: 4,
-            transition: 'width 0.4s'
-          }}
-        />
-      </div>
-      <span style={{ minWidth: 70, fontSize: 12, fontWeight: 600, textAlign: 'right', flexShrink: 0 }}>
-        {texto ?? `${value}${suffix ?? ''}`}
+    <div className="est-bar" title={label}>
+      <span className="est-bar-label">{label}</span>
+      <span className="est-bar-pista" aria-hidden="true">
+        <span className={'est-bar-valor' + (tenue ? ' tenue' : '')} style={{ width: `${pct}%`, minWidth: value > 0 ? 4 : 0 }} />
       </span>
+      <span className="est-bar-cifra">{texto ?? `${value}${suffix ?? ''}`}</span>
+    </div>
+  );
+}
+
+/** Cifra destacada: qué es, el número y una nota opcional debajo. */
+export function Cifra({ label, valor, nota }: { label: string; valor: string | number; nota?: string }) {
+  return (
+    <div className="est-cifra">
+      <span className="est-cifra-label">{label}</span>
+      <strong>{valor}</strong>
+      {nota && <small>{nota}</small>}
     </div>
   );
 }

@@ -325,7 +325,7 @@ await check('Ficha: cabecera con el siguiente paso, cuatro pestañas y señal pe
     urgente: false, precio_firme: false, created_at: '2026-11-01T10:00:00Z', updated_at: '2026-11-01T10:00:00Z'
   };
   const pedido = { id: 'AB12CD34', quote_id: 'q1', data: { coste_bruto: 4.2, repeticiones_error: 1, peso_g: '12.8', horas: '1.5', filamento: 'PLA', filamento_color: 'Negro', impresora: 'Creality K1C' } };
-  const acciones = { mover: async () => {}, archivar: async () => {}, eliminar: async () => {}, duplicar: async () => {}, releer: async () => {}, avisar: () => {} };
+  const acciones = { mover: async () => {}, archivar: async () => {}, eliminar: async () => {}, duplicar: async () => {}, releer: async () => {}, avisar: () => {}, avisarCliente: async () => '' };
   const html = render(Ficha, { q: quote, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'resumen', onPestana: () => {}, onCerrar: () => {}, acciones });
   assert(html.includes('Marcar listo y avisar') && html.includes('sin avisar'), 'no ofrece el siguiente paso con aviso');
   for (const p of ['Resumen', 'Piezas', 'Cobros', 'Envío']) assert(html.includes(`>${p}<`), `falta la pestaña ${p}`);
@@ -335,6 +335,8 @@ await check('Ficha: cabecera con el siguiente paso, cuatro pestañas y señal pe
   // Sin email no se ofrece avisar.
   const sin = render(Ficha, { q: { ...quote, email: '' }, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'resumen', onPestana: () => {}, onCerrar: () => {}, acciones });
   assert(sin.includes('Marcar listo') && !sin.includes('y avisar'), 'ofrece avisar sin email');
+  // Avisar en cualquier momento del estado actual, solo con email.
+  assert(html.includes('Avisar de «En producción»') && !sin.includes('Avisar de «'), 'no ofrece avisar del estado actual');
   // Una solicitud nueva se presupuesta en «Nuevo encargo».
   const nuevo = render(Ficha, { q: { ...quote, estado: 'nuevo', origen: 'web' }, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'piezas', onPestana: () => {}, onCerrar: () => {}, acciones });
   assert(nuevo.includes('/admin/encargo?solicitud=Q-2026-0142'), 'no enlaza a presupuestar');
@@ -353,7 +355,7 @@ await check('Ficha: un pedido web de varias piezas enseña cada una (fase 8)', a
     { nombre: 'tapa.stl', cantidad: 3, material: 'PLA', colores: [{ nombre: 'Negro', hex: '#000000', parte: '' }], peso_g: 12.5, horas: 0.75 },
     { nombre: 'qr.3mf', cantidad: 1, material: 'PETG', colores: [{ nombre: 'Blanco', hex: '#ffffff', parte: 'Base' }, { nombre: 'Negro', hex: '#000000', parte: 'Código' }], peso_g: 30, horas: 2 }
   ];
-  const acciones = { mover: async () => {}, archivar: async () => {}, eliminar: async () => {}, duplicar: async () => {}, releer: async () => {}, avisar: () => {} };
+  const acciones = { mover: async () => {}, archivar: async () => {}, eliminar: async () => {}, duplicar: async () => {}, releer: async () => {}, avisar: () => {}, avisarCliente: async () => '' };
   const props = { q, conPedido: true, ajustes: normalizeSettings(null), pestana: 'piezas', onPestana: () => {}, onCerrar: () => {}, acciones };
   const html = render(Ficha, { ...props, pedido: { id: 'P2', quote_id: 'q2', data: { peso_g: '68', horas: '4.25', filamento: 'PLA, PETG', piezas } } });
   assert(html.includes('Piezas del pedido (2)'), 'no enseña la lista de piezas');
@@ -366,7 +368,12 @@ await check('Ficha: un pedido web de varias piezas enseña cada una (fase 8)', a
 });
 
 // ── Dinero (fase 5) ─────────────────────────────────────────────────────────
-const { Dinero } = await cargar('app/admin/estadisticas/Dinero.tsx', 'dinero');
+const { useDinero, PanelDinero, PanelPedidos } = await cargar('app/admin/estadisticas/Dinero.tsx', 'dinero');
+// La página pinta las cifras arriba y cada panel en su pestaña: aquí, todo junto.
+const Dinero = (props) => {
+  const d = useDinero(props);
+  return createElement('div', null, createElement(PanelDinero, { d }), createElement(PanelPedidos, { d }));
+};
 const { spanDe } = await cargar('lib/quote/dinero.ts', 'dinero-lib');
 
 await check('Dinero: cifras del periodo, cobros por método y bloques con su pregunta', async () => {
@@ -388,7 +395,7 @@ await check('Dinero: cifras del periodo, cobros por método y bloques con su pre
     span: spanDe('concreto', '2026-11')
   });
   // Dos pedidos comprometidos de 40 € y 10 € de coste × 2 pasadas: 80 € facturados.
-  assert(html.includes('80,00 €') && html.includes('facturado'), 'no enseña lo facturado');
+  assert(html.includes('80,00 €') && html.includes('Facturado'), 'no enseña lo facturado');
   assert(html.includes('20,00 €') && !html.includes('99,00 €'), 'el cobro anulado cuenta o falta el cobrado');
   assert(html.includes('Bizum') && html.includes('R-2026-0001'), 'cobros por método o justificante');
   for (const t of ['¿Cuánto entra y por dónde?', '¿Quién debe?', '¿Se aceptan los presupuestos?', '¿Se cumplen los plazos?', '¿Acierta el riesgo?', '¿Acierta el tasador?']) {

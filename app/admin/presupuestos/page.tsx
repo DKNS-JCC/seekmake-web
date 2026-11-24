@@ -19,6 +19,7 @@ import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { AdminCabecera } from '../_components/AdminNav';
 import { ErrorBanner } from '../_components/ErrorBanner';
 import { useAviso } from '../_components/Aviso';
+import { useConfirm } from '../_components/useConfirm';
 import { Ficha } from './Ficha';
 import {
   AVISABLES, ESTADO_COLOR, ESTADO_LABEL, FILTROS, PAGO_LABEL, siguientePaso,
@@ -33,6 +34,7 @@ const importe = (q: Quote) => Number(q.precio_final ?? q.precio_total);
 export default function AdminPedidos() {
   const { authed, supabase } = useAdminAuth();
   const { avisar, aviso } = useAviso();
+  const { confirmar, dialogo } = useConfirm();
 
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [pedidos, setPedidos] = useState<Map<string, PedidoRow>>(new Map());
@@ -150,9 +152,23 @@ export default function AdminPedidos() {
     }
   }
 
-  /** Cambia de estado. Aceptar apunta el material; entregar con todo cobrado archiva. */
-  async function mover(q: Quote, a: QuoteEstado, conAviso: boolean) {
+  /**
+   * Cambia de estado. Aceptar apunta el material; entregar con todo cobrado
+   * archiva. Sin conAviso (el desplegable de la ficha) pregunta si avisar.
+   */
+  async function mover(q: Quote, a: QuoteEstado, conAviso?: boolean) {
+    if (a === q.estado) return;
     setError(null);
+    if (conAviso === undefined && q.email && AVISABLES.includes(a)) {
+      conAviso = await confirmar({
+        titulo: `Pasar a «${ESTADO_LABEL[a]}»`,
+        mensaje: `¿Mandamos a ${q.nombre} el email de «${ESTADO_LABEL[a]}»?`,
+        detalle: 'Si el cambio es para corregir un error, mejor sin avisar.',
+        confirmar: 'Avisar',
+        cancelar: 'Sin avisar',
+        destructivo: false
+      });
+    }
     const antes = q.estado;
     const { error: err } = await supabase().from('quotes').update({ estado: a }).eq('id', q.id);
     if (err) {
@@ -311,7 +327,7 @@ export default function AdminPedidos() {
         className="pq-siguiente"
         onClick={(e) => {
           e.stopPropagation();
-          void mover(q, s.a, false);
+          void mover(q, s.a, true);
         }}
       >
         {s.label} ▸
@@ -322,6 +338,7 @@ export default function AdminPedidos() {
   return (
     <div>
       {aviso}
+      {dialogo}
       <AdminCabecera
         titulo="Pedidos"
         acciones={<Link href="/admin/encargo" className="btn-primary">+ Nuevo encargo</Link>}
@@ -450,6 +467,7 @@ export default function AdminPedidos() {
           duplicar,
           releer,
           avisar,
+          avisarCliente,
           eliminar: async (q) => eliminar(q)
         }}
       />

@@ -4,6 +4,8 @@
 // presupuestos, si se cumplen los plazos y si los precios aciertan. Todo sale
 // de los pedidos (orders.data), el libro de cobros y las solicitudes, con las
 // reglas de la Calculadora 7.2 (lib/quote/dinero.ts). Solo barras y tablas.
+// useDinero calcula una vez; Kpis, PanelDinero y PanelPedidos lo pintan en
+// sitios distintos de la página (cifras arriba y una pestaña cada uno).
 
 import { useMemo } from 'react';
 import Link from 'next/link';
@@ -16,7 +18,7 @@ import {
   TRAMOS, aceptacion, aciertoRiesgo, caja, csvPedidos, deudas, enSpan, puntualidad, recurrentes, resumen, tramoDe,
   type Pedido, type Span
 } from '@/lib/quote/dinero';
-import { Bar } from './Bar';
+import { Bar, Cifra } from './Bar';
 
 export type FilaPedido = { id: string; quote_id: string | null; data: Pedido };
 
@@ -24,16 +26,16 @@ const pct = (n: number) => `${Math.round(n)} %`;
 const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-ES');
 const vacio = <p className="hoy-vacio">Sin datos en este periodo.</p>;
 
-function Tarjeta({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+export function Tarjeta({ titulo, children, ancha }: { titulo: string; children: React.ReactNode; ancha?: boolean }) {
   return (
-    <section className="adm-card">
+    <section className={'adm-card' + (ancha ? ' est-ancha' : '')}>
       <h2 className="adm-card-titulo">{titulo}</h2>
       {children}
     </section>
   );
 }
 
-export function Dinero({
+export function useDinero({
   filas,
   quotes,
   cobros,
@@ -72,6 +74,7 @@ export function Dinero({
     const ratios = midi.map((q) => Number(q.coste_real) / Number(q.coste_estimado));
     return {
       r, c, debe, porOrigen, porTramo, pun, vencidas,
+      acept: aceptacion(r.emitidos),
       riesgo: aciertoRiesgo(r.comprometidos),
       repiten: recurrentes(r.comprometidos).slice(0, 5),
       tasador: {
@@ -90,6 +93,26 @@ export function Dinero({
   // Cada pedido de taller con su solicitud (para enlazar a la ficha).
   const quoteDePedido = useMemo(() => new Map(filas.map((f) => [f.data, f.quote_id ? quoteDe.get(f.quote_id) : undefined])), [filas, quoteDe]);
   const reciboDe = useMemo(() => new Map(recibos.filter((x) => !x.anulado_at && x.cobro_id).map((x) => [x.cobro_id as string, x])), [recibos]);
+  return { ...d, quoteDe, quoteDePedido, reciboDe, pendienteTotal: d.debe.reduce((s, x) => s + x.saldo, 0) };
+}
+
+type D = ReturnType<typeof useDinero>;
+
+function Kpis({ d }: { d: D }) {
+  return (
+    <div className="est-cifras">
+      <Cifra label="Facturado" valor={euros(d.r.facturado)} nota="pedidos aceptados" />
+      <Cifra label="Cobrado" valor={euros(d.c.total)} nota={`${d.cobrosLista.length} cobro${d.cobrosLista.length === 1 ? '' : 's'}`} />
+      <Cifra label="Beneficio" valor={euros(d.r.beneficio)} nota={d.r.facturado > 0 ? `margen ${pct(d.r.margenPct)}` : undefined} />
+      <Cifra label="Por cobrar" valor={euros(d.pendienteTotal)} nota={`${d.debe.length} pedido${d.debe.length === 1 ? '' : 's'}, a día de hoy`} />
+      <Cifra label="Beneficio / hora" valor={d.r.horas > 0 ? euros(d.r.beneficioHora) : '—'} nota="de impresora" />
+    </div>
+  );
+}
+
+/** Pestaña «Dinero»: por dónde entra, quién debe, quién repite. */
+export function PanelDinero({ d }: { d: D }) {
+  const { quoteDe, quoteDePedido, reciboDe } = d;
   function exportarCsv() {
     const blob = new Blob(['﻿' + csvPedidos(d.r.emitidos)], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
@@ -98,41 +121,35 @@ export function Dinero({
     a.click();
     URL.revokeObjectURL(a.href);
   }
-  const pendienteTotal = d.debe.reduce((s, x) => s + x.saldo, 0);
+  const deudor = ({ pedido: o, saldo, dias }: (typeof d.debe)[number]) => {
+    const q = quoteDePedido.get(o);
+    return (
+      <li key={String(o.id)}>
+        {q ? (
+          <Link href={`/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}&pestana=cobros`} className="est-fila">
+            <span><strong>{String(o.cliente || q.nombre)}</strong><small>{q.codigo} · hace {dias} día{dias === 1 ? '' : 's'}</small></span>
+            <span className="adm-num">{euros(saldo)}</span>
+          </Link>
+        ) : (
+          <span className="est-fila"><span><strong>{String(o.cliente)}</strong><small>hace {dias} días</small></span><span className="adm-num">{euros(saldo)}</span></span>
+        )}
+      </li>
+    );
+  };
   const maxMetodo = Math.max(1, ...d.c.porMetodo.map(([, v]) => v));
-  const filaAcept = (x: (typeof d.porOrigen)[number]) => (
-    <tr key={x.nombre}>
-      <td>{x.nombre}</td>
-      <td data-label="Presupuestos" className="adm-num">{x.emitidos}</td>
-      <td data-label="Aceptados" className="adm-num">{x.aceptados}</td>
-      <td data-label="Descartados" className="adm-num">{x.descartados}</td>
-      <td data-label="Abiertos" className="adm-num">{x.abiertos}</td>
-      <td data-label="Aceptación" className="adm-num">{x.aceptados + x.descartados > 0 ? pct(x.conversionPct) : '—'}</td>
-    </tr>
-  );
-  const cabAcept = (
-    <thead>
-      <tr><th /><th>Presupuestos</th><th>Aceptados</th><th>Descartados</th><th>Abiertos</th><th>Aceptación</th></tr>
-    </thead>
-  );
-
   return (
     <>
-      <div className="hoy-kpis">
-        <div><span>{euros(d.r.facturado)}</span>facturado (aceptados)</div>
-        <div><span>{euros(d.c.total)}</span>cobrado</div>
-        <div><span>{euros(d.r.beneficio)}</span>beneficio real{d.r.facturado > 0 ? ` · ${pct(d.r.margenPct)}` : ''}</div>
-        <div><span>{euros(pendienteTotal)}</span>pendiente de cobro (hoy)</div>
-        <div><span>{d.r.horas > 0 ? euros(d.r.beneficioHora) : '—'}</span>beneficio por hora de impresora</div>
-      </div>
-
-      <Tarjeta titulo="¿Cuánto entra y por dónde?">
+      <Kpis d={d} />
+      <div className="est-grid">
+      <Tarjeta titulo="¿Cuánto entra y por dónde?" ancha>
         {d.c.porMetodo.length === 0 ? vacio : (
           <>
             {d.c.porMetodo.map(([m, v]) => (
-              <Bar key={m} label={m} value={v} max={maxMetodo} color="#0EA5E9" texto={euros(v)} />
+              <Bar key={m} label={m} value={v} max={maxMetodo} texto={euros(v)} />
             ))}
-            <table className="adm-tabla" style={{ marginTop: 14 }}>
+            <details className="est-mas">
+            <summary>Ver los cobros ({d.cobrosLista.length})</summary>
+            <table className="adm-tabla" style={{ marginTop: 8 }}>
               <thead>
                 <tr><th>Fecha</th><th>Pedido</th><th>Cliente</th><th>Método</th><th style={{ textAlign: 'right' }}>Importe</th><th>Justificante</th></tr>
               </thead>
@@ -157,34 +174,73 @@ export function Dinero({
                 <tr><td colSpan={4} style={{ textAlign: 'right' }}><strong>Total</strong></td><td className="adm-num"><strong>{euros(d.c.total)}</strong></td><td /></tr>
               </tfoot>
             </table>
+            </details>
           </>
         )}
       </Tarjeta>
 
-      <Tarjeta titulo="¿Quién debe?">
+      <Tarjeta titulo={`¿Quién debe? · ${euros(d.pendienteTotal)}`}>
         {d.debe.length === 0 ? <p className="hoy-vacio">Todo lo aceptado está cobrado.</p> : (
-          <ul className="est-lista">
-            {d.debe.slice(0, 10).map(({ pedido: o, saldo, dias }) => {
-              const q = quoteDePedido.get(o);
-              return (
-                <li key={String(o.id)}>
-                  {q ? (
-                    <Link href={`/admin/presupuestos?abrir=${encodeURIComponent(q.codigo)}&pestana=cobros`} className="est-fila">
-                      <span><strong>{String(o.cliente || q.nombre)}</strong><small>{q.codigo} · hace {dias} día{dias === 1 ? '' : 's'}</small></span>
-                      <span className="adm-num">{euros(saldo)}</span>
-                    </Link>
-                  ) : (
-                    <span className="est-fila"><span><strong>{String(o.cliente)}</strong><small>hace {dias} días</small></span><span className="adm-num">{euros(saldo)}</span></span>
-                  )}
-                </li>
-              );
-            })}
-            {d.debe.length > 10 && <li className="hoy-vacio">y {d.debe.length - 10} más…</li>}
-          </ul>
+          <>
+          <ul className="est-lista">{d.debe.slice(0, 5).map(deudor)}</ul>
+          {d.debe.length > 5 && (
+            <details className="est-mas">
+              <summary>Ver los otros {d.debe.length - 5}</summary>
+              <ul className="est-lista">{d.debe.slice(5).map(deudor)}</ul>
+            </details>
+          )}
+          </>
         )}
       </Tarjeta>
 
-      <Tarjeta titulo="¿Se aceptan los presupuestos?">
+
+      {d.repiten.length > 0 && (
+        <Tarjeta titulo="Clientes que repiten">
+          <ul className="est-lista">
+            {d.repiten.map((c) => (
+              <li key={c.nombre}><span className="est-fila"><span><strong>{c.nombre}</strong><small>{c.pedidos} pedidos</small></span><span className="adm-num">{euros(c.facturado)}</span></span></li>
+            ))}
+          </ul>
+        </Tarjeta>
+      )}
+      </div>
+      <p className="est-nota">
+        <button type="button" className="btn-outline" disabled={d.r.emitidos.length === 0} onClick={exportarCsv}>Exportar los pedidos del periodo (CSV)</button>
+      </p>
+      {d.r.horas > 0 && <p className="est-nota">En el periodo: {formatHoras(d.r.horas)} de impresión y {formatNumero(d.r.gramos / 1000, 2)} kg.</p>}
+    </>
+  );
+}
+
+/** Pestaña «Pedidos»: aceptación, plazos, riesgo y acierto del tasador. */
+export function PanelPedidos({ d }: { d: D }) {
+  const filaAcept = (x: (typeof d.porOrigen)[number]) => (
+    <tr key={x.nombre}>
+      <td>{x.nombre}</td>
+      <td data-label="Presupuestos" className="adm-num">{x.emitidos}</td>
+      <td data-label="Aceptados" className="adm-num">{x.aceptados}</td>
+      <td data-label="Descartados" className="adm-num">{x.descartados}</td>
+      <td data-label="Abiertos" className="adm-num">{x.abiertos}</td>
+      <td data-label="Aceptación" className="adm-num">{x.aceptados + x.descartados > 0 ? pct(x.conversionPct) : '—'}</td>
+    </tr>
+  );
+  const cabAcept = (
+    <thead>
+      <tr><th /><th className="adm-num">Presupuestos</th><th className="adm-num">Aceptados</th><th className="adm-num">Descartados</th><th className="adm-num">Abiertos</th><th className="adm-num">Aceptación</th></tr>
+    </thead>
+  );
+
+  const pun = d.pun.medidos > 0 ? pct(d.pun.enPlazoPct) : '—';
+  return (
+    <>
+    <div className="est-cifras">
+      <Cifra label="Aceptación" valor={d.acept.aceptados + d.acept.descartados > 0 ? pct(d.acept.conversionPct) : '—'} nota={`${d.acept.emitidos} presupuestos, ${d.acept.abiertos} abiertos`} />
+      <Cifra label="En plazo" valor={pun} nota={d.vencidas > 0 ? `${d.vencidas} vencido${d.vencidas === 1 ? '' : 's'} en producción` : `${d.pun.medidos} terminados`} />
+      <Cifra label="Reimpresiones" valor={d.riesgo.pedidos > 0 ? formatNumero(d.riesgo.realPorPedido, 2) : '—'} nota="por pedido" />
+      <Cifra label="Tasador" valor={d.tasador.n > 0 ? formatNumero(d.tasador.mediana, 2) : '—'} nota="coste real ÷ estimado" />
+    </div>
+    <div className="est-grid">
+      <Tarjeta titulo="¿Se aceptan los presupuestos?" ancha>
         {d.r.emitidos.length === 0 ? vacio : (
           <>
             <table className="adm-tabla">{cabAcept}<tbody>{d.porOrigen.map(filaAcept)}</tbody></table>
@@ -240,19 +296,7 @@ export function Dinero({
         )}
       </Tarjeta>
 
-      {d.repiten.length > 0 && (
-        <Tarjeta titulo="Clientes que repiten">
-          <ul className="est-lista">
-            {d.repiten.map((c) => (
-              <li key={c.nombre}><span className="est-fila"><span><strong>{c.nombre}</strong><small>{c.pedidos} pedidos</small></span><span className="adm-num">{euros(c.facturado)}</span></span></li>
-            ))}
-          </ul>
-        </Tarjeta>
-      )}
-      <p className="est-nota">
-        <button type="button" className="btn-outline" disabled={d.r.emitidos.length === 0} onClick={exportarCsv}>Exportar los pedidos del periodo (CSV)</button>
-      </p>
-      {d.r.horas > 0 && <p className="est-nota">En el periodo: {formatHoras(d.r.horas)} de impresión y {formatNumero(d.r.gramos / 1000, 2)} kg.</p>}
+    </div>
     </>
   );
 }
