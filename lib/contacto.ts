@@ -20,8 +20,15 @@ export const CONTACTO = {
   whatsapp: PHONE_E164,
   instagram: 'https://www.instagram.com/impresion3dcc/',
   /** Google Business profile, by its stable CID. */
-  googleMaps: 'https://www.google.com/maps?cid=5037644109956242266'
+  googleMaps: 'https://www.google.com/maps?cid=5037644109956242266',
+  /** Atajo a «Escribir una reseña» en Google (página /qr y tickets). */
+  resena: 'https://reviewthis.biz/3dcc'
 } as const;
+
+/** Tasador con el cupón ya aplicado (lo lee useCupon). */
+export function enlaceCupon(codigo: string): string {
+  return `${CONTACTO.sitio}/instant-quote?cupon=${encodeURIComponent(codigo)}`;
+}
 
 /** `mailto:` link, optionally with a prefilled subject. */
 export function mailtoUrl(subject?: string): string {

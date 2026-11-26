@@ -14,6 +14,7 @@ import { downloadQuoteFile } from '@/lib/quote/compress';
 import { euros } from '@/lib/recibo/types';
 import { fechaLarga, fechaTope, hoyMadrid, senalPendiente, type QuoteSettings } from '@/lib/quote/pricing';
 import { openQuotePdf } from '@/lib/quote/pdf';
+import { BotonTicket } from './BotonTicket';
 import { whatsappTo } from '@/lib/contacto';
 import { mensajeDeError } from '@/lib/errors';
 import { Drawer } from '../_components/Drawer';
@@ -442,6 +443,7 @@ export function Ficha({
                 </Link>
                 <button type="button" className="btn-outline" onClick={() => void acciones.duplicar(q)} disabled={!d}>Duplicar</button>
                 <button type="button" className="btn-outline" onClick={pdf}>PDF</button>
+                <BotonTicket q={q} piezas={Array.isArray(d?.piezas) ? (d.piezas as PiezaPedido[]) : []} onError={setError} />
                 <button type="button" className="btn-outline" onClick={() => void acciones.archivar(q)}>{q.archivado ? 'Recuperar' : 'Archivar'}</button>
               </span>
             </div>
