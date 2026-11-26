@@ -15,7 +15,6 @@ const WA_QR =
   whatsappUrl('Hola! Acabo de escanear vuestro QR y me gustaría información sobre impresión 3D');
 const WA_FAB =
   whatsappUrl('Hola! Acabo de escanear vuestro QR');
-const REVIEW_URL = 'https://reviewthis.biz/3dcc';
 
 // Filled-star path used many times.
 const STAR_PATH =
@@ -127,7 +126,7 @@ export default function QrPage() {
 
           {/* Review CTA */}
           <a
-            href={REVIEW_URL}
+            href={CONTACTO.resena}
             target="_blank"
             rel="noopener noreferrer"
             className="qr-review-cta qr-fade"
@@ -314,7 +313,7 @@ export default function QrPage() {
           <div className="qr-review-bottom qr-fade">
             <p>¿Te hemos ayudado con tu proyecto?</p>
             <a
-              href={REVIEW_URL}
+              href={CONTACTO.resena}
               target="_blank"
               rel="noopener noreferrer"
               className="qr-review-btn"

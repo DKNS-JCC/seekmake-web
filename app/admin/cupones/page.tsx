@@ -9,6 +9,7 @@ import { useAdminAuth, AccesoDenegado } from '../_components/useAdminAuth';
 import { ErrorBanner } from '../_components/ErrorBanner';
 import { AdminCabecera } from '../_components/AdminNav';
 import { euros } from '@/lib/recibo/types';
+import { enlaceCupon } from '@/lib/contacto';
 
 // Códigos de descuento del tasador. Un uso = una solicitud con el código que
 // no esté rechazada (validar_cupon). Un código usado no se borra: se apaga.
@@ -25,9 +26,6 @@ const vacio = (): Draft => ({
   activo: true,
   nota: ''
 });
-
-const enlace = (codigo: string) =>
-  `https://www.impresion3dcc.com/instant-quote?cupon=${encodeURIComponent(codigo)}`;
 
 export default function AdminCupones() {
   const [cupones, setCupones] = useState<CuponRow[]>([]);
@@ -194,7 +192,7 @@ export default function AdminCupones() {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
                 <button type="button" className="btn-outline" style={{ padding: '6px 12px', fontSize: 11 }}
-                  onClick={() => navigator.clipboard?.writeText(enlace(c.codigo))}>
+                  onClick={() => navigator.clipboard?.writeText(enlaceCupon(c.codigo))}>
                   Copiar enlace
                 </button>
                 <button type="button" className="btn-outline" style={{ padding: '6px 12px', fontSize: 11 }} onClick={() => alternar(c)}>
