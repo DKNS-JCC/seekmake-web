@@ -1191,9 +1191,17 @@ await check('pedido web: conserva cada pieza (material, colores, gramos y horas)
   // Los totales aplanados que lee la 7.2 siguen igual: 3 × 12,5 + 30 g y 3 × 0,75 + 2 h.
   assert(o.data.peso_g === '68' && o.data.horas === '4.25' && o.data.cantidad === 4, `totales: ${o.data.peso_g} g, ${o.data.horas} h, ${o.data.cantidad}`);
   assert(o.data.notes.includes('Solicitud web') && o.data.filamento === 'PLA, PETG', 'se perdió lo de siempre');
-  // Sin archivos: lista vacía, no null.
+  // Desglose de la 7.2 (20261127150000): la pieza de dos partes reparte sus 30 g.
+  const b = o.data.material_breakdown;
+  assert(o.data.is_multimaterial === true && JSON.stringify(b) === JSON.stringify([
+    { color: 'Negro', grams: 37.5, material: 'PLA' },
+    { color: 'Blanco', grams: 15, material: 'PETG' },
+    { color: 'Negro', grams: 15, material: 'PETG' }
+  ]), `desglose: ${JSON.stringify(b)}`);
+  // Sin archivos: lista vacía, no null, y sin desglose.
   const v = await ordenDeQuote(webQuote.id);
   assert(Array.isArray(v.data.piezas), 'sin lista de piezas');
+  assert(!v.data.is_multimaterial, 'desglose en un pedido de una sola línea');
 });
 
 console.log('\n▸ Miniaturas del tasador');
