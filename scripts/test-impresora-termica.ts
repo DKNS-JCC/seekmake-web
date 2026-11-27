@@ -4,7 +4,7 @@
 //   npx tsx scripts/test-impresora-termica.ts
 
 import { ANCHO, crc8, empaquetar, orden } from '../lib/impresora-termica';
-import { cuidados } from '../app/admin/presupuestos/ticket';
+import { cuidados, partirLineas } from '../app/admin/presupuestos/ticket';
 import { check, done, section } from './_assert';
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(' ');
@@ -36,5 +36,12 @@ check('PA12-CF → nailon y fibra', mats(['PA12-CF']) === 'Nailon,Con fibra');
 check('sin repetir aunque haya varias piezas', mats(['ASA', 'asa', 'ASA']) === 'ASA');
 check('PLA-CF no cuenta como PLA, pero sí como fibra', mats(['PLA-CF']) === 'Con fibra');
 check('«PC» no salta con PETG ni PCTG', mats(['PETG', 'PCTG']) === '');
+
+section('Nombres largos en el ticket');
+const medir = (t: string) => t.length * 10; // 10 px por letra
+const ls = partirLineas('soporte_pared_estanteria_final_v3', 100, medir);
+check('una palabra sin espacios se corta por letras', ls.every((l) => medir(l) <= 100) && ls.join('') === 'soporte_pared_estanteria_final_v3', ls.join('|'));
+check('las palabras normales siguen partiendo por espacios', partirLineas('caja de tornillos', 100, medir).join('|') === 'caja de|tornillos');
+check('la palabra larga empieza línea nueva', partirLineas('2 × abcdefghijklmno', 100, medir).join('|') === '2 ×|abcdefghij|klmno');
 
 done();
