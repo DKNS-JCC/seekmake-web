@@ -32,6 +32,28 @@ export function cuidados(materiales: (string | null | undefined)[]): { material:
   return CUIDADOS.filter(([re]) => [...palabras].some((w) => re.test(w))).map(([, material, texto]) => ({ material, texto }));
 }
 
+/** Parte el texto en líneas que caben en `ancho`. Una palabra más ancha que la línea (nombres de archivo sin espacios) se corta por letras. */
+export function partirLineas(t: string, ancho: number, medir: (s: string) => number): string[] {
+  const out: string[] = [];
+  let l = '';
+  for (let w of t.split(/\s+/).filter(Boolean)) {
+    while (medir(w) > ancho && w.length > 1) {
+      let n = w.length - 1;
+      while (n > 1 && medir(w.slice(0, n)) > ancho) n--;
+      if (l) out.push(l);
+      out.push(w.slice(0, n));
+      l = '';
+      w = w.slice(n);
+    }
+    const p = l ? `${l} ${w}` : w;
+    if (medir(p) > ancho && l) {
+      out.push(l);
+      l = w;
+    } else l = p;
+  }
+  return l ? [...out, l] : out;
+}
+
 let logo: Promise<HTMLImageElement> | null = null;
 function cargarLogo() {
   logo ??= new Promise((ok, mal) => {
@@ -72,18 +94,7 @@ export async function ticketPedido(q: Quote, pzs: Pieza[] = [], cupon: CuponRow 
   ctx.textBaseline = 'top';
   let y = 8;
 
-  const partir = (t: string, ancho: number) => {
-    const out: string[] = [];
-    let l = '';
-    for (const w of t.split(/\s+/).filter(Boolean)) {
-      const p = l ? `${l} ${w}` : w;
-      if (ctx.measureText(p).width > ancho && l) {
-        out.push(l);
-        l = w;
-      } else l = p;
-    }
-    return l ? [...out, l] : out;
-  };
+  const partir = (t: string, ancho: number) => partirLineas(t, ancho, (s) => ctx.measureText(s).width);
   const texto = (t: string, fuente: string, alto: number, alinear: 'left' | 'center' = 'left', max = 3) => {
     ctx.font = fuente;
     ctx.textAlign = alinear;
@@ -102,7 +113,9 @@ export async function ticketPedido(q: Quote, pzs: Pieza[] = [], cupon: CuponRow 
     ctx.textAlign = 'right';
     ctx.fillText(der, ANCHO - M, y);
     ctx.textAlign = 'left';
-    for (const l of partir(izq, UTIL - ancho - 12).slice(0, 3)) {
+    let ls = partir(izq, UTIL - ancho - 16);
+    if (ls.length > 3) ls = [...ls.slice(0, 2), ls[2] + '…'];
+    for (const l of ls) {
       ctx.fillText(l, M, y);
       y += alto;
     }
