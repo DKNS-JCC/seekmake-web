@@ -57,8 +57,8 @@ export function siguientePaso(
   return q.origen === 'web' && !consultar ? { a: 'aceptado', label: 'Aceptar pedido' } : undefined;
 }
 
-/** Filtros de la lista. Los que no son un estado agrupan o miran el archivo. */
-export type Filtro = 'activos' | QuoteEstado | 'archivados';
+/** Filtros de la lista: «Activos» agrupa lo que sigue en marcha; el resto, un estado. */
+export type Filtro = 'activos' | QuoteEstado;
 export const ACTIVOS: QuoteEstado[] = ['nuevo', 'revisado', 'aceptado', 'imprimiendo', 'listo'];
 export const FILTROS: { id: Filtro; label: string }[] = [
   { id: 'activos', label: 'Activos' },
@@ -68,13 +68,10 @@ export const FILTROS: { id: Filtro; label: string }[] = [
   { id: 'imprimiendo', label: 'En producción' },
   { id: 'listo', label: 'Listos' },
   { id: 'entregado', label: 'Entregados' },
-  { id: 'rechazado', label: 'Descartados' },
-  { id: 'archivados', label: 'Archivados' }
+  { id: 'rechazado', label: 'Descartados' }
 ];
 
-export function coincideFiltro(q: Pick<Quote, 'estado' | 'archivado'>, f: Filtro): boolean {
-  if (f === 'archivados') return q.archivado;
-  if (q.archivado) return false;
+export function coincideFiltro(q: Pick<Quote, 'estado'>, f: Filtro): boolean {
   return f === 'activos' ? ACTIVOS.includes(q.estado) : q.estado === f;
 }
 

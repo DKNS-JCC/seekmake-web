@@ -899,11 +899,13 @@ await check('los pedidos de SILAB3D no crean quote', async () => {
   assert((await orden('silab3d', 'SIL00002')).quote_id === null, 'tiene quote');
 });
 
-await check('borrar un pedido manual archiva su quote', async () => {
+await check('borrar un pedido manual archiva su quote y la descarta', async () => {
   await guardarPedido('3dcc', 'MAN00009', { id: 'MAN00009', cliente: 'Borrar', estado: 'Presupuesto enviado' });
   const o = await orden('3dcc', 'MAN00009');
   await client.query(`delete from public.orders where empresa = '3dcc' and id = 'MAN00009'`);
-  assert((await quoteDe(o.quote_id)).archivado === true, 'quote sin archivar');
+  const q = await quoteDe(o.quote_id);
+  assert(q.archivado === true, 'quote sin archivar');
+  assert(q.estado === 'rechazado', `sigue en «${q.estado}»: saldría en Activos`);
 });
 
 console.log('\n▸ Sincronización: libro de cobros (0028)');

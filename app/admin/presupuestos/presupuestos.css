@@ -17,7 +17,6 @@
 /* Lista: una fila = un clic. */
 .pq-lista tbody tr { cursor: pointer; }
 .pq-lista tbody tr:hover { background: var(--bg); }
-.pq-lista tr.archived { opacity: 0.55; }
 .pq-codigo { font-family: var(--font-mono), monospace; font-weight: 600; white-space: nowrap; }
 .pq-cliente { max-width: 260px; }
 .pq-cliente strong { display: block; font-weight: 600; }
