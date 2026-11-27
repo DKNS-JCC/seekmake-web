@@ -207,6 +207,8 @@ export async function ticketPedido(q: Quote, pzs: Pieza[] = [], cupon: CuponRow 
   texto('Escanea y déjanos tu reseña en Google', '19px sans-serif', 26, 'center');
   dibujarQr(CONTACTO.resena, 180);
   texto('¡Gracias por confiar en nosotros!', 'bold 22px sans-serif', 28, 'center');
+  y += 10;
+  texto('Documento sin validez fiscal', '16px sans-serif', 20, 'center');
   y += 20;
 
   const out = document.createElement('canvas');
