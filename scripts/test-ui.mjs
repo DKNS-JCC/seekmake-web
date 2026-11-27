@@ -303,8 +303,8 @@ await check('Pestanas: tablist con una sola pestaña en el orden de tabulación'
 await check('estados: filtros, siguiente paso y plazo escrito (no solo color)', async () => {
   const q = (estado, extra = {}) => ({ estado, archivado: false, ...extra });
   assert(est.coincideFiltro(q('listo'), 'activos') && !est.coincideFiltro(q('entregado'), 'activos'), 'activos');
-  assert(est.coincideFiltro(q('entregado', { archivado: true }), 'archivados'), 'archivados');
-  assert(!est.coincideFiltro(q('listo', { archivado: true }), 'listo'), 'un archivado sigue en su estado');
+  assert(est.coincideFiltro(q('entregado', { archivado: true }), 'entregado'), 'un archivado sale en su estado');
+  assert(!est.coincideFiltro(q('rechazado'), 'activos'), 'descartados fuera de activos');
   assert(est.SIGUIENTE.imprimiendo.a === 'listo' && !est.SIGUIENTE.entregado && !est.SIGUIENTE.nuevo, 'siguiente paso');
   const hoy = '2026-11-10';
   assert(est.plazoDe(q('imprimiendo', { fecha_prometida: '2026-11-08' }), hoy).texto === '2 días tarde', 'tarde');
@@ -330,7 +330,8 @@ await check('Ficha: cabecera con el siguiente paso, cuatro pestañas y señal pe
   assert(html.includes('Marcar listo y avisar') && html.includes('sin avisar'), 'no ofrece el siguiente paso con aviso');
   for (const p of ['Resumen', 'Piezas', 'Cobros', 'Envío']) assert(html.includes(`>${p}<`), `falta la pestaña ${p}`);
   assert(html.includes('Señal del 50 % pendiente'), 'no avisa de la señal');
-  assert(html.includes('Editar y recalcular') && html.includes('Duplicar') && html.includes('Archivar') && html.includes('Eliminar pedido'), 'faltan acciones');
+  assert(html.includes('Editar y recalcular') && html.includes('Duplicar') && html.includes('Eliminar pedido'), 'faltan acciones');
+  assert(!html.includes('Archivar'), 'sigue el botón Archivar');
   assert(html.includes('Reimpresiones por fallo'), 'faltan las reimpresiones');
   // Sin email no se ofrece avisar.
   const sin = render(Ficha, { q: { ...quote, email: '' }, pedido, conPedido: true, ajustes: normalizeSettings(null), pestana: 'resumen', onPestana: () => {}, onCerrar: () => {}, acciones });

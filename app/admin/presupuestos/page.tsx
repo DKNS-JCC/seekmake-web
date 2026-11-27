@@ -25,7 +25,7 @@ import {
   AVISABLES, ESTADO_COLOR, ESTADO_LABEL, FILTROS, PAGO_LABEL, siguientePaso,
   coincideFiltro, fechaCorta, piezas, plazoDe, type Filtro
 } from './estados';
-import { contabilizarMaterial, nuevoId, parchearOrden, type PedidoRow } from './orden';
+import { contabilizarMaterial, nuevoId, type PedidoRow } from './orden';
 
 type Orden = 'tope' | 'recientes' | 'importe';
 
@@ -74,8 +74,7 @@ export default function AdminPedidos() {
   useEffect(() => {
     const u = new URLSearchParams(window.location.search);
     const e = u.get('estado');
-    if (u.get('archivados') === '1') setFiltro('archivados');
-    else if (e && FILTROS.some((f) => f.id === e)) setFiltro(e as Filtro);
+    if (e && FILTROS.some((f) => f.id === e)) setFiltro(e as Filtro);
     setQuery(u.get('q') ?? '');
     setAbierta(u.get('abrir'));
     setPestana(['resumen', 'piezas', 'cobros', 'envio'].includes(u.get('pestana') ?? '') ? (u.get('pestana') as string) : 'resumen');
@@ -153,8 +152,7 @@ export default function AdminPedidos() {
   }
 
   /**
-   * Cambia de estado. Aceptar apunta el material; entregar con todo cobrado
-   * archiva. Sin conAviso (el desplegable de la ficha) pregunta si avisar.
+   * Cambia de estado. Aceptar apunta el material. Sin conAviso (el desplegable de la ficha) pregunta si avisar.
    */
   async function mover(q: Quote, a: QuoteEstado, conAviso?: boolean) {
     if (a === q.estado) return;
@@ -184,48 +182,15 @@ export default function AdminPedidos() {
         partes.push('No se pudo apuntar el material: ' + mensajeDeError(e as { message?: string }));
       }
     }
+    // La base de datos puede haber puesto la fecha al aceptar.
     await releer(q.id);
-    // La base de datos puede haber puesto la fecha al aceptar y el cobro manda sobre el pago.
-    const { data: fresco } = await supabase().from('quotes').select('pago, archivado').eq('id', q.id).single();
-    let archivado = false;
-    if (a === 'entregado' && fresco?.pago === 'pagado' && !fresco.archivado) {
-      const { error: e2 } = await supabase().from('quotes').update({ archivado: true }).eq('id', q.id);
-      if (!e2) {
-        archivado = true;
-        partes.push('Todo cobrado: archivado.');
-        await releer(q.id);
-      }
-    }
     if (conAviso && q.email && AVISABLES.includes(a)) partes.push(await avisarCliente(q));
     else if (q.email && AVISABLES.includes(a)) partes.push('Cliente sin avisar.');
     avisar(partes.join(' '), {
       label: 'Deshacer',
       run: () => {
         void (async () => {
-          await supabase().from('quotes').update({ estado: antes, ...(archivado ? { archivado: false } : {}) }).eq('id', q.id);
-          await releer(q.id);
-        })();
-      }
-    });
-  }
-
-  async function archivar(q: Quote) {
-    const valor = !q.archivado;
-    const { error: err } = await supabase().from('quotes').update({ archivado: valor }).eq('id', q.id);
-    if (err) return setError(mensajeDeError(err, 'No se pudo archivar el pedido'));
-    try {
-      await parchearOrden(supabase(), q.id, { archived: valor });
-    } catch {
-      /* el pedido de taller se pone al día en el siguiente guardado */
-    }
-    await releer(q.id);
-    setAbierta(null);
-    avisar(`${q.codigo} ${valor ? 'archivado' : 'recuperado'}.`, {
-      label: 'Deshacer',
-      run: () => {
-        void (async () => {
-          await supabase().from('quotes').update({ archivado: !valor }).eq('id', q.id);
-          await parchearOrden(supabase(), q.id, { archived: !valor }).catch(() => null);
+          await supabase().from('quotes').update({ estado: antes }).eq('id', q.id);
           await releer(q.id);
         })();
       }
@@ -418,7 +383,6 @@ export default function AdminPedidos() {
               return (
                 <tr
                   key={q.id}
-                  className={q.archivado ? 'archived' : ''}
                   {...activableRow(() => { setPestana('resumen'); setAbierta(q.codigo); }, `Abrir el pedido ${q.codigo}`)}
                 >
                   <td className="pq-codigo">{q.codigo}</td>
@@ -463,7 +427,6 @@ export default function AdminPedidos() {
         onCerrar={() => setAbierta(null)}
         acciones={{
           mover,
-          archivar,
           duplicar,
           releer,
           avisar,

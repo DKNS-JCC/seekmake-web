@@ -3,7 +3,7 @@
 // Ficha del pedido: cajón con cabecera fija (estado, plazo, siguiente paso) y
 // cuatro pestañas. Estado y cobros actúan al momento; fecha, precio, notas y
 // reimpresiones se guardan con el botón (y el cajón avisa si se cierra sin
-// guardar). La lista decide qué hacer con el estado, el archivo y el borrado:
+// guardar). La lista decide qué hacer con el estado y el borrado:
 // aquí solo se piden.
 
 import { useEffect, useMemo, useState } from 'react';
@@ -35,7 +35,6 @@ import { contabilizarMaterial, lineasMaterial, parchearOrden, type PedidoRow } f
 export type AccionesFicha = {
   /** Sin avisar (undefined): pregunta si mandar el email. */
   mover: (q: Quote, a: QuoteEstado, avisar?: boolean) => Promise<void>;
-  archivar: (q: Quote) => Promise<void>;
   eliminar: (q: Quote) => Promise<void>;
   duplicar: (q: Quote) => Promise<void>;
   /** Vuelve a leer el pedido (los triggers pueden haber tocado pago o estado). */
@@ -444,7 +443,6 @@ export function Ficha({
                 <button type="button" className="btn-outline" onClick={() => void acciones.duplicar(q)} disabled={!d}>Duplicar</button>
                 <button type="button" className="btn-outline" onClick={pdf}>PDF</button>
                 <BotonTicket q={q} piezas={Array.isArray(d?.piezas) ? (d.piezas as PiezaPedido[]) : []} onError={setError} />
-                <button type="button" className="btn-outline" onClick={() => void acciones.archivar(q)}>{q.archivado ? 'Recuperar' : 'Archivar'}</button>
               </span>
             </div>
             <p style={{ marginTop: 28 }}>
