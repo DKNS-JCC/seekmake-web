@@ -126,6 +126,8 @@ export interface EncargoInput {
   riesgo: string;
   urgente: boolean;
   gastoExtra: number;
+  /** € por unidad acordados con el cliente: sustituye al precio de la tarifa. */
+  precioPactado?: number;
 }
 
 export interface Desglose {
@@ -159,6 +161,9 @@ export interface EncargoResultado {
   minimoAplicado: boolean;
   /** Céntimos que sube el redondeo a 0,05 €. */
   redondeo: number;
+  /** El precio de la tarifa; con precio pactado, el precio es otro. */
+  precioTarifa: number;
+  pactado: boolean;
   pesoG: number;
   precioKg: number;
   /** «PLA», «PLA + TPU». */
@@ -265,7 +270,10 @@ export function calcularEncargo(e: EncargoInput, cfg: ConfigCalculadora, urgenci
   const trasMargen = bruto * MARKUP + bruto * errorRate + resto;
   const conUrgencia = trasMargen * (1 + urgenciaRate);
   const sinExtra = roundUpToNickel(Math.max(conUrgencia, minimo));
-  const precio = roundUpToNickel(sinExtra + bd.gasto_misc);
+  const tarifa = roundUpToNickel(sinExtra + bd.gasto_misc);
+  const pactado = Number(e.precioPactado) > 0;
+  // Pactado: tal cual × unidades, sin mínimo, urgencia ni redondeo.
+  const precio = pactado ? roundMoney(Number(e.precioPactado) * unidades) : tarifa;
   const costeReal = bruto + bd.gasto_misc;
 
   return {
@@ -279,11 +287,13 @@ export function calcularEncargo(e: EncargoInput, cfg: ConfigCalculadora, urgenci
     margen: precio > 0 ? (precio - costeReal) / precio : 0,
     errorRate,
     urgenciaRate,
-    recargoUrgencia: trasMargen * urgenciaRate,
+    recargoUrgencia: pactado ? 0 : trasMargen * urgenciaRate,
     precioBase: roundUpToNickel(Math.max(trasMargen, minimo)),
     precioMinimo: minimo,
-    minimoAplicado: sinExtra > conUrgencia && conUrgencia < minimo,
-    redondeo: Math.max(0, precio - (Math.max(conUrgencia, minimo) + bd.gasto_misc)),
+    minimoAplicado: !pactado && sinExtra > conUrgencia && conUrgencia < minimo,
+    redondeo: pactado ? 0 : Math.max(0, precio - (Math.max(conUrgencia, minimo) + bd.gasto_misc)),
+    precioTarifa: tarifa,
+    pactado,
     pesoG: peso,
     precioKg: kg,
     filamento,
@@ -323,7 +333,9 @@ export function camposPedido(e: EncargoInput, r: EncargoResultado) {
     postprocesado_label: e.postprocesado || 'Limpio',
     probabilidad_error_label: e.riesgo || 'Baja (25%)',
     markup_label: MARKUP_LABEL,
-    gasto_misc: roundMoney(r.desglose.gasto_misc)
+    gasto_misc: roundMoney(r.desglose.gasto_misc),
+    // Solo la web lo lee; la 7.2 lo conserva y, si se recalcula allí, vuelve a la tarifa.
+    precio_pactado_ud: r.pactado ? roundMoney(Number(e.precioPactado)) : null
   };
 }
 

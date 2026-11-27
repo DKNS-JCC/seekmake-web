@@ -83,6 +83,8 @@ type Form = {
   riesgo: string;
   urgente: boolean;
   extra: string;
+  /** € por unidad acordados con el cliente (vacío = la tarifa). */
+  pactado: string;
   motivo: string;
 };
 
@@ -199,6 +201,7 @@ function formVacio(cfg: ConfigCalculadora | null, riesgo: string): Form {
     riesgo,
     urgente: false,
     extra: '',
+    pactado: '',
     motivo: ''
   };
 }
@@ -340,6 +343,7 @@ export default function NuevoEncargo() {
       riesgo,
       urgente: d.urgencia_nivel === 'Urgente',
       extra: Number(d.gasto_misc) > 0 ? formatNumero(Number(d.gasto_misc), 2) : '',
+      pactado: Number(d.precio_pactado_ud) > 0 ? formatNumero(Number(d.precio_pactado_ud), 2) : '',
       motivo: ''
     });
     if (esSolicitud && d.descripcion) setSugerenciaDesc(String(d.descripcion).replace(/^Q-\S+ · /, ''));
@@ -428,7 +432,8 @@ export default function NuevoEncargo() {
       postprocesado: f.postpro,
       riesgo: f.riesgo,
       urgente: f.urgente,
-      gastoExtra: Math.max(0, parseNumero(f.extra) || 0)
+      gastoExtra: Math.max(0, parseNumero(f.extra) || 0),
+      precioPactado: Math.max(0, parseNumero(f.pactado) || 0)
     };
     try {
       return { faltan, input, r: calcularEncargo(input, cfg, settings.urgencia_recargo_pct) };
@@ -476,13 +481,14 @@ export default function NuevoEncargo() {
       if (dh === null || Number.isNaN(dh) || dh <= 0) e.disenoHoras = 'Pon las horas de diseño.';
     }
     if (f.extra.trim() && Number.isNaN(parseNumero(f.extra))) e.extra = 'Pon un importe, p. ej. 4,50.';
+    if (f.pactado.trim() && !((parseNumero(f.pactado) ?? 0) > 0)) e.pactado = 'Pon el precio por unidad, p. ej. 11.';
     if (f.purgaG.trim() && Number.isNaN(parseNumero(f.purgaG))) e.purga = 'Pon los gramos de purga.';
     if (pideMotivo && !f.motivo.trim()) e.motivo = 'El pedido ya está aceptado: di por qué cambia el precio.';
     if (calculo.error) e.calculo = calculo.error;
     return e;
   }, [f, sugerenciaDesc, pideMotivo, calculo.error]);
   const ver = (k: string) => (intentado || tocados.has(k) ? errores[k] : undefined);
-  const ORDEN_CAMPOS = ['g0', 'tiempo', ...f.lineas.flatMap((_, i) => [`m${i}`, `c${i}`, `g${i}`]), 'purga', 'nombre', 'email', 'descripcion', 'disenoHoras', 'extra', 'motivo'];
+  const ORDEN_CAMPOS = ['g0', 'tiempo', ...f.lineas.flatMap((_, i) => [`m${i}`, `c${i}`, `g${i}`]), 'purga', 'nombre', 'email', 'descripcion', 'disenoHoras', 'extra', 'pactado', 'motivo'];
   const ID: Record<string, string> = { tiempo: 'enc-tiempo', nombre: 'enc-nombre', email: 'enc-email', descripcion: 'enc-desc', disenoHoras: 'enc-dh', extra: 'enc-extra', motivo: 'enc-motivo', purga: 'enc-purga' };
   const idDe = (k: string) => ID[k] ?? `enc-${k[0]}-${k.slice(1)}`;
 
@@ -872,10 +878,10 @@ export default function NuevoEncargo() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  // Abre «Más» si urgencia o extra tienen valor (al editar o repetir).
+  // Abre «Más» si urgencia, extra o precio pactado tienen valor (al editar o repetir).
   useEffect(() => {
-    if (masRef.current && (f.urgente || f.extra.trim())) masRef.current.open = true;
-  }, [f.urgente, f.extra]);
+    if (masRef.current && (f.urgente || f.extra.trim() || f.pactado.trim())) masRef.current.open = true;
+  }, [f.urgente, f.extra, f.pactado]);
 
   // ── Render ──
   if (authed === false) return <AccesoDenegado />;
@@ -1386,7 +1392,7 @@ export default function NuevoEncargo() {
             </Opciones>
 
             <details ref={masRef} className="enc-mas">
-              <summary>Más: urgencia, gasto extra</summary>
+              <summary>Más: urgencia, gasto extra, precio pactado</summary>
               <label className="enc-check">
                 <input type="checkbox" checked={f.urgente} onChange={(e) => set('urgente', e.target.checked)} />
                 Urgente (+{formatNumero(settings.urgencia_recargo_pct, 0)} %)
@@ -1405,6 +1411,25 @@ export default function NuevoEncargo() {
                 />
                 <span id="ayuda-extra" className="enc-gris">
                   {ver('extra') ?? 'Anillas, pintura, embalaje. Se suma tal cual, sin margen.'}
+                </span>
+              </label>
+              <label className="enc-campo">
+                <span className="enc-rotulo">Precio pactado por unidad</span>
+                <CampoNumero
+                  id="enc-pactado"
+                  unidad="€"
+                  enterKeyHint="done"
+                  value={f.pactado}
+                  invalido={!!ver('pactado')}
+                  aria-describedby="ayuda-pactado"
+                  onChange={(v) => set('pactado', v)}
+                  onBlur={() => tocar('pactado')}
+                />
+                <span id="ayuda-pactado" className="enc-gris">
+                  {ver('pactado') ??
+                    (r?.pactado
+                      ? `La tarifa daría ${euros(r.precioTarifa)}. Gramos y tiempo siguen contando para coste y plazo.`
+                      : 'Lo acordado con el cliente. Sustituye al precio calculado.')}
                 </span>
               </label>
             </details>
@@ -1495,6 +1520,12 @@ export default function NuevoEncargo() {
                     <li>Señal (50 %): {euros(Math.round(r.precio * 50) / 100)}</li>
                     {fechaTope && <li>Listo antes del {fechaCortaProxima(fechaTope)}</li>}
                     {r.minimoAplicado && <li><span className="enc-etq">Mínimo {euros(r.precioMinimo)}</span></li>}
+                    {r.pactado && (
+                      <li>
+                        <span className="enc-etq">Pactado</span> tarifa {euros(r.precioTarifa)} ({r.precio >= r.precioTarifa ? '+' : '−'}
+                        {euros(Math.abs(r.precio - r.precioTarifa))})
+                      </li>
+                    )}
                     {f.urgente && <li><span className="enc-etq">Urgente</span></li>}
                   </ul>
                   <div className="enc-interno">
@@ -1527,6 +1558,12 @@ export default function NuevoEncargo() {
                           <div>
                             <dt>Redondeo</dt>
                             <dd>{euros(r.redondeo)}</dd>
+                          </div>
+                        )}
+                        {r.pactado && (
+                          <div>
+                            <dt>Ajuste pactado</dt>
+                            <dd>{r.precio >= r.precioTarifa ? '+' : '−'}{euros(Math.abs(r.precio - r.precioTarifa))}</dd>
                           </div>
                         )}
                       </dl>

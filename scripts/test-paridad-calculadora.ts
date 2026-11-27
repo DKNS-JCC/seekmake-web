@@ -189,5 +189,20 @@ section('el mínimo actúa');
   check('1 g y 6 min → 3,00 € con mínimo aplicado', r.precio === 3 && r.minimoAplicado);
 }
 
+section('precio pactado');
+{
+  const base: EncargoInput = {
+    impresora: 'Kobra X', lineas: [{ material: 'PLA', color: 'Negro', gramos: 120 }], horas: 4, cantidad: 3,
+    diseno: 'No necesario', disenoHoras: 0, postprocesado: 'Limpio', riesgo: 'Baja (25%)', urgente: true, gastoExtra: 2
+  };
+  const t = calcularEncargo(base, fixture.config);
+  const p = calcularEncargo({ ...base, precioPactado: 11 }, fixture.config);
+  check('11 €/ud × 3 = 33 €, sin urgencia ni mínimo', p.precio === 33 && p.pactado && p.recargoUrgencia === 0 && !p.minimoAplicado);
+  check('la tarifa queda de referencia y el coste no cambia', p.precioTarifa === t.precio && p.costeReal === t.costeReal);
+  check('beneficio sobre el precio pactado', cent(p.beneficioReal) === cent(33 - t.costeReal) && p.precioUnitario === 11);
+  check('se guarda en el pedido (y no sin pactar)',
+    camposPedido({ ...base, precioPactado: 11 }, p).precio_pactado_ud === 11 && camposPedido(base, t).precio_pactado_ud === null);
+}
+
 console.log(`\n${casos} casos comparados, ${fallos} distintos.`);
 done();
